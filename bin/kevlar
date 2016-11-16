@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+#
+# -----------------------------------------------------------------------------
+# Copyright (c) 2016 The Regents of the University of California
+#
+# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# licensed under the MIT license: see LICENSE.
+# -----------------------------------------------------------------------------
+
+from __future__ import print_function
+import argparse
+import kevlar
+
+def parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', action='version',
+                        version='kevlar v{}'.format(kevlar.__version__))
+    kevlar.dump.subparser(parser)
+    return parser
+
+
+def main(args):
+    print('Hello, {}!'.format(args.cmd))
+
+
+if __name__ == '__main__':
+    main(parser().parse_args())

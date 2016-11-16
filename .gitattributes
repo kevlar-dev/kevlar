@@ -1,0 +1,3 @@
+kevlar/_version.py export-subst
+kevlar/_version.py linguist-vendored
+versioneer.py linguist-vendored
