@@ -14,14 +14,12 @@ import kevlar
 
 def subparser(parser):
     subparsers = parser.add_subparsers(dest='cmd')
-    subparser = subparsers.add_parser('dump')
-    subparser.add_argument('--infmt', metavar='FMT', choices=['bam, fastq'],
-                           help='format of input file; "bam" or "fastq"')
+    subparser = subparsers.add_parser('dump'))
     subparser.add_argument('--out', metavar='FILE',
                            type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('refr', help='reference sequence in Fasta format')
-    subparser.add_argument('reads', help='reads in Fastq or BAM format')
+    subparser.add_argument('reads', help='read alignments in BAM format')
 
 
 def main(args, log=sys.stderr):
