@@ -52,9 +52,13 @@ def main(args):
         if (i+1) % 10000 == 0:
             print('...processed', i, 'records', file=sys.stderr)
 
+        # We only want primary sequences
         if record.is_secondary or record.is_supplementary:
             continue
 
+        # If we're restricting to a particular chromosome, keep reads with that
+        # chromosome's seqid or reads whose median k-mer abundance is 0 in the
+        # genome mask.
         pass_seqid_filter = True
         if args.seqid:
             if record.reference_id < 0 or \
@@ -67,6 +71,7 @@ def main(args):
         if not pass_seqid_filter and not pass_genomemask_filter:
             continue
 
+        # Discard reads that match the reference genome exactly
         matchcigar = '{:d}M'.format(record.rlen)
         if record.cigarstring == matchcigar:
             seq = seqs[bam.get_reference_name(record.tid)]
