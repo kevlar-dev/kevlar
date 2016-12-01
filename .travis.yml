@@ -2,7 +2,7 @@ addons:
     apt:
         packages:
             - curl
-            - libcurl3-dev
+            - libcurl4-nss-dev
 language: python
 python:
     - 2.7
