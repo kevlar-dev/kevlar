@@ -68,8 +68,16 @@ def main(args):
         if args.genomemask:
             count = genomemask.get_median_count(record.seq)[0]
             pass_genomemask_filter = count < 1
-        if not pass_seqid_filter and not pass_genomemask_filter:
-            continue
+
+        if args.seqid and args.genomemask:
+            if not pass_seqid_filter and not pass_genomemask_filter:
+                continue
+        elif args.seqid:
+            if not pass_seqid_filter:
+                continue
+        elif args.genomemask:
+            if not pass_genomemask_filter:
+                continue
 
         # Discard reads that match the reference genome exactly
         matchcigar = '{:d}M'.format(record.rlen)
