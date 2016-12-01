@@ -1,14 +1,15 @@
 addons:
     apt:
         packages:
-            - curl
-            - libcurl4-openssl-dev
+            - libssl-dev
 language: python
 python:
     - 2.7
     - 3.5
+env:
+    - HTSLIB_CONFIGURE_OPTIONS=--disable-libcurl
 install:
-    - pip install --upgrade pip setuptools pytest cython
+    - pip install --upgrade pip setuptools pytest
     - make devenv
     - pip install .
 script:
