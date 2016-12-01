@@ -17,6 +17,7 @@ mains = {
     'dump': kevlar.dump.main,
 }
 
+
 def parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='version',

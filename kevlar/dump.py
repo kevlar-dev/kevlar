@@ -9,7 +9,6 @@
 
 from __future__ import print_function
 import argparse
-import sys
 
 import pysam
 import khmer
@@ -20,6 +19,7 @@ import kevlar
 def match(record, seq):
     refrseq = str(seq[record.pos:record.pos+record.rlen].seq)
     return refrseq == records.seq
+
 
 def subparser(parser):
     subparsers = parser.add_subparsers(dest='cmd')

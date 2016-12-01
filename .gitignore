@@ -2,3 +2,5 @@ env/
 khmer/
 setup
 nullgraph/
+.cache/
+__pycache__
