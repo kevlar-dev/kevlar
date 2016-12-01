@@ -10,17 +10,28 @@
 from __future__ import print_function
 import argparse
 import kevlar
+import sys
+
+
+mains = {
+    'dump': kevlar.dump.main,
+}
+
 
 def parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='version',
                         version='kevlar v{}'.format(kevlar.__version__))
+    parser.add_argument('-l', '--logfile', metavar='FILE', default=sys.stderr,
+                        type=argparse.FileType('w'))
     kevlar.dump.subparser(parser)
     return parser
 
 
 def main(args):
-    print('Hello, {}!'.format(args.cmd))
+    assert args.cmd in mains
+    mainmethod = mains[args.cmd]
+    mainmethod(args)
 
 
 if __name__ == '__main__':

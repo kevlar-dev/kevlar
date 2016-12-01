@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
-import sys
 
 
 def parse(data):
@@ -35,20 +34,8 @@ def parse(data):
 def parse_seq_dict(data):
     """Load sequences from a Fasta file into a dictionary."""
     seqs = dict()
-    for defline, sequence in parse(args.refr):
+    for defline, sequence in parse(data):
         seqid = defline[1:].split(' ')[0]
         assert seqid not in seqs
         seqs[seqid] = sequence
     return seqs
-
-
-def format(seq, linewidth=70, outstream=sys.stdout):
-    """Print a sequence in a readable format."""
-    if linewidth == 0 or len(seq) <= linewidth:
-        print(seq, file=outstream)
-        return
-
-    i = 0
-    while i < len(seq):
-        print(seq[i:i+linewidth], file=outstream)
-        i += linewidth

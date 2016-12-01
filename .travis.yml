@@ -1,0 +1,13 @@
+dist: trusty
+language: python
+python:
+    - 2.7
+    - 3.5
+install:
+    - pip install --upgrade pip setuptools pytest pep8 cython
+    - pip install git+https://github.com/standage/pysam.git
+    - pip install git+https://github.com/dib-lab/khmer.git
+    - pip install .
+script:
+    - make test
+    - make style
