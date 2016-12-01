@@ -1,7 +1,4 @@
-addons:
-    apt:
-        packages:
-            - libssl-dev
+dist: trusty
 language: python
 python:
     - 2.7
