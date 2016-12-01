@@ -18,14 +18,14 @@ def get_parser():
     parser.add_argument('--seqid', metavar='SEQ',
                         help='dump reads not mapped to SEQ')
     parser.add_argument('--genomemask', metavar='FILE', help='dump reads with '
-                        'median k-mer abundance ≥ 1 in the specified genome; '
+                        'median k-mer abundance >= 1 in the specified genome; '
                         'if both --seqid and --genomemask are declared, reads '
                         'passing either filter will be kept')
-    parser.add_argument('--maskmemory', metavar='SIZE', default=2e9,
+    parser.add_argument('--maskmemory', metavar='SIZE', default=2e9, type=float,
                         help='memory to be occupied by genome mask; default is'
                         ' 2e9 (2G)')
-    parser.add_argument('--mask-k', metavar='K', default=31, help='k size '
-                        'for genome mask')
+    parser.add_argument('--mask-k', metavar='K', default=31, type=int,
+                        help='k size for genome mask')
     parser.add_argument('--out', type=argparse.FileType('w'),
                         help='output file; default is terminal (stdout)')
     parser.add_argument('--dry-run', action='store_true',
