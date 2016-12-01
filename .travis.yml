@@ -1,3 +1,7 @@
+addons:
+    apt:
+        packages:
+            - python-pysam
 language: python
 python:
     - 2.7
