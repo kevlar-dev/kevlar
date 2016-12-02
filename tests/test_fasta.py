@@ -22,7 +22,7 @@ def bogusseqs():
 
 
 def test_parse(bogusseqs):
-    seqs = { defline: seq for defline, seq in kevlar.fasta.parse(bogusseqs) }
+    seqs = {defline: seq for defline, seq in kevlar.fasta.parse(bogusseqs)}
     assert seqs == {
         '>seq1': 'ACGT',
         '>seq2 yo': 'GATTACAGATTACA',
