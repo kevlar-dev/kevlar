@@ -9,6 +9,7 @@
 
 from . import fasta
 from . import dump
+from . import find
 
 from ._version import get_versions
 __version__ = get_versions()['version']

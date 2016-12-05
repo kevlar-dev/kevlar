@@ -21,8 +21,7 @@ def match(record, seq):
     return refrseq == records.seq
 
 
-def subparser(parser):
-    subparsers = parser.add_subparsers(dest='cmd')
+def subparser(subparsers):
     subparser = subparsers.add_parser('dump')
     subparser.add_argument('--seqid', metavar='SEQ',
                            help='dump reads not mapped to SEQ')
