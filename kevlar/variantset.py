@@ -11,17 +11,10 @@ from __future__ import print_function
 from collections import defaultdict
 from sys import stdout
 import kevlar
-import screed
 
 
 def setpair():
     return (set(), set())
-
-
-def revcommin(seq):
-    revcom = screed.dna.reverse_complement(str(seq))
-    minseq = sorted((seq, revcom))[0]
-    return minseq
 
 
 class VariantSet(object):
@@ -31,8 +24,8 @@ class VariantSet(object):
         self.read_ids = defaultdict(setpair)
 
     def add_kmer(self, kmer, read_id, linear_path):
-        minkmer = revcommin(kmer)
-        minlp = revcommin(linear_path)
+        minkmer = kevlar.revcommin(kmer)
+        minlp = kevlar.revcommin(linear_path)
 
         self.kmers[minkmer][0].add(minlp)
         self.kmers[minkmer][1].add(read_id)
@@ -43,16 +36,28 @@ class VariantSet(object):
         self.linear_paths[minlp][0].add(read_id)
         self.linear_paths[minlp][1].add(minkmer)
 
+    @property
+    def npaths(self):
+        return len(self.linear_paths)
+
+    @property
+    def nkmers(self):
+        return len(self.kmers)
+
+    @property
+    def nreads(self):
+        return len(self.read_ids)
+
     def iter_kmer(self):
         for minkmer in sorted(self.kmers):
-            maxkmer = screed.dna.reverse_complement(minkmer)
+            maxkmer = kevlar.revcom(minkmer)
             pathset = self.kmers[minkmer][0]
             readset = self.kmers[minkmer][1]
             yield minkmer, maxkmer, pathset, readset
 
     def iter_path(self):
         for minpath in sorted(self.linear_paths):
-            maxpath = screed.dna.reverse_complement(minpath)
+            maxpath = kevlar.revcom(minpath)
             readset = self.linear_paths[minpath][0]
             kmerset = self.linear_paths[minpath][1]
             yield minpath, maxpath, readset, kmerset

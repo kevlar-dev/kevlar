@@ -10,8 +10,10 @@
 from __future__ import print_function
 from collections import defaultdict
 import argparse
+from sys import stdout
 
 import khmer
+from khmer.utils import write_record
 import kevlar
 import screed
 
@@ -39,19 +41,12 @@ def subparser(subparsers):
     subparser.add_argument('--paths-out', type=argparse.FileType('w'),
                            default=None, metavar='FILE',
                            help='output linear paths to specified file')
-    subparser.add_argument('--upint', type=float, default=1e6, help='debugging'
-                           ' update interval; default is 1000000')
+    subparser.add_argument('--upint', type=float, default=1e6, metavar='INT',
+                           help='debug update interval; default is 1000000')
     subparser.add_argument('case_fastq')
 
 
-def main(args):
-    if args.kmers_out:
-        unique_kmers = set()
-
-    if args.paths_out:
-        assert args.kmers_out, '--paths-out requires --kmers-out'
-        linear_paths = defaultdict(set)
-
+def load_case_and_controls(args):
     print('[kevlar::find] Loading case countgraph', args.case, '...',
           end='', file=args.logfile)
     case = khmer.load_countgraph(args.case)
@@ -66,67 +61,49 @@ def main(args):
         controls.append(countgraph)
         print('done', file=args.logfile)
 
+    return case, controls
+
+
+def main(args):
+    case, controls = load_case_and_controls(args)
+
+    variants = kevlar.VariantSet()
     print('[kevlar::find] Iterating over case reads', args.case_fastq,
           file=args.logfile)
-    intreadcount = 0
-    intkmercount = 0
     for n, record in enumerate(screed.open(args.case_fastq)):
         if n > 0 and n % args.upint == 0:
             print('    processed', n, 'reads...', file=args.logfile)
-        novel_kmers = dict()
+        read_novel_kmers = dict()
         for i, kmer in enumerate(case.get_kmers(record.sequence)):
             case_abund = case.get(kmer)
-            if case_abund < args.case_lower_threshold:
+            if case_abund < args.case_min:
                 continue
             ctl_abunds = [c.get(kmer) for c in controls]
-            ctl_thresh_pass = [a > args.control_threshold for a in ctl_abunds]
+            ctl_thresh_pass = [a > args.ctrl_max for a in ctl_abunds]
             if True in ctl_thresh_pass:
                 continue
 
-            novel_kmers[i] = [kmer, case_abund] + ctl_abunds
-            intkmercount += 1
-            if args.kmers_out:
-                minkmer = revcommin(kmer)
-                unique_kmers.add(minkmer)
-                if args.paths_out:
-                    linear_path = case.assemble_linear_path(minkmer)
-                    min_path = revcommin(linear_path)
-                    linear_paths[min_path].add(record.name)
-        if len(novel_kmers) > 0:
-            intreadcount += 1
-            khmer.utils.write_record(record, args.out)
-            for i in sorted(novel_kmers):
-                kmer = novel_kmers[i][0]
-                abunds = novel_kmers[i][1:]
+            lpath = case.assemble_linear_path(kmer)
+            variants.add_kmer(kmer, record.name, lpath)
+            read_novel_kmers[i] = [kmer, case_abund] + ctl_abunds
+
+        if len(read_novel_kmers) > 0:
+            write_record(record, args.out)
+            for i in sorted(read_novel_kmers):
+                kmer = read_novel_kmers[i][0]
+                abunds = read_novel_kmers[i][1:]
                 abundstr = ' '.join([str(abund) for abund in abunds])
                 print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='',
                       file=args.out)
-            if args.out == sys.stdout:
-                sys.stdout.flush()
+            if args.out == stdout:
+                stdout.flush()
 
     if args.kmers_out:
-        message = 'Found {} novel kmers in {} reads'.format(len(unique_kmers),
-                                                            intreadcount)
-        for i, kmer in enumerate(unique_kmers):
-            kmername = 'kmer{}'.format(i+1)
-            rcname = 'kmer{}_revcom'.format(i+1)
-            rcseq = screed.dna.reverse_complement(kmer)
-            print('>', kmer_name, '\n', kmer, sep='', file=args.kmers_out)
-            print('>', rcname, '\n', rcseq, sep='', file=args.kmers_out)
-        if args.paths_out:
-            message += ', {} linear paths'.format(len(linear_paths))
-            for i, linear_path in enumerate(linear_paths):
-                readnames = lpaths[linear_path]
-                lpathname = 'lpath{} {} reads {}'.format(
-                                i+1, len(readnames),
-                                ' '.join(readnames)
-                            )
-                rcname = 'lpath{}_revcom'.format(i+1)
-                rcseq = screed.dna.reverse_complement(linear_path)
-                print('>', lpathname, '\n', linear_path, sep='',
-                      file=args.paths_out)
-                print('>', rcname, '\n', rcseq, sep='', file=args.paths_out)
-    else:
-        message = 'Found {} novel kmers in {} reads'.format(intkmercount,
-                                                            intreadcount)
+        variants.kmer_table(args.kmers_out)
+    if args.paths_out:
+        variants.path_table(args.paths_out)
+
+    message = 'Found {} novel kmers in {} reads, {} linear paths'.format(
+        variants.nkmers, variants.nreads, variants.npaths
+    )
     print('[kevlar::find]', message, file=args.logfile)

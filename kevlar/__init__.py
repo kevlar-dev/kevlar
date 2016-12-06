@@ -10,7 +10,19 @@
 from . import fasta
 from . import dump
 from . import find
+from .variantset import VariantSet
+import screed
 
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+def revcom(seq):
+    return screed.dna.reverse_complement(str(seq))
+
+
+def revcommin(seq):
+    rc = revcom(seq)
+    minseq = sorted((seq, rc))[0]
+    return minseq
