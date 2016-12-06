@@ -43,41 +43,41 @@ class VariantSet(object):
         self.linear_paths[minlp][1].add(minkmer)
 
     def iter_kmer(self):
-        for minkmer in self.kmers:
+        for minkmer in sorted(self.kmers):
             maxkmer = screed.dna.reverse_complement(minkmer)
             pathset = self.kmers[minkmer][0]
             readset = self.kmers[minkmer][1]
             yield minkmer, maxkmer, pathset, readset
 
     def iter_path(self):
-        for minpath in self.linear_paths:
+        for minpath in sorted(self.linear_paths):
             maxpath = screed.dna.reverse_complement(minpath)
-            readset = self.kmers[minpath][0]
-            kmerset = self.kmers[minpath][1]
+            readset = self.linear_paths[minpath][0]
+            kmerset = self.linear_paths[minpath][1]
             yield minpath, maxpath, readset, kmerset
 
     def iter_read(self):
-        for read_id in self.read_ids:
+        for read_id in sorted(self.read_ids):
             pathset = self.read_ids[read_id][0]
             kmerset = self.read_ids[read_id][1]
-            return readid, pathset, kmerset
+            yield read_id, pathset, kmerset
 
     def kmer_table(self, outstream=stdout):
         for minkmer, maxkmer, pathset, readset in self.iter_kmer():
             kmerstr = ','.join((minkmer, maxkmer))
-            pathstr = ','.join(pathset)
-            readstr = ','.join(readset)
+            pathstr = ','.join(sorted(pathset))
+            readstr = ','.join(sorted(readset))
             print(kmerstr, pathstr, readstr, sep='\t', file=outstream)
 
     def path_table(self, outstream=stdout):
         for minpath, maxpath, readset, kmerset in self.iter_path():
             pathstr = ','.join((minpath, maxpath))
-            readstr = ','.join(readset)
-            kmerstr = ','.join(kmerset)
+            readstr = ','.join(sorted(readset))
+            kmerstr = ','.join(sorted(kmerset))
             print(pathstr, readstr, kmerstr, sep='\t', file=outstream)
 
     def read_table(self, outstream=stdout):
         for readid, pathset, kmerset in self.iter_read():
-            pathstr = ','.join(pathset)
-            kmerstr = ','.join(kmerset)
+            pathstr = ','.join(sorted(pathset))
+            kmerstr = ','.join(sorted(kmerset))
             print(readid, pathstr, kmerstr, sep='\t', file=outstream)
