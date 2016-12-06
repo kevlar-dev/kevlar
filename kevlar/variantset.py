@@ -23,13 +23,13 @@ def revcommin(seq):
     return minseq
 
 
-class VariantSet(obj):
+class VariantSet(object):
     def __init__(self):
         self.linear_paths = defaultdict(setpair)
         self.kmers = defaultdict(setpair)
         self.read_ids = defaultdict(setpair)
 
-    def add_kmer(kmer, read_id, linear_path):
+    def add_kmer(self, kmer, read_id, linear_path):
         minkmer = revcommin(kmer)
         minlp = revcommin(linear_path)
 
@@ -39,7 +39,7 @@ class VariantSet(obj):
         self.read_ids[read_id][0].add(minlp)
         self.read_ids[read_id][1].add(minkmer)
 
-        self.linear_paths[minlp][0].add(readid)
+        self.linear_paths[minlp][0].add(read_id)
         self.linear_paths[minlp][1].add(minkmer)
 
     def iter_kmer(self):
