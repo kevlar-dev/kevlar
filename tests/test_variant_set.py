@@ -13,7 +13,7 @@ try:
 except ImportError:
     from io import StringIO
 import kevlar
-from kevlar.variantset import VariantSet
+from kevlar import VariantSet
 
 
 @pytest.fixture

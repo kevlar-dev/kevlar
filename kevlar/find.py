@@ -64,6 +64,31 @@ def load_case_and_controls(args):
     return case, controls
 
 
+def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
+                        ctrl_max=1):
+    caseabund = casecounts.get(kmer)
+    if caseabund < case_min:
+        return False
+
+    ctrlabunds = [counts.get(kmer) for counts in controlcounts]
+    ctrlpass = [abund > ctrl_max for abund in ctrlabunds]
+    if True in ctrlpass:
+        return False
+
+    return [caseabund] + ctrlabunds
+
+
+def print_interesting_read(record, kmers, outstream):
+    write_record(record, outstream)
+    for i in sorted(kmers):
+        kmer = kmers[i][0]
+        abunds = kmers[i][1:]
+        abundstr = ' '.join([str(abund) for abund in abunds])
+        print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='', file=outstream)
+    if outstream == stdout:
+        stdout.flush()
+
+
 def main(args):
     case, controls = load_case_and_controls(args)
 
@@ -73,30 +98,19 @@ def main(args):
     for n, record in enumerate(screed.open(args.case_fastq)):
         if n > 0 and n % args.upint == 0:
             print('    processed', n, 'reads...', file=args.logfile)
+
         read_novel_kmers = dict()
         for i, kmer in enumerate(case.get_kmers(record.sequence)):
-            case_abund = case.get(kmer)
-            if case_abund < args.case_min:
+            counts = kmer_is_interesting(kmer, case, controls, args.case_min,
+                                         args.ctrl_max)
+            if counts is False:
                 continue
-            ctl_abunds = [c.get(kmer) for c in controls]
-            ctl_thresh_pass = [a > args.ctrl_max for a in ctl_abunds]
-            if True in ctl_thresh_pass:
-                continue
-
             lpath = case.assemble_linear_path(kmer)
             variants.add_kmer(kmer, record.name, lpath)
-            read_novel_kmers[i] = [kmer, case_abund] + ctl_abunds
+            read_novel_kmers[i] = [kmer] + counts
 
         if len(read_novel_kmers) > 0:
-            write_record(record, args.out)
-            for i in sorted(read_novel_kmers):
-                kmer = read_novel_kmers[i][0]
-                abunds = read_novel_kmers[i][1:]
-                abundstr = ' '.join([str(abund) for abund in abunds])
-                print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='',
-                      file=args.out)
-            if args.out == stdout:
-                stdout.flush()
+            print_interesting_read(record, read_novel_kmers, args.out)
 
     if args.kmers_out:
         variants.kmer_table(args.kmers_out)
