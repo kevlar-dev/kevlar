@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from __future__ import print_function
 from collections import defaultdict
 from sys import stdout
 import kevlar
