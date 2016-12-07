@@ -68,3 +68,13 @@ def test_find_case2(trio):
         'GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGGTGG'
         'TTCGTTCCGATACAGA',
     ]
+
+
+def test_find_case3(trio):
+    args, pathout = trio
+    args.case = 'tests/data/trio1-case3.counts'
+    args.case_fastq = 'tests/data/trio1-case3.fq'
+    kevlar.find.main(args)
+
+    pathdata = pathout.getvalue()
+    assert len(pathdata.strip().split('\n')) == 59
