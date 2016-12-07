@@ -25,7 +25,7 @@ def trio():
     serrout = StringIO()
 
     args = type('', (), {})()
-    args.controls = glob.glob('tests/data/trio1-ctrl?.counts')
+    args.controls = glob.glob('tests/data/trio1/ctrl?.counts')
     args.ctrl_max = 0
     args.case_min = 8
     args.out = readout
@@ -40,8 +40,8 @@ def trio():
 
 def test_find_case1(trio):
     args, pathout = trio
-    args.case = 'tests/data/trio1-case1.counts'
-    args.case_fastq = 'tests/data/trio1-case1.fq'
+    args.case = 'tests/data/trio1/case1.counts'
+    args.case_fastq = 'tests/data/trio1/case1.fq'
     kevlar.find.main(args)
 
     path = ('GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAG'
@@ -53,8 +53,8 @@ def test_find_case1(trio):
 
 def test_find_case2(trio):
     args, pathout = trio
-    args.case = 'tests/data/trio1-case2.counts'
-    args.case_fastq = 'tests/data/trio1-case2.fq'
+    args.case = 'tests/data/trio1/case2.counts'
+    args.case_fastq = 'tests/data/trio1/case2.fq'
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
@@ -72,8 +72,8 @@ def test_find_case2(trio):
 
 def test_find_case3(trio):
     args, pathout = trio
-    args.case = 'tests/data/trio1-case3.counts'
-    args.case_fastq = 'tests/data/trio1-case3.fq'
+    args.case = 'tests/data/trio1/case3.counts'
+    args.case_fastq = 'tests/data/trio1/case3.fq'
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()

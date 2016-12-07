@@ -22,4 +22,9 @@ cat bogus-genome-chr?.fa bogus-genome-contam1.fa > bogus-genome-refr-contam.fa
 ./mutate3.py bogus-genome-refr.fa > bogus-genome-seq-pool-3snps.fa
 ./mutate1.py bogus-genome-refr-contam.fa > bogus-genome-seq-pool-1snp-contam.fa
 
-rm -f bogus-genome-chr?.fa bogus-genome-contam1.fa bogus-genome-refr-contam.fa
+./make-bogus-reads.py bogus-genome-refr-contam.fa > bogus-reads-small.fq
+
+rm -f bogus-genome-chr?.fa bogus-genome-contam1.fa
+
+mkdir -p bogus-genome/
+mv bogus-genome-* bogus-reads-small.fq bogus-genome/
