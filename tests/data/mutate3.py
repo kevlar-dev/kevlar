@@ -8,7 +8,6 @@ mutations = {
     0: (3566, 'A', 'C'),
     1: (9262, 'C', 'T'),
     2: (6134, 'C', 'G'),
-    3: (927,  'A', 'T')
 }
 
 for n, record in enumerate(screed.open(sys.argv[1])):

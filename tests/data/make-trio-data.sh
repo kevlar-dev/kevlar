@@ -9,13 +9,13 @@ which load-into-counting.py
 
 # Simulate reads
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 1234 \
-    bogus-genome-seq-pool.fa trio1-ctrl1-1.fq trio1-ctrl1-2.fq
+    bogus-genome-seq-pool-ctrl1.fa trio1-ctrl1-1.fq trio1-ctrl1-2.fq
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 5678 \
-    bogus-genome-seq-pool.fa trio1-ctrl2-1.fq trio1-ctrl2-2.fq
+    bogus-genome-seq-pool-ctrl2.fa trio1-ctrl2-1.fq trio1-ctrl2-2.fq
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 2468 \
     bogus-genome-seq-pool-1snp.fa trio1-case1-1.fq trio1-case1-2.fq
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 95616 \
-    bogus-genome-seq-pool-4snps.fa trio1-case2-1.fq trio1-case2-2.fq
+    bogus-genome-seq-pool-3snps.fa trio1-case2-1.fq trio1-case2-2.fq
 
 
 # Interleave split reads, trim, and build countgraphs

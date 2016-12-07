@@ -18,7 +18,7 @@ import kevlar
 
 
 @pytest.fixture
-def trio1():
+def trio():
     readout = StringIO()
     kmerout = StringIO()
     pathout = StringIO()
@@ -26,7 +26,6 @@ def trio1():
 
     args = type('', (), {})()
     args.controls = glob.glob('tests/data/trio1-ctrl?.counts')
-    args.case = 'tests/data/trio1-case1.counts'
     args.ctrl_max = 0
     args.case_min = 8
     args.out = readout
@@ -34,14 +33,38 @@ def trio1():
     args.paths_out = pathout
     args.logfile = serrout
     args.upint = 1000
+    args.case = None
+    args.case_fastq = None
+    return args, pathout
+
+
+def test_find_case1(trio):
+    args, pathout = trio
+    args.case = 'tests/data/trio1-case1.counts'
     args.case_fastq = 'tests/data/trio1-case1.fq'
-
     kevlar.find.main(args)
-    return readout.getvalue(), kmerout.getvalue(), pathout.getvalue()
 
-
-def test_basic(trio1):
-    path = 'GATGACCTTTATGCTTCCACGGCAAATGGTGCGGTTAGGTGTGCCCTTCCGCCATAGCC'
-    pathdata = trio1[2]
+    path = ('GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAG'
+            'GTGGTTCGTTCCGATACAGA')
+    pathdata = pathout.getvalue()
     assert len(pathdata.strip().split('\n')) == 1
     assert pathdata.startswith(path)
+
+
+def test_find_case2(trio):
+    args, pathout = trio
+    args.case = 'tests/data/trio1-case2.counts'
+    args.case_fastq = 'tests/data/trio1-case2.fq'
+    kevlar.find.main(args)
+
+    pathdata = pathout.getvalue()
+    assert len(pathdata.strip().split('\n')) == 4
+
+    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
+    assert paths == [
+        'AAGGTAGTTCTCGGGGACCCTTAACGCACTTTAACCTTGATGCAGGT',
+        'ACCAGGGGAGGTGAGAGTCAACCTTAGAACCGACCCATCCGTACGTAGCGATAGC',
+        'ACCTGCATCAAGGTTAAAGTGCGTTAAGGGTCCCCGAGAACTACCTTGCCTTGCC',
+        'GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGGTGG'
+        'TTCGTTCCGATACAGA',
+    ]
