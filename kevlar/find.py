@@ -10,7 +10,7 @@
 from __future__ import print_function
 from collections import defaultdict
 import argparse
-from sys import stdout
+import sys
 
 import khmer
 from khmer.utils import write_record
@@ -85,8 +85,8 @@ def print_interesting_read(record, kmers, outstream):
         abunds = kmers[i][1:]
         abundstr = ' '.join([str(abund) for abund in abunds])
         print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='', file=outstream)
-    if outstream == stdout:
-        stdout.flush()
+    if outstream == sys.stdout:
+        sys.stdout.flush()
 
 
 def main(args):
