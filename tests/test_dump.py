@@ -23,8 +23,8 @@ def bogusargs():
     args.genomemask = None
     args.out = StringIO()
     args.logfile = sys.stderr
-    args.refr = 'tests/data/bogus-genome-refr.fa'
-    args.reads = 'tests/data/bogus-reads.bam'
+    args.refr = 'tests/data/bogus-genome/refr.fa'
+    args.reads = 'tests/data/bogus-genome/reads.bam'
     return args
 
 
@@ -48,7 +48,7 @@ def test_seqid_filter(bogusargs):
 
 
 def test_genomemask_filter(bogusargs):
-    bogusargs.genomemask = 'tests/data/bogus-genome-refr-without-chr1.fa'
+    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr1.fa'
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
     kevlar.dump.main(bogusargs)
@@ -61,7 +61,7 @@ def test_genomemask_filter(bogusargs):
 
 def test_seqid_genomemask_filters(bogusargs):
     bogusargs.seqid = 'bogus-genome-chr1'
-    bogusargs.genomemask = 'tests/data/bogus-genome-refr-without-chr1.fa'
+    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr1.fa'
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
     kevlar.dump.main(bogusargs)
@@ -73,12 +73,12 @@ def test_seqid_genomemask_filters(bogusargs):
 
 
 def test_indels(bogusargs):
-    bogusargs.genomemask = 'tests/data/bogus-genome-refr-without-chr2.fa'
+    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr2.fa'
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
-    bogusargs.reads = 'tests/data/bogus-reads-indels.bam'
+    bogusargs.reads = 'tests/data/bogus-genome/reads-indels.bam'
     kevlar.dump.main(bogusargs)
     outputlines = bogusargs.out.getvalue().strip().split('\n')
     assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
     assert 'read2' in outputlines[0]
-    assert 'read4' in outputlines[4]
+    assert 'read3' in outputlines[4]
