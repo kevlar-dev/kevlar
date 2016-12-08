@@ -81,4 +81,4 @@ def test_indels(bogusargs):
     outputlines = bogusargs.out.getvalue().strip().split('\n')
     assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
     assert 'read2' in outputlines[0]
-    assert 'read4' in outputlines[4]
+    assert 'read3' in outputlines[4]
