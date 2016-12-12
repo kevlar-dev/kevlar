@@ -85,8 +85,8 @@ def print_interesting_read(record, kmers, outstream):
         abunds = kmers[i][1:]
         abundstr = ' '.join([str(abund) for abund in abunds])
         print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='', file=outstream)
-    if outstream == sys.stdout:
-        sys.stdout.flush()
+    if hasattr(outstream, 'flush'):
+        outstream.flush()
 
 
 def main(args):
