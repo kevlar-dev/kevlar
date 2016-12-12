@@ -29,6 +29,7 @@ def trio():
     args.ctrl_max = 0
     args.case_min = 8
     args.out = readout
+    args.flush = False
     args.kmers_out = kmerout
     args.paths_out = pathout
     args.logfile = serrout
