@@ -4,3 +4,4 @@ setup
 nullgraph/
 .cache/
 __pycache__
+*.pyc
