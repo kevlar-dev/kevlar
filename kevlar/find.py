@@ -35,6 +35,8 @@ def subparser(subparsers):
                            'with abund < Y; default=5')
     subparser.add_argument('--out', type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
+    subparser.add_argument('--flush', action='store_true', help='flush output'
+                           'after each read written')
     subparser.add_argument('--kmers-out', type=argparse.FileType('w'),
                            default=None, metavar='FILE',
                            help='output novel k-mers to specified file')
@@ -78,14 +80,14 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     return [caseabund] + ctrlabunds
 
 
-def print_interesting_read(record, kmers, outstream):
+def print_interesting_read(record, kmers, outstream, flush=False):
     write_record(record, outstream)
     for i in sorted(kmers):
         kmer = kmers[i][0]
         abunds = kmers[i][1:]
         abundstr = ' '.join([str(abund) for abund in abunds])
         print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='', file=outstream)
-    if hasattr(outstream, 'flush'):
+    if hasattr(outstream, 'flush') and flush:
         outstream.flush()
 
 
@@ -110,7 +112,8 @@ def main(args):
             read_novel_kmers[i] = [kmer] + counts
 
         if len(read_novel_kmers) > 0:
-            print_interesting_read(record, read_novel_kmers, args.out)
+            print_interesting_read(record, read_novel_kmers, args.out,
+                                   args.flush)
 
     if args.kmers_out:
         variants.kmer_table(args.kmers_out)
