@@ -20,10 +20,12 @@ wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 95616 \
     bogus-genome/seq-pool-3snps.fa trio1-case2-1.fq trio1-case2-2.fq
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 2468 \
     bogus-genome/seq-pool-1snp-contam.fa trio1-case3-1.fq trio1-case3-2.fq
+wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 192837 \
+    bogus-genome/seq-pool-1indel.fa trio1-case4-1.fq trio1-case4-2.fq
 
 
 # Interleave split reads, trim, and build countgraphs
-for sample in "case1" "case2" "case3" "ctrl1" "ctrl2"
+for sample in "case1" "case2" "case3" "case4" "ctrl1" "ctrl2"
 do
     interleave-reads.py -o - trio1-${sample}-1.fq trio1-${sample}-2.fq \
         | trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o - - \
@@ -31,7 +33,7 @@ do
 done
 
 # Interleave case reads for `kevlar find` input
-for sample in "case1" "case2" "case3"
+for sample in "case1" "case2" "case3" "case4" "ctrl1" "ctrl2"
 do
     interleave-reads.py -o trio1/${sample}.fq trio1-${sample}-1.fq trio1-${sample}-2.fq
 done

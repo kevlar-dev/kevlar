@@ -36,6 +36,26 @@ class VariantSet(object):
         self.linear_paths[minlp][0].add(read_id)
         self.linear_paths[minlp][1].add(minkmer)
 
+    def collapse(self):
+        upaths = dict()
+        for path in sorted(self.linear_paths, key=len, reverse=True):
+            pathrc = kevlar.revcom(path)
+            merge = False
+            for upath in upaths:
+                if path in upath or pathrc in upath:
+                    mergedreads = self.linear_paths[upath][0].union(
+                        self.linear_paths[path][0]
+                    )
+                    mergedkmers = self.linear_paths[upath][1].union(
+                        self.linear_paths[path][1]
+                    )
+                    self.linear_paths[upath] = (mergedreads, mergedkmers)
+                    del self.linear_paths[path]
+                    merge = True
+                    break
+            if merge is False:
+                upaths[path] = True
+
     @property
     def npaths(self):
         return len(self.linear_paths)

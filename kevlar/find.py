@@ -118,6 +118,7 @@ def main(args):
     if args.kmers_out:
         variants.kmer_table(args.kmers_out)
     if args.paths_out:
+        variants.collapse()
         variants.path_table(args.paths_out)
 
     message = 'Found {} novel kmers in {} reads, {} linear paths'.format(

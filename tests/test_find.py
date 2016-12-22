@@ -59,11 +59,10 @@ def test_find_case2(trio):
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
-    assert len(pathdata.strip().split('\n')) == 4
+    assert len(pathdata.strip().split('\n')) == 3
 
     paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
     assert paths == [
-        'AAGGTAGTTCTCGGGGACCCTTAACGCACTTTAACCTTGATGCAGGT',
         'ACCAGGGGAGGTGAGAGTCAACCTTAGAACCGACCCATCCGTACGTAGCGATAGC',
         'ACCTGCATCAAGGTTAAAGTGCGTTAAGGGTCCCCGAGAACTACCTTGCCTTGCC',
         'GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGGTGG'
@@ -78,4 +77,18 @@ def test_find_case3(trio):
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
-    assert len(pathdata.strip().split('\n')) == 59
+    assert len(pathdata.strip().split('\n')) == 17
+    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
+    assert paths[0] == 'AAAAAGGCTCGCAAGCTGGTCATATGTA'
+    assert paths[-1] == 'TAGTCCAGTCTCCCCAGGCGAGCCAAA'
+
+
+def test_find_case4(trio):
+    args, pathout = trio
+    args.case = 'tests/data/trio1/case4.counts'
+    args.case_fastq = 'tests/data/trio1/case4.fq'
+    kevlar.find.main(args)
+
+    pathdata = pathout.getvalue()
+    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
+    assert paths == ['GGGTCCCTATTGACCTCTTTACCA', 'GGTCAATAGGGACCCCGAGCCCA']

@@ -6,3 +6,4 @@ nullgraph/
 __pycache__
 *.pyc
 scratch/
+*.swp
