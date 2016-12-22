@@ -1,49 +1,49 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Check software prereqs
-which wgsim
-which interleave-reads.py
-which trim-low-abund.py
-which load-into-counting.py
+simulate_reads()
+{
+    local refr=$1
+    local sample=$2
+    local seed=$3
+    local erate=${4:-0.0}
+    local dist=${5:-300}
+    local stdev=${6:-25}
+    local nreads=${7:-6000}
+    local readlen=${8:-50}
 
-mkdir -p trio1/
+    wgsim \
+        -e $erate -r 0.0 -d $dist -s $stdev -N $nreads \
+        -1 $readlen -2 $readlen -S $seed \
+        $refr ${sample}-1.fq ${sample}-2.fq
+    
+    paste <(paste - - - - < ${sample}-1.fq) \
+          <(paste - - - - < ${sample}-2.fq) \
+        | tr '\t' '\n' \
+        > trio1/${sample}.fq
 
-# Simulate reads
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 1234 \
-    bogus-genome/refr.fa trio1-ctrl1-1.fq trio1-ctrl1-2.fq
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 5678 \
-    bogus-genome/refr.fa trio1-ctrl2-1.fq trio1-ctrl2-2.fq
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 2468 \
-    bogus-genome/seq-pool-1snp.fa trio1-case1-1.fq trio1-case1-2.fq
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 95616 \
-    bogus-genome/seq-pool-3snps.fa trio1-case2-1.fq trio1-case2-2.fq
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 2468 \
-    bogus-genome/seq-pool-1snp-contam.fa trio1-case3-1.fq trio1-case3-2.fq
-wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 192837 \
-    bogus-genome/seq-pool-1indel.fa trio1-case4-1.fq trio1-case4-2.fq
+    rm ${sample}-[1,2].fq
+}
 
-wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 97531 \
-    bogus-genome/refr.fa trio1-ctrl3-1.fq trio1-ctrl3-2.fq
-wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 86420 \
-    bogus-genome/refr.fa trio1-ctrl4-1.fq trio1-ctrl4-2.fq
-wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 969696 \
-    bogus-genome/seq-pool-1indel.fa trio1-case5-1.fq trio1-case5-2.fq
+main()
+{
+    echo -n "Checking for wgsim: "
+    which wgsim
 
+    mkdir -p trio1/
 
-# Interleave split reads, trim, and build countgraphs
-for sample in "case1" "case2" "case3" "case4" "case5" "ctrl1" "ctrl2" "ctrl3" "ctrl4"
-do
-    interleave-reads.py -o - trio1-${sample}-1.fq trio1-${sample}-2.fq \
-        | trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o - - \
-        | load-into-counting.py --ksize 13 -M 1e6 trio1/${sample}.counts -
-done
+    # Error-free
+    simulate_reads bogus-genome/refr.fa ctrl1 1234
+    simulate_reads bogus-genome/refr.fa ctrl2 5678
+    simulate_reads bogus-genome/seq-pool-1snp.fa case1 2468
+    simulate_reads bogus-genome/seq-pool-3snps.fa case2 95616
+    simulate_reads bogus-genome/seq-pool-1snp-contam.fa case3 2468
+    simulate_reads bogus-genome/seq-pool-1indel.fa case4 192837
 
-# Interleave case reads for `kevlar find` input
-for sample in "case1" "case2" "case3" "case4" "case5" "ctrl1" "ctrl2" "ctrl3" "ctrl4"
-do
-    interleave-reads.py -o trio1/${sample}.fq trio1-${sample}-1.fq trio1-${sample}-2.fq
-done
+    # 1% error rate
+    simulate_reads bogus-genome/refr.fa ctrl3 97531 0.01
+    simulate_reads bogus-genome/refr.fa ctrl4 86420 0.01
+    simulate_reads bogus-genome/seq-pool-1indel.fa case5 969696 0.01
+}
 
-# Cleanup
-rm trio1-* trio1/*.counts.info
+main
