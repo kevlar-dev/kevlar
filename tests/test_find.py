@@ -25,7 +25,7 @@ def trio():
     serrout = StringIO()
 
     args = type('', (), {})()
-    args.controls = glob.glob('tests/data/trio1/ctrl?.counts')
+    args.controls = glob.glob('tests/data/trio1/ctrl[1,2].counts')
     args.ctrl_max = 0
     args.case_min = 8
     args.out = readout
@@ -46,11 +46,14 @@ def test_find_case1(trio):
     args.case_fastq = 'tests/data/trio1/case1.fq'
     kevlar.find.main(args)
 
-    path = ('GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAG'
-            'GTGGTTCGTTCCGATACAGA')
     pathdata = pathout.getvalue()
-    assert len(pathdata.strip().split('\n')) == 1
-    assert pathdata.startswith(path)
+    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
+    assert len(paths) == 1
+
+    #              ┌----------- SNV here
+    mutseq = 'CCGCACCATTT'
+    mutseqrc = kevlar.revcom(mutseq)
+    assert mutseq in paths[0] or mutseqrc in paths[0]
 
 
 def test_find_case2(trio):
@@ -60,15 +63,21 @@ def test_find_case2(trio):
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
-    assert len(pathdata.strip().split('\n')) == 3
+    # This sorts by the value of the second field (which should sort by seq ID)
+    pathlines = sorted(pathdata.strip().split('\n'),
+                       key=lambda pd: pd.split('\t')[1])
+    paths = [ln.split(',')[0] for ln in pathlines]
+    assert len(paths) == 3
 
-    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
-    assert paths == [
-        'ACCAGGGGAGGTGAGAGTCAACCTTAGAACCGACCCATCCGTACGTAGCGATAGC',
-        'ACCTGCATCAAGGTTAAAGTGCGTTAAGGGTCCCCGAGAACTACCTTGCCTTGCC',
-        'GGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGGTGG'
-        'TTCGTTCCGATACAGA',
+    mutseqs = [
+        #      ┌----------- SNVs here
+        'CCGCACCATTT',
+        'AGAACTACCTT',
+        'CATCCGTACGT',
     ]
+    for mutseq, path in zip(mutseqs, paths):
+        mutseqrc = kevlar.revcom(mutseq)
+        assert mutseq in path or mutseqrc in path
 
 
 def test_find_case3(trio):
@@ -78,10 +87,14 @@ def test_find_case3(trio):
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
-    assert len(pathdata.strip().split('\n')) == 17
-    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
-    assert paths[0] == 'AAAAAGGCTCGCAAGCTGGTCATATGTA'
-    assert paths[-1] == 'TAGTCCAGTCTCCCCAGGCGAGCCAAA'
+    pathlines = [ln for ln in pathdata.strip().split('\n') if 'chr1' in ln]
+    paths = sorted([ln.split(',')[0] for ln in pathlines])
+    assert len(paths) == 1
+
+    #              ┌----------- SNV here
+    mutseq = 'CCGCACCATTT'
+    mutseqrc = kevlar.revcom(mutseq)
+    assert mutseq in paths[0] or mutseqrc in paths[0]
 
 
 def test_find_case4(trio):
@@ -91,5 +104,10 @@ def test_find_case4(trio):
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
-    paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
-    assert paths == ['GGGTCCCTATTGACCTCTTTACCA', 'GGTCAATAGGGACCCCGAGCCCA']
+    paths = [ln.split(',')[0] for ln in pathdata.strip().split('\n')]
+    assert len(paths) == 1
+
+    #         ----┐┌--------- 5bp deletion between these nucleotides
+    mutseq = 'GGTCAATAGG'
+    mutseqrc = kevlar.revcom(mutseq)
+    assert mutseq in paths[0] or mutseqrc in paths[0]

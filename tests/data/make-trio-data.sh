@@ -23,17 +23,24 @@ wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 2468 \
 wgsim -e 0.0 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 192837 \
     bogus-genome/seq-pool-1indel.fa trio1-case4-1.fq trio1-case4-2.fq
 
+wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 97531 \
+    bogus-genome/refr.fa trio1-ctrl3-1.fq trio1-ctrl3-2.fq
+wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 86420 \
+    bogus-genome/refr.fa trio1-ctrl4-1.fq trio1-ctrl4-2.fq
+wgsim -e 0.01 -r 0.0 -d 300 -s 25 -N 6000 -1 50 -2 50 -S 969696 \
+    bogus-genome/seq-pool-1indel.fa trio1-case5-1.fq trio1-case5-2.fq
+
 
 # Interleave split reads, trim, and build countgraphs
-for sample in "case1" "case2" "case3" "case4" "ctrl1" "ctrl2"
+for sample in "case1" "case2" "case3" "case4" "case5" "ctrl1" "ctrl2" "ctrl3" "ctrl4"
 do
     interleave-reads.py -o - trio1-${sample}-1.fq trio1-${sample}-2.fq \
         | trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o - - \
-        | load-into-counting.py --ksize 13 -M 3e5 trio1/${sample}.counts -
+        | load-into-counting.py --ksize 13 -M 1e6 trio1/${sample}.counts -
 done
 
 # Interleave case reads for `kevlar find` input
-for sample in "case1" "case2" "case3" "case4" "ctrl1" "ctrl2"
+for sample in "case1" "case2" "case3" "case4" "case5" "ctrl1" "ctrl2" "ctrl3" "ctrl4"
 do
     interleave-reads.py -o trio1/${sample}.fq trio1-${sample}-1.fq trio1-${sample}-2.fq
 done
