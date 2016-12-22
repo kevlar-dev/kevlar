@@ -43,6 +43,8 @@ def subparser(subparsers):
     subparser.add_argument('--paths-out', type=argparse.FileType('w'),
                            default=None, metavar='FILE',
                            help='output linear paths to specified file')
+    subparser.add_argument('--collapse', action='store_true', help='collapse '
+                           'linear paths contained in other linear paths')
     subparser.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='debug update interval; default is 1000000')
     subparser.add_argument('case_fastq')
@@ -118,7 +120,8 @@ def main(args):
     if args.kmers_out:
         variants.kmer_table(args.kmers_out)
     if args.paths_out:
-        variants.collapse()
+        if args.collapse:
+            variants.collapse()
         variants.path_table(args.paths_out)
 
     message = 'Found {} novel kmers in {} reads, {} linear paths'.format(
