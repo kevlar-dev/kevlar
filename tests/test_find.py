@@ -60,6 +60,7 @@ def run_single(case, ctrl, gmem, mutseq, ksize, trio_args):
     ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 13),
     ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 13),
     ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 13),
+    ('case6', 'ctrl[5,6]', 1e6, 'GTCAATAG', 13),
 ])
 def test_find_single_mutation(case, ctrl, gmem, mutseq, ksize, trio_args):
     run_single(case, ctrl, gmem, mutseq, ksize, trio_args)

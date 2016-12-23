@@ -16,7 +16,7 @@ simulate_reads()
         -e $erate -r 0.0 -d $dist -s $stdev -N $nreads \
         -1 $readlen -2 $readlen -S $seed \
         $refr ${sample}-1.fq ${sample}-2.fq
-    
+
     paste <(paste - - - - < ${sample}-1.fq) \
           <(paste - - - - < ${sample}-2.fq) \
         | tr '\t' '\n' \
@@ -28,7 +28,7 @@ simulate_reads()
 trim_reads()
 {
     local sample=$1
-    trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o ${sample}.tmp trio1/${sample}.fq 
+    trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o ${sample}.tmp trio1/${sample}.fq
     mv ${sample}.tmp trio1/${sample}.fq
 }
 
@@ -57,13 +57,21 @@ main()
     trim_reads ctrl4
     trim_reads case5
 
-    # 3% error rate
-    simulate_reads bogus-genome/refr.fa ctrl5 11111 0.03
-    simulate_reads bogus-genome/refr.fa ctrl6 22222 0.03
-    simulate_reads bogus-genome/seq-pool-1indel.fa case6 33333 0.03
+    # 2% error rate
+    simulate_reads bogus-genome/refr.fa ctrl5 11111 0.02
+    simulate_reads bogus-genome/refr.fa ctrl6 22222 0.02
+    simulate_reads bogus-genome/seq-pool-1indel.fa case6 12121 0.02
     trim_reads ctrl5
     trim_reads ctrl6
     trim_reads case6
+
+    # 3% error rate
+    simulate_reads bogus-genome/refr.fa ctrl7 33333 0.03
+    simulate_reads bogus-genome/refr.fa ctrl8 44444 0.03
+    simulate_reads bogus-genome/seq-pool-1indel.fa case7 19191 0.03
+    trim_reads ctrl7
+    trim_reads ctrl8
+    trim_reads case7
 }
 
 main
