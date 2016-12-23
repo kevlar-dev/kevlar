@@ -19,69 +19,34 @@ import kevlar
 
 
 @pytest.fixture
-def trio():
-    readout = StringIO()
-    kmerout = StringIO()
-    pathout = StringIO()
-    serrout = StringIO()
-
+def trio_args():
     args = type('', (), {})()
+
+    args.controls = glob.glob('tests/data/trio1/ctrl[1,2].fq')
     args.ctrl_max = 0
     args.case_min = 8
     args.ksize = 13
-    args.kmers_out = None
-    args.controls = glob.glob('tests/data/trio1/ctrl[1,2].fq')
-    args.out = readout
+    args.graph_memory = 1e6
+    args.out = StringIO()
     args.flush = False
-    args.paths_out = pathout
+    args.kmers_out = None
+    args.paths_out = StringIO()
     args.collapse = True
-    args.logfile = serrout
     args.upint = 1000
-    args.graph_memory = 1e6
-    return args, pathout
+    args.logfile = StringIO()
+    args.case = 'tests/data/trio1/case1.fq'
+
+    return args
 
 
-@pytest.mark.parametrize('case,ctrl,gmem,mutseq,ksize', [
-    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 11),
-    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 13),
-    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 15),
-    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 17),
-    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 19),
-    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 11),
-    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 13),
-    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 15),
-    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 17),
-    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 19),
-    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 11),
-    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 13),
-    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 15),
-    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 17),
-    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 19),
-    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 11),
-    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 13),
-    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 15),
-    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 17),
-    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 19),
-    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 11),
-    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 13),
-    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 15),
-    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 17),
-    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 19),
-    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 11),
-    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 13),
-    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 15),
-    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 17),
-    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 19),
-])
-def test_find_single_mutation(case, ctrl, gmem, mutseq, ksize, trio):
-    args, pathout = trio
-    args.ksize = ksize
-    args.graph_memory = 1e6
-    args.case = 'tests/data/trio1/{}.fq'.format(case)
-    args.controls = glob.glob('tests/data/trio1/{}.fq'.format(ctrl))
-    kevlar.find.main(args)
+def run_single(case, ctrl, gmem, mutseq, ksize, trio_args):
+    trio_args.ksize = ksize
+    trio_args.graph_memory = gmem
+    trio_args.case = 'tests/data/trio1/{}.fq'.format(case)
+    trio_args.controls = glob.glob('tests/data/trio1/{}.fq'.format(ctrl))
+    kevlar.find.main(trio_args)
 
-    pathdata = pathout.getvalue()
+    pathdata = trio_args.paths_out.getvalue()
     paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
     assert len(paths) == 1
 
@@ -89,13 +54,50 @@ def test_find_single_mutation(case, ctrl, gmem, mutseq, ksize, trio):
     assert mutseq in paths[0] or mutseqrc in paths[0]
 
 
-def test_find_case2(trio):
-    args, pathout = trio
-    args.case = 'tests/data/trio1/case2.fq'
-    args.ksize = 13
-    kevlar.find.main(args)
+@pytest.mark.parametrize('case,ctrl,gmem,mutseq,ksize', [
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 13),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 13),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 13),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 13),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 13),
+])
+def test_find_single_mutation(case, ctrl, gmem, mutseq, ksize, trio_args):
+    run_single(case, ctrl, gmem, mutseq, ksize, trio_args)
 
-    pathdata = pathout.getvalue()
+
+@pytest.mark.long
+@pytest.mark.parametrize('case,ctrl,gmem,mutseq,ksize', [
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 11),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 15),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 17),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 19),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 11),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 15),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 17),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 19),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 11),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 15),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 17),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 19),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 11),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 15),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 17),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 19),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 11),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 15),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 17),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 19),
+])
+def test_find_single_mutation_long(case, ctrl, gmem, mutseq, ksize, trio_args):
+    run_single(case, ctrl, gmem, mutseq, ksize, trio_args)
+
+
+def test_find_case2(trio_args):
+    trio_args.case = 'tests/data/trio1/case2.fq'
+    trio_args.ksize = 13
+    kevlar.find.main(trio_args)
+
+    pathdata = trio_args.paths_out.getvalue()
     # This sorts by the value of the second field (which should sort by seq ID)
     pathlines = sorted(pathdata.strip().split('\n'),
                        key=lambda pd: pd.split('\t')[1])
@@ -113,12 +115,11 @@ def test_find_case2(trio):
         assert mutseq in path or mutseqrc in path
 
 
-def test_find_case3(trio):
-    args, pathout = trio
-    args.case = 'tests/data/trio1/case3.fq'
-    kevlar.find.main(args)
+def test_find_case3(trio_args):
+    trio_args.case = 'tests/data/trio1/case3.fq'
+    kevlar.find.main(trio_args)
 
-    pathdata = pathout.getvalue()
+    pathdata = trio_args.paths_out.getvalue()
     pathlines = [ln for ln in pathdata.strip().split('\n') if 'chr1' in ln]
     paths = sorted([ln.split(',')[0] for ln in pathlines])
     assert len(paths) == 1

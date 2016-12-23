@@ -56,6 +56,14 @@ main()
     trim_reads ctrl3
     trim_reads ctrl4
     trim_reads case5
+
+    # 3% error rate
+    simulate_reads bogus-genome/refr.fa ctrl5 11111 0.03
+    simulate_reads bogus-genome/refr.fa ctrl6 22222 0.03
+    simulate_reads bogus-genome/seq-pool-1indel.fa case6 33333 0.03
+    trim_reads ctrl5
+    trim_reads ctrl6
+    trim_reads case6
 }
 
 main
