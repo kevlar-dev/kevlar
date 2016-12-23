@@ -1,4 +1,4 @@
-KHMERROOT=../khmer
+KHMERROOT=khmer
 CXXFLAGS=-Wall -O3 --std=c++11 -I src -I $(KHMERROOT)/lib -I $(KHMERROOT)/third-party/seqan/core/include
 
 OBJS=obj/log.o obj/hist.o obj/mut.o obj/snv.o obj/del.o

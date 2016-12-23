@@ -1,3 +1,4 @@
+#include <chrono>
 #include <getopt.h>
 #include <memory>
 #include "primes.hpp"
@@ -8,6 +9,7 @@
 using namespace khmer;
 using namespace read_parsers;
 typedef Read Sequence;
+typedef std::chrono::time_point<std::chrono::system_clock> timepoint;
 
 typedef struct
 {
@@ -17,6 +19,8 @@ typedef struct
     ulong limit;
     uint histmax;
     uint numtables;
+    double sampling_rate;
+    int seed;
     std::string muttype;
     ulong targetsize;
     std::string infile;
@@ -33,6 +37,8 @@ void print_usage(std::ostream& stream = std::cerr)
     stream << "    -l    limit number of positions to process\n";
     stream << "    -m    max histogram value (default: 16)\n";
     stream << "    -n    num tables (default: 4)\n";
+    stream << "    -r    sampling rate (default: 1.0)\n";
+    stream << "    -s    seed for random number generator (default: 42)\n";
     stream << "    -t    mutation type: snv (default), del\n";
     stream << "    -x    approx table size (default: 5e8)\n";
     stream << "    -z    deletion size (default: 5)\n";
@@ -41,7 +47,7 @@ void print_usage(std::ostream& stream = std::cerr)
 void parse_args(int argc, const char **argv, ProgramArgs *args)
 {
     char c;
-    while ((c = getopt (argc, (char *const *)argv, "d:hi:k:l:m:n:t:x:z:")) != -1) {
+    while ((c = getopt (argc, (char *const *)argv, "d:hi:k:l:m:n:r:s:t:x:z:")) != -1) {
         if (c == 'd') {
             args->delsize = atoi(optarg);
         }
@@ -63,6 +69,12 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
         }
         else if (c == 'n') {
             args->numtables = atoi(optarg);
+        }
+        else if (c == 'r') {
+            args->sampling_rate = atof(optarg);
+        }
+        else if (c == 's') {
+            args->seed = atoi(optarg);
         }
         else if (c == 't') {
             args->muttype = optarg;
@@ -94,19 +106,22 @@ int main(int argc, const char **argv)
         return 0;
     }
 
-    ProgramArgs args = {5, 1000000, 31, 0, 16, 4, "snv", 500000000, "", ""};
+    ProgramArgs args = {5, 1000000, 31, 0, 16, 4, 1.0, 42, "snv", 500000000, "", ""};
     parse_args(argc, argv, &args);
 
     std::cerr << "# allocating countgraph\n";
-    std::vector<HashIntoType> tablesizes = get_n_primes_near_x(args.targetsize, args.numtables);
+    std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.targetsize, args.numtables);
     Countgraph countgraph(args.ksize, tablesizes);
 
     std::cerr << "# consuming reference...";
+    timepoint start = std::chrono::system_clock::now();
     unsigned int seqs_consumed = 0;
     unsigned long long kmers_consumed = 0;
     countgraph.consume_fasta(args.refrfile, seqs_consumed, kmers_consumed);
+    timepoint end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
     std::cerr << "consumed " << seqs_consumed << " sequence(s) and "
-              << kmers_consumed << " " << args.ksize << "-mers\n";
+              << kmers_consumed << " " << args.ksize << "-mers (in " << elapsed.count() << " seconds)\n";
 
     std::cerr << "# querying k-mer abundance...\n\n";
     Logger logger(args.interval, std::cerr);
@@ -121,6 +136,7 @@ int main(int argc, const char **argv)
         std::cerr << "Error: unknown mutation type '" << args.muttype << "'\n";
         exit(1);
     }
+    mut->set_sampling_rate(args.sampling_rate, args.seed);
 
     IParser *parser = IParser::get_parser(args.infile);
     Sequence seq;

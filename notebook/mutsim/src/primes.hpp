@@ -28,9 +28,9 @@ bool isprime(uint n)
     return true;
 }
 
-std::vector<HashIntoType> get_n_primes_near_x(uint x, uint n)
+std::vector<uint64_t> get_n_primes_near_x(uint x, uint n)
 {
-    std::vector<HashIntoType> primes;
+    std::vector<uint64_t> primes;
     if (x == 1 && n == 1) {
         primes.push_back(1);
         return primes;

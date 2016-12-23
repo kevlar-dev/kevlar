@@ -15,13 +15,15 @@ ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
         if (limit > 0 && nuclcount > limit) {
             break;
         }
+        if (skip_nucl()) {
+            continue;
+        }
         nuclcount++;
 
         ulong min1 = i - k + 1;
         ulong length1 = k - 1;
         ulong min2 = i + delsize;
         ulong length2 = k;
-std::cerr << "DEBUG " << min1 << ' ' << length1 << ' ' << min2 << ' ' << length2 << '\n';
         std::string delseq = sequence.substr(min1, length1) +
                              sequence.substr(min2, length2);
         assert(delseq.size() == (2*k) - 1);

@@ -15,6 +15,9 @@ ulong MutatorSNV::process(std::string& sequence, Countgraph& countgraph)
         if (limit > 0 && nuclcount > limit) {
             break;
         }
+        if (skip_nucl()) {
+            continue;
+        }
         nuclcount++;
 
         ulong minindex = i - k + 1;
