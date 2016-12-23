@@ -25,10 +25,19 @@ simulate_reads()
     rm ${sample}-[1,2].fq
 }
 
+trim_reads()
+{
+    local sample=$1
+    trim-low-abund.py -M 5e6 -k 13 -Z 10 -C 2 -V -o ${sample}.tmp trio1/${sample}.fq 
+    mv ${sample}.tmp trio1/${sample}.fq
+}
+
 main()
 {
     echo -n "Checking for wgsim: "
     which wgsim
+    echo -n "Checking for trim-low-abund.py: "
+    which trim-low-abund.py
 
     mkdir -p trio1/
 
@@ -44,6 +53,9 @@ main()
     simulate_reads bogus-genome/refr.fa ctrl3 97531 0.01
     simulate_reads bogus-genome/refr.fa ctrl4 86420 0.01
     simulate_reads bogus-genome/seq-pool-1indel.fa case5 969696 0.01
+    trim_reads ctrl3
+    trim_reads ctrl4
+    trim_reads case5
 }
 
 main

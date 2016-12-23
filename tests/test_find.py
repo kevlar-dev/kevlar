@@ -26,32 +26,65 @@ def trio():
     serrout = StringIO()
 
     args = type('', (), {})()
-    args.controls = glob.glob('tests/data/trio1/ctrl[1,2].fq')
     args.ctrl_max = 0
     args.case_min = 8
+    args.ksize = 13
+    args.kmers_out = None
+    args.controls = glob.glob('tests/data/trio1/ctrl[1,2].fq')
     args.out = readout
     args.flush = False
-    args.kmers_out = kmerout
     args.paths_out = pathout
     args.collapse = True
     args.logfile = serrout
     args.upint = 1000
     args.graph_memory = 1e6
-    args.ksize = 13
     return args, pathout
 
 
-def test_find_case1(trio):
+@pytest.mark.parametrize('case,ctrl,gmem,mutseq,ksize', [
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 11),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 13),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 15),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 17),
+    ('case1', 'ctrl[1,2]', 1e6, 'CCGCACCATTT', 19),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 11),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 13),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 15),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 17),
+    ('case4', 'ctrl[1,2]', 1e6, 'GGTCAATAGG', 19),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 11),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 13),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 15),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 17),
+    ('case5', 'ctrl[3,4]', 1e6, 'GGTCAATAGG', 19),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 11),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 13),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 15),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 17),
+    ('case1', 'ctrl[1,2]', 5e5, 'CCGCACCATTT', 19),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 11),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 13),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 15),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 17),
+    ('case4', 'ctrl[1,2]', 5e5, 'GGTCAATAGG', 19),
+    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 11),
+    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 13),
+    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 15),
+    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 17),
+    ('case5', 'ctrl[3,4]', 5e5, 'GGTCAATAGG', 19),
+])
+def test_find_single_mutation(case, ctrl, gmem, mutseq, ksize, trio):
     args, pathout = trio
-    args.case = 'tests/data/trio1/case1.fq'
+    args.ksize = ksize
+    args.graph_memory = 1e6
+    args.case = 'tests/data/trio1/{}.fq'.format(case)
+    args.controls = glob.glob('tests/data/trio1/{}.fq'.format(ctrl))
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
     paths = sorted([ln.split(',')[0] for ln in pathdata.strip().split('\n')])
     assert len(paths) == 1
 
-    #              ┌----------- SNV here
-    mutseq = 'CCGCACCATTT'
     mutseqrc = kevlar.revcom(mutseq)
     assert mutseq in paths[0] or mutseqrc in paths[0]
 
@@ -59,6 +92,7 @@ def test_find_case1(trio):
 def test_find_case2(trio):
     args, pathout = trio
     args.case = 'tests/data/trio1/case2.fq'
+    args.ksize = 13
     kevlar.find.main(args)
 
     pathdata = pathout.getvalue()
@@ -91,20 +125,5 @@ def test_find_case3(trio):
 
     #              ┌----------- SNV here
     mutseq = 'CCGCACCATTT'
-    mutseqrc = kevlar.revcom(mutseq)
-    assert mutseq in paths[0] or mutseqrc in paths[0]
-
-
-def test_find_case4(trio):
-    args, pathout = trio
-    args.case = 'tests/data/trio1/case4.fq'
-    kevlar.find.main(args)
-
-    pathdata = pathout.getvalue()
-    paths = [ln.split(',')[0] for ln in pathdata.strip().split('\n')]
-    assert len(paths) == 1
-
-    #         ----┐┌--------- 5bp deletion between these nucleotides
-    mutseq = 'GGTCAATAGG'
     mutseqrc = kevlar.revcom(mutseq)
     assert mutseq in paths[0] or mutseqrc in paths[0]
