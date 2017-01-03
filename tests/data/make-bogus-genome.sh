@@ -30,6 +30,7 @@ cat bogus-genome/chr?.fa bogus-genome/contam1.fa > bogus-genome/refr-contam.fa
 ./mutate1.py bogus-genome/refr.fa > bogus-genome/seq-pool-1snp.fa
 ./mutate3.py bogus-genome/refr.fa > bogus-genome/seq-pool-3snps.fa
 ./mutate1.py bogus-genome/refr-contam.fa > bogus-genome/seq-pool-1snp-contam.fa
+./mutate-indel.py bogus-genome/refr.fa > bogus-genome/seq-pool-1indel.fa
 
 # Simulate and map some simple reads
 ./make-bogus-reads.py bogus-genome/refr-contam.fa > bogus-genome/reads-small.fq
