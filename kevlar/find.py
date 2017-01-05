@@ -51,25 +51,46 @@ def subparser(subparsers):
                            'linear paths contained in other linear paths')
     subparser.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='debug update interval; default is 1000000')
+    subparser.add_argument('--batch', type=int, nargs=2, metavar='INT',
+                           help='process only a fraction of the k-mers in the '
+                           'input file; invoke with "--batch X Y" where X is '
+                           'a power of 2 and Y is between 1 and X inclusive')
     subparser.add_argument('case')
 
 
 def load_case_and_controls(args):
-    print('[kevlar::find] Loading case countgraph', args.case, '...',
+    print('[kevlar::find] Loading case counttable', args.case, '...',
           end='', file=args.logfile)
-    case = khmer.Countgraph(args.ksize, args.graph_memory / 4, 4)
-    case.consume_fasta(args.case)
-    print('done, k={}'.format(case.ksize()), file=args.logfile)
+    case = khmer.Counttable(args.ksize, args.graph_memory / 4, 4)
+    if args.batch:
+        num_batches = int(args.batch[0])
+        batch = int(args.batch[1])
+        nr, nk = case.consume_fasta_banding(args.case, num_batches, batch - 1)
+        message = 'batch {:d}/{:d} done'.format(batch, num_batches)
+    else:
+        message = 'done'
+        nr, nk = case.consume_fasta(args.case)
+    message += ', k={:d}'.format(case.ksize())
+    message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+    print(message, file=args.logfile)
 
     controls = list()
     for ctlfile in args.controls:
-        print('[kevlar::find] Loading control countgraph', ctlfile, '...',
+        print('[kevlar::find] Loading control counttable', ctlfile, '...',
               end='', file=args.logfile)
-        countgraph = khmer.Countgraph(args.ksize, args.graph_memory / 4, 4)
-        countgraph.consume_fasta(ctlfile)
-        assert countgraph.ksize() == case.ksize()
-        controls.append(countgraph)
-        print('done, k={}'.format(countgraph.ksize()), file=args.logfile)
+        counttable = khmer.Counttable(args.ksize, args.graph_memory / 4, 4)
+        if args.batch:
+            nr, nk = counttable.consume_fasta_banding(ctlfile, num_batches,
+                                                      batch - 1)
+            message = 'batch {:d}/{:d} done'.format(batch, num_batches)
+        else:
+            nr, nk = counttable.consume_fasta(ctlfile)
+            message = 'done'
+        assert counttable.ksize() == case.ksize()
+        message += ', k={:d}'.format(counttable.ksize())
+        message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+        print(message, file=args.logfile)
+        controls.append(counttable)
 
     return case, controls
 
@@ -80,10 +101,12 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     if caseabund < case_min:
         return False
 
-    ctrlabunds = [counts.get(kmer) for counts in controlcounts]
-    ctrlpass = [abund > ctrl_max for abund in ctrlabunds]
-    if True in ctrlpass:
-        return False
+    ctrlabunds = list()
+    for count in controlcounts:
+        abund = count.get(kmer)
+        if abund > ctrl_max:
+            return False
+        ctrlabunds.append(abund)
 
     return [caseabund] + ctrlabunds
 
@@ -102,9 +125,11 @@ def print_interesting_read(record, kmers, outstream, flush=False):
 def main(args):
     case, controls = load_case_and_controls(args)
 
-    variants = kevlar.VariantSet()
     print('[kevlar::find] Iterating over case reads', args.case,
           file=args.logfile)
+    nkmers = 0
+    nreads = 0
+    unique_kmers = set()
     for n, record in enumerate(screed.open(args.case)):
         if n > 0 and n % args.upint == 0:
             print('    processed', n, 'reads...', file=args.logfile)
@@ -115,22 +140,17 @@ def main(args):
                                          args.ctrl_max)
             if counts is False:
                 continue
-            lpath = case.assemble_linear_path(kmer)
-            variants.add_kmer(kmer, record.name, lpath)
             read_novel_kmers[i] = [kmer] + counts
+            minkmer = kevlar.revcommin(kmer)
+            unique_kmers.add(minkmer)
 
         if len(read_novel_kmers) > 0:
+            nreads += 1
+            nkmers += len(read_novel_kmers)
             print_interesting_read(record, read_novel_kmers, args.out,
                                    args.flush)
 
-    if args.kmers_out:
-        variants.kmer_table(args.kmers_out)
-    if args.paths_out:
-        if args.collapse:
-            variants.collapse()
-        variants.path_table(args.paths_out)
-
-    message = 'Found {} novel kmers in {} reads, {} linear paths'.format(
-        variants.nkmers, variants.nreads, variants.npaths
-    )
+    message = 'Found {:d} instances'.format(nkmers)
+    message += ' of {:d} unique novel kmers'.format(len(unique_kmers))
+    message += ' in {:d} reads'.format(nreads)
     print('[kevlar::find]', message, file=args.logfile)
