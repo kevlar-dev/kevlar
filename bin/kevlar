@@ -16,6 +16,7 @@ import sys
 mains = {
     'dump': kevlar.dump.main,
     'find': kevlar.find.main,
+    'collect': kevlar.collect.main,
 }
 
 
@@ -26,9 +27,10 @@ def parser():
     parser.add_argument('-l', '--logfile', metavar='FILE', default=sys.stderr,
                         type=argparse.FileType('w'))
     subparsers = parser.add_subparsers(dest='cmd', metavar='cmd',
-                                       help='dump | find')
+                                       help='dump | find | collect')
     kevlar.dump.subparser(subparsers)
     kevlar.find.subparser(subparsers)
+    kevlar.collect.subparser(subparsers)
 
     return parser
 

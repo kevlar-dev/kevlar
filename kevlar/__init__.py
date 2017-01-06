@@ -10,6 +10,7 @@
 from . import fasta
 from . import dump
 from . import find
+from . import collect
 from .variantset import VariantSet
 import screed
 

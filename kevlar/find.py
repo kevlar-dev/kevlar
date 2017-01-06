@@ -33,22 +33,14 @@ def subparser(subparsers):
                            'with abund < Y; default=5')
     subparser.add_argument('-k', '--ksize', metavar='K', default=31, type=int,
                            help='k-mer size; default is 31')
-    subparser.add_argument('-M', '--graph-memory', default='1e6',
+    subparser.add_argument('-M', '--memory', default='1e6',
                            type=khmer_args.memory_setting, metavar='MEM',
                            help='total memory to allocate for each count '
-                           'graph; default is 1M')
+                           'table; default is 1M')
     subparser.add_argument('--out', type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--flush', action='store_true', help='flush output'
                            'after each read written')
-    subparser.add_argument('--kmers-out', type=argparse.FileType('w'),
-                           default=None, metavar='FILE',
-                           help='output novel k-mers to specified file')
-    subparser.add_argument('--paths-out', type=argparse.FileType('w'),
-                           default=None, metavar='FILE',
-                           help='output linear paths to specified file')
-    subparser.add_argument('--collapse', action='store_true', help='collapse '
-                           'linear paths contained in other linear paths')
     subparser.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='debug update interval; default is 1000000')
     subparser.add_argument('--batch', type=int, nargs=2, metavar='INT',
@@ -61,7 +53,7 @@ def subparser(subparsers):
 def load_case_and_controls(args):
     print('[kevlar::find] Loading case counttable', args.case, '...',
           end='', file=args.logfile)
-    case = khmer.Counttable(args.ksize, args.graph_memory / 4, 4)
+    case = khmer.Counttable(args.ksize, args.memory / 4, 4)
     if args.batch:
         num_batches = int(args.batch[0])
         batch = int(args.batch[1])
@@ -78,7 +70,7 @@ def load_case_and_controls(args):
     for ctlfile in args.controls:
         print('[kevlar::find] Loading control counttable', ctlfile, '...',
               end='', file=args.logfile)
-        counttable = khmer.Counttable(args.ksize, args.graph_memory / 4, 4)
+        counttable = khmer.Counttable(args.ksize, args.memory / 4, 4)
         if args.batch:
             nr, nk = counttable.consume_fasta_banding(ctlfile, num_batches,
                                                       batch - 1)
