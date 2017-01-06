@@ -85,7 +85,7 @@ def assemble_contigs(nodegraph, variants, collapse=True, logfile=sys.stderr):
     if collapse:
         print('[kevlar::collect] Collapsing linear paths', file=logfile)
         variants.collapse()
-        print('    {:d} collapsed linear paths'.format(variants.npaths),
+        print('    {:d} collapsed linear paths'.format(variants.ncontigs),
               file=logfile)
 
 
