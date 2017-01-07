@@ -90,12 +90,14 @@ def load_case_and_controls(args):
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
                         ctrl_max=1):
     caseabund = casecounts.get(kmer)
+    print('DEBUG caseabund', kmer, caseabund, file=sys.stderr)
     if caseabund < case_min:
         return False
 
     ctrlabunds = list()
     for count in controlcounts:
         abund = count.get(kmer)
+        print('DEBUG ctrlabund', abund, file=sys.stderr)
         if abund > ctrl_max:
             return False
         ctrlabunds.append(abund)
@@ -128,6 +130,13 @@ def main(args):
 
         read_novel_kmers = dict()
         for i, kmer in enumerate(case.get_kmers(record.sequence)):
+            if args.batch:
+                num_batches = int(args.batch[0])
+                batch = int(args.batch[1]) - 1
+                khash = case.hash(kmer)
+                if khash & (num_batches - 1) != batch:
+                    continue
+                print('DEBUG', kmer, khash, file=sys.stderr)
             counts = kmer_is_interesting(kmer, case, controls, args.case_min,
                                          args.ctrl_max)
             if counts is False:
