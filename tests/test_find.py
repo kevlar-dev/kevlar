@@ -28,6 +28,7 @@ def trio_args():
     args.case_min = 8
     args.ksize = 13
     args.memory = 1e6
+    args.max_fpr = 0.2
     args.out = StringIO()
     args.flush = False
     args.collapse = False

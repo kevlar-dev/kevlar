@@ -37,6 +37,9 @@ def subparser(subparsers):
                            type=khmer_args.memory_setting, metavar='MEM',
                            help='total memory to allocate for each count '
                            'table; default is 1M')
+    subparser.add_argument('--max-fpr', type=float, default=0.2, metavar='FPR',
+                           help='terminate if the expected false positive rate'
+                           ' is higher than the specified FPR; default is 0.2')
     subparser.add_argument('--out', type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--flush', action='store_true', help='flush output'
@@ -62,9 +65,13 @@ def load_case_and_controls(args):
     else:
         message = 'done'
         nr, nk = case.consume_fasta(args.case)
+    fpr = kevlar.calc_fpr(case)
     message += ', k={:d}'.format(case.ksize())
     message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+    message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=args.logfile)
+    if fpr > args.max_fpr:
+        sys.exit(1)
 
     controls = list()
     for ctlfile in args.controls:
@@ -79,9 +86,13 @@ def load_case_and_controls(args):
             nr, nk = counttable.consume_fasta(ctlfile)
             message = 'done'
         assert counttable.ksize() == case.ksize()
+        fpr = kevlar.calc_fpr(case)
         message += ', k={:d}'.format(counttable.ksize())
         message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+        message += '; estimated false positive rate is {:1.3f}'.format(fpr)
         print(message, file=args.logfile)
+        if fpr > args.max_fpr:
+            sys.exit(1)
         controls.append(counttable)
 
     return case, controls
