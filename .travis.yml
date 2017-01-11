@@ -6,7 +6,7 @@ python:
 install:
     - pip install --upgrade pip setuptools pytest pep8 cython
     - pip install git+https://github.com/pysam-developers/pysam.git
-    - pip install git+https://github.com/dib-lab/khmer.git
+    - pip install git+https://github.com/dib-lab/khmer.git@research/banding_and_k32+
     - pip install .
 script:
     - make testall
