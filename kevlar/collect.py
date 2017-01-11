@@ -23,14 +23,19 @@ def subparser(subparsers):
                            type=khmer_args.memory_setting, metavar='MEM',
                            help='total memory to allocate for the node '
                            'graph; default is 1M')
+    subparser.add_argument('--max-fpr', type=float, default=0.2, metavar='FPR',
+                           help='terminate if the expected false positive rate'
+                           ' is higher than the specified FPR; default is 0.2')
     subparser.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    subparser.add_argument('--out', type=argparse.FileType('w'),
+    subparser.add_argument('-o', '--out', type=argparse.FileType('w'),
+                           metavar='OUT',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--collapse', action='store_true', help='collapse '
                            'linear paths contained in other linear paths')
-    subparser.add_argument('find_output', nargs='+', help='one or more output '
-                           'files from the "kevlar find" command')
+    subparser.add_argument('find_output', nargs='+',
+                           type=argparse.FileType('r'), help='one or more '
+                           'output files from the "kevlar find" command')
 
 
 def load_input(infile, nodegraph, variants):
@@ -55,20 +60,27 @@ def load_input(infile, nodegraph, variants):
     return reads_consumed, kmers_consumed
 
 
-def load_all_inputs(filelist, nodegraph, variants, logfile=sys.stderr):
+def load_all_inputs(filelist, nodegraph, variants, maxfpr=0.2,
+                    logfile=sys.stderr):
     kmers_consumed = 0
     reads_consumed = 0
     for infile in filelist:
-        print('[kevlar::collect] Loading', infile, file=logfile)
-        with open(infile, 'r') as fh:
-            nr, nk = load_input(fh, nodegraph, variants)
-            reads_consumed += nr
-            kmers_consumed += nk
+        infilename = 'input file'
+        if hasattr(infile, "name"):
+            infilename = infile.name
+        print('[kevlar::collect] Loading', infilename, file=logfile)
+        nr, nk = load_input(infile, nodegraph, variants)
+        reads_consumed += nr
+        kmers_consumed += nk
+    fpr = kevlar.calc_fpr(nodegraph)
     message = '    {:d} reads'.format(reads_consumed)
     message += ' and {:d} k-mers consumed'.format(kmers_consumed)
     message += '; {:d} instances'.format(variants.nkmerinst)
     message += ' of {:d} unique novel k-mers'.format(variants.nkmers)
+    message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logfile)
+    if fpr > maxfpr:
+        sys.exit(1)
 
 
 def assemble_contigs(nodegraph, variants, collapse=True, logfile=sys.stderr):
@@ -93,6 +105,7 @@ def main(args):
     nodegraph = khmer.Nodegraph(args.ksize, args.memory / 4, 4)
     variants = kevlar.VariantSet()
 
-    load_all_inputs(args.find_output, nodegraph, variants, args.logfile)
+    load_all_inputs(args.find_output, nodegraph, variants, args.max_fpr,
+                    args.logfile)
     assemble_contigs(nodegraph, variants, args.collapse, args.logfile)
     variants.write(outstream=args.out)

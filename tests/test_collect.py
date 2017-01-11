@@ -39,13 +39,15 @@ def test_load_input(filename, creads, ckmers, ukmers, kmerinst):
 def test_load_all_inputs():
     ng = khmer.Nodegraph(13, 3e5 / 4, 4)
     vs = kevlar.VariantSet()
+    maxfpr = 0.2
     log = StringIO()
 
     batches = [3, 4, 5, 7, 8]
     filepattern = 'tests/data/trio1/novel_1_1,2_batch{:d}.txt'
-    infiles = [filepattern.format(batch) for batch in batches]
+    infilenames = [filepattern.format(batch) for batch in batches]
+    infiles = [open(fn, 'r') for fn in infilenames]
 
-    kevlar.collect.load_all_inputs(infiles, ng, vs, log)
+    kevlar.collect.load_all_inputs(infiles, ng, vs, maxfpr, log)
     assert vs.nkmers == 6
     assert vs.nkmerinst == 49
     assert vs.nreads == 10
