@@ -19,6 +19,8 @@ import kevlar
 
 def subparser(subparsers):
     subparser = subparsers.add_parser('collect')
+    subparser.add_argument('-d', '--debug', action='store_true',
+                           help='print debugging output')
     subparser.add_argument('-M', '--memory', default='1e6',
                            type=khmer_args.memory_setting, metavar='MEM',
                            help='total memory to allocate for the node '
@@ -28,6 +30,8 @@ def subparser(subparsers):
                            ' is higher than the specified FPR; default is 0.2')
     subparser.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+    subparser.add_argument('--ignore', metavar='KMER', nargs='+',
+                           help='ignore the specified k-mer(s)')
     subparser.add_argument('-o', '--out', type=argparse.FileType('w'),
                            metavar='OUT',
                            help='output file; default is terminal (stdout)')
@@ -83,13 +87,18 @@ def load_all_inputs(filelist, nodegraph, variants, maxfpr=0.2,
         sys.exit(1)
 
 
-def assemble_contigs(nodegraph, variants, collapse=True, logfile=sys.stderr):
+def assemble_contigs(nodegraph, variants, kmers_to_ignore=None,
+                     collapse=True, debug=False, logfile=sys.stderr):
     print('[kevlar::collect] Retrieving linear paths', file=logfile)
     for kmer in variants.kmers:
+        if kmers_to_ignore and kmer in kmers_to_ignore:
+            continue
+        if debug:
+            print('[kevlar::collect]     DEBUG kmer:', kmer, file=logfile)
         contig = nodegraph.assemble_linear_path(kmer)
         if contig == '':
             print('    WARNING: no linear path found for k-mer', kmer,
-                  file=args.logfile)
+                  file=logfile)
             continue
         variants.add_contig(contig, kmer)
     print('    {:d} linear paths'.format(variants.ncontigs), file=logfile)
@@ -107,5 +116,6 @@ def main(args):
 
     load_all_inputs(args.find_output, nodegraph, variants, args.max_fpr,
                     args.logfile)
-    assemble_contigs(nodegraph, variants, args.collapse, args.logfile)
+    assemble_contigs(nodegraph, variants, args.ignore, args.collapse,
+                     args.debug, args.logfile)
     variants.write(outstream=args.out)
