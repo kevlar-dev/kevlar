@@ -163,7 +163,7 @@ def main(args):
         if len(read_novel_kmers) > 0:
             nreads += 1
             nkmers += len(read_novel_kmers)
-            print_interesting_read(record, read_novel_kmers, args.out,
+            print_interesting_read(record, read_novel_kmers, args.out, 2,
                                    args.flush)
 
     message = 'Found {:d} instances'.format(nkmers)
