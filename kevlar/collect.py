@@ -89,18 +89,20 @@ def load_all_inputs(filelist, nodegraph, variants, maxfpr=0.2,
 
 def assemble_contigs(nodegraph, variants, kmers_to_ignore=None,
                      collapse=True, debug=False, logfile=sys.stderr):
+    asm = khmer.JunctionCountAssembler(nodegraph)
     print('[kevlar::collect] Retrieving linear paths', file=logfile)
     for kmer in variants.kmers:
         if kmers_to_ignore and kmer in kmers_to_ignore:
             continue
         if debug:
             print('[kevlar::collect]     DEBUG kmer:', kmer, file=logfile)
-        contig = nodegraph.assemble_linear_path(kmer)
-        if contig == '':
-            print('    WARNING: no linear path found for k-mer', kmer,
-                  file=logfile)
-            continue
-        variants.add_contig(contig, kmer)
+        contigs = asm.assemble(kmer)
+        for i, contig in enumerate(contigs):
+            if contig == '':
+                print('    WARNING: no linear path found for k-mer', kmer,
+                      file=logfile)
+                continue
+            variants.add_contig(contig, kmer)
     print('    {:d} linear paths'.format(variants.ncontigs), file=logfile)
 
     if collapse:
