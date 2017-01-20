@@ -66,3 +66,23 @@ def test_find_single_mutation(case, ctrl, mem, trio_args):
         ctl2 = int(abundmatch.group(3))
         assert case >= 8
         assert ctl1 == 0 and ctl2 == 0
+
+
+def test_kmer_rep_in_read():
+    read = ('AGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGAT'
+            'GAGGATGAGGATGAGGAT')
+    record = type('', (), {})()
+    record.sequence = read
+    record.name = 'reqseq'
+    kmers = dict()
+    kmers[2] = ['GATGAGGATGAGGATGAGGATGAGG', 11, 1, 0]
+    kmers[8] = ['GATGAGGATGAGGATGAGGATGAGG', 11, 1, 0]
+    outstream = StringIO()
+    kevlar.find.print_interesting_read(record, kmers, outstream)
+    assert read in outstream.getvalue()
+
+    outstream = StringIO()
+    kmers[14] = ['GATGAGGATGAGGATGAGGATGAGG', 11, 1, 0]
+    kmers[20] = ['GATGAGGATGAGGATGAGGATGAGG', 11, 1, 0]
+    kevlar.find.print_interesting_read(record, kmers, outstream)
+    assert outstream.getvalue() == ''

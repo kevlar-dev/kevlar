@@ -114,7 +114,14 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     return [caseabund] + ctrlabunds
 
 
-def print_interesting_read(record, kmers, outstream, flush=False):
+def print_interesting_read(record, kmers, outstream, max_copy=2, flush=False):
+    counts = defaultdict(int)
+    for kmerpos in kmers:
+        kmer = kmers[kmerpos][0]
+        counts[kmer] += 1
+        if counts[kmer] > max_copy:
+            return
+
     write_record(record, outstream)
     for i in sorted(kmers):
         kmer = kmers[i][0]
