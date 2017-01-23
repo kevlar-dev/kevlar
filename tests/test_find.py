@@ -17,6 +17,7 @@ try:
 except ImportError:
     from io import StringIO
 import kevlar
+from khmer import Counttable
 
 
 @pytest.fixture
@@ -38,6 +39,18 @@ def trio_args():
     args.case = 'tests/data/trio1/case1.fq'
 
     return args
+
+
+@pytest.mark.parametrize('kmer', [
+    ('ACCGTACAA' * 3),
+    ('TTATAATAG' * 3),
+    ('CGAAAAATT' * 3),
+])
+def test_assumptions(kmer):
+    ct = Counttable(27, 1e5, 2)
+    kmer_rc = kevlar.revcom(kmer)
+    assert ct.hash(kmer) == ct.hash(kmer_rc)
+    assert ct.get_kmer_hashes(kmer)[0] == ct.get_kmer_hashes(kmer_rc)[0]
 
 
 @pytest.mark.parametrize('case,ctrl,mem', [
