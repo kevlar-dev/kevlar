@@ -10,6 +10,7 @@
 from __future__ import print_function
 from collections import defaultdict
 import argparse
+import re
 import sys
 
 import khmer
@@ -143,6 +144,10 @@ def main(args):
     for n, record in enumerate(screed.open(args.case)):
         if n > 0 and n % args.upint == 0:
             print('    processed', n, 'reads...', file=args.logfile)
+        if re.search('[^ACGT]', record.sequence):
+            # This check should be temporary; hopefully khmer will handle
+            # this soon.
+            continue
 
         read_novel_kmers = dict()
         for i, kmer in enumerate(case.get_kmers(record.sequence)):
