@@ -92,5 +92,13 @@ def main(args):
             if refrseq.upper() == record.seq.upper():
                 continue
 
-        print('@', record.qname, '\n', record.seq, '\n+\n', record.qual,
-              sep='', file=args.out)
+            # Make sure paired reads have unique IDs
+            if record.flag & 1:
+                name = record.qname
+                assert (record.flag & 64) != (record.flag & 128)
+                suffix = '/1' if record.flag & 64 else '/2'
+                if not name.endswith(suffix):
+                    name += suffix
+
+        print('@', qname, '\n', record.seq, '\n+\n', record.qual, sep='',
+              file=args.out)
