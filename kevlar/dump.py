@@ -95,6 +95,8 @@ def main(args):
         # Make sure paired reads have unique IDs
         name = record.qname
         if record.flag & 1:
+            # Logical XOR: if the read is paired, it should be first in pair
+            # or second in pair, not both.
             assert (record.flag & 64) != (record.flag & 128)
             suffix = '/1' if record.flag & 64 else '/2'
             if not name.endswith(suffix):
