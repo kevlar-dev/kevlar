@@ -12,6 +12,10 @@ for n, record in enumerate(screed.open(sys.argv[1])):
     if n in mutations:
         ind, origbase, newbase = mutations[n]
         assert record.sequence[ind] == origbase
-        record.sequence = record.sequence[:ind] + newbase + record.sequence[ind+1:]
+        piece1 = record.sequence[:ind]
+        piece2 = record.sequence[ind+1:]
+        record.sequence = piece1 + newbase + piece2
+        print('DEBUG ', piece1[-5:], '|', newbase, '|', piece2[:5], sep='',
+              file=sys.stderr)
 
     write_record(record, sys.stdout)

@@ -82,3 +82,11 @@ def test_indels(bogusargs):
     assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
     assert 'read2' in outputlines[0]
     assert 'read3' in outputlines[4]
+
+
+def test_suffix(bogusargs):
+    bogusargs.reads = 'tests/data/nopair.sam'
+    kevlar.dump.main(bogusargs)
+    outputlines = bogusargs.out.getvalue().strip().split('\n')
+    assert len(outputlines) == 4
+    assert outputlines[0].endswith('/1') or outputlines[0].endswith('/2')
