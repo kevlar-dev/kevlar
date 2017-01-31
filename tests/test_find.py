@@ -81,6 +81,30 @@ def test_find_single_mutation(case, ctrl, mem, trio_args):
         assert ctl1 == 0 and ctl2 == 0
 
 
+def test_find_two_cases(trio_args):
+    pattern = 'tests/data/trio1/case{}.fq'
+    trio_args.cases = [pattern.format(n) for n in ('6', '6b')]
+    trio_args.controls = glob.glob('tests/data/trio1/ctrl[5,6].fq')
+    trio_args.ctrl_max = 1
+    trio_args.case_min = 7
+    trio_args.ksize = 19
+    trio_args.memory = 1e7
+    kevlar.find.main(trio_args)
+
+    assert trio_args.out.getvalue().strip() != ''
+    for line in trio_args.out.getvalue().split('\n'):
+        if not line.endswith('#'):
+            continue
+        abundmatch = re.search('(\d+) (\d+) (\d+) (\d+)#$', line)
+        assert abundmatch, line
+        case1 = int(abundmatch.group(1))
+        case2 = int(abundmatch.group(2))
+        ctl1 = int(abundmatch.group(3))
+        ctl2 = int(abundmatch.group(4))
+        assert case1 >= 7 and case2 >= 7
+        assert ctl1 <= 1 and ctl2 <= 1
+
+
 def test_kmer_rep_in_read():
     read = ('AGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGAT'
             'GAGGATGAGGATGAGGAT')
