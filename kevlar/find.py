@@ -147,14 +147,14 @@ def main(args):
             continue
 
         read_novel_kmers = dict()
-        for i, kmer in enumerate(case.get_kmers(record.sequence)):
+        for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
             if args.batch:
                 num_batches = int(args.batch[0])
                 batch = int(args.batch[1]) - 1
                 khash = case.hash(kmer)
                 if khash & (num_batches - 1) != batch:
                     continue
-            counts = kmer_is_interesting(kmer, case, controls, args.case_min,
+            counts = kmer_is_interesting(kmer, cases, controls, args.case_min,
                                          args.ctrl_max)
             if counts is False:
                 continue

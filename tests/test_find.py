@@ -36,7 +36,7 @@ def trio_args():
     args.batch = None
     args.upint = 1000
     args.logfile = StringIO()
-    args.case = 'tests/data/trio1/case1.fq'
+    args.cases = ['tests/data/trio1/case1.fq']
 
     return args
 
@@ -65,7 +65,7 @@ def test_assumptions(kmer):
 ])
 def test_find_single_mutation(case, ctrl, mem, trio_args):
     trio_args.memory = mem
-    trio_args.case = 'tests/data/trio1/{}.fq'.format(case)
+    trio_args.cases = ['tests/data/trio1/{}.fq'.format(case)]
     trio_args.controls = glob.glob('tests/data/trio1/{}.fq'.format(ctrl))
     kevlar.find.main(trio_args)
 
@@ -99,3 +99,10 @@ def test_kmer_rep_in_read():
     kmers[20] = ['GATGAGGATGAGGATGAGGATGAGG', 11, 1, 0]
     kevlar.find.print_interesting_read(record, kmers, outstream)
     assert outstream.getvalue() == ''
+
+
+def test_iter_screed():
+    pattern = 'tests/data/bogus-genome/mask-chr{}.fa'
+    infiles = [pattern.format(n) for n in (1, 2)]
+    records = [r for r in kevlar.find.iter_screed(infiles)]
+    assert len(records) == 4
