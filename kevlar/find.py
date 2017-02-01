@@ -63,9 +63,9 @@ def load_samples(samples, ksize, memory, max_fpr=0.2, batch=None,
         ct = khmer.Counttable(ksize, memory / 4, 4)
         if batch:
             num_batches = batch[0]
-            batches = batch[1]
-            nr, nk = ct.consume_fasta_banding(sample, num_batches, batch - 1)
-            message = 'batch {:d}/{:d} done'.format(batch, num_batches)
+            which = batch[1]
+            nr, nk = ct.consume_fasta_banding(sample, num_batches, which - 1)
+            message = 'batch {:d}/{:d} done'.format(which, num_batches)
         else:
             message = 'done'
             nr, nk = ct.consume_fasta(sample)
@@ -151,7 +151,7 @@ def main(args):
             if args.batch:
                 num_batches = int(args.batch[0])
                 batch = int(args.batch[1]) - 1
-                khash = case.hash(kmer)
+                khash = cases[0].hash(kmer)
                 if khash & (num_batches - 1) != batch:
                     continue
             counts = kmer_is_interesting(kmer, cases, controls, args.case_min,
