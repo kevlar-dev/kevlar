@@ -126,13 +126,30 @@ def iter_screed(filenames):
 
 
 def main(args):
+    timer = kevlar.Timer()
+    timer.start()
+
     print('[kevlar::find] Loading case samples', file=args.logfile)
+    timer.start('loadall')
+    timer.start('loadcase')
     cases = load_samples(args.cases, args.ksize, args.memory, args.max_fpr,
                          args.batch, args.logfile)
+    elapsed = timer.stop('loadcase')
+    print('[kevlar::find] Case samples loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
+
+    elapsed = timer.start('loadctrl')
     print('[kevlar::find] Loading control samples', file=args.logfile)
     controls = load_samples(args.controls, args.ksize, args.memory,
                             args.max_fpr, args.batch, args.logfile)
+    elapsed = timer.stop('loadctrl')
+    print('[kevlar::find] Cntrl samples loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
+    elapsed = timer.stop('loadall')
+    print('[kevlar::find] All samples loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
 
+    timer.start('iter')
     print('[kevlar::find] Iterating over case reads', args.cases,
           file=args.logfile)
     nkmers = 0
@@ -140,7 +157,10 @@ def main(args):
     unique_kmers = set()
     for n, record in enumerate(iter_screed(args.cases)):
         if n > 0 and n % args.upint == 0:
-            print('    processed', n, 'reads...', file=args.logfile)
+            elapsed = timer.probe('iter')
+            msg = '    processed {} reads'.format(n)
+            msg += ' in {:.2f} seconds...'.format(elapsed)
+            print(msg, file=args.logfile)
         if re.search('[^ACGT]', record.sequence):
             # This check should be temporary; hopefully khmer will handle
             # this soon.
@@ -167,8 +187,15 @@ def main(args):
             nkmers += len(read_novel_kmers)
             print_interesting_read(record, read_novel_kmers, args.out, 2,
                                    args.flush)
+    elapsed = timer.stop('iter')
+    message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)
+    print('[kevlar::find]', message, file=args.logfile)
 
     message = 'Found {:d} instances'.format(nkmers)
     message += ' of {:d} unique novel kmers'.format(len(unique_kmers))
     message += ' in {:d} reads'.format(nreads)
+    print('[kevlar::find]', message, file=args.logfile)
+
+    total = timer.stop()
+    message = 'Total time: {:.2f} seconds'.format(total)
     print('[kevlar::find]', message, file=args.logfile)

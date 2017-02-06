@@ -12,6 +12,7 @@ from . import dump
 from . import find
 from . import collect
 from .variantset import VariantSet
+from .timer import Timer
 import screed
 
 from ._version import get_versions
