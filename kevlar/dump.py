@@ -92,5 +92,15 @@ def main(args):
             if refrseq.upper() == record.seq.upper():
                 continue
 
-        print('@', record.qname, '\n', record.seq, '\n+\n', record.qual,
-              sep='', file=args.out)
+        # Make sure paired reads have unique IDs
+        name = record.qname
+        if record.flag & 1:
+            # Logical XOR: if the read is paired, it should be first in pair
+            # or second in pair, not both.
+            assert (record.flag & 64) != (record.flag & 128)
+            suffix = '/1' if record.flag & 64 else '/2'
+            if not name.endswith(suffix):
+                name += suffix
+
+        print('@', name, '\n', record.seq, '\n+\n', record.qual, sep='',
+              file=args.out)
