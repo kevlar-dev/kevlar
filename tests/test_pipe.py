@@ -35,7 +35,7 @@ def test_trio2():
         args.batch = [4, i+1]
         args.upint = 10000
         args.logfile = StringIO()
-        args.case = 'tests/data/trio2/case1.fq.gz'
+        args.cases = ['tests/data/trio2/case1.fq.gz']
 
         kevlar.find.main(args)
         findouts[i].seek(0)
@@ -45,6 +45,8 @@ def test_trio2():
     args.ksize = 31
     args.out = StringIO()
     args.max_fpr = 0.02
+    args.ignore = False
+    args.debug = False
     args.collapse = True
     args.find_output = findouts
     args.logfile = StringIO()
