@@ -51,59 +51,45 @@ def subparser(subparsers):
                            help='process only a fraction of the k-mers in the '
                            'input file; invoke with "--batch X Y" where X is '
                            'a power of 2 and Y is between 1 and X inclusive')
-    subparser.add_argument('case')
+    subparser.add_argument('cases', nargs='+')
 
 
-def load_case_and_controls(args):
-    print('[kevlar::find] Loading case counttable', args.case, '...',
-          end='', file=args.logfile)
-    case = khmer.Counttable(args.ksize, args.memory / 4, 4)
-    if args.batch:
-        num_batches = int(args.batch[0])
-        batch = int(args.batch[1])
-        nr, nk = case.consume_fasta_banding(args.case, num_batches, batch - 1)
-        message = 'batch {:d}/{:d} done'.format(batch, num_batches)
-    else:
-        message = 'done'
-        nr, nk = case.consume_fasta(args.case)
-    fpr = kevlar.calc_fpr(case)
-    message += ', k={:d}'.format(case.ksize())
-    message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
-    message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-    print(message, file=args.logfile)
-    if fpr > args.max_fpr:
-        sys.exit(1)
-
-    controls = list()
-    for ctlfile in args.controls:
-        print('[kevlar::find] Loading control counttable', ctlfile, '...',
-              end='', file=args.logfile)
-        counttable = khmer.Counttable(args.ksize, args.memory / 4, 4)
-        if args.batch:
-            nr, nk = counttable.consume_fasta_banding(ctlfile, num_batches,
-                                                      batch - 1)
-            message = 'batch {:d}/{:d} done'.format(batch, num_batches)
+def load_samples(samples, ksize, memory, max_fpr=0.2, batch=None,
+                 logfile=sys.stderr):
+    tables = list()
+    for sample in samples:
+        print('[kevlar::find]     Loading counttable', sample, '...', end='',
+              file=logfile)
+        ct = khmer.Counttable(ksize, memory / 4, 4)
+        if batch:
+            num_batches = batch[0]
+            which = batch[1]
+            nr, nk = ct.consume_fasta_banding(sample, num_batches, which - 1)
+            message = 'batch {:d}/{:d} done'.format(which, num_batches)
         else:
-            nr, nk = counttable.consume_fasta(ctlfile)
             message = 'done'
-        assert counttable.ksize() == case.ksize()
-        fpr = kevlar.calc_fpr(case)
-        message += ', k={:d}'.format(counttable.ksize())
+            nr, nk = ct.consume_fasta(sample)
+        fpr = kevlar.calc_fpr(ct)
+        message += ', k={:d}'.format(ct.ksize())
         message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
         message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-        print(message, file=args.logfile)
-        if fpr > args.max_fpr:
-            sys.exit(1)
-        controls.append(counttable)
+        if fpr > max_fpr:
+            raise SystemExit(message)
+        else:
+            print(message, file=logfile)
+        tables.append(ct)
 
-    return case, controls
+    return tables
 
 
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
                         ctrl_max=1):
-    caseabund = casecounts.get(kmer)
-    if caseabund < case_min:
-        return False
+    caseabunds = list()
+    for ct in casecounts:
+        abund = ct.get(kmer)
+        if abund < case_min:
+            return False
+        caseabunds.append(abund)
 
     ctrlabunds = list()
     for count in controlcounts:
@@ -112,7 +98,7 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
             return False
         ctrlabunds.append(abund)
 
-    return [caseabund] + ctrlabunds
+    return caseabunds + ctrlabunds
 
 
 def print_interesting_read(record, kmers, outstream, max_copy=2, flush=False):
@@ -133,15 +119,26 @@ def print_interesting_read(record, kmers, outstream, max_copy=2, flush=False):
         outstream.flush()
 
 
-def main(args):
-    case, controls = load_case_and_controls(args)
+def iter_screed(filenames):
+    for filename in filenames:
+        for record in screed.open(filename):
+            yield record
 
-    print('[kevlar::find] Iterating over case reads', args.case,
+
+def main(args):
+    print('[kevlar::find] Loading case samples', file=args.logfile)
+    cases = load_samples(args.cases, args.ksize, args.memory, args.max_fpr,
+                         args.batch, args.logfile)
+    print('[kevlar::find] Loading control samples', file=args.logfile)
+    controls = load_samples(args.controls, args.ksize, args.memory,
+                            args.max_fpr, args.batch, args.logfile)
+
+    print('[kevlar::find] Iterating over case reads', args.cases,
           file=args.logfile)
     nkmers = 0
     nreads = 0
     unique_kmers = set()
-    for n, record in enumerate(screed.open(args.case)):
+    for n, record in enumerate(iter_screed(args.cases)):
         if n > 0 and n % args.upint == 0:
             print('    processed', n, 'reads...', file=args.logfile)
         if re.search('[^ACGT]', record.sequence):
@@ -150,14 +147,14 @@ def main(args):
             continue
 
         read_novel_kmers = dict()
-        for i, kmer in enumerate(case.get_kmers(record.sequence)):
+        for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
             if args.batch:
                 num_batches = int(args.batch[0])
                 batch = int(args.batch[1]) - 1
-                khash = case.hash(kmer)
+                khash = cases[0].hash(kmer)
                 if khash & (num_batches - 1) != batch:
                     continue
-            counts = kmer_is_interesting(kmer, case, controls, args.case_min,
+            counts = kmer_is_interesting(kmer, cases, controls, args.case_min,
                                          args.ctrl_max)
             if counts is False:
                 continue

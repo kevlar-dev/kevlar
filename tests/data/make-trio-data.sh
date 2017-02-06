@@ -66,9 +66,10 @@ main()
     simulate_reads bogus-genome/refr.fa ctrl5 11111 trio1 0.02
     simulate_reads bogus-genome/refr.fa ctrl6 22222 trio1 0.02
     simulate_reads bogus-genome/seq-pool-1indel.fa case6 12121 trio1 0.02
+    simulate_reads bogus-genome/seq-pool-1indel.fa case6b 98989 trio1 0.02
     trim_reads ctrl5
     trim_reads ctrl6
-    trim_reads case6
+    trim_reads case6b
 
     # 3% error rate
     simulate_reads bogus-genome/refr.fa ctrl7 33333 trio1 0.03
