@@ -50,7 +50,7 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                     logfile=sys.stderr):
     kmers_consumed = 0
     reads_consumed = 0
-    readids = dict()
+    readids = set()
     print('[kevlar::collect]',
           'Loading input, pass 1 (recalculate k-mer abundance)',
           file=logfile)
@@ -66,7 +66,7 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                     _ = next(infile)
 
                     if readid not in readids:
-                        readids[readid] = True
+                        readids.add(readid)
                         kmers_consumed += countgraph.consume(seq)
                         reads_consumed += 1
 
@@ -86,6 +86,7 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
     print('[kevlar::collect]',
           'Loading input, pass 2 (store novel k-mers)',
           file=logfile)
+    discarded = 0
     for filename in filelist:
         print('   ', filename, file=logfile)
         with open(filename, 'r') as infile:
@@ -99,11 +100,14 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                 elif line.endswith('#\n'):
                     # Second pass, double check the abundance, and then add
                     novel_kmer = str(re.search('^ *(\S+)', line).group(1))
-                    if countgraph.get(novel_kmer) >= minabund:
+                    if countgraph.get(novel_kmer) < minabund:
+                        discarded += 1
+                    else:
                         variants.add_kmer(novel_kmer, readid)
 
     message = '    found {:d} instances'.format(variants.nkmerinst)
     message += ' of {:d} unique novel k-mers'.format(variants.nkmers)
+    message += '; {:d} k-mers with inflated counts discarded'.format(discarded)
     print(message, file=logfile)
 
 
@@ -136,8 +140,8 @@ def main(args):
     countgraph = khmer.Countgraph(args.ksize, args.memory / 4, 4)
     variants = kevlar.VariantSet()
 
-    load_all_inputs(args.find_output, countgraph, variants, args.max_fpr,
-                    args.logfile)
+    load_all_inputs(args.find_output, countgraph, variants, args.minabund,
+                    args.max_fpr, args.logfile)
     assemble_contigs(countgraph, variants, args.ignore, args.collapse,
                      args.debug, args.logfile)
     variants.write(outstream=args.out)
