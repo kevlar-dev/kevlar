@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import glob
 import pytest
 import sys
 try:
@@ -69,3 +70,19 @@ def test_load_all_inputs_alpha():
              'GGGGCGTGACTTAATAAGG', 'GGGCGTGACTTAATAAGGT']
     for kmer in kmers:
         assert kmer in vs.kmers or kevlar.revcom(kmer) in vs.kmers
+
+
+def test_load_all_inputs_beta():
+    cg = khmer.Countgraph(19, 4e4 / 4, 4)
+    vs = kevlar.VariantSet()
+    minabund = 8
+    maxfpr = 0.2
+    log = StringIO()
+    infilenames = glob.glob('tests/data/collect.beta.?.txt')
+
+    kevlar.collect.load_all_inputs(infilenames, cg, vs, minabund, maxfpr, log)
+    assert vs.nreads == 8
+
+    readseq = 'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
+    for kmer in cg.get_kmers(readseq):
+        assert cg.get(kmer) == 8
