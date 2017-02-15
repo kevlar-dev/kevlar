@@ -37,7 +37,7 @@ import kevlar
 
 
 def test_load_all_inputs():
-    cg = khmer.Countgraph(13, 24e5 / 4, 4)
+    cg = khmer.Countgraph(13, 2e6 / 4, 4)
     vs = kevlar.VariantSet()
     minabund = 8
     maxfpr = 0.2
@@ -51,3 +51,21 @@ def test_load_all_inputs():
     assert vs.nkmers == 6
     assert vs.nkmerinst == 49
     assert vs.nreads == 10
+
+
+def test_load_all_inputs_alpha():
+    cg = khmer.Countgraph(19, 4e4 / 4, 4)
+    vs = kevlar.VariantSet()
+    minabund = 8
+    maxfpr = 0.2
+    log = StringIO()
+    infilenames = ['tests/data/collect.alpha.txt']
+
+    kevlar.collect.load_all_inputs(infilenames, cg, vs, minabund, maxfpr, log)
+    assert 'CAGGCCAGGGATCGCCGTG' not in vs.kmers and \
+           kevlar.revcom('CAGGCCAGGGATCGCCGTG') not in vs.kmers
+
+    kmers = ['TAGGGGCGTGACTTAATAA', 'AGGGGCGTGACTTAATAAG',
+             'GGGGCGTGACTTAATAAGG', 'GGGCGTGACTTAATAAGGT']
+    for kmer in kmers:
+        assert kmer in vs.kmers or kevlar.revcom(kmer) in vs.kmers
