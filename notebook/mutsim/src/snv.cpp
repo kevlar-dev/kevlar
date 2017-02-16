@@ -84,3 +84,8 @@ void MutatorSNV::SingleNucleotideVariant::print(std::ostream& stream)
         }
     }
 }
+
+ulong MutatorSNV::get_mut_count()
+{
+    return nuclcount * 3;
+}

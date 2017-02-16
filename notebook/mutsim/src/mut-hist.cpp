@@ -123,7 +123,7 @@ int main(int argc, const char **argv)
     std::cerr << "consumed " << seqs_consumed << " sequence(s) and "
               << kmers_consumed << " " << args.ksize << "-mers (in " << elapsed.count() << " seconds)\n";
 
-    std::cerr << "# querying k-mer abundance...\n\n";
+    std::cerr << "# querying k-mer abundance...\n";
     Logger logger(args.interval, std::cerr);
     std::unique_ptr<Mutator> mut = NULL;
     if(args.muttype == "snv") {
@@ -148,7 +148,8 @@ int main(int argc, const char **argv)
         }
         mut->process(seq.sequence, countgraph);
     }
-    std::cout << *mut;
+    std::cerr << "# Processed " << mut->get_mut_count() << " mutations\n";
+    std::cout << '\n' << *mut;
 
     return 0;
 }

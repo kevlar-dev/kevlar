@@ -31,6 +31,7 @@ class Mutator
         std::ostream& print(std::ostream& stream) const;
         bool skip_nucl();
         void set_sampling_rate(double rate, int seed);
+        virtual ulong get_mut_count();
 };
 
 std::ostream& operator<<(std::ostream& stream, const Mutator& m);

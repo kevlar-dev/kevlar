@@ -33,6 +33,11 @@ void Mutator::set_sampling_rate(double rate, int seed)
     sampling_rate = rate;
 }
 
+ulong Mutator::get_mut_count()
+{
+    return nuclcount;
+}
+
 std::ostream& operator<<(std::ostream& stream, const Mutator& m)
 {
     return m.print(stream);

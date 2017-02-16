@@ -23,6 +23,7 @@ class MutatorSNV : public Mutator
     public:
         MutatorSNV(uint ksize, Logger& l, uint maxabund = 16, ulong lim = 0);
         ulong process(std::string& sequence, Countgraph& countgraph);
+        ulong get_mut_count();
 };
 
 #endif // KEVLAR_CPP_SNV
