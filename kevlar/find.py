@@ -64,11 +64,11 @@ def load_samples(samples, ksize, memory, max_fpr=0.2, batch=None,
         if batch:
             num_batches = batch[0]
             which = batch[1]
-            nr, nk = ct.consume_fasta_banding(sample, num_batches, which - 1)
+            nr, nk = ct.consume_seqfile_banding(sample, num_batches, which - 1)
             message = 'batch {:d}/{:d} done'.format(which, num_batches)
         else:
             message = 'done'
-            nr, nk = ct.consume_fasta(sample)
+            nr, nk = ct.consume_seqfile(sample)
         fpr = kevlar.calc_fpr(ct)
         message += ', k={:d}'.format(ct.ksize())
         message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
