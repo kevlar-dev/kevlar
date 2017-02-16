@@ -18,11 +18,10 @@ typedef struct
     uint ksize;
     ulong limit;
     uint histmax;
-    uint numtables;
     double sampling_rate;
     int seed;
     std::string muttype;
-    ulong targetsize;
+    ulong memory;
     std::string infile;
     std::string refrfile;
 } ProgramArgs;
@@ -36,18 +35,17 @@ void print_usage(std::ostream& stream = std::cerr)
     stream << "    -k    k-mer length (default: 31)\n";
     stream << "    -l    limit number of positions to process\n";
     stream << "    -m    max histogram value (default: 16)\n";
-    stream << "    -n    num tables (default: 4)\n";
     stream << "    -r    sampling rate (default: 1.0)\n";
     stream << "    -s    seed for random number generator (default: 42)\n";
     stream << "    -t    mutation type: snv (default), del\n";
-    stream << "    -x    approx table size (default: 5e8)\n";
+    stream << "    -y    memory consumption (in bytes; default: 2000000000)\n";
     stream << "    -z    deletion size (default: 5)\n";
 }
 
 void parse_args(int argc, const char **argv, ProgramArgs *args)
 {
     char c;
-    while ((c = getopt (argc, (char *const *)argv, "d:hi:k:l:m:n:r:s:t:x:z:")) != -1) {
+    while ((c = getopt (argc, (char *const *)argv, "d:hi:k:l:m:r:s:t:y:z:")) != -1) {
         if (c == 'd') {
             args->delsize = atoi(optarg);
         }
@@ -67,9 +65,6 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
         else if (c == 'm') {
             args->histmax = atoi(optarg);
         }
-        else if (c == 'n') {
-            args->numtables = atoi(optarg);
-        }
         else if (c == 'r') {
             args->sampling_rate = atof(optarg);
         }
@@ -79,8 +74,8 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
         else if (c == 't') {
             args->muttype = optarg;
         }
-        else if (c == 'x') {
-            args->targetsize = atoi(optarg);
+        else if (c == 'y') {
+            args->memory = atoi(optarg);
         }
         else if (c == 'z') {
             args->delsize = atoi(optarg);
@@ -106,12 +101,12 @@ int main(int argc, const char **argv)
         return 0;
     }
 
-    ProgramArgs args = {5, 1000000, 31, 0, 16, 4, 1.0, 42, "snv", 500000000, "", ""};
+    ProgramArgs args = {5, 1000000, 31, 0, 16, 1.0, 42, "snv", 2000000000, "", ""};
     parse_args(argc, argv, &args);
 
     timepoint alloc_start = std::chrono::system_clock::now();
     std::cerr << "# allocating countgraph...";
-    std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.targetsize, args.numtables);
+    std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.memory / 4, 4);
     Countgraph countgraph(args.ksize, tablesizes);
     timepoint alloc_end = std::chrono::system_clock::now();
     std::chrono::duration<double> alloc_elapsed = alloc_end - alloc_start;
