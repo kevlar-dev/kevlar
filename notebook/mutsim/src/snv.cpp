@@ -3,7 +3,7 @@
 #include "snv.hpp"
 
 MutatorSNV::MutatorSNV(uint ksize, Logger& l, uint maxabund, ulong lim)
-    : Mutator(ksize, l, maxabund, lim), nucl("ACGT")
+    : Mutator(ksize, l, maxabund, lim), nuclcount(0), nucl("ACGT")
 {
 
 }

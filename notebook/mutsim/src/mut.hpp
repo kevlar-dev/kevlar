@@ -15,7 +15,6 @@ class Mutator
     protected:
         uint k;
         ulong limit;
-        ulong nuclcount;
         Histogram abund_hist;
         Histogram unique_hist;
         Logger& logger;
@@ -31,7 +30,7 @@ class Mutator
         std::ostream& print(std::ostream& stream) const;
         bool skip_nucl();
         void set_sampling_rate(double rate, int seed);
-        virtual ulong get_mut_count();
+        virtual ulong get_mut_count() = 0;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Mutator& m);

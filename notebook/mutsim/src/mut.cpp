@@ -1,8 +1,8 @@
 #include "mut.hpp"
 
 Mutator::Mutator(uint ksize, Logger& l, uint maxabund, ulong lim)
-    : k(ksize), limit(lim), nuclcount(0), abund_hist(maxabund),
-      unique_hist(ksize), logger(l), sampling_rate(1.0), dist(0.0, 1.0), prng(0)
+    : k(ksize), limit(lim), abund_hist(maxabund), unique_hist(ksize), logger(l),
+      sampling_rate(1.0), dist(0.0, 1.0), prng(0)
 {
 
 }
@@ -31,11 +31,6 @@ void Mutator::set_sampling_rate(double rate, int seed)
     prng.seed(seed);
     dist.reset();
     sampling_rate = rate;
-}
-
-ulong Mutator::get_mut_count()
-{
-    return nuclcount;
 }
 
 std::ostream& operator<<(std::ostream& stream, const Mutator& m)

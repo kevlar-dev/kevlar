@@ -3,7 +3,7 @@
 #include "del.hpp"
 
 MutatorDel::MutatorDel(uint ksize, uint delsize, Logger& l, uint maxabund, ulong lim)
-    : Mutator(ksize, l, maxabund, lim), delsize(delsize)
+    : Mutator(ksize, l, maxabund, lim), delcount(0), delsize(delsize)
 {
 
 }
@@ -12,13 +12,13 @@ ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
 {
     ulong kmercount = 0;
     for (ulong i = k - 1; i + k + delsize <= sequence.length(); i++) {
-        if (limit > 0 && nuclcount > limit) {
+        if (limit > 0 && delcount > limit) {
             break;
         }
         if (skip_nucl()) {
             continue;
         }
-        nuclcount++;
+        delcount++;
 
         ulong min1 = i - k + 1;
         ulong length1 = k - 1;
@@ -76,4 +76,9 @@ void MutatorDel::Deletion::print(std::ostream& stream)
         stream << abund;
     }
     stream << '\n';
+}
+
+ulong MutatorDel::get_mut_count()
+{
+    return delcount;
 }

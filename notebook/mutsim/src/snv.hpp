@@ -9,6 +9,7 @@ using namespace khmer;
 class MutatorSNV : public Mutator
 {
     private:
+        ulong nuclcount;
         std::string nucl;
         class SingleNucleotideVariant
         {
