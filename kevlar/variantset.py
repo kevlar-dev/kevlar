@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 from collections import defaultdict
+from Bio.trie import trie
 from sys import stdout
 import kevlar
 
@@ -31,21 +32,23 @@ class VariantSet(object):
         self.contigs[min_contig].add(min_kmer)
 
     def collapse(self):
-        unique_contigs = set()
+        unique_contigs = list()
+        suffix_tree = trie()
         for contig in sorted(self.contigs, key=len, reverse=True):
             contigrc = kevlar.revcom(contig)
-            merge = False
-            for ucontig in unique_contigs:
-                if contig in ucontig or contigrc in ucontig:
-                    mergedkmers = self.contigs[ucontig].union(
-                        self.contigs[contig]
-                    )
-                    self.contigs[ucontig] = mergedkmers
-                    del self.contigs[contig]
-                    merge = True
-                    break
-            if merge is False:
-                unique_contigs.add(contig)
+            query = suffix_tree.with_prefix(contig) + \
+                suffix_tree.with_prefix(contigrc)
+            if query == []:
+                unique_contigs.append(contig)
+                for i in range(len(contig)):
+                    suffix_tree[contig[i:]] = 1
+            else:
+                longest = sorted(query, key=len, reverse=True)[0]
+                mergedkmers = self.contigs[longest].union(
+                    self.contigs[contig]
+                )
+                self.contigs[longest] = mergedkmers
+                del self.contigs[contig]
 
     @property
     def ncontigs(self):
