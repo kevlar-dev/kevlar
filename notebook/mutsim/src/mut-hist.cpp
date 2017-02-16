@@ -117,7 +117,7 @@ int main(int argc, const char **argv)
     timepoint start = std::chrono::system_clock::now();
     unsigned int seqs_consumed = 0;
     unsigned long long kmers_consumed = 0;
-    countgraph.consume_fasta(args.refrfile, seqs_consumed, kmers_consumed);
+    countgraph.consume_seqfile<FastxReader>(args.refrfile, seqs_consumed, kmers_consumed);
     timepoint end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cerr << "consumed " << seqs_consumed << " sequence(s) and "
@@ -138,7 +138,7 @@ int main(int argc, const char **argv)
     }
     mut->set_sampling_rate(args.sampling_rate, args.seed);
 
-    IParser *parser = IParser::get_parser(args.infile);
+    FastxParserPtr parser = get_parser<FastxReader>(args.infile);
     Sequence seq;
     while (!parser->is_complete()) {
         try {
@@ -149,7 +149,6 @@ int main(int argc, const char **argv)
         mut->process(seq.sequence, countgraph);
     }
     std::cout << *mut;
-    delete parser;
 
     return 0;
 }
