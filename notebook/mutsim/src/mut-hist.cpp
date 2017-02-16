@@ -109,21 +109,28 @@ int main(int argc, const char **argv)
     ProgramArgs args = {5, 1000000, 31, 0, 16, 4, 1.0, 42, "snv", 500000000, "", ""};
     parse_args(argc, argv, &args);
 
-    std::cerr << "# allocating countgraph\n";
+    timepoint alloc_start = std::chrono::system_clock::now();
+    std::cerr << "# allocating countgraph...";
     std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.targetsize, args.numtables);
     Countgraph countgraph(args.ksize, tablesizes);
+    timepoint alloc_end = std::chrono::system_clock::now();
+    std::chrono::duration<double> alloc_elapsed = alloc_end - alloc_start;
+    std::cerr << "done! (in " << alloc_elapsed.count() << " seconds)\n";
+
 
     std::cerr << "# consuming reference...";
-    timepoint start = std::chrono::system_clock::now();
+    timepoint consume_start = std::chrono::system_clock::now();
     unsigned int seqs_consumed = 0;
     unsigned long long kmers_consumed = 0;
     countgraph.consume_seqfile<FastxReader>(args.refrfile, seqs_consumed, kmers_consumed);
-    timepoint end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cerr << "consumed " << seqs_consumed << " sequence(s) and "
-              << kmers_consumed << " " << args.ksize << "-mers (in " << elapsed.count() << " seconds)\n";
+    timepoint consume_end = std::chrono::system_clock::now();
+    std::chrono::duration<double> consume_elapsed = consume_end - consume_start;
+    std::cerr << "done! consumed " << seqs_consumed << " sequence(s) and "
+              << kmers_consumed << " " << args.ksize << "-mers (in "
+              << consume_elapsed.count() << " seconds)\n";
 
-    std::cerr << "# querying k-mer abundance...\n";
+    timepoint query_start = std::chrono::system_clock::now();
+    std::cerr << "# querying k-mer abundance...";
     Logger logger(args.interval, std::cerr);
     std::unique_ptr<Mutator> mut = NULL;
     if(args.muttype == "snv") {
@@ -148,7 +155,11 @@ int main(int argc, const char **argv)
         }
         mut->process(seq.sequence, countgraph);
     }
-    std::cerr << "# Processed " << mut->get_mut_count() << " mutations\n";
+    timepoint query_end = std::chrono::system_clock::now();
+    std::chrono::duration<double> query_elapsed = query_end - query_start;
+
+    std::cerr << "done! processed " << mut->get_mut_count()
+              << " mutations (in " << query_elapsed.count() << " seconds)\n";
     std::cout << '\n' << *mut;
 
     return 0;
