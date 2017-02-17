@@ -17,13 +17,13 @@ class MutatorSNV : public Mutator
                 std::string& sequence;
                 MutatorSNV& mut;
                 std::vector<uint> abunds;
-                SingleNucleotideVariant(std::string& seq, MutatorSNV& m, Countgraph& countgraph);
+                SingleNucleotideVariant(std::string& seq, MutatorSNV& m, Counttable& counttable);
                 void print(std::ostream& stream);
         };
 
     public:
         MutatorSNV(uint ksize, Logger& l, uint maxabund = 16, ulong lim = 0);
-        ulong process(std::string& sequence, Countgraph& countgraph);
+        ulong process(std::string& sequence, Counttable& counttable);
         ulong get_mut_count();
 };
 

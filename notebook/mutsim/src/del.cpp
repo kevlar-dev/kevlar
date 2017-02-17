@@ -8,7 +8,7 @@ MutatorDel::MutatorDel(uint ksize, uint delsize, Logger& l, uint maxabund, ulong
 
 }
 
-ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
+ulong MutatorDel::process(std::string& sequence, Counttable& counttable)
 {
     ulong kmercount = 0;
     for (ulong i = k - 1; i + k + delsize <= sequence.length(); i++) {
@@ -28,7 +28,7 @@ ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
                              sequence.substr(min2, length2);
         assert(delseq.size() == (2*k) - 1);
 
-        Deletion del(delseq, *this, countgraph);
+        Deletion del(delseq, *this, counttable);
         bool doprint = logger.increment();
         if (doprint) {
             float mb = (float)logger.counter / (float)1000000.0;
@@ -43,15 +43,15 @@ ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
     return kmercount;
 }
 
-MutatorDel::Deletion::Deletion(std::string& seq, MutatorDel& m, Countgraph& countgraph)
+MutatorDel::Deletion::Deletion(std::string& seq, MutatorDel& m, Counttable& counttable)
     : sequence(seq), mut(m)
 {
     int unique_count = 0;
     std::vector<std::string> kmers;
-    countgraph.get_kmers(sequence, kmers);
+    counttable.get_kmers(sequence, kmers);
     assert(kmers.size() == mut.k);
     for (auto& kmer : kmers) {
-        uint kmer_freq = countgraph.get_count(kmer.c_str());
+        uint kmer_freq = counttable.get_count(kmer.c_str());
         mut.abund_hist.increment(kmer_freq);
         abunds.push_back(kmer_freq);
         if (kmer_freq == 0) {

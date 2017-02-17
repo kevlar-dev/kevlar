@@ -105,9 +105,9 @@ int main(int argc, const char **argv)
     parse_args(argc, argv, &args);
 
     timepoint alloc_start = std::chrono::system_clock::now();
-    std::cerr << "# allocating countgraph...";
+    std::cerr << "# allocating counttable...";
     std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.memory / 4, 4);
-    Countgraph countgraph(args.ksize, tablesizes);
+    Counttable counttable(args.ksize, tablesizes);
     timepoint alloc_end = std::chrono::system_clock::now();
     std::chrono::duration<double> alloc_elapsed = alloc_end - alloc_start;
     std::cerr << "done! (in " << alloc_elapsed.count() << " seconds)\n";
@@ -117,7 +117,7 @@ int main(int argc, const char **argv)
     timepoint consume_start = std::chrono::system_clock::now();
     unsigned int seqs_consumed = 0;
     unsigned long long kmers_consumed = 0;
-    countgraph.consume_seqfile<FastxReader>(args.refrfile, seqs_consumed, kmers_consumed);
+    counttable.consume_seqfile<FastxReader>(args.refrfile, seqs_consumed, kmers_consumed);
     timepoint consume_end = std::chrono::system_clock::now();
     std::chrono::duration<double> consume_elapsed = consume_end - consume_start;
     std::cerr << "done! consumed " << seqs_consumed << " sequence(s) and "
@@ -148,7 +148,7 @@ int main(int argc, const char **argv)
         } catch (NoMoreReadsAvailable &e) {
             break;
         }
-        mut->process(seq.sequence, countgraph);
+        mut->process(seq.sequence, counttable);
     }
     timepoint query_end = std::chrono::system_clock::now();
     std::chrono::duration<double> query_elapsed = query_end - query_start;

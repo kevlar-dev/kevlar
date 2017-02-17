@@ -5,7 +5,7 @@
 #include <string>
 #include "hist.hpp"
 #include "log.hpp"
-#include "hashgraph.hh"
+#include "hashtable.hh"
 #include "khmer.hh"
 
 using namespace khmer;
@@ -26,7 +26,7 @@ class Mutator
 
     public:
         Mutator(uint ksize, Logger& l, uint maxabund = 16, ulong lim = 0);
-        virtual unsigned long process(std::string& sequence, Countgraph& countgraph) = 0;
+        virtual unsigned long process(std::string& sequence, Counttable& counttable) = 0;
         std::ostream& print(std::ostream& stream) const;
         bool skip_nucl();
         void set_sampling_rate(double rate, int seed);
