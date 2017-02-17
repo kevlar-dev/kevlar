@@ -154,8 +154,8 @@ int main(int argc, const char **argv)
     std::chrono::duration<double> query_elapsed = query_end - query_start;
 
     std::cerr << "done! processed " << mut->get_mut_count()
-              << " mutations (in " << query_elapsed.count() << " seconds)\n";
-    std::cout << '\n' << *mut;
+              << " mutations (in " << query_elapsed.count() << " seconds)\n\n";
+    std::cout << *mut;
 
     return 0;
 }
