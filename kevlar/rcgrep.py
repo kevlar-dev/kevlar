@@ -39,8 +39,10 @@ def positive_int(value):
 
 def subparser(subparsers):
     subparser = subparsers.add_parser('rcgrep')
-    subparser.add_argument('-A', '--after', type=positive_int, default=0)
-    subparser.add_argument('-B', '--before', type=positive_int, default=0)
+    subparser.add_argument('-A', '--after', metavar='N', type=positive_int,
+                           default=0)
+    subparser.add_argument('-B', '--before', metavar='N', type=positive_int,
+                           default=0)
     subparser.add_argument('-q', '--query', action='append', metavar='SEQ',
                            required=True)
     subparser.add_argument('file', nargs='+')
