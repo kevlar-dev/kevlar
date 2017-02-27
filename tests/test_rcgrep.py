@@ -75,3 +75,19 @@ def test_before_and_after(capsys):
         assert 'chr1' in l1
         assert args.query[0] in l2 or kevlar.revcom(args.query[0]) in l2
         assert '+' == l3
+
+
+def test_compressed(capsys):
+    args = type('', (), {})()
+
+    args.before = 1
+    args.after = 0
+    args.query = ['CATTACACTGCAGTTAAAACAAATTCTGTGCTTTTCACGGGAGCAGCCCAAA']
+    args.file = ['tests/data/trio2/case1.fq.gz']
+    kevlar.rcgrep.main(args)
+
+    out, err = capsys.readouterr()
+    outlines = out.split('\t')
+    for line1, line2 in zip(outlines[::2], outlines[1::2]):
+        assert line1.startswith('@') and 'seq0' in line1
+        assert args.query[0] in line2 or kevlar.revcom(args.query[0]) in line2
