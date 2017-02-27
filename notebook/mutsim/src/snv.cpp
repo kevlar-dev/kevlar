@@ -3,17 +3,20 @@
 #include "snv.hpp"
 
 MutatorSNV::MutatorSNV(uint ksize, Logger& l, uint maxabund, ulong lim)
-    : Mutator(ksize, l, maxabund, lim), nucl("ACGT")
+    : Mutator(ksize, l, maxabund, lim), nuclcount(0), nucl("ACGT")
 {
 
 }
 
-ulong MutatorSNV::process(std::string& sequence, Countgraph& countgraph)
+ulong MutatorSNV::process(std::string& sequence, Counttable& counttable)
 {
     ulong kmercount = 0;
     for (ulong i = k - 1; i + k <= sequence.length(); i++) {
         if (limit > 0 && nuclcount > limit) {
             break;
+        }
+        if (skip_nucl()) {
+            continue;
         }
         nuclcount++;
 
@@ -21,7 +24,7 @@ ulong MutatorSNV::process(std::string& sequence, Countgraph& countgraph)
         uint subseqlength = (2*k) - 1;
         std::string snv_interval = sequence.substr(minindex, subseqlength);
 
-        SingleNucleotideVariant snv(snv_interval, *this, countgraph);
+        SingleNucleotideVariant snv(snv_interval, *this, counttable);
         bool doprint = logger.increment();
         if (doprint) {
             float mb = (float)logger.counter / (float)1000000.0;
@@ -36,7 +39,7 @@ ulong MutatorSNV::process(std::string& sequence, Countgraph& countgraph)
     return kmercount;
 }
 
-MutatorSNV::SingleNucleotideVariant::SingleNucleotideVariant(std::string& seq, MutatorSNV& m, Countgraph& countgraph)
+MutatorSNV::SingleNucleotideVariant::SingleNucleotideVariant(std::string& seq, MutatorSNV& m, Counttable& counttable)
     : sequence(seq), mut(m)
 {
     for (auto bp : mut.nucl) {
@@ -49,10 +52,10 @@ MutatorSNV::SingleNucleotideVariant::SingleNucleotideVariant(std::string& seq, M
 
         int unique_count = 0;
         std::vector<std::string> kmers;
-        countgraph.get_kmers(mutseq, kmers);
+        counttable.get_kmers(mutseq, kmers);
         assert(kmers.size() == mut.k);
         for (auto& kmer : kmers) {
-            uint kmer_freq = countgraph.get_count(kmer.c_str());
+            uint kmer_freq = counttable.get_count(kmer.c_str());
             mut.abund_hist.increment(kmer_freq);
             abunds.push_back(kmer_freq);
             if (kmer_freq == 0) {
@@ -80,4 +83,9 @@ void MutatorSNV::SingleNucleotideVariant::print(std::ostream& stream)
             stream << '\n';
         }
     }
+}
+
+ulong MutatorSNV::get_mut_count()
+{
+    return nuclcount * 3;
 }

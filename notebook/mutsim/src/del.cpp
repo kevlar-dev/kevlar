@@ -3,30 +3,32 @@
 #include "del.hpp"
 
 MutatorDel::MutatorDel(uint ksize, uint delsize, Logger& l, uint maxabund, ulong lim)
-    : Mutator(ksize, l, maxabund, lim), delsize(delsize)
+    : Mutator(ksize, l, maxabund, lim), delcount(0), delsize(delsize)
 {
 
 }
 
-ulong MutatorDel::process(std::string& sequence, Countgraph& countgraph)
+ulong MutatorDel::process(std::string& sequence, Counttable& counttable)
 {
     ulong kmercount = 0;
     for (ulong i = k - 1; i + k + delsize <= sequence.length(); i++) {
-        if (limit > 0 && nuclcount > limit) {
+        if (limit > 0 && delcount > limit) {
             break;
         }
-        nuclcount++;
+        if (skip_nucl()) {
+            continue;
+        }
+        delcount++;
 
         ulong min1 = i - k + 1;
         ulong length1 = k - 1;
         ulong min2 = i + delsize;
         ulong length2 = k;
-std::cerr << "DEBUG " << min1 << ' ' << length1 << ' ' << min2 << ' ' << length2 << '\n';
         std::string delseq = sequence.substr(min1, length1) +
                              sequence.substr(min2, length2);
         assert(delseq.size() == (2*k) - 1);
 
-        Deletion del(delseq, *this, countgraph);
+        Deletion del(delseq, *this, counttable);
         bool doprint = logger.increment();
         if (doprint) {
             float mb = (float)logger.counter / (float)1000000.0;
@@ -41,15 +43,15 @@ std::cerr << "DEBUG " << min1 << ' ' << length1 << ' ' << min2 << ' ' << length2
     return kmercount;
 }
 
-MutatorDel::Deletion::Deletion(std::string& seq, MutatorDel& m, Countgraph& countgraph)
+MutatorDel::Deletion::Deletion(std::string& seq, MutatorDel& m, Counttable& counttable)
     : sequence(seq), mut(m)
 {
     int unique_count = 0;
     std::vector<std::string> kmers;
-    countgraph.get_kmers(sequence, kmers);
+    counttable.get_kmers(sequence, kmers);
     assert(kmers.size() == mut.k);
     for (auto& kmer : kmers) {
-        uint kmer_freq = countgraph.get_count(kmer.c_str());
+        uint kmer_freq = counttable.get_count(kmer.c_str());
         mut.abund_hist.increment(kmer_freq);
         abunds.push_back(kmer_freq);
         if (kmer_freq == 0) {
@@ -74,4 +76,9 @@ void MutatorDel::Deletion::print(std::ostream& stream)
         stream << abund;
     }
     stream << '\n';
+}
+
+ulong MutatorDel::get_mut_count()
+{
+    return delcount;
 }
