@@ -17,6 +17,9 @@ import kevlar
 
 
 def linesets(instream, before=0, after=0):
+    """
+    Yield a line along with its before-and-after context.
+    """
     if before + after == 0:
         for line in instream:
             yield deque([line])
