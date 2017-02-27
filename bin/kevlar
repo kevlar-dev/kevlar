@@ -22,13 +22,15 @@ mains = {
 
 
 def parser():
+    subcommandstr = '", "'.join(sorted(list(mains.keys())))
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='version',
                         version='kevlar v{}'.format(kevlar.__version__))
     parser.add_argument('-l', '--logfile', metavar='FILE', default=sys.stderr,
                         type=argparse.FileType('w'))
     subparsers = parser.add_subparsers(dest='cmd', metavar='cmd',
-                                       help='dump | find | collect')
+                                       help='kevlar subcommand; choices '
+                                       'include "' + subcommandstr + '"')
     kevlar.dump.subparser(subparsers)
     kevlar.find.subparser(subparsers)
     kevlar.collect.subparser(subparsers)
