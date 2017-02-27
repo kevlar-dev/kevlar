@@ -1,0 +1,173 @@
+@bogus-genome-chr1_10993_11306_0:0:0_1:0:0_7b3/1
+TTTTGTGCGTGGTAAAGAGGTCAATAGGGACCCCGAGCCCAACCCCTTTG
++
+55555555555555555555555555555555555555555555555555
+           GTAAAGAGGTCAA          11 0 0#
+             AAAGAGGTCAATA          11 0 0#
+              AAGAGGTCAATAG          11 0 0#
+               AGAGGTCAATAGG          13 0 0#
+                GAGGTCAATAGGG          12 0 0#
+                 AGGTCAATAGGGA          13 0 0#
+                  GGTCAATAGGGAC          13 0 0#
+                   GTCAATAGGGACC          13 0 0#
+                    TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10994_11273_0:0:0_0:0:0_7ca/2
+TTTGTGCGTGGTAAAGAGGTCAATAGGGACCCCGAGCCCAACCCCTTTGA
++
+55555555555555555555555555555555555555555555555555
+          GTAAAGAGGTCAA          11 0 0#
+            AAAGAGGTCAATA          11 0 0#
+             AAGAGGTCAATAG          11 0 0#
+              AGAGGTCAATAGG          13 0 0#
+               GAGGTCAATAGGG          12 0 0#
+                AGGTCAATAGGGA          13 0 0#
+                 GGTCAATAGGGAC          13 0 0#
+                  GTCAATAGGGACC          13 0 0#
+                   TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10985_11292_1:0:0_0:0:0_824/2
+GTTCTTAGTTTTGTGCGTGGTAAAGAGGTCAATAGGGACC
++
+5555555555555555555555555555555555555555
+                   GTAAAGAGGTCAA          11 0 0#
+                     AAAGAGGTCAATA          11 0 0#
+                      AAGAGGTCAATAG          11 0 0#
+                       AGAGGTCAATAGG          13 0 0#
+                        GAGGTCAATAGGG          12 0 0#
+                         AGGTCAATAGGGA          13 0 0#
+                          GGTCAATAGGGAC          13 0 0#
+                           GTCAATAGGGACC          13 0 0#
+@bogus-genome-chr1_10987_11250_0:0:0_1:0:0_d1/2
+TCTTAGTTTTGTGCGTGGTAAAGAGGTCAATAGGGACCCCGAGCCCAACC
++
+55555555555555555555555555555555555555555555555555
+                 GTAAAGAGGTCAA          11 0 0#
+                   AAAGAGGTCAATA          11 0 0#
+                    AAGAGGTCAATAG          11 0 0#
+                     AGAGGTCAATAGG          13 0 0#
+                      GAGGTCAATAGGG          12 0 0#
+                       AGGTCAATAGGGA          13 0 0#
+                        GGTCAATAGGGAC          13 0 0#
+                         GTCAATAGGGACC          13 0 0#
+                          TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_11006_11306_1:0:0_0:0:0_e4/2
+AAAGAGGTCAATAGGGACCCCGAGCCCAACCC
++
+55555555555555555555555555555555
+AAAGAGGTCAATA          11 0 0#
+ AAGAGGTCAATAG          11 0 0#
+  AGAGGTCAATAGG          13 0 0#
+   GAGGTCAATAGGG          12 0 0#
+    AGGTCAATAGGGA          13 0 0#
+     GGTCAATAGGGAC          13 0 0#
+      GTCAATAGGGACC          13 0 0#
+       TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10999_11275_0:0:0_1:0:0_10c/2
+GCGTGGTAAAGAGGTCAATAGGGACCCCGAGCCCAACCCCTTTGAAATAC
++
+55555555555555555555555555555555555555555555555555
+     GTAAAGAGGTCAA          11 0 0#
+       AAAGAGGTCAATA          11 0 0#
+        AAGAGGTCAATAG          11 0 0#
+         AGAGGTCAATAGG          13 0 0#
+          GAGGTCAATAGGG          12 0 0#
+           AGGTCAATAGGGA          13 0 0#
+            GGTCAATAGGGAC          13 0 0#
+             GTCAATAGGGACC          13 0 0#
+              TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_11011_11340_1:0:0_1:0:0_16a/1
+GGTCAATAGGGACCCCGAGCCCAAC
++
+5555555555555555555555555
+GGTCAATAGGGAC          13 0 0#
+ GTCAATAGGGACC          13 0 0#
+  TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10968_11244_0:0:0_0:0:0_247/1
+TACAGAGGAGGACGTTCGTTCTTAGTTTTGTGCGTGGTAAAGAGGTCAAT
++
+55555555555555555555555555555555555555555555555555
+                                    GTAAAGAGGTCAA          11 0 0#
+@bogus-genome-chr1_10991_11321_0:0:0_0:0:0_33b/1
+AGTTTTGTGCGTGGTAAAGAGGTCAATAGGGACCCCGAGCCCAACCCCTT
++
+55555555555555555555555555555555555555555555555555
+             GTAAAGAGGTCAA          11 0 0#
+               AAAGAGGTCAATA          11 0 0#
+                AAGAGGTCAATAG          11 0 0#
+                 AGAGGTCAATAGG          13 0 0#
+                  GAGGTCAATAGGG          12 0 0#
+                   AGGTCAATAGGGA          13 0 0#
+                    GGTCAATAGGGAC          13 0 0#
+                     GTCAATAGGGACC          13 0 0#
+                      TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10733_11026_1:0:0_0:0:0_552/2
+GGGGTCCCTATTGACCTCTTTACCACGCACAAAACTAAGAACGAACGTCC
++
+55555555555555555555555555555555555555555555555555
+ GGGTCCCTATTGA          13 0 0#
+  GGTCCCTATTGAC          13 0 0#
+   GTCCCTATTGACC          13 0 0#
+    TCCCTATTGACCT          13 0 0#
+     CCCTATTGACCTC          12 0 0#
+      CCTATTGACCTCT          13 0 0#
+       CTATTGACCTCTT          11 0 0#
+        TATTGACCTCTTT          11 0 0#
+          TTGACCTCTTTAC          11 0 0#
+@bogus-genome-chr1_10982_11290_2:0:0_0:0:0_5ac/1
+TTCGTTCTTAGATTTGTGCGTGGTACAGAGGTCAATAGGGACCCCGAGCC
++
+55555555555555555555555555555555555555555555555555
+                          AGAGGTCAATAGG          13 0 0#
+                           GAGGTCAATAGGG          12 0 0#
+                            AGGTCAATAGGGA          13 0 0#
+                             GGTCAATAGGGAC          13 0 0#
+                              GTCAATAGGGACC          13 0 0#
+                               TCAATAGGGACCC          13 0 0#
+@bogus-genome-chr1_10790_11062_1:0:0_0:0:0_627/1
+AACCGTTATCGAGGGTATTTCAAAGGGGTTGGGCTCGGGGTCCCTATTGA
++
+55555555555555555555555555555555555555555555555555
+                                     GGGTCCCTATTGA          13 0 0#
+@bogus-genome-chr1_10731_11038_1:0:0_0:0:0_694/2
+GGGGTTGGGCTCGGGGTCCCTATTGACCTCTTTACCACGCACAAAACTAA
++
+55555555555555555555555555555555555555555555555555
+             GGGTCCCTATTGA          13 0 0#
+              GGTCCCTATTGAC          13 0 0#
+               GTCCCTATTGACC          13 0 0#
+                TCCCTATTGACCT          13 0 0#
+                 CCCTATTGACCTC          12 0 0#
+                  CCTATTGACCTCT          13 0 0#
+                   CTATTGACCTCTT          11 0 0#
+                    TATTGACCTCTTT          11 0 0#
+                      TTGACCTCTTTAC          11 0 0#
+@bogus-genome-chr1_10773_11049_0:0:0_0:0:0_6ad/2
+GGTATTTCAAAGGGGTTGGGCTCGGGGTCCCTATTGACCTCTTTACCACG
++
+55555555555555555555555555555555555555555555555555
+                        GGGTCCCTATTGA          13 0 0#
+                         GGTCCCTATTGAC          13 0 0#
+                          GTCCCTATTGACC          13 0 0#
+                           TCCCTATTGACCT          13 0 0#
+                            CCCTATTGACCTC          12 0 0#
+                             CCTATTGACCTCT          13 0 0#
+                              CTATTGACCTCTT          11 0 0#
+                               TATTGACCTCTTT          11 0 0#
+                                 TTGACCTCTTTAC          11 0 0#
+@bogus-genome-chr1_10739_11057_2:0:0_0:0:0_737/1
+TTATCGAGGGTATTTCAAAGGGGTTGGGCTCGGGGTCCCTATTGACCTCT
++
+55555555555555555555555555555555555555555555555555
+                                GGGTCCCTATTGA          13 0 0#
+                                 GGTCCCTATTGAC          13 0 0#
+                                  GTCCCTATTGACC          13 0 0#
+                                   TCCCTATTGACCT          13 0 0#
+                                    CCCTATTGACCTC          12 0 0#
+                                     CCTATTGACCTCT          13 0 0#
+@bogus-genome-chr1_10747_11020_1:0:0_1:0:0_7c3/2
+CCTATTGACCTCTTTACCACGCACAAAACTAAGAACGAACGTCCTCCT
++
+555555555555555555555555555555555555555555555555
+CCTATTGACCTCT          13 0 0#
+ CTATTGACCTCTT          11 0 0#
+  TATTGACCTCTTT          11 0 0#
+    TTGACCTCTTTAC          11 0 0#

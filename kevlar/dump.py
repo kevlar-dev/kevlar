@@ -50,7 +50,7 @@ def main(args):
     if args.genomemask:
         print('[kevlar::dump] Loading genome mask', file=args.logfile)
         genomemask = khmer.Countgraph(args.mask_k, int(args.maskmemory / 4), 4)
-        genomemask.consume_fasta(args.genomemask)
+        genomemask.consume_seqfile(args.genomemask)
 
     bam = pysam.AlignmentFile(args.reads, 'rb')
     for i, record in enumerate(bam):

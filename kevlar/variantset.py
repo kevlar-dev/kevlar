@@ -13,97 +13,75 @@ from sys import stdout
 import kevlar
 
 
-def setpair():
-    return (set(), set())
-
-
 class VariantSet(object):
     def __init__(self):
-        self.linear_paths = defaultdict(setpair)
-        self.kmers = defaultdict(setpair)
-        self.read_ids = defaultdict(setpair)
+        self.contigs = defaultdict(set)  # contig -> set(kmers)
+        self.kmers = defaultdict(set)  # kmer -> set(read IDs)
+        self._kmer_instances = 0
+        self._reads = 0
 
-    def add_kmer(self, kmer, read_id, linear_path):
-        minkmer = kevlar.revcommin(kmer)
-        minlp = kevlar.revcommin(linear_path)
+    def add_kmer(self, kmer, read_id):
+        min_kmer = kevlar.revcommin(kmer)
+        self.kmers[min_kmer].add(read_id)
+        self._kmer_instances += 1
 
-        self.kmers[minkmer][0].add(minlp)
-        self.kmers[minkmer][1].add(read_id)
-
-        self.read_ids[read_id][0].add(minlp)
-        self.read_ids[read_id][1].add(minkmer)
-
-        self.linear_paths[minlp][0].add(read_id)
-        self.linear_paths[minlp][1].add(minkmer)
+    def add_contig(self, contig, kmer):
+        min_contig = kevlar.revcommin(contig)
+        min_kmer = kevlar.revcommin(kmer)
+        self.contigs[min_contig].add(min_kmer)
 
     def collapse(self):
-        upaths = dict()
-        for path in sorted(self.linear_paths, key=len, reverse=True):
-            pathrc = kevlar.revcom(path)
+        unique_contigs = set()
+        for contig in sorted(self.contigs, key=len, reverse=True):
+            contigrc = kevlar.revcom(contig)
             merge = False
-            for upath in upaths:
-                if path in upath or pathrc in upath:
-                    mergedreads = self.linear_paths[upath][0].union(
-                        self.linear_paths[path][0]
+            for ucontig in unique_contigs:
+                if contig in ucontig or contigrc in ucontig:
+                    mergedkmers = self.contigs[ucontig].union(
+                        self.contigs[contig]
                     )
-                    mergedkmers = self.linear_paths[upath][1].union(
-                        self.linear_paths[path][1]
-                    )
-                    self.linear_paths[upath] = (mergedreads, mergedkmers)
-                    del self.linear_paths[path]
+                    self.contigs[ucontig] = mergedkmers
+                    del self.contigs[contig]
                     merge = True
                     break
             if merge is False:
-                upaths[path] = True
+                unique_contigs.add(contig)
 
     @property
-    def npaths(self):
-        return len(self.linear_paths)
+    def ncontigs(self):
+        return len(self.contigs)
 
     @property
     def nkmers(self):
         return len(self.kmers)
 
     @property
+    def nkmerinst(self):
+        return self._kmer_instances
+
+    @property
     def nreads(self):
-        return len(self.read_ids)
+        reads = set()
+        for kmer in self.kmers:
+            kreads = self.kmers[kmer]
+            reads = reads.union(kreads)
+        return len(reads)
 
-    def iter_kmer(self):
-        for minkmer in sorted(self.kmers):
-            maxkmer = kevlar.revcom(minkmer)
-            pathset = self.kmers[minkmer][0]
-            readset = self.kmers[minkmer][1]
-            yield minkmer, maxkmer, pathset, readset
+    def __iter__(self):
+        for mincontig in sorted(self.contigs):
+            maxcontig = kevlar.revcom(mincontig)
+            kmers = self.contigs[mincontig]
+            reads = set()
+            for kmer in kmers:
+                reads = reads.union(self.kmers[kmer])
+            yield mincontig, maxcontig, kmers, reads
 
-    def iter_path(self):
-        for minpath in sorted(self.linear_paths):
-            maxpath = kevlar.revcom(minpath)
-            readset = self.linear_paths[minpath][0]
-            kmerset = self.linear_paths[minpath][1]
-            yield minpath, maxpath, readset, kmerset
-
-    def iter_read(self):
-        for read_id in sorted(self.read_ids):
-            pathset = self.read_ids[read_id][0]
-            kmerset = self.read_ids[read_id][1]
-            yield read_id, pathset, kmerset
-
-    def kmer_table(self, outstream=stdout):
-        for minkmer, maxkmer, pathset, readset in self.iter_kmer():
-            kmerstr = ','.join((minkmer, maxkmer))
-            pathstr = ','.join(sorted(pathset))
-            readstr = ','.join(sorted(readset))
-            print(kmerstr, pathstr, readstr, sep='\t', file=outstream)
-
-    def path_table(self, outstream=stdout):
-        for minpath, maxpath, readset, kmerset in self.iter_path():
-            pathstr = ','.join((minpath, maxpath))
+    def write(self, outstream=stdout):
+        print('Contig,ContigRevCom\tNumReads\tNumKmers\tReads\tKmers',
+              file=outstream)
+        for mincontig, maxcontig, kmerset, readset in self:
+            contigstr = ','.join((mincontig, maxcontig))
             readstr = ','.join(sorted(readset))
             kmerstr = ','.join(sorted(kmerset))
-            print(pathstr, readstr, kmerstr, sep='\t', file=outstream)
-
-    def read_table(self, outstream=stdout):
-        for readid, pathset, kmerset in self.iter_read():
-            pathstr = ','.join(sorted(pathset))
-            kmerstr = ','.join(sorted(kmerset))
-            print(readid, pathstr, kmerstr, sep='\t', file=outstream)
+            print(contigstr, len(readset), len(kmerset), readstr, kmerstr,
+                  sep='\t', file=outstream)

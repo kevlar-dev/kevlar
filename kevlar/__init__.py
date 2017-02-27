@@ -10,12 +10,25 @@
 from . import fasta
 from . import dump
 from . import find
+from . import collect
 from .variantset import VariantSet
+from .timer import Timer
 import screed
 
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+def calc_fpr(table):
+    """Stolen shamelessly from khmer/__init__.py"""
+    sizes = table.hashsizes()
+    n_ht = float(len(sizes))
+    occupancy = float(table.n_occupied())
+    min_size = min(sizes)
+    fp_one = occupancy / min_size
+    fp_all = fp_one ** n_ht
+    return fp_all
 
 
 def revcom(seq):

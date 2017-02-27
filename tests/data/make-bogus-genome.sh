@@ -52,5 +52,8 @@ bwa mem -k 13 -a refr.fa reads-indels.fq \
 rm refr.fa.* reads-indels.fq
 cd ../
 
+# Simulate an indel on random seq with same nucl composition as human chr19
+./mutate-indel-chr19.py chr19.order2.rand.100k.fa > chr19.indel.fa
+
 # Cleanup
 rm -f bogus-genome/chr?.fa bogus-genome/contam1.fa bogus-genome/refr-contam.fa
