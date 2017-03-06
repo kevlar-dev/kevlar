@@ -21,9 +21,9 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('collect')
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')
-    subparser.add_argument('-M', '--memory', default='1e6',
-                           type=khmer_args.memory_setting, metavar='MEM',
-                           help='total memory to allocate for the node '
+    subparser.add_argument('-M', '--memory', default='1e6', metavar='MEM',
+                           type=khmer_args.memory_setting,
+                           help='total memory to allocate for the count '
                            'graph; default is 1M')
     subparser.add_argument('--minabund', type=int, default=5, metavar='Y',
                            help='minimum case abundance required to call a '
@@ -33,6 +33,13 @@ def subparser(subparsers):
     subparser.add_argument('--max-fpr', type=float, default=0.1, metavar='FPR',
                            help='terminate if the expected false positive rate'
                            ' is higher than the specified FPR; default is 0.1')
+    subparser.add_argument('--mask', metavar='FILE', type=str, default=None,
+                           help='ignore any k-mers present in the provided '
+                           'sequence file')
+    subparser.add_argument('--mask-memory', metavar='MEM', default='1e6',
+                           type=khmer_args.memory_setting,
+                           help='total memory to allocate for the k-mer mask; '
+                           'default is 1M')
     subparser.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     subparser.add_argument('--ignore', metavar='KMER', nargs='+',
@@ -46,8 +53,19 @@ def subparser(subparsers):
                            'files from the "kevlar find" command')
 
 
-def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
-                    logfile=sys.stderr):
+def load_mask(maskfile, ksize, memory, logfile=sys.stderr):
+    print('[kevlar::collect] Loading k-mer mask from ' + maskfile,
+          file=logfile)
+    buckets = memory * khmer._buckets_per_byte / 4
+    mask = khmer.Nodetable(args.ksize, buckets, 4)
+    nr, nk = mask.consume_seqfile(maskfile)
+    message = '    {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+    print(message, file=logfile)
+    return mask
+
+
+def load_all_inputs(filelist, countgraph, variants, mask, minabund=5,
+                    maxfpr=0.2, logfile=sys.stderr):
     kmers_consumed = 0
     reads_consumed = 0
     readids = set()
@@ -86,6 +104,7 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
     print('[kevlar::collect]',
           'Loading input, pass 2 (store novel k-mers)',
           file=logfile)
+    masked = 0
     discarded = 0
     for filename in filelist:
         print('   ', filename, file=logfile)
@@ -100,13 +119,16 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                 elif line.endswith('#\n'):
                     # Second pass, double check the abundance, and then add
                     novel_kmer = str(re.search('^ *(\S+)', line).group(1))
-                    if countgraph.get(novel_kmer) < minabund:
+                    if mask and mask.get(novel_kmer) > 0:
+                        masked += 1
+                    elif countgraph.get(novel_kmer) < minabund:
                         discarded += 1
                     else:
                         variants.add_kmer(novel_kmer, readid)
 
     message = '    found {:d} instances'.format(variants.nkmerinst)
     message += ' of {:d} unique novel k-mers'.format(variants.nkmers)
+    message += '; {:d} k-mers masked'.format(masked)
     message += '; {:d} k-mers with inflated counts discarded'.format(discarded)
     print(message, file=logfile)
 
@@ -139,9 +161,12 @@ def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
 def main(args):
     countgraph = khmer.Countgraph(args.ksize, args.memory / 4, 4)
     variants = kevlar.VariantSet()
+    mask = None
+    if args.mask:
+        mask = load_mask(args.mask, args.mask_memory, args.ksize)
 
-    load_all_inputs(args.find_output, countgraph, variants, args.minabund,
-                    args.max_fpr, args.logfile)
+    load_all_inputs(args.find_output, countgraph, variants, mask,
+                    args.minabund, args.max_fpr, args.logfile)
     assemble_contigs(countgraph, variants, args.ignore, args.collapse,
                      args.debug, args.logfile)
     variants.write(outstream=args.out)
