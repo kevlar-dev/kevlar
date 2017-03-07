@@ -23,8 +23,8 @@ def subparser(subparsers):
                            help='print debugging output')
     subparser.add_argument('-M', '--memory', default='1e6', metavar='MEM',
                            type=khmer_args.memory_setting,
-                           help='total memory to allocate for the count '
-                           'graph; default is 1M')
+                           help='memory to allocate for recalculating '
+                           'abundances of novel k-mers; default is 1M')
     subparser.add_argument('--minabund', type=int, default=5, metavar='Y',
                            help='minimum case abundance required to call a '
                            'k-mer novel; used to filter out k-mers with '
@@ -64,13 +64,13 @@ def load_mask(maskfile, ksize, memory, logfile=sys.stderr):
     return mask
 
 
-def load_all_inputs(filelist, countgraph, variants, mask, minabund=5,
-                    maxfpr=0.2, logfile=sys.stderr):
+def recalc_abund(filelist, ksize, memory, maxfpr=0.1, logfile=sys.stderr):
+    countgraph = khmer.Countgraph(ksize, memory / 4, 4)
     kmers_consumed = 0
     reads_consumed = 0
     readids = set()
     print('[kevlar::collect]',
-          'Loading input, pass 1 (recalculate k-mer abundance)',
+          'Loading input, pass 1; recalculating k-mer abundances',
           file=logfile)
     for filename in filelist:
         print('   ', filename, file=logfile)
@@ -92,7 +92,6 @@ def load_all_inputs(filelist, countgraph, variants, mask, minabund=5,
                     # Ignore the novel k-mers in the first pass
                     continue
 
-    del readids  # Free the memory!
     fpr = kevlar.calc_fpr(countgraph)
     message = '    {:d} reads'.format(reads_consumed)
     message += ' and {:d} k-mers consumed'.format(kmers_consumed)
@@ -100,9 +99,13 @@ def load_all_inputs(filelist, countgraph, variants, mask, minabund=5,
     print(message, file=logfile)
     if fpr > maxfpr:
         sys.exit(1)
+    return countgraph
 
-    print('[kevlar::collect]',
-          'Loading input, pass 2 (store novel k-mers)',
+
+def load_novel_kmers(filelist, countgraph, mask=None, minabund=5,
+                     logfile=sys.stderr):
+    variants = kevlar.VariantSet()
+    print('[kevlar::collect] Loading input, pass 2; store novel k-mers',
           file=logfile)
     masked = 0
     discarded = 0
@@ -131,6 +134,7 @@ def load_all_inputs(filelist, countgraph, variants, mask, minabund=5,
     message += '; {:d} k-mers masked'.format(masked)
     message += '; {:d} k-mers with inflated counts discarded'.format(discarded)
     print(message, file=logfile)
+    return variants
 
 
 def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
@@ -159,14 +163,13 @@ def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
 
 
 def main(args):
-    countgraph = khmer.Countgraph(args.ksize, args.memory / 4, 4)
-    variants = kevlar.VariantSet()
     mask = None
     if args.mask:
         mask = load_mask(args.mask, args.ksize, args.mask_memory)
-
-    load_all_inputs(args.find_output, countgraph, variants, mask,
-                    args.minabund, args.max_fpr, args.logfile)
+    countgraph = recalc_abund(args.find_output, args.ksize, args.memory,
+                              args.max_fpr, args.logfile)
+    variants = load_novel_kmers(args.find_output, countgraph, mask,
+                                args.minabund, args.logfile)
     assemble_contigs(countgraph, variants, args.ignore, args.collapse,
                      args.debug, args.logfile)
     variants.write(outstream=args.out)
