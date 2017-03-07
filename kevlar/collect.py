@@ -56,8 +56,8 @@ def subparser(subparsers):
 def load_mask(maskfile, ksize, memory, logfile=sys.stderr):
     print('[kevlar::collect] Loading k-mer mask from ' + maskfile,
           file=logfile)
-    buckets = memory * khmer._buckets_per_byte / 4
-    mask = khmer.Nodetable(args.ksize, buckets, 4)
+    buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
+    mask = khmer.Nodetable(ksize, int(buckets), 4)
     nr, nk = mask.consume_seqfile(maskfile)
     message = '    {:d} reads and {:d} k-mers consumed'.format(nr, nk)
     print(message, file=logfile)
@@ -163,7 +163,7 @@ def main(args):
     variants = kevlar.VariantSet()
     mask = None
     if args.mask:
-        mask = load_mask(args.mask, args.mask_memory, args.ksize)
+        mask = load_mask(args.mask, args.ksize, args.mask_memory)
 
     load_all_inputs(args.find_output, countgraph, variants, mask,
                     args.minabund, args.max_fpr, args.logfile)
