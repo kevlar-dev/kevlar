@@ -9,7 +9,7 @@ python:
     - 3.5
 install:
     - pip install --upgrade pip setuptools pytest pep8 cython
-    - pip install git+https://github.com/pysam-developers/pysam.git
+    - pip install pysam
     - pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
     - pip install .
 script:
