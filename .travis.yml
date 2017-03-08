@@ -1,5 +1,9 @@
 dist: trusty
 language: python
+cache:
+    directories:
+        - $HOME/virtualenv/python2.7
+        - $HOME/virtualenv/python3.5
 python:
     - 2.7
     - 3.5
