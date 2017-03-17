@@ -18,3 +18,5 @@ install:
 script:
     - make testall
     - make style
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
