@@ -11,7 +11,7 @@ python:
     - 2.7
     - 3.5
 install:
-    - pip install --upgrade pip setuptools pytest pep8 cython
+    - pip install --upgrade pip setuptools pytest-cov pep8 cython
     - pip install pysam
     - pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
     - pip install .
