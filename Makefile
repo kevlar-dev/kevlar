@@ -8,7 +8,7 @@ style:
 	pep8 kevlar/*.py bin/kevlar tests/*.py tests/data/*.py
 
 test:
-	py.test -v tests/*.py -m 'not long'
+	py.test -v --cov=kevlar tests/*.py -m 'not long'
 
 testall:
-	py.test -v tests/*.py
+	py.test -v --cov=kevlar tests/*.py
