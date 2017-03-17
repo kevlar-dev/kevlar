@@ -30,9 +30,10 @@ def subparser(subparsers):
                            'k-mer novel; used to filter out k-mers with '
                            'inflated abundances; should equal the value of '
                            '--case_min used in "kevlar find"; default is 5')
-    subparser.add_argument('--max-fpr', type=float, default=0.1, metavar='FPR',
-                           help='terminate if the expected false positive rate'
-                           ' is higher than the specified FPR; default is 0.1')
+    subparser.add_argument('--max-fpr', type=float, metavar='FPR',
+                           default=0.001, help='terminate if the expected '
+                           'false positive rate is higher than the specified '
+                           'FPR; default is 0.001')
     subparser.add_argument('--mask', metavar='FILE', type=str, default=None,
                            help='ignore any k-mers present in the provided '
                            'sequence file')
