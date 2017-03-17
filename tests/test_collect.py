@@ -18,11 +18,11 @@ import khmer
 import kevlar
 
 
-def test_load_mask():
-    mask = kevlar.collect.load_mask('tests/data/bogus-genome/refr.fa', 25, 1e7)
-    assert mask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
-    assert mask.get('GCTGGCTAAATTTTCATACTAACTA') > 0
-    assert mask.get('G' * 25) == 0
+def test_load_refr():
+    refr = kevlar.collect.load_refr('tests/data/bogus-genome/refr.fa', 25, 1e7)
+    assert refr.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
+    assert refr.get('GCTGGCTAAATTTTCATACTAACTA') > 0
+    assert refr.get('G' * 25) == 0
 
 
 def test_recalc_abund_beta():
@@ -68,12 +68,12 @@ def test_load_novel_kmers_beta():
     assert vs.nreads == 0
 
 
-def test_load_novel_kmers_withmask():
+def test_load_novel_kmers_withrefr():
     kmer = 'AGGGGCGTGACTTAATAAG'
     filelist = glob.glob('tests/data/collect.beta.?.txt')
     countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
-    mask = khmer.Nodetable(19, 1e3, 2)
-    mask.add(kmer)
-    vs = kevlar.collect.load_novel_kmers(filelist, countgraph, mask)
+    refr = khmer.Nodetable(19, 1e3, 2)
+    refr.add(kmer)
+    vs = kevlar.collect.load_novel_kmers(filelist, countgraph, refr)
     assert vs.nkmers == 3
     assert kmer not in vs.kmers and kevlar.revcom(kmer) not in vs.kmers
