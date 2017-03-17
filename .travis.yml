@@ -1,5 +1,8 @@
 dist: trusty
 language: python
+branches:
+  only:  # don't build "pushes" except on the master branch
+    - master
 cache:
     directories:
         - $HOME/virtualenv/python2.7
