@@ -53,6 +53,8 @@ def test_trio2():
     args.debug = False
     args.minabund = 8
     args.collapse = True
+    args.mask = None
+    args.mask_memory = None
     args.find_output = findoutfiles
     args.logfile = StringIO()
     kevlar.collect.main(args)

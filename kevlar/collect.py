@@ -21,18 +21,28 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('collect')
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')
-    subparser.add_argument('-M', '--memory', default='1e6',
-                           type=khmer_args.memory_setting, metavar='MEM',
-                           help='total memory to allocate for the node '
-                           'graph; default is 1M')
+    subparser.add_argument('-M', '--memory', default='1e6', metavar='MEM',
+                           type=khmer_args.memory_setting,
+                           help='memory to allocate for recalculating '
+                           'abundances of novel k-mers; default is 1M')
     subparser.add_argument('--minabund', type=int, default=5, metavar='Y',
                            help='minimum case abundance required to call a '
                            'k-mer novel; used to filter out k-mers with '
                            'inflated abundances; should equal the value of '
                            '--case_min used in "kevlar find"; default is 5')
-    subparser.add_argument('--max-fpr', type=float, default=0.1, metavar='FPR',
-                           help='terminate if the expected false positive rate'
-                           ' is higher than the specified FPR; default is 0.1')
+    subparser.add_argument('--max-fpr', type=float, metavar='FPR',
+                           default=0.001, help='terminate if the expected '
+                           'false positive rate is higher than the specified '
+                           'FPR; default is 0.001')
+    subparser.add_argument('--refr', metavar='FILE', type=str, default=None,
+                           help='reference genome in Fasta/Fastq format; any '
+                           'k-mers designated as "interesting" by "kevlar '
+                           'find" are ignored if they are present in the '
+                           'reference genome')
+    subparser.add_argument('--refr-memory', metavar='MEM', default='1e6',
+                           type=khmer_args.memory_setting,
+                           help='memory to allocate for storing the reference '
+                           'genome; default is 1M')
     subparser.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     subparser.add_argument('--ignore', metavar='KMER', nargs='+',
@@ -46,13 +56,23 @@ def subparser(subparsers):
                            'files from the "kevlar find" command')
 
 
-def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
-                    logfile=sys.stderr):
+def load_refr(refrfile, ksize, memory, logfile=sys.stderr):
+    print('[kevlar::collect] Loading reference from ' + refrfile, file=logfile)
+    buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
+    refr = khmer.Nodetable(ksize, int(buckets), 4)
+    nr, nk = refr.consume_seqfile(refrfile)
+    message = '    {:d} reads and {:d} k-mers consumed'.format(nr, nk)
+    print(message, file=logfile)
+    return refr
+
+
+def recalc_abund(filelist, ksize, memory, maxfpr=0.1, logfile=sys.stderr):
+    countgraph = khmer.Countgraph(ksize, memory / 4, 4)
     kmers_consumed = 0
     reads_consumed = 0
     readids = set()
     print('[kevlar::collect]',
-          'Loading input, pass 1 (recalculate k-mer abundance)',
+          'Loading input, pass 1; recalculating k-mer abundances',
           file=logfile)
     for filename in filelist:
         print('   ', filename, file=logfile)
@@ -74,7 +94,6 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                     # Ignore the novel k-mers in the first pass
                     continue
 
-    del readids  # Free the memory!
     fpr = kevlar.calc_fpr(countgraph)
     message = '    {:d} reads'.format(reads_consumed)
     message += ' and {:d} k-mers consumed'.format(kmers_consumed)
@@ -82,10 +101,15 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
     print(message, file=logfile)
     if fpr > maxfpr:
         sys.exit(1)
+    return countgraph
 
-    print('[kevlar::collect]',
-          'Loading input, pass 2 (store novel k-mers)',
+
+def load_novel_kmers(filelist, countgraph, refr=None, minabund=5,
+                     logfile=sys.stderr):
+    variants = kevlar.VariantSet()
+    print('[kevlar::collect] Loading input, pass 2; store novel k-mers',
           file=logfile)
+    masked = 0
     discarded = 0
     for filename in filelist:
         print('   ', filename, file=logfile)
@@ -100,15 +124,19 @@ def load_all_inputs(filelist, countgraph, variants, minabund=5, maxfpr=0.2,
                 elif line.endswith('#\n'):
                     # Second pass, double check the abundance, and then add
                     novel_kmer = str(re.search('^ *(\S+)', line).group(1))
-                    if countgraph.get(novel_kmer) < minabund:
+                    if refr and refr.get(novel_kmer) > 0:
+                        masked += 1
+                    elif countgraph.get(novel_kmer) < minabund:
                         discarded += 1
                     else:
                         variants.add_kmer(novel_kmer, readid)
 
     message = '    found {:d} instances'.format(variants.nkmerinst)
     message += ' of {:d} unique novel k-mers'.format(variants.nkmers)
+    message += '; {:d} k-mers masked by the reference genome'.format(masked)
     message += '; {:d} k-mers with inflated counts discarded'.format(discarded)
     print(message, file=logfile)
+    return variants
 
 
 def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
@@ -137,11 +165,13 @@ def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
 
 
 def main(args):
-    countgraph = khmer.Countgraph(args.ksize, args.memory / 4, 4)
-    variants = kevlar.VariantSet()
-
-    load_all_inputs(args.find_output, countgraph, variants, args.minabund,
-                    args.max_fpr, args.logfile)
+    refr = None
+    if args.mask:
+        refr = load_refr(args.refr, args.ksize, args.refr_memory)
+    countgraph = recalc_abund(args.find_output, args.ksize, args.memory,
+                              args.max_fpr, args.logfile)
+    variants = load_novel_kmers(args.find_output, countgraph, refr,
+                                args.minabund, args.logfile)
     assemble_contigs(countgraph, variants, args.ignore, args.collapse,
                      args.debug, args.logfile)
     variants.write(outstream=args.out)
