@@ -17,7 +17,6 @@ mains = {
     'dump': kevlar.dump.main,
     'find': kevlar.find.main,
     'collect': kevlar.collect.main,
-    'rcgrep': kevlar.rcgrep.main,
 }
 
 
@@ -34,7 +33,6 @@ def parser():
     kevlar.dump.subparser(subparsers)
     kevlar.find.subparser(subparsers)
     kevlar.collect.subparser(subparsers)
-    kevlar.rcgrep.subparser(subparsers)
 
     return parser
 
