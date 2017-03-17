@@ -11,7 +11,6 @@ from . import fasta
 from . import dump
 from . import find
 from . import collect
-from . import rcgrep
 from .variantset import VariantSet
 from .timer import Timer
 import screed
