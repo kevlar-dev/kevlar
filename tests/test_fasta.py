@@ -13,6 +13,7 @@ try:
 except ImportError:
     from io import StringIO
 import kevlar
+import re
 
 
 @pytest.fixture
@@ -37,3 +38,15 @@ def test_seq_dict(bogusseqs):
         'seq2': 'GATTACAGATTACA',
         'seq3': 'ATGATGTGA',
     }
+
+
+def test_aug_fastq_reader():
+    infile = open('tests/data/collect.beta.1.txt', 'r')
+    for n, aug_record in enumerate(kevlar.parse_augmented_fastq(infile)):
+        record, kmers = aug_record
+        assert record.name.startswith('good')
+        assert record.sequence == (
+            'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
+        )
+        assert len(kmers) == 2
+    assert n == 7
