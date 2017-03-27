@@ -49,4 +49,7 @@ def test_aug_fastq_reader():
             'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
         )
         assert len(kmers) == 2
+        for offset in kmers:
+            kmer, abundances = kmers[offset]
+            assert abundances == [8, 0, 0]
     assert n == 7

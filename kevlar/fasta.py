@@ -62,6 +62,7 @@ def parse_augmented_fastq(instream):
             line = line.strip()[:-1]
             abundances = re.split('\s+', line)
             kmer = abundances.pop(0)
+            abundances = [int(a) for a in abundances]
             annot_kmers[offset] = (kmer, abundances)
     if record is not None:
         yield record, annot_kmers
