@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from . import fasta
+from .fasta import parse_augmented_fastq
 from . import dump
 from . import find
 from . import collect
