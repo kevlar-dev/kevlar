@@ -13,7 +13,6 @@ try:
 except ImportError:
     from io import StringIO
 import kevlar
-import re
 
 
 @pytest.fixture
