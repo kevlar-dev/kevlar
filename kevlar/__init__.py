@@ -7,11 +7,13 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from . import fasta
-from .fasta import parse_augmented_fastq
+from collections import namedtuple
+from . import seqio
+from .seqio import parse_fasta, parse_augmented_fastq, print_augmented_fastq
 from . import dump
 from . import find
 from . import collect
+from . import filter
 from .variantset import VariantSet
 from .timer import Timer
 import screed
@@ -40,3 +42,5 @@ def revcommin(seq):
     rc = revcom(seq)
     minseq = sorted((seq, rc))[0]
     return minseq
+
+KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

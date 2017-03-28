@@ -8,10 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import pytest
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import kevlar
 
 
@@ -21,8 +17,8 @@ def bogusseqs():
     return seq.split('\n')
 
 
-def test_parse(bogusseqs):
-    seqs = {defline: seq for defline, seq in kevlar.fasta.parse(bogusseqs)}
+def test_parse_fasta(bogusseqs):
+    seqs = {defline: seq for defline, seq in kevlar.parse_fasta(bogusseqs)}
     assert seqs == {
         '>seq1': 'ACGT',
         '>seq2 yo': 'GATTACAGATTACA',
@@ -31,7 +27,7 @@ def test_parse(bogusseqs):
 
 
 def test_seq_dict(bogusseqs):
-    d = kevlar.fasta.parse_seq_dict(bogusseqs)
+    d = kevlar.seqio.parse_seq_dict(bogusseqs)
     assert d == {
         'seq1': 'ACGT',
         'seq2': 'GATTACAGATTACA',
@@ -41,53 +37,51 @@ def test_seq_dict(bogusseqs):
 
 def test_aug_fastq_reader():
     infile = open('tests/data/collect.beta.1.txt', 'r')
-    for n, aug_record in enumerate(kevlar.parse_augmented_fastq(infile)):
-        record, kmers = aug_record
+    for n, record in enumerate(kevlar.parse_augmented_fastq(infile)):
         assert record.name.startswith('good')
         assert record.sequence == (
             'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
         )
-        assert len(kmers) == 2
-        for offset in kmers:
-            kmer, abundances = kmers[offset]
-            assert abundances == [8, 0, 0]
+        assert len(record.ikmers) == 2
+        for kmer in record.ikmers:
+            assert kmer.abund == [8, 0, 0]
     assert n == 7
 
 
 def test_aug_fastq_reader_e1():
     infile = open('tests/data/example1.augfastq', 'r')
-    record, kmers = next(kevlar.parse_augmented_fastq(infile))
+    record = next(kevlar.parse_augmented_fastq(infile))
 
     assert record.name == 'e1'
     assert record.sequence == (
         'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
     )
-    assert len(kmers) == 2
+    assert len(record.ikmers) == 2
 
-    assert 13 in kmers
-    assert kmers[13][0] == 'AGGGGCGTGACTTAATAAG'
-    assert kmers[13][1] == [12, 15, 1, 1]
+    assert record.ikmers[0].sequence == 'AGGGGCGTGACTTAATAAG'
+    assert record.ikmers[0].offset == 13
+    assert record.ikmers[0].abund == [12, 15, 1, 1]
 
-    assert 15 in kmers
-    assert kmers[15][0] == 'GGGCGTGACTTAATAAGGT'
-    assert kmers[15][1] == [20, 28, 0, 1]
+    assert record.ikmers[1].sequence == 'GGGCGTGACTTAATAAGGT'
+    assert record.ikmers[1].offset == 15
+    assert record.ikmers[1].abund == [20, 28, 0, 1]
 
 
 def test_aug_fastq_reader_e2():
     infile = open('tests/data/example2.augfastq', 'r')
-    record, kmers = next(kevlar.parse_augmented_fastq(infile))
+    record = next(kevlar.parse_augmented_fastq(infile))
 
     assert record.name == 'ERR894724.125497791/1'
     assert record.sequence == (
         'TAGCCAGTTTGGGTAATTTTAATTGTAAAACTTTTTTTTCTTTTTTTTTGATTTTTTTTTTTCAAGCAG'
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
-    assert len(kmers) == 2
+    assert len(record.ikmers) == 2
 
-    assert 74 in kmers
-    assert kmers[74][0] == 'GGCATACGAGCTCTTTTCACGTGACTGGAGT'
-    assert kmers[74][1] == [23, 0, 0]
+    assert record.ikmers[0].sequence == 'GGCATACGAGCTCTTTTCACGTGACTGGAGT'
+    assert record.ikmers[0].offset == 74
+    assert record.ikmers[0].abund == [23, 0, 0]
 
-    assert 83 in kmers
-    assert kmers[83][0] == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
-    assert kmers[83][1] == [23, 0, 0]
+    assert record.ikmers[1].sequence == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
+    assert record.ikmers[1].offset == 83
+    assert record.ikmers[1].abund == [23, 0, 0]

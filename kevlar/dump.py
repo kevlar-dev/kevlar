@@ -45,7 +45,7 @@ def subparser(subparsers):
 def main(args):
     print('[kevlar::dump] Loading reference sequence', file=args.logfile)
     with open(args.refr, 'r') as genome:
-        seqs = kevlar.fasta.parse_seq_dict(genome)
+        seqs = kevlar.seqio.parse_seq_dict(genome)
 
     if args.genomemask:
         print('[kevlar::dump] Loading genome mask', file=args.logfile)
