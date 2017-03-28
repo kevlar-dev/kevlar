@@ -19,16 +19,18 @@ import kevlar
 
 
 def test_load_refr():
-    refr = kevlar.collect.load_refr('tests/data/bogus-genome/refr.fa', 25, 1e7)
+    refr = kevlar.filter.load_refr('tests/data/bogus-genome/refr.fa', 25, 1e7)
     assert refr.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
     assert refr.get('GCTGGCTAAATTTTCATACTAACTA') > 0
     assert refr.get('G' * 25) == 0
 
 
-def test_recalc_abund_beta():
+def test_load_input():
     filelist = glob.glob('tests/data/collect.beta.?.txt')
-    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 1e3)
 
+    assert len(readset) == 8
+    assert readset
     kmers = [
         'AGGGGCGTGACTTAATAAG', 'GGGCGTGACTTAATAAGGT',
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
@@ -37,43 +39,50 @@ def test_recalc_abund_beta():
         assert countgraph.get(kmer) == 8
 
 
-def test_load_novel_kmers_alpha():
+def test_validate():
     filelist = ['tests/data/collect.alpha.txt']
-    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
-    vs = kevlar.collect.load_novel_kmers(filelist, countgraph)
-    assert vs.nkmers == 4
-    assert vs.nreads == 8
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph)
+
+    assert readset.valid == (4, 32)
+    assert len(readset) == 9
+    assert readset.discarded == 1
 
     badkmers = ['CAGGCCAGGGATCGCCGTG']
     goodkmers = [
         'AGGGGCGTGACTTAATAAG', 'GGGCGTGACTTAATAAGGT',
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
     ]
-    for kmer in badkmers:
-        assert kmer not in vs.kmers and kevlar.revcom(kmer) not in vs.kmers
-    for kmer in goodkmers:
-        assert kmer in vs.kmers or kevlar.revcom(kmer) in vs.kmers
+    for record in readset:
+        for kmer in record.ikmers:
+            assert kmer.sequence not in badkmers and \
+                kevlar.revcom(kmer.sequence) not in badkmers
+            assert kmer.sequence in goodkmers or \
+                kevlar.revcom(kmer.sequence) in goodkmers
 
 
-def test_load_novel_kmers_beta():
+def test_validate_minabund():
     filelist = glob.glob('tests/data/collect.beta.?.txt')
-    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
-    vs = kevlar.collect.load_novel_kmers(filelist, countgraph)
-    assert vs.nkmers == 4
-    assert vs.nreads == 8
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph)
+    assert readset.valid == (4, 32)
 
-    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
-    vs = kevlar.collect.load_novel_kmers(filelist, countgraph, minabund=9)
-    assert vs.nkmers == 0
-    assert vs.nreads == 0
+    filelist = glob.glob('tests/data/collect.beta.?.txt')
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph, minabund=9)
+    assert readset.valid == (0, 0)
 
 
-def test_load_novel_kmers_withrefr():
+def test_validate_withrefr():
     kmer = 'AGGGGCGTGACTTAATAAG'
-    filelist = glob.glob('tests/data/collect.beta.?.txt')
-    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
     refr = khmer.Nodetable(19, 1e3, 2)
     refr.add(kmer)
-    vs = kevlar.collect.load_novel_kmers(filelist, countgraph, refr)
-    assert vs.nkmers == 3
-    assert kmer not in vs.kmers and kevlar.revcom(kmer) not in vs.kmers
+
+    filelist = glob.glob('tests/data/collect.beta.?.txt')
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph, refr)
+    assert readset.valid == (3, 24)
+    for record in readset:
+        for ikmer in record.ikmers:
+            assert ikmer.sequence != kmer
+            assert kevlar.revcom(ikmer.sequence) != kmer
