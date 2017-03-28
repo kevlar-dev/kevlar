@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 from collections import defaultdict
+from sys import stdout
 import re
 import khmer
 import screed
@@ -71,7 +72,7 @@ def parse_augmented_fastq(instream):
         yield record
 
 
-def print_augmented_fastq(record, outstream):
+def print_augmented_fastq(record, outstream=stdout):
     khmer.utils.write_record(record, outstream)
     for kmer in sorted(record.ikmers, key=lambda k: k.offset):
         abundstr = ' '.join([str(a) for a in kmer.abund])

@@ -101,24 +101,6 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     return caseabunds + ctrlabunds
 
 
-def print_interesting_read(record, kmers, outstream, max_copy=2, flush=False):
-    counts = defaultdict(int)
-    for kmerpos in kmers:
-        kmer = kmers[kmerpos][0]
-        counts[kmer] += 1
-        if counts[kmer] > max_copy:
-            return
-
-    write_record(record, outstream)
-    for i in sorted(kmers):
-        kmer = kmers[i][0]
-        abunds = kmers[i][1:]
-        abundstr = ' '.join([str(abund) for abund in abunds])
-        print(' ' * i, kmer, ' ' * 10, abundstr, '#', sep='', file=outstream)
-    if hasattr(outstream, 'flush') and flush:
-        outstream.flush()
-
-
 def iter_screed(filenames):
     for filename in filenames:
         for record in screed.open(filename):
@@ -166,7 +148,7 @@ def main(args):
             # this soon.
             continue
 
-        read_novel_kmers = dict()
+        record.ikmers = list()
         for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
             if args.batch:
                 num_batches = int(args.batch[0])
@@ -174,19 +156,21 @@ def main(args):
                 khash = cases[0].hash(kmer)
                 if khash & (num_batches - 1) != batch:
                     continue
-            counts = kmer_is_interesting(kmer, cases, controls, args.case_min,
-                                         args.ctrl_max)
-            if counts is False:
+            abund = kmer_is_interesting(kmer, cases, controls, args.case_min,
+                                        args.ctrl_max)
+            if not abund:
                 continue
-            read_novel_kmers[i] = [kmer] + counts
+            ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=i, abund=abund)
+            record.ikmers.append(ikmer)
             minkmer = kevlar.revcommin(kmer)
             unique_kmers.add(minkmer)
 
-        if len(read_novel_kmers) > 0:
+        read_kmers = len(record.ikmers)
+        if read_kmers > 0:
             nreads += 1
-            nkmers += len(read_novel_kmers)
-            print_interesting_read(record, read_novel_kmers, args.out, 2,
-                                   args.flush)
+            nkmers += read_kmers
+            kevlar.print_augmented_fastq(record, args.out)
+
     elapsed = timer.stop('iter')
     message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)
     print('[kevlar::find]', message, file=args.logfile)
