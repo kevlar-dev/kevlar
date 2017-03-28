@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
-from collections import defaultdict
 import argparse
 import re
 import sys
@@ -16,88 +15,6 @@ import sys
 import khmer
 from khmer import khmer_args
 import kevlar
-
-
-class AnnotatedReadSet(object):
-    """
-    Data structure for de-duplicating reads and combining annotated k-mers.
-
-    The `kevlar find` command produces output in an "augmented Fastq" format,
-    with "interesting" (potentially novel) k-mers annotated like so.
-
-            @read1
-            TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT
-            +
-            IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-                         AGGGGCGTGACTTAATAAG          8 0 0#
-                           GGGCGTGACTTAATAAGGT          8 0 0#
-
-    Each line ending with a # shows an interesting k-mer and its abundances
-    in the case and control samples. If `kevlar find` is run in "k-mer banding"
-    mode (with the `--batch` flag), the same read will typically show up in
-    multiple output files, with different "interesting" k-mers annotated in
-    each. This data structure supports de-duplicating reads that appear in
-    multiple augmented Fastq files and combining their annotated k-mers.
-    """
-
-    def __init__(self):
-        self._reads = dict()
-        self._kmers = dict()
-
-        self._masked = defaultdict(int)
-        self._lowabund = defaultdict(int)
-        self._valid = defaultdict(int)
-
-        self._novalidkmers_count = 0
-
-    def __len__(self):
-        assert len(self._reads) == len(self._kmers)
-        return len(self._reads)
-
-    def __iter__(self):
-        for readid in self._reads:
-            if len(self._kmers[readid]) == 0:
-                self._novalidkmers_count += 1
-            else:
-                yield self._reads[readid], self._kmers[readid]
-
-    @property
-    def masked(self):
-        return len(self._masked), sum(self._masked.values())
-
-    @property
-    def lowabund(self):
-        return len(self._lowabund), sum(self._lowabund.values())
-
-    @property
-    def valid(self):
-        return len(self._valid), sum(self._valid.values())
-
-    @property
-    def discarded(self):
-        return self._novalidkmers_count
-
-    def add(self, record, kmers):
-        if record.name in self._reads:
-            assert record.sequence == self._reads[record.name].sequence
-            self._kmers[record.name].update(kmers)
-        else:
-            self._reads[record.name] = record
-            self._kmers[record.name] = kmers
-
-    def validate(self, counts, refr=None, minabund=5):
-        for readid in self._kmers:
-            validated_kmers = dict()
-            for offset in self._kmers[readid]:
-                kmer, abundances = self._kmers[readid][offset]
-                if refr and refr.get(kmer) > 0:
-                    self._masked[kmer] += 1
-                elif counts.get(kmer) < minabund:
-                    self._lowabund[kmer] += 1
-                else:
-                    validated_kmers[offset] = (kmer, abundances)
-                    self._valid[kmer] += 1
-            self._kmers[readid] = validated_kmers
 
 
 def subparser(subparsers):
@@ -191,26 +108,27 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     """
     countgraph = khmer.Countgraph(ksize, memory / 4, 4)
     read_inst_consumed = 0
-    int_kmers_parsed = defaultdict(int)
-    readset = AnnotatedReadSet()
+    int_kmer_instances = 0
+    int_kmers_parsed = set()
+    readset = kevlar.seqio.AnnotatedReadSet()
     for filename in filelist:
         print('    -', filename, file=logfile)
         with open(filename, 'r') as infile:
-            for record, kmers in kevlar.parse_augmented_fastq(infile):
+            for record in kevlar.parse_augmented_fastq(infile):
                 if record.name not in readset._reads:
                     countgraph.consume(record.sequence)
-                readset.add(record, kmers)
+                readset.add(record)
                 read_inst_consumed += 1
-                for offset in kmers:
-                    kmer, abund = kmers[offset]
-                    int_kmers_parsed[kmer] += 1
+                for kmer in record.ikmers:
+                    int_kmer_instances += 1
+                    minkmer = kevlar.revcommin(kmer.sequence)
+                    int_kmers_parsed.add(minkmer)
     n_kmers_distinct = len(int_kmers_parsed)
-    n_kmers = sum(int_kmers_parsed.values())
 
     fpr = kevlar.calc_fpr(countgraph)
     message = '    {:d} instances'.format(read_inst_consumed)
     message += ' of {:d} reads consumed'.format(len(readset))
-    message += ', annotated with {:d} instances '.format(n_kmers)
+    message += ', annotated with {:d} instances '.format(int_kmer_instances)
     message += 'of {:d} distinct "interesting" k-mers'.format(n_kmers_distinct)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logfile)
@@ -223,10 +141,10 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
 def validate_and_print(readset, countgraph, refr=None, minabund=5,
                        outfile=sys.stdout, augout=None, logfile=sys.stderr):
     readset.validate(countgraph, refr, minabund)
-    for record, kmers in readset:
+    for record in readset:
         khmer.utils.write_record(record, outfile)
         if augout:
-            kevlar.print_augmented_fastq(record, kmers, augout)
+            kevlar.print_augmented_fastq(record, augout)
 
     int_distinct = readset.masked[0] + readset.lowabund[0] + readset.valid[0]
     int_instances = readset.masked[1] + readset.lowabund[1] + readset.valid[1]

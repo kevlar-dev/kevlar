@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import namedtuple
 from . import seqio
 from .seqio import parse_fasta, parse_augmented_fastq, print_augmented_fastq
 from . import dump
@@ -41,3 +42,5 @@ def revcommin(seq):
     rc = revcom(seq)
     minseq = sorted((seq, rc))[0]
     return minseq
+
+KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')
