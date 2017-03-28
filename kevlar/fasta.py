@@ -9,6 +9,7 @@
 
 from __future__ import print_function
 import re
+import khmer
 import screed
 
 
@@ -66,3 +67,12 @@ def parse_augmented_fastq(instream):
             annot_kmers[offset] = (kmer, abundances)
     if record is not None:
         yield record, annot_kmers
+
+
+def print_augmented_fastq(record, kmers, outstream):
+    khmer.utils.write_record(record, outstream)
+    for offset in sorted(kmers):
+        kmer, abundances = kmers[offset]
+        abundstr = ' '.join([str(a) for a in abundances])
+        print(' ' * offset, kmer, ' ' * 10, abundstr, '#', sep='',
+              file=outstream)
