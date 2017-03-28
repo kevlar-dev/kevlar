@@ -5,7 +5,7 @@ devenv: depend
 	pip install pep8 pytest
 
 style:
-	pep8 kevlar/*.py bin/kevlar tests/*.py tests/data/*.py
+	pep8 kevlar/*.py kevlar/*/*.py tests/*.py tests/data/*.py
 
 test:
 	py.test -v --cov=kevlar tests/*.py -m 'not long'

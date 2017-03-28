@@ -20,8 +20,10 @@ setuptools.setup(name='kevlar',
                  author='Daniel Standage',
                  author_email='daniel.standage@gmail.com',
                  license='MIT',
-                 packages=['kevlar'],
-                 scripts=['bin/kevlar'],
+                 packages=['kevlar', 'kevlar.cli'],
+                 entry_points={
+                    'console_scripts': ['kevlar = kevlar.__main__:main']
+                 },
                  #install_requires=['khmer>=2.1'],
                  classifiers=[
                     'Development Status :: 4 - Beta',

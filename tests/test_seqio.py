@@ -18,7 +18,7 @@ def bogusseqs():
 
 
 def test_parse_fasta(bogusseqs):
-    seqs = {defline: seq for defline, seq in kevlar.parse_fasta(bogusseqs)}
+    seqs = {name: seq for name, seq in kevlar.seqio.parse_fasta(bogusseqs)}
     assert seqs == {
         '>seq1': 'ACGT',
         '>seq2 yo': 'GATTACAGATTACA',
