@@ -7,8 +7,8 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from . import fasta
-from .fasta import parse_augmented_fastq, print_augmented_fastq
+from . import seqio
+from .seqio import parse_fasta, parse_augmented_fastq, print_augmented_fastq
 from . import dump
 from . import find
 from . import collect

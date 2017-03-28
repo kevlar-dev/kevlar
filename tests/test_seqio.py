@@ -8,10 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import pytest
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import kevlar
 
 
@@ -21,8 +17,8 @@ def bogusseqs():
     return seq.split('\n')
 
 
-def test_parse(bogusseqs):
-    seqs = {defline: seq for defline, seq in kevlar.fasta.parse(bogusseqs)}
+def test_parse_fasta(bogusseqs):
+    seqs = {defline: seq for defline, seq in kevlar.parse_fasta(bogusseqs)}
     assert seqs == {
         '>seq1': 'ACGT',
         '>seq2 yo': 'GATTACAGATTACA',
@@ -31,7 +27,7 @@ def test_parse(bogusseqs):
 
 
 def test_seq_dict(bogusseqs):
-    d = kevlar.fasta.parse_seq_dict(bogusseqs)
+    d = kevlar.seqio.parse_seq_dict(bogusseqs)
     assert d == {
         'seq1': 'ACGT',
         'seq2': 'GATTACAGATTACA',

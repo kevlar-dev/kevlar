@@ -13,7 +13,7 @@ import khmer
 import screed
 
 
-def parse(data):
+def parse_fasta(data):
     """
     Load sequences in Fasta format.
 
@@ -37,7 +37,7 @@ def parse(data):
 def parse_seq_dict(data):
     """Load sequences from a Fasta file into a dictionary."""
     seqs = dict()
-    for defline, sequence in parse(data):
+    for defline, sequence in parse_fasta(data):
         seqid = defline[1:].replace('\t', ' ').split(' ')[0]
         assert seqid not in seqs
         seqs[seqid] = sequence

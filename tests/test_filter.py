@@ -27,7 +27,7 @@ def test_load_refr():
 
 def test_recalc_abund_beta():
     filelist = glob.glob('tests/data/collect.beta.?.txt')
-    countgraph = kevlar.filter.recalc_abund(filelist, 19, 1e3)
+    countgraph = kevlar.collect.recalc_abund(filelist, 19, 1e3)
 
     kmers = [
         'AGGGGCGTGACTTAATAAG', 'GGGCGTGACTTAATAAGGT',
