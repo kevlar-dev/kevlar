@@ -100,6 +100,7 @@ def recalc_abund(filelist, ksize, memory, maxfpr=0.1, logfile=sys.stderr):
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logfile)
     if fpr > maxfpr:
+        print('[kevlar::collect] FPR too high, bailing out', fpr, file=logfile)
         sys.exit(1)
     return countgraph
 
@@ -166,7 +167,7 @@ def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
 
 def main(args):
     refr = None
-    if args.mask:
+    if args.refr:
         refr = load_refr(args.refr, args.ksize, args.refr_memory)
     countgraph = recalc_abund(args.find_output, args.ksize, args.memory,
                               args.max_fpr, args.logfile)

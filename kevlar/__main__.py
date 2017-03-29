@@ -28,5 +28,5 @@ def main(args=None):
         kevlar.cli.parser().parse_args(['-h'])
 
     assert args.cmd in kevlar.cli.mains
-    mainmethod = mains[args.cmd]
+    mainmethod = kevlar.cli.mains[args.cmd]
     mainmethod(args)

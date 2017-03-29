@@ -182,7 +182,7 @@ def main(args):
         for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
             if args.num_bands:
                 khash = cases[0].hash(kmer)
-                if khash & (args.num_band - 1) != band:
+                if khash & (args.num_bands - 1) != args.band - 1:
                     continue
             abund = kmer_is_interesting(kmer, cases, controls, args.case_min,
                                         args.ctrl_max)
