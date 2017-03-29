@@ -12,6 +12,7 @@ import re
 import shutil
 import tempfile
 import kevlar
+import kevlar.__main__
 
 
 @pytest.mark.long
@@ -37,7 +38,7 @@ def test_trio2(capsys):
     args = kevlar.cli.parser().parse_args(arglist)
     args.out = stdout
     args.logfile = stderr
-    kevlar.collect.main(args)
+    kevlar.__main__.main(args)
     out, err = capsys.readouterr()
 
     assert '1 collapsed linear paths' in err
