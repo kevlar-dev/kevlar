@@ -24,6 +24,7 @@ setuptools.setup(name='kevlar',
                  package_data={
                     'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
                  },
+                 include_package_data=True,
                  entry_points={
                     'console_scripts': ['kevlar = kevlar.__main__:main']
                  },
