@@ -14,7 +14,7 @@ import kevlar
 
 def main(args=None):
     """
-    Entry point for the tag CLI.
+    Entry point for the kevlar CLI.
 
     Isolated as a method so that the CLI can be called by other Python code
     (e.g. for testing), in which case the arguments are passed to the function.
