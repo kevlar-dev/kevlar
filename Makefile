@@ -2,7 +2,7 @@ depend:
 	pip install pysam git+https://github.com/dib-lab/khmer.git
 
 devenv: depend
-	pip install pep8 pytest
+	pip install pep8 pytest-cov
 
 style:
 	pep8 kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
