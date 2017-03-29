@@ -8,10 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import pytest
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import kevlar
 from kevlar import VariantSet
 
@@ -41,10 +37,11 @@ def test_vset_contigs(basicvset):
     assert list(basicvset.contigs.keys()) == ['AATTTTTAA']
 
 
-def test_vset_write(basicvset):
-    out = StringIO()
-    basicvset.write(out)
+def test_vset_write(basicvset, capsys):
+    from sys import stdout
+    basicvset.write(stdout)
+    out, err = capsys.readouterr()
     outtest = ('Contig,ContigRevCom\tNumReads\tNumKmers\tReads\tKmers\n'
                'AATTTTTAA,TTAAAAATT\t4\t2\tread1,read2,read3,read4'
                '\tAAAAA,TAAAA\n')
-    assert out.getvalue() == outtest
+    assert out == outtest

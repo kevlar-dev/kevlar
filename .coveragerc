@@ -3,5 +3,4 @@ show_missing = True
 
 [run]
 branch = True
-omit =
-    kevlar/_version.py
+omit = kevlar/_version.py, kevlar/tests/*.py
