@@ -20,7 +20,10 @@ setuptools.setup(name='kevlar',
                  author='Daniel Standage',
                  author_email='daniel.standage@gmail.com',
                  license='MIT',
-                 packages=['kevlar', 'kevlar.cli'],
+                 packages=['kevlar', 'kevlar.cli', 'kevlar.tests'],
+                 package_data=[
+                    'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
+                 ]
                  entry_points={
                     'console_scripts': ['kevlar = kevlar.__main__:main']
                  },

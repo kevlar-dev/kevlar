@@ -59,19 +59,19 @@ def test_assumptions(kmer):
 
 
 @pytest.mark.parametrize('case,ctrl,mem', [
-    ('case1', 'ctrl[1,2]', '500K'),
-    ('case1', 'ctrl[1,2]', '1M'),
-    ('case2', 'ctrl[1,2]', '1M'),
-    ('case3', 'ctrl[1,2]', '1M'),
-    ('case4', 'ctrl[1,2]', '500K'),
-    ('case4', 'ctrl[1,2]', '1M'),
-    ('case5', 'ctrl[3,4]', '1M'),
-    ('case6', 'ctrl[5,6]', '1M'),
+    ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '500K'),
+    ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '1M'),
+    ('trio1/case2.fq', 'trio1/ctrl[1,2].fq', '1M'),
+    ('trio1/case3.fq', 'trio1/ctrl[1,2].fq', '1M'),
+    ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
+    ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '1M'),
+    ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
+    ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
 ])
 def test_find_single_mutation(case, ctrl, mem, capsys):
     from sys import stdout, stderr
-    casestr = 'tests/data/trio1/{}.fq'.format(case)
-    ctrls = glob.glob('tests/data/trio1/{}.fq'.format(ctrl))
+    casestr = kevlar.tests.data_file(case)
+    ctrls = kevlar.tests.data_glob(ctrl)
     arglist = ['find', '--ksize', '13', '--case_min', '8', '--ctrl_max', '0',
                '--memory', mem, '--cases', casestr, '--controls'] + ctrls
     args = kevlar.cli.parser().parse_args(arglist)
@@ -95,8 +95,8 @@ def test_find_single_mutation(case, ctrl, mem, capsys):
 def test_find_two_cases(capsys):
     from sys import stdout, stderr
     pattern = 'tests/data/trio1/case{}.fq'
-    cases = [pattern.format(n) for n in ('6', '6b')]
-    ctrls = glob.glob('tests/data/trio1/ctrl[5,6].fq')
+    cases = kevlar.tests.data_glob('trio1/case6*.fq')
+    ctrls = kevlar.tests.data_glob('trio1/ctrl[5,6].fq')
     arglist = ['find', '--ksize', '19', '--memory', '1e7', '--ctrl_max', '1',
                '--case_min', '7']
     arglist += ['--cases'] + cases + ['--controls'] + ctrls
@@ -144,7 +144,7 @@ def test_kmer_rep_in_read(capsys):
 
 
 def test_iter_screed():
-    pattern = 'tests/data/bogus-genome/mask-chr{}.fa'
-    infiles = [pattern.format(n) for n in (1, 2)]
+    infiles = kevlar.tests.data_glob('bogus-genome/mask-chr[1,2].fa')
+    print(infiles)
     records = [r for r in kevlar.find.iter_screed(infiles)]
     assert len(records) == 4

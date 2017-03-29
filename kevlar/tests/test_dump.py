@@ -14,6 +14,7 @@ try:
 except ImportError:
     from io import StringIO
 import kevlar
+from kevlar.tests import data_file
 
 
 @pytest.fixture
@@ -23,8 +24,8 @@ def bogusargs():
     args.genomemask = None
     args.out = StringIO()
     args.logfile = sys.stderr
-    args.refr = 'tests/data/bogus-genome/refr.fa'
-    args.reads = 'tests/data/bogus-genome/reads.bam'
+    args.refr = data_file('bogus-genome/refr.fa')
+    args.reads = data_file('bogus-genome/reads.bam')
     return args
 
 
@@ -48,7 +49,7 @@ def test_seqid_filter(bogusargs):
 
 
 def test_genomemask_filter(bogusargs):
-    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr1.fa'
+    bogusargs.genomemask = data_file('bogus-genome/mask-chr1.fa')
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
     kevlar.dump.main(bogusargs)
@@ -61,7 +62,7 @@ def test_genomemask_filter(bogusargs):
 
 def test_seqid_genomemask_filters(bogusargs):
     bogusargs.seqid = 'bogus-genome-chr1'
-    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr1.fa'
+    bogusargs.genomemask = data_file('bogus-genome/mask-chr1.fa')
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
     kevlar.dump.main(bogusargs)
@@ -73,10 +74,10 @@ def test_seqid_genomemask_filters(bogusargs):
 
 
 def test_indels(bogusargs):
-    bogusargs.genomemask = 'tests/data/bogus-genome/mask-chr2.fa'
+    bogusargs.genomemask = data_file('bogus-genome/mask-chr2.fa')
     bogusargs.maskmemory = 5e7
     bogusargs.mask_k = 13
-    bogusargs.reads = 'tests/data/bogus-genome/reads-indels.bam'
+    bogusargs.reads = data_file('bogus-genome/reads-indels.bam')
     kevlar.dump.main(bogusargs)
     outputlines = bogusargs.out.getvalue().strip().split('\n')
     assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
@@ -85,7 +86,7 @@ def test_indels(bogusargs):
 
 
 def test_suffix(bogusargs):
-    bogusargs.reads = 'tests/data/nopair.sam'
+    bogusargs.reads = data_file('nopair.sam')
     kevlar.dump.main(bogusargs)
     outputlines = bogusargs.out.getvalue().strip().split('\n')
     assert len(outputlines) == 4
