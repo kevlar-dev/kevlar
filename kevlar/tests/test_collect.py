@@ -10,10 +10,6 @@
 import glob
 import pytest
 import sys
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import khmer
 import kevlar
 

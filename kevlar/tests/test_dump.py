@@ -9,29 +9,21 @@
 
 import pytest
 import sys
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 import kevlar
 from kevlar.tests import data_file
 
 
-@pytest.fixture
-def bogusargs():
-    args = type('', (), {})()
-    args.seqid = None
-    args.genomemask = None
-    args.out = StringIO()
-    args.logfile = sys.stderr
-    args.refr = data_file('bogus-genome/refr.fa')
-    args.reads = data_file('bogus-genome/reads.bam')
-    return args
+def test_basic(capsys):
+    arglist = [
+        'dump',
+        data_file('bogus-genome/refr.fa'),
+        data_file('bogus-genome/reads.bam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
 
-
-def test_basic(bogusargs):
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 5 * 4  # 5 records, 4 lines per record
     assert 'read2' in outputlines[0]
     assert 'read4' in outputlines[4]
@@ -40,54 +32,92 @@ def test_basic(bogusargs):
     assert 'read8' in outputlines[16]
 
 
-def test_seqid_filter(bogusargs):
-    bogusargs.seqid = 'bogus-genome-chr1'
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+def test_seqid_filter(capsys):
+    arglist = [
+        'dump',
+        '--seqid', 'bogus-genome-chr1',
+        data_file('bogus-genome/refr.fa'),
+        data_file('bogus-genome/reads.bam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
+
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 1 * 4  # 1 record, 4 lines per record
     assert 'read2' in outputlines[0]
 
 
-def test_genomemask_filter(bogusargs):
-    bogusargs.genomemask = data_file('bogus-genome/mask-chr1.fa')
-    bogusargs.maskmemory = 5e7
-    bogusargs.mask_k = 13
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+def test_genomemask_filter(capsys):
+    arglist = [
+        'dump',
+        '--mask-k', '13',
+        '--maskmemory', '50M',
+        '--genomemask', data_file('bogus-genome/mask-chr1.fa'),
+        data_file('bogus-genome/refr.fa'),
+        data_file('bogus-genome/reads.bam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
+
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 3 * 4  # 3 records, 4 lines per record
     assert 'read2' in outputlines[0]
     assert 'read7' in outputlines[4]
     assert 'read8' in outputlines[8]
 
 
-def test_seqid_genomemask_filters(bogusargs):
-    bogusargs.seqid = 'bogus-genome-chr1'
-    bogusargs.genomemask = data_file('bogus-genome/mask-chr1.fa')
-    bogusargs.maskmemory = 5e7
-    bogusargs.mask_k = 13
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+def test_seqid_genomemask_filters(capsys):
+    arglist = [
+        'dump',
+        '--mask-k', '13',
+        '--maskmemory', '50M',
+        '--genomemask', data_file('bogus-genome/mask-chr1.fa'),
+        '--seqid', 'bogus-genome-chr1',
+        data_file('bogus-genome/refr.fa'),
+        data_file('bogus-genome/reads.bam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
+
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 3 * 4  # 3 records, 4 lines per record
     assert 'read2' in outputlines[0]
     assert 'read7' in outputlines[4]
     assert 'read8' in outputlines[8]
 
 
-def test_indels(bogusargs):
-    bogusargs.genomemask = data_file('bogus-genome/mask-chr2.fa')
-    bogusargs.maskmemory = 5e7
-    bogusargs.mask_k = 13
-    bogusargs.reads = data_file('bogus-genome/reads-indels.bam')
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+def test_indels(capsys):
+    arglist = [
+        'dump',
+        '--mask-k', '13',
+        '--maskmemory', '50M',
+        '--genomemask', data_file('bogus-genome/mask-chr2.fa'),
+        data_file('bogus-genome/refr.fa'),
+        data_file('bogus-genome/reads-indels.bam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
+
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
     assert 'read2' in outputlines[0]
     assert 'read3' in outputlines[4]
 
 
-def test_suffix(bogusargs):
-    bogusargs.reads = data_file('nopair.sam')
-    kevlar.dump.main(bogusargs)
-    outputlines = bogusargs.out.getvalue().strip().split('\n')
+def test_suffix(capsys):
+    arglist = [
+        'dump',
+        data_file('bogus-genome/refr.fa'),
+        data_file('nopair.sam'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dump.main(args)
+    out, err = capsys.readouterr()
+
+    outputlines = out.strip().split('\n')
     assert len(outputlines) == 4
     assert outputlines[0].endswith('/1') or outputlines[0].endswith('/2')

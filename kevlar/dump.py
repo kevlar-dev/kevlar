@@ -12,6 +12,7 @@ import argparse
 
 import pysam
 import khmer
+from khmer import khmer_args
 
 import kevlar
 
@@ -31,8 +32,9 @@ def subparser(subparsers):
                            'declared, reads passing either filter will be '
                            'kept')
     subparser.add_argument('--maskmemory', metavar='SIZE', default=2e9,
-                           type=float, help='memory to be occupied by genome '
-                           'mask; default is 2e9 (2G)')
+                           type=khmer_args.memory_setting,
+                           help='memory to be occupied by genome mask; default'
+                           ' is 2G')
     subparser.add_argument('--mask-k', metavar='K', default=31, type=int,
                            help='k size for genome mask')
     subparser.add_argument('--out', metavar='FILE',
