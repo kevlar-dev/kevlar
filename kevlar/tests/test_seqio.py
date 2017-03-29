@@ -18,7 +18,7 @@ def bogusseqs():
 
 
 def test_parse_fasta(bogusseqs):
-    seqs = {defline: seq for defline, seq in kevlar.parse_fasta(bogusseqs)}
+    seqs = {name: seq for name, seq in kevlar.seqio.parse_fasta(bogusseqs)}
     assert seqs == {
         '>seq1': 'ACGT',
         '>seq2 yo': 'GATTACAGATTACA',
@@ -36,7 +36,8 @@ def test_seq_dict(bogusseqs):
 
 
 def test_aug_fastq_reader():
-    infile = open('tests/data/collect.beta.1.txt', 'r')
+    infilename = kevlar.tests.data_file('collect.beta.1.txt')
+    infile = open(infilename, 'r')
     for n, record in enumerate(kevlar.parse_augmented_fastq(infile)):
         assert record.name.startswith('good')
         assert record.sequence == (
@@ -49,7 +50,8 @@ def test_aug_fastq_reader():
 
 
 def test_aug_fastq_reader_e1():
-    infile = open('tests/data/example1.augfastq', 'r')
+    infilename = kevlar.tests.data_file('example1.augfastq')
+    infile = open(infilename, 'r')
     record = next(kevlar.parse_augmented_fastq(infile))
 
     assert record.name == 'e1'
@@ -68,7 +70,8 @@ def test_aug_fastq_reader_e1():
 
 
 def test_aug_fastq_reader_e2():
-    infile = open('tests/data/example2.augfastq', 'r')
+    infilename = kevlar.tests.data_file('example2.augfastq')
+    infile = open(infilename, 'r')
     record = next(kevlar.parse_augmented_fastq(infile))
 
     assert record.name == 'ERR894724.125497791/1'

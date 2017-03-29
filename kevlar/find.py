@@ -21,51 +21,77 @@ import screed
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('find')
+    subparser = subparsers.add_parser('find', add_help=False)
 
-    subparser.add_argument('--controls', metavar='FILE', nargs='+',
-                           required=True, help='one or more countgraph files '
+    samp_args = subparser.add_argument_group(
+        'Case and control configuration',
+        'Specify input files and thresholds for identifying "interesting" '
+        'k-mers, which are high abundance in each case sample and absent (or '
+        'low abundance) in each control sample.'
+    )
+    samp_args.add_argument('--cases', metavar='F', nargs='+',
+                           required=True, help='one or more Fastq files '
+                           'corresponding to case sample(s)')
+    samp_args.add_argument('--controls', metavar='F', nargs='+',
+                           required=True, help='one or more Fastq files '
                            'corresponding to control sample(s)')
-    subparser.add_argument('-x', '--ctrl_max', metavar='X', type=int,
+    samp_args.add_argument('-x', '--ctrl_max', metavar='X', type=int,
                            default=1, help='k-mers with abund > X in any '
                            'control sample are uninteresting; default=1')
-    subparser.add_argument('-y', '--case_min', metavar='Y',
+    samp_args.add_argument('-y', '--case_min', metavar='Y',
                            type=int, default=5, help='ignore k-mers from case '
                            'with abund < Y; default=5')
-    subparser.add_argument('-k', '--ksize', metavar='K', default=31, type=int,
-                           help='k-mer size; default is 31')
-    subparser.add_argument('-M', '--memory', default='1e6',
+    samp_args.add_argument('-M', '--memory', default='1e6',
                            type=khmer_args.memory_setting, metavar='MEM',
-                           help='total memory to allocate for each count '
-                           'table; default is 1M')
-    subparser.add_argument('--max-fpr', type=float, default=0.2, metavar='FPR',
+                           help='total memory to allocate for each sample; '
+                           'default is 1M')
+    samp_args.add_argument('--max-fpr', type=float, default=0.2, metavar='FPR',
                            help='terminate if the expected false positive rate'
-                           ' is higher than the specified FPR; default is 0.2')
-    subparser.add_argument('--out', type=argparse.FileType('w'),
+                           ' for any sample is higher than the specified FPR; '
+                           'default is 0.2')
+
+    band_args = subparser.add_argument_group(
+        'K-mer banding',
+        'If memory is a limiting factor, it is possible to get a linear '
+        'decrease in memory consumption by running `kevlar find` in "banded" '
+        'mode. Splitting the hashed k-mer space into N bands and only '
+        'considering k-mers from one band at a time reduces the memory '
+        'consumption to approximately 1/N of the total memory required. This '
+        'implements a scatter/gather approach in which `kevlar find` is run N '
+        'times, after the results are combined using `kevlar filter`.'
+    )
+    band_args.add_argument('--num-bands', type=int, metavar='N', default=None,
+                           help='number of bands into which to divide the '
+                           'hashed k-mer space')
+    band_args.add_argument('--band', type=int, metavar='I', default=None,
+                           help='a number between 1 and N (inclusive) '
+                           'indicating the band to be processed')
+
+    misc_args = subparser.add_argument_group(
+        'Miscellaneous settings'
+    )
+    misc_args.add_argument('-h', '--help', action='help',
+                           help='show this help message and exit')
+    misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
+                           help='k-mer size; default is 31')
+    misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
+                           metavar='FILE',
                            help='output file; default is terminal (stdout)')
-    subparser.add_argument('--flush', action='store_true', help='flush output'
-                           'after each read written')
-    subparser.add_argument('--upint', type=float, default=1e6, metavar='INT',
-                           help='debug update interval; default is 1000000')
-    subparser.add_argument('--batch', type=int, nargs=2, metavar='INT',
-                           help='process only a fraction of the k-mers in the '
-                           'input file; invoke with "--batch X Y" where X is '
-                           'a power of 2 and Y is between 1 and X inclusive')
-    subparser.add_argument('cases', nargs='+')
+    misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
+                           help='update interval for log messages; default is '
+                           '1000000 (1 update message per millon reads)')
 
 
-def load_samples(samples, ksize, memory, max_fpr=0.2, batch=None,
+def load_samples(samples, ksize, memory, max_fpr=0.2, numbands=None, band=None,
                  logfile=sys.stderr):
     tables = list()
     for sample in samples:
         print('[kevlar::find]     Loading counttable', sample, '...', end='',
               file=logfile)
         ct = khmer.Counttable(ksize, memory / 4, 4)
-        if batch:
-            num_batches = batch[0]
-            which = batch[1]
-            nr, nk = ct.consume_seqfile_banding(sample, num_batches, which - 1)
-            message = 'batch {:d}/{:d} done'.format(which, num_batches)
+        if numbands:
+            nr, nk = ct.consume_seqfile_banding(sample, numbands, band - 1)
+            message = 'batch {:d}/{:d} done'.format(band, numbands)
         else:
             message = 'done'
             nr, nk = ct.consume_seqfile(sample)
@@ -108,6 +134,9 @@ def iter_screed(filenames):
 
 
 def main(args):
+    if (args.num_bands is None) is not (args.band is None):
+        raise ValueError('Must specify --num-bands and --band together')
+
     timer = kevlar.Timer()
     timer.start()
 
@@ -115,7 +144,7 @@ def main(args):
     timer.start('loadall')
     timer.start('loadcase')
     cases = load_samples(args.cases, args.ksize, args.memory, args.max_fpr,
-                         args.batch, args.logfile)
+                         args.num_bands, args.band, args.logfile)
     elapsed = timer.stop('loadcase')
     print('[kevlar::find] Case samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
@@ -123,7 +152,8 @@ def main(args):
     elapsed = timer.start('loadctrl')
     print('[kevlar::find] Loading control samples', file=args.logfile)
     controls = load_samples(args.controls, args.ksize, args.memory,
-                            args.max_fpr, args.batch, args.logfile)
+                            args.max_fpr, args.num_bands, args.band,
+                            args.logfile)
     elapsed = timer.stop('loadctrl')
     print('[kevlar::find] Cntrl samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
@@ -150,11 +180,9 @@ def main(args):
 
         record.ikmers = list()
         for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
-            if args.batch:
-                num_batches = int(args.batch[0])
-                batch = int(args.batch[1]) - 1
+            if args.num_bands:
                 khash = cases[0].hash(kmer)
-                if khash & (num_batches - 1) != batch:
+                if khash & (args.num_bands - 1) != args.band - 1:
                     continue
             abund = kmer_is_interesting(kmer, cases, controls, args.case_min,
                                         args.ctrl_max)

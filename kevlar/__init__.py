@@ -8,17 +8,18 @@
 # -----------------------------------------------------------------------------
 
 from collections import namedtuple
-from . import seqio
-from .seqio import parse_fasta, parse_augmented_fastq, print_augmented_fastq
-from . import dump
-from . import find
-from . import collect
-from . import filter
-from .variantset import VariantSet
-from .timer import Timer
+from kevlar import seqio
+from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
+from kevlar import dump
+from kevlar import find
+from kevlar import collect
+from kevlar import filter
+from kevlar import cli
+from kevlar.variantset import VariantSet
+from kevlar.timer import Timer
 import screed
 
-from ._version import get_versions
+from kevlar._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 

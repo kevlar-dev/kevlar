@@ -19,14 +19,15 @@ import kevlar
 
 
 def test_load_refr():
-    refr = kevlar.filter.load_refr('tests/data/bogus-genome/refr.fa', 25, 1e7)
+    infile = kevlar.tests.data_file('bogus-genome/refr.fa')
+    refr = kevlar.filter.load_refr(infile, 25, 1e7)
     assert refr.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
     assert refr.get('GCTGGCTAAATTTTCATACTAACTA') > 0
     assert refr.get('G' * 25) == 0
 
 
 def test_load_input():
-    filelist = glob.glob('tests/data/collect.beta.?.txt')
+    filelist = kevlar.tests.data_glob('collect.beta.?.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 1e3)
 
     assert len(readset) == 8
@@ -40,7 +41,7 @@ def test_load_input():
 
 
 def test_validate():
-    filelist = ['tests/data/collect.alpha.txt']
+    filelist = kevlar.tests.data_glob('collect.alpha.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph)
 
@@ -62,12 +63,11 @@ def test_validate():
 
 
 def test_validate_minabund():
-    filelist = glob.glob('tests/data/collect.beta.?.txt')
+    filelist = kevlar.tests.data_glob('collect.beta.?.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph)
     assert readset.valid == (4, 32)
 
-    filelist = glob.glob('tests/data/collect.beta.?.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph, minabund=9)
     assert readset.valid == (0, 0)
@@ -78,7 +78,7 @@ def test_validate_withrefr():
     refr = khmer.Nodetable(19, 1e3, 2)
     refr.add(kmer)
 
-    filelist = glob.glob('tests/data/collect.beta.?.txt')
+    filelist = kevlar.tests.data_glob('collect.beta.?.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph, refr)
     assert readset.valid == (3, 24)
