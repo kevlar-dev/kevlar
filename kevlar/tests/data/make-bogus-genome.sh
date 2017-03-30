@@ -56,4 +56,4 @@ cd ../
 ./mutate-indel-chr19.py chr19.order2.rand.100k.fa > chr19.indel.fa
 
 # Cleanup
-rm -f bogus-genome/chr?.fa bogus-genome/contam1.fa bogus-genome/refr-contam.fa
+rm -f bogus-genome/chr?.fa bogus-genome/refr-contam.fa
