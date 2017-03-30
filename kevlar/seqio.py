@@ -110,6 +110,7 @@ class AnnotatedReadSet(object):
         self._valid = defaultdict(int)
 
         self._novalidkmers_count = 0
+        self._contam_seqs = 0
 
     def __len__(self):
         return len(self._reads)
@@ -118,9 +119,10 @@ class AnnotatedReadSet(object):
         for readid in self._reads:
             record = self._reads[readid]
             if len(record.ikmers) == 0:
-                self._novalidkmers_count += 1
-            else:
-                yield record
+                continue
+            elif hasattr(record, 'contam') and record.contam is True:
+                continue
+            yield record
 
     @property
     def masked(self):
@@ -138,6 +140,10 @@ class AnnotatedReadSet(object):
     def discarded(self):
         return self._novalidkmers_count
 
+    @property
+    def contam(self):
+        return self._contam_seqs
+
     def add(self, newrecord):
         if newrecord.name in self._reads:
             record = self._reads[newrecord.name]
@@ -146,9 +152,16 @@ class AnnotatedReadSet(object):
         else:
             self._reads[newrecord.name] = newrecord
 
-    def validate(self, counts, refr=None, minabund=5):
+    def validate(self, counts, refr=None, contam=None, minabund=5):
         for readid in self._reads:
             record = self._reads[readid]
+            if contam:
+                medcount, _, _ = contam.get_median_count(record.sequence)
+                if medcount > 0:
+                    record.contam = True
+                    self._contam_seqs += 1
+                    continue
+
             validated_kmers = list()
             for kmer in record.ikmers:
                 kmerseq = kevlar.revcommin(kmer.sequence)
@@ -160,3 +173,5 @@ class AnnotatedReadSet(object):
                     validated_kmers.append(kmer)
                     self._valid[kmerseq] += 1
             record.ikmers = validated_kmers
+            if len(validated_kmers) == 0:
+                self._novalidkmers_count += 1

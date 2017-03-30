@@ -37,6 +37,25 @@ def subparser(subparsers):
                            'false positive rate is higher than the specified '
                            'FPR; default is 0.001')
 
+    contam_args = subparser.add_argument_group(
+        'Screening for known contaminants',
+        'It may not be possible to anticipate every possible contaminant that '
+        'may be present in a sample, but if there is a common or known set of '
+        'contaminants these can be filtered out at this step. Unknown '
+        'contaminants will have to be filtered out after read partitioning.'
+    )
+    contam_args.add_argument('--contam', metavar='FILE', type=str,
+                             default=None, help='database of contaminant '
+                             'sequences in Fasta/Fastq format')
+    contam_args.add_argument('--contam-memory', metavar='MEM', default='1e6',
+                             type=khmer_args.memory_setting,
+                             help='memory to allocate for storing contaminant '
+                             'sequences; default is 1M')
+    contam_args.add_argument('--contam-max-fpr', type=float, metavar='FPR',
+                             default=0.001, help='terminate if the expected '
+                             'false positive rate is higher than the specified'
+                             ' FPR; default is 0.001')
+
     filter_args = subparser.add_argument_group(
         'Filtering k-mers',
         'Memory constraints often require running `kevlar find` with false '
@@ -82,7 +101,7 @@ def subparser(subparsers):
 
 
 def load_refr(refrfile, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
-    """Load reference genome from a file."""
+    """Load reference genome or contaminant database from a file."""
     buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
     refr = khmer.Nodetable(ksize, buckets, 4)
     nr, nk = refr.consume_seqfile(refrfile)
@@ -138,10 +157,11 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     return readset, countgraph
 
 
-def validate_and_print(readset, countgraph, refr=None, minabund=5,
+def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
                        outfile=sys.stdout, augout=None, logfile=sys.stderr):
-    readset.validate(countgraph, refr, minabund)
-    for record in readset:
+    readset.validate(countgraph, refr, contam, minabund)
+    n = 0  # Get an unbound var error later (printing report) without this?!?!
+    for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
         if augout:
             kevlar.print_augmented_fastq(record, augout)
@@ -167,6 +187,10 @@ def validate_and_print(readset, countgraph, refr=None, minabund=5,
     message += '\n        '
     message += '{:d} reads'.format(readset.discarded)
     message += ' with no surviving valid k-mers ignored'
+    message += '\n        '
+    message += '{:d} contaminant reads discarded'.format(readset.contam)
+    message += '\n        '
+    message += '{:d} reads written to output'.format(n + 1)
     print(message, file=logfile)
 
 
@@ -186,6 +210,18 @@ def main(args):
               'Reference genome loaded in {:.2f} sec'.format(elapsed),
               file=args.logfile)
 
+    contam = None
+    if args.contam:
+        timer.start('loadcontam')
+        print('[kevlar::filter] Loading contaminants from', args.contam,
+              file=args.logfile)
+        contam = load_refr(args.contam, args.ksize, args.contam_memory,
+                           args.contam_max_fpr, args.logfile)
+        elapsed = timer.stop('loadcontam')
+        print('[kevlar::filter]',
+              'Contaminant database loaded in {:.2f} sec'.format(elapsed),
+              file=args.logfile)
+
     timer.start('recalc')
     print('[kevlar::filter] Loading input; recalculate k-mer abundances,',
           'de-duplicate reads and merge k-mers',
@@ -199,8 +235,8 @@ def main(args):
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
           file=args.logfile)
-    validate_and_print(readset, countgraph, refr, args.min_abund, args.out,
-                       args.aug_out, args.logfile)
+    validate_and_print(readset, countgraph, refr, contam, args.min_abund,
+                       args.out, args.aug_out, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)

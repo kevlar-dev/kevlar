@@ -14,6 +14,29 @@ import khmer
 import kevlar
 
 
+@pytest.fixture
+def bogusrefr():
+    refr = khmer.Nodetable(13, 1e7 / 4, 4)
+    refrfile = kevlar.tests.data_file('bogus-genome/refr.fa')
+    refr.consume_seqfile(refrfile)
+    return refr
+
+
+@pytest.fixture
+def contaminants():
+    contam = khmer.Nodetable(13, 1e7 / 4, 4)
+    contamfile = kevlar.tests.data_file('bogus-genome/contam1.fa')
+    contam.consume_seqfile(contamfile)
+    return contam
+
+
+@pytest.fixture
+def ctrl3():
+    augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
+    readset, countgraph = kevlar.filter.load_input([augfastq], 13, 1e7)
+    return readset, countgraph
+
+
 def test_load_refr():
     infile = kevlar.tests.data_file('bogus-genome/refr.fa')
     refr = kevlar.filter.load_refr(infile, 25, 1e7)
@@ -82,3 +105,23 @@ def test_validate_withrefr():
         for ikmer in record.ikmers:
             assert ikmer.sequence != kmer
             assert kevlar.revcom(ikmer.sequence) != kmer
+
+
+def test_ctrl3(ctrl3):
+    readset, countgraph = ctrl3
+    kevlar.filter.validate_and_print(readset, countgraph, minabund=6)
+    assert readset.valid == (424, 5782)
+
+
+def test_ctrl3_refr(ctrl3, bogusrefr):
+    readset, countgraph = ctrl3
+    kevlar.filter.validate_and_print(readset, countgraph, refr=bogusrefr,
+                                     minabund=6)
+    assert readset.valid == (424, 5782)
+
+
+def test_ctrl3_refr_contam(ctrl3, bogusrefr, contaminants):
+    readset, countgraph = ctrl3
+    kevlar.filter.validate_and_print(readset, countgraph, refr=bogusrefr,
+                                     contam=contaminants, minabund=6)
+    assert readset.valid == (13, 171)
