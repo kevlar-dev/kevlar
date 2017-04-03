@@ -15,7 +15,8 @@ def test_help(capsys):
     with pytest.raises(SystemExit):
         kevlar.cli.parser().parse_args(['-h'])
     out, err = capsys.readouterr()
-    assert 'show this help message and exit' in out
+    msg = 'show this help message and exit'
+    assert msg in out or msg in err
 
 
 def test_version(capsys):
