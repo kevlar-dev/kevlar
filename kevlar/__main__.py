@@ -21,12 +21,14 @@ def main(args=None):
     If no arguments are passed to the function, parse them from the command
     line.
     """
-    if args is None:
+    if args is None:  # pragma: no cover
         args = kevlar.cli.parser().parse_args()
 
-    if args.cmd is None:
+    if args.cmd is None:  # pragma: no cover
         kevlar.cli.parser().parse_args(['-h'])
 
     assert args.cmd in kevlar.cli.mains
     mainmethod = kevlar.cli.mains[args.cmd]
+    versionmessage = '[kevlar] running version {}'.format(kevlar.__version__)
+    print(versionmessage, file=args.logfile)
     mainmethod(args)
