@@ -44,4 +44,9 @@ def revcommin(seq):
     minseq = sorted((seq, rc))[0]
     return minseq
 
+
+def same_seq(seq1, seq2):
+    return seq1 == seq2 or seq1 == revcom(seq2)
+
+
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

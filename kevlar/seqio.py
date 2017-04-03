@@ -9,6 +9,8 @@
 
 from __future__ import print_function
 from collections import defaultdict
+from itertools import combinations, product
+from networkx import Graph
 from sys import stdout
 import re
 import khmer
@@ -175,3 +177,16 @@ class AnnotatedReadSet(object):
             record.ikmers = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
+
+    def group_reads_by_novel_kmers(self):
+        read_graph = Graph()
+        readids = sorted(self._reads)
+        for read1id, read2id in combinations(readids, 2):
+            record1 = self._reads[read1id]
+            record2 = self._reads[read2id]
+            for kmer1, kmer2 in product(record1.ikmers, record2.ikmers):
+                if kevlar.same_seq(kmer1.sequence, kmer2.sequence):
+                    read_graph.add_edge(read1id, read2id)
+                    break
+        for cc in read_graph.connected_components():
+            print('DEBUG', cc, file=sys.stderr)

@@ -230,7 +230,8 @@ def main(args):
                                      args.abund_memory, args.abund_max_fpr,
                                      args.logfile)
     elapsed = timer.stop('recalc')
-    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed))
+    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
 
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
@@ -239,6 +240,14 @@ def main(args):
                        args.out, args.aug_out, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
+          'in {:.2f} sec'.format(elapsed), file=args.logfile)
+
+    timer.start('graph')
+    print('[kevlar::filter] Group reads by novel k-mers',
+          file=args.logfile)
+    readset.group_reads_by_novel_kmers()
+    elapsed = timer.stop('graph')
+    print('[kevlar::filter] reads grouped by novel k-mers',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
     total = timer.stop()
