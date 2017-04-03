@@ -29,4 +29,6 @@ def main(args=None):
 
     assert args.cmd in kevlar.cli.mains
     mainmethod = kevlar.cli.mains[args.cmd]
+    versionmessage = '[kevlar] running version {}'.format(kevlar.__version__)
+    print(versionmessage, file=args.logfile)
     mainmethod(args)
