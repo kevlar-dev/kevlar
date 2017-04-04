@@ -94,8 +94,8 @@ def subparser(subparsers):
     misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
                            metavar='FILE',
                            help='optional augmented Fastq output')
-    misc_args.add_argument('--reads-by-novel-kmers', metavar='FILE',
-                           type=argsparse.FileType('w'),
+    misc_args.add_argument('--cc-novel', metavar='FILE',
+                           type=argparse.FileType('w'),
                            help='group reads by novel k-mers')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
