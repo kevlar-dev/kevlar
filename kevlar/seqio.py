@@ -178,15 +178,26 @@ class AnnotatedReadSet(object):
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 
-    def group_reads_by_novel_kmers(self):
+    def group_reads_by_novel_kmers(self, upint=10000, logstream=None):
+        reads_by_novel_kmer = defaultdict(set)
+        for n, read_name in enumerate(self._reads):
+            if logstream and n > 0 and n % upint == 0:
+                print('    store reads by novel k-mers:', n, file=logstream)
+            record = self._reads[read_name]
+            for novel_kmer in record.ikmers:
+                kmer_seq = novel_kmer.sequence
+                kmer_seq_rc = kevlar.revcom(novel_kmer.sequence)
+                reads_by_novel_kmer[kmer_seq].add(record.name)
+                reads_by_novel_kmer[kmer_seq_rc].add(record.name)
+
         read_graph = Graph()
-        readids = sorted(self._reads)
-        for read1id, read2id in combinations(readids, 2):
-            record1 = self._reads[read1id]
-            record2 = self._reads[read2id]
-            for kmer1, kmer2 in product(record1.ikmers, record2.ikmers):
-                if kevlar.same_seq(kmer1.sequence, kmer2.sequence):
-                    read_graph.add_edge(read1id, read2id)
-                    break
+        for n, read_name in enumerate(self._reads):
+            if logstream and n > 0 and n % upint == 0:
+                print('    build shared novel k-mer graph:', n, file=logstream)
+            record = self._reads[read_name]
+            for kmer in record.ikmers:
+                for other_record_name in reads_by_novel_kmer[kmer.sequence]:
+                    read_graph.add_edge(read_name, other_record_name)
+
         for cc in read_graph.connected_components():
             print('DEBUG', cc, file=sys.stderr)
