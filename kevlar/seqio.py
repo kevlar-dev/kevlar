@@ -178,7 +178,7 @@ class AnnotatedReadSet(object):
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 
-    def group_reads_by_novel_kmers(self, outstream=sys.stdout, upint=10000,
+    def group_reads_by_novel_kmers(self, outstream=stdout, upint=10000,
                                    logstream=None):
         n = 0
         reads_by_novel_kmer = defaultdict(set)
