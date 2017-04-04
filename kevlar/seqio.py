@@ -182,6 +182,7 @@ class AnnotatedReadSet(object):
                                    logstream=None):
         n = 0
         reads_by_novel_kmer = defaultdict(set)
+        novel_kmers = set()  # just for reporting numbers; free memory ASAP
         for n, read_name in enumerate(self._reads):
             if logstream and n > 0 and n % upint == 0:
                 print('    store reads by novel k-mers:', n, file=logstream)
@@ -191,6 +192,12 @@ class AnnotatedReadSet(object):
                 kmer_seq_rc = kevlar.revcom(novel_kmer.sequence)
                 reads_by_novel_kmer[kmer_seq].add(record.name)
                 reads_by_novel_kmer[kmer_seq_rc].add(record.name)
+                # Using ternary here instead of kmer.revcommin to avoid
+                # recomputing the reverse complement.
+                min_kmer = kmer_seq if kmer_seq < kmer_seq_rc else kmer_seq_rc
+                novel_kmers.add(min_kmer)
+        num_novel_kmers = len(novel_kmers)
+        del novel_kmers
 
         read_graph = Graph()
         for n, read_name in enumerate(self._reads):
@@ -201,10 +208,12 @@ class AnnotatedReadSet(object):
                 for other_record_name in reads_by_novel_kmer[kmer.sequence]:
                     read_graph.add_edge(read_name, other_record_name)
 
+        reads_in_ccs = 0
         for n, cc in enumerate(connected_components(read_graph)):
             print('CC', n, len(cc), cc, sep='\t', file=outstream)
+            reads_in_ccs += len(cc)
 
-        message = '        grouped {:d} reads'.format(len(reads_by_novel_kmer))
+        message = '        grouped {:d} reads'.format(reads_in_ccs)
         message += ' into {:d} connected components'.format(n + 1)
-        message += ' by share novel k-mers'
+        message += ' by {:d} shared novel k-mers'.format(num_novel_kmers)
         print(message, file=logstream)
