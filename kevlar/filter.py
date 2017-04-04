@@ -249,7 +249,7 @@ def main(args):
         timer.start('graph')
         print('[kevlar::filter] Group reads by novel k-mers',
               file=args.logfile)
-        readset.group_reads_by_novel_kmers(outstream=cc_novel,
+        readset.group_reads_by_novel_kmers(outstream=args.cc_novel,
                                            logstream=args.logfile)
         elapsed = timer.stop('graph')
         print('[kevlar::filter] reads grouped by novel k-mers',
