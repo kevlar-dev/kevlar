@@ -10,7 +10,7 @@
 from __future__ import print_function
 from collections import defaultdict
 from itertools import combinations, product
-from networkx import Graph
+from networkx import Graph, connected_components
 from sys import stdout
 import re
 import khmer
@@ -178,7 +178,9 @@ class AnnotatedReadSet(object):
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 
-    def group_reads_by_novel_kmers(self, upint=10000, logstream=None):
+    def group_reads_by_novel_kmers(self, outstream=sys.stdout, upint=10000,
+                                   logstream=None):
+        n = 0
         reads_by_novel_kmer = defaultdict(set)
         for n, read_name in enumerate(self._reads):
             if logstream and n > 0 and n % upint == 0:
@@ -199,5 +201,10 @@ class AnnotatedReadSet(object):
                 for other_record_name in reads_by_novel_kmer[kmer.sequence]:
                     read_graph.add_edge(read_name, other_record_name)
 
-        for cc in read_graph.connected_components():
-            print('DEBUG', cc, file=sys.stderr)
+        for n, cc in enumerate(connected_components(read_graph)):
+            print('CC', n, len(cc), cc, sep='\t', file=outstream)
+
+        message = '        grouped {:d} reads'.format(len(reads_by_novel_kmer))
+        message += ' into {:d} connected components'.format(n + 1)
+        message += ' by share novel k-mers'
+        print(message, file=logstream)

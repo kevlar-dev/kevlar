@@ -94,6 +94,9 @@ def subparser(subparsers):
     misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
                            metavar='FILE',
                            help='optional augmented Fastq output')
+    misc_args.add_argument('--reads-by-novel-kmers', metavar='FILE',
+                           type=argsparse.FileType('w'),
+                           help='group reads by novel k-mers')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar find` '
@@ -242,13 +245,15 @@ def main(args):
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
-    timer.start('graph')
-    print('[kevlar::filter] Group reads by novel k-mers',
-          file=args.logfile)
-    readset.group_reads_by_novel_kmers(logstream=args.logfile)
-    elapsed = timer.stop('graph')
-    print('[kevlar::filter] reads grouped by novel k-mers',
-          'in {:.2f} sec'.format(elapsed), file=args.logfile)
+    if args.reads_by_novel_kmers:
+        timer.start('graph')
+        print('[kevlar::filter] Group reads by novel k-mers',
+              file=args.logfile)
+        readset.group_reads_by_novel_kmers(outstream=reads_by_novel_kmers,
+                                           logstream=args.logfile)
+        elapsed = timer.stop('graph')
+        print('[kevlar::filter] reads grouped by novel k-mers',
+              'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
