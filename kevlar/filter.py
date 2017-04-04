@@ -94,9 +94,10 @@ def subparser(subparsers):
     misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
                            metavar='FILE',
                            help='optional augmented Fastq output')
-    misc_args.add_argument('--cc-novel', metavar='FILE',
-                           type=argparse.FileType('w'),
-                           help='group reads by novel k-mers')
+    misc_args.add_argument('--cc-prefix', metavar='PREFIX',
+                           type=argparse.FileType('w'), help='group reads by '
+                           'novel k-mers, and use the specified prefix to '
+                           'write each group to its own file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar find` '
@@ -249,7 +250,7 @@ def main(args):
         timer.start('graph')
         print('[kevlar::filter] Group reads by novel k-mers',
               file=args.logfile)
-        readset.group_reads_by_novel_kmers(outstream=args.cc_novel,
+        readset.group_reads_by_novel_kmers(args.cc_prefix,
                                            logstream=args.logfile)
         elapsed = timer.stop('graph')
         print('[kevlar::filter] reads grouped by novel k-mers',

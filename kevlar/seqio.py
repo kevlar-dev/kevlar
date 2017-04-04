@@ -178,7 +178,7 @@ class AnnotatedReadSet(object):
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 
-    def group_reads_by_novel_kmers(self, outstream=stdout, upint=10000,
+    def group_reads_by_novel_kmers(self, ccprefix, upint=10000,
                                    logstream=None):
         n = 0
         reads_by_novel_kmer = defaultdict(set)
@@ -209,9 +209,15 @@ class AnnotatedReadSet(object):
                     read_graph.add_edge(read_name, other_record_name)
 
         reads_in_ccs = 0
+        cclog = open(ccprefix + '.cc.log', 'w')
         for n, cc in enumerate(connected_components(read_graph)):
-            print('CC', n, len(cc), cc, sep='\t', file=outstream)
+            print('CC', n, len(cc), cc, sep='\t', file=cclog)
             reads_in_ccs += len(cc)
+            outfilename = '{:s}.cc{:d}.augfastq'.format(ccprefix, n)
+            with open(outfilename, 'w') as outfile:
+                for readid in cc:
+                    record = self._reads[readid]
+                    kevlar.print_augmented_fastq(record, outfile)
 
         message = '        grouped {:d} reads'.format(reads_in_ccs)
         message += ' into {:d} connected components'.format(n + 1)
