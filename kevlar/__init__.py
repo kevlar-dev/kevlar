@@ -14,6 +14,7 @@ from kevlar import dump
 from kevlar import find
 from kevlar import collect
 from kevlar import filter
+from kevlar import reaugment
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
