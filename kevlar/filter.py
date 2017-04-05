@@ -95,9 +95,9 @@ def subparser(subparsers):
                            metavar='FILE',
                            help='optional augmented Fastq output')
     misc_args.add_argument('--cc-prefix', metavar='PREFIX',
-                           type=argparse.FileType('w'), help='group reads by '
-                           'novel k-mers, and use the specified prefix to '
-                           'write each group to its own file')
+                           help='group reads by novel k-mers, and use the '
+                           'specified prefix to write each group to its own '
+                           'file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar find` '
@@ -246,7 +246,7 @@ def main(args):
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
-    if args.cc_novel:
+    if args.cc_prefix:
         timer.start('graph')
         print('[kevlar::filter] Group reads by novel k-mers',
               file=args.logfile)
