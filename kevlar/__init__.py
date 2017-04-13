@@ -7,6 +7,10 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+try:
+    import __builtin__ as builtins
+except:  # pragma: no cover
+    import builtins
 from collections import namedtuple
 from kevlar import seqio
 from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
@@ -18,11 +22,22 @@ from kevlar import reaugment
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
+from gzip import open as gzopen
 import screed
 
 from kevlar._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+def open(filename, mode):
+    if mode not in ['r', 'w']:
+        raise ValueError('invalid mode "{}"'.format(mode))
+    openfunc = builtins.open
+    if filename.endswith('.gz'):
+        openfunc = gzopen
+        mode += 't'
+    return openfunc(filename, mode)
 
 
 def calc_fpr(table):

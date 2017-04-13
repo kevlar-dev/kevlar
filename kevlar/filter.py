@@ -136,7 +136,7 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     readset = kevlar.seqio.AnnotatedReadSet()
     for filename in filelist:
         print('    -', filename, file=logfile)
-        with open(filename, 'r') as infile:
+        with kevlar.open(filename, 'r') as infile:
             for record in kevlar.parse_augmented_fastq(infile):
                 if record.name not in readset._reads:
                     countgraph.consume(record.sequence)
