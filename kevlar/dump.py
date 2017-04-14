@@ -10,7 +10,10 @@
 from __future__ import print_function
 import argparse
 
-import pysam
+try:
+    import pysam
+except ImportError:
+    pass
 import khmer
 from khmer import khmer_args
 
@@ -45,6 +48,14 @@ def subparser(subparsers):
 
 
 def main(args):
+    try:
+        import pysam
+    except ImportError:
+        import sys
+        print('[kevlar::dump] FATAL ERROR: cannot execute "kevlar dump" '
+              'unless the "pysam" module is installed', file=sys.stderr)
+        sys.exit(1)
+
     print('[kevlar::dump] Loading reference sequence', file=args.logfile)
     with open(args.refr, 'r') as genome:
         seqs = kevlar.seqio.parse_seq_dict(genome)
