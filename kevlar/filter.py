@@ -89,7 +89,7 @@ def subparser(subparsers):
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE',
+                           metavar='FILE', default=sys.stdout,
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
                            metavar='FILE',

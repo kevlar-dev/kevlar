@@ -10,8 +10,11 @@
 from __future__ import print_function
 from collections import defaultdict
 from itertools import combinations, product
-from networkx import Graph, connected_components
-from sys import stdout
+try:
+    from networkx import Graph, connected_components
+except:
+    pass
+from sys import stdout, stderr, exit
 import re
 import khmer
 import screed
@@ -180,6 +183,15 @@ class AnnotatedReadSet(object):
 
     def group_reads_by_novel_kmers(self, ccprefix, upint=10000,
                                    logstream=None):
+        try:
+            _ = Graph()
+        except NameError as ne:
+            assert "'Graph' is not defined" in str(ne)
+            print('[kevlar::AnnotatedReadSet] FATAL ERROR: Cannot call '
+                  '"group_reads_by_novel_kmers" unless the "networkx" module '
+                  ' is installed', file=stderr)
+            exit(1)
+
         n = 0
         reads_by_novel_kmer = defaultdict(set)
         novel_kmers = set()  # just for reporting numbers; free memory ASAP
