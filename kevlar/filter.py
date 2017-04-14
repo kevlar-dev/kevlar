@@ -199,7 +199,7 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
 
 
 def main(args):
-    if args.cc_prefix:
+    if args.cc_prefix:  # pragma: no cover
         try:
             import networkx
         except ImportError:

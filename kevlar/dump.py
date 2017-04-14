@@ -48,7 +48,7 @@ def subparser(subparsers):
 
 
 def main(args):
-    try:
+    try:  # pragma: no cover
         import pysam
     except ImportError:
         import sys
@@ -57,7 +57,7 @@ def main(args):
         sys.exit(1)
 
     print('[kevlar::dump] Loading reference sequence', file=args.logfile)
-    with open(args.refr, 'r') as genome:
+    with kevlar.open(args.refr, 'r') as genome:
         seqs = kevlar.seqio.parse_seq_dict(genome)
 
     if args.genomemask:

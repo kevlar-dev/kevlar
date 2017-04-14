@@ -225,8 +225,8 @@ class AnnotatedReadSet(object):
         for n, cc in enumerate(connected_components(read_graph)):
             print('CC', n, len(cc), cc, sep='\t', file=cclog)
             reads_in_ccs += len(cc)
-            outfilename = '{:s}.cc{:d}.augfastq'.format(ccprefix, n)
-            with open(outfilename, 'w') as outfile:
+            outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)
+            with kevlar.open(outfilename, 'w') as outfile:
                 for readid in cc:
                     record = self._reads[readid]
                     kevlar.print_augmented_fastq(record, outfile)

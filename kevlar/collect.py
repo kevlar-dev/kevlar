@@ -76,7 +76,7 @@ def recalc_abund(filelist, ksize, memory, maxfpr=0.1, logfile=sys.stderr):
           file=logfile)
     for filename in filelist:
         print('   ', filename, file=logfile)
-        with open(filename, 'r') as infile:
+        with kevlar.open(filename, 'r') as infile:
             for line in infile:
                 if line.startswith('@'):
                     # Load the 4 lines of the Fastq record
@@ -114,7 +114,7 @@ def load_novel_kmers(filelist, countgraph, refr=None, minabund=5,
     discarded = 0
     for filename in filelist:
         print('   ', filename, file=logfile)
-        with open(filename, 'r') as infile:
+        with kevlar.open(filename, 'r') as infile:
             for line in infile:
                 if line.startswith('@'):
                     # Load the 4 lines of the Fastq record
