@@ -17,6 +17,7 @@ mains = {
     'find': kevlar.find.main,
     'collect': kevlar.collect.main,
     'filter': kevlar.filter.main,
+    'reaugment': kevlar.reaugment.main,
 }
 
 
@@ -36,5 +37,6 @@ def parser():
     kevlar.find.subparser(subparsers)
     kevlar.collect.subparser(subparsers)
     kevlar.filter.subparser(subparsers)
+    kevlar.reaugment.subparser(subparsers)
 
     return parser

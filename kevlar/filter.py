@@ -89,11 +89,15 @@ def subparser(subparsers):
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE',
+                           metavar='FILE', default=sys.stdout,
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
                            metavar='FILE',
                            help='optional augmented Fastq output')
+    misc_args.add_argument('--cc-prefix', metavar='PREFIX',
+                           help='group reads by novel k-mers, and use the '
+                           'specified prefix to write each group to its own '
+                           'file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar find` '
@@ -132,7 +136,7 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     readset = kevlar.seqio.AnnotatedReadSet()
     for filename in filelist:
         print('    -', filename, file=logfile)
-        with open(filename, 'r') as infile:
+        with kevlar.open(filename, 'r') as infile:
             for record in kevlar.parse_augmented_fastq(infile):
                 if record.name not in readset._reads:
                     countgraph.consume(record.sequence)
@@ -195,6 +199,15 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
 
 
 def main(args):
+    if args.cc_prefix:  # pragma: no cover
+        try:
+            import networkx
+        except ImportError:
+            print('[kevlar::filter] FATAL ERROR: cannot group reads by novel '
+                  'k-mers (--cc-prefix flag) unless the "networkx" module is '
+                  'installed', file=sys.stderr)
+            sys.exit(1)
+
     timer = kevlar.Timer()
     timer.start()
 
@@ -230,7 +243,8 @@ def main(args):
                                      args.abund_memory, args.abund_max_fpr,
                                      args.logfile)
     elapsed = timer.stop('recalc')
-    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed))
+    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
 
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
@@ -240,6 +254,16 @@ def main(args):
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
+
+    if args.cc_prefix:
+        timer.start('graph')
+        print('[kevlar::filter] Group reads by novel k-mers',
+              file=args.logfile)
+        readset.group_reads_by_novel_kmers(args.cc_prefix,
+                                           logstream=args.logfile)
+        elapsed = timer.stop('graph')
+        print('[kevlar::filter] reads grouped by novel k-mers',
+              'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
