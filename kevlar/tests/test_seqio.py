@@ -88,3 +88,20 @@ def test_aug_fastq_reader_e2():
     assert record.ikmers[1].sequence == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
     assert record.ikmers[1].offset == 83
     assert record.ikmers[1].abund == [23, 0, 0]
+
+
+@pytest.mark.parametrize('basename', [
+    ('example2.augfastq'),
+    ('example2.augfastq.gz'),
+])
+def test_kevlar_open(basename):
+    infilename = kevlar.tests.data_file(basename)
+    infile = kevlar.open(infilename, 'r')
+    record = next(kevlar.parse_augmented_fastq(infile))
+
+    assert record.name == 'ERR894724.125497791/1'
+    assert record.sequence == (
+        'TAGCCAGTTTGGGTAATTTTAATTGTAAAACTTTTTTTTCTTTTTTTTTGATTTTTTTTTTTCAAGCAG'
+        'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
+    )
+    assert len(record.ikmers) == 2
