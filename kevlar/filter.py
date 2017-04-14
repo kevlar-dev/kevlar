@@ -199,6 +199,15 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
 
 
 def main(args):
+    if args.cc_prefix:
+        try:
+            import networkx
+        except ImportError:
+            print('[kevlar::filter] FATAL ERROR: cannot group reads by novel '
+                  'k-mers (--cc-prefix flag) unless the "networkx" module is '
+                  'installed', file=sys.stderr)
+            sys.exit(1)
+
     timer = kevlar.Timer()
     timer.start()
 
