@@ -22,8 +22,21 @@ mains = {
 
 
 def parser():
+    bubbletext = """
+≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
+┌ ┐            ┌ ┐
+| |            | |
+| | _______   _| | __ _ _ __
+| |/ / _ \ \ / / |/ _` | '__|
+|   <  __/\ V /| | (_| | |        reference-free variant discovery in
+|_|\_\___| \_/ |_|\__,_|_|                   large eukaryotic genomes
+≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
+"""
     subcommandstr = '", "'.join(sorted(list(mains.keys())))
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=bubbletext,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser._positionals.title = 'Subcommands'
     parser._optionals.title = 'Global arguments'
     parser.add_argument('-v', '--version', action='version',
