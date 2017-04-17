@@ -79,9 +79,13 @@ def main(args):
 
     debugout = None
     if args.debug:
-        debugout = args.logstream
+        debugout = args.logfile
     graph = networkx.Graph()  # DiGraph?
-    for minkmer in kmers:
+    nkmers = len(kmers)
+    for n, minkmer in enumerate(kmers, 1):
+        if n % 1000 == 0:
+            msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
+            print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
         readnames = kmers[minkmer]
         assert len(readnames) > 1
         readset = [reads[rn] for rn in readnames]
@@ -90,7 +94,6 @@ def main(args):
             if tail is None:  # Shared k-mer but bad overlap
                 continue
             if tail in graph and head in graph[tail]:
-
                 assert graph[tail][head]['offset'] == offset
             else:
                 graph.add_edge(tail.name, head.name, offset=offset)
