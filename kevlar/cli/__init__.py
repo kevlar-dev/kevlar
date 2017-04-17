@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
