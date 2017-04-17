@@ -19,6 +19,8 @@ import kevlar
 
 def subparser(subparsers):
     subparser = subparsers.add_parser('assemble')
+    subparser.add_argument('-d', '--debug', action='store_true',
+                           help='print debugging output')
     subparser.add_argument('-o', '--out', metavar='FILE', default=sys.stdout,
                            type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
@@ -26,12 +28,12 @@ def subparser(subparsers):
                            help='annotated reads in augmented Fastq format')
 
 
-def calc_offset(read1, read2, minkmer):
-    maxkmer = kevlar.revcommin(minkmer)
+def calc_offset(read1, read2, minkmer, debugstream=None):
+    maxkmer = kevlar.revcom(minkmer)
     kmer1 = [k for k in read1.ikmers
-             if kevlar.same_seq(k.sequence, minkmer, maxkmer)]
+             if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
     kmer2 = [k for k in read2.ikmers
-             if kevlar.same_seq(k.sequence, minkmer, maxkmer)]
+             if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
     ksize = len(kmer1.sequence)
 
     pos1 = kmer1.offset
@@ -48,29 +50,56 @@ def calc_offset(read1, read2, minkmer):
         tail, head = read2, read1
         offset = pos2 - pos1
 
+    segment1 = tail.sequence[offset:]
+    headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
+    segment2 = headseq[:(len(headseq)-offset)]
+    if segment1 != segment2:
+        return None, None, None
+
+    if debugstream:
+        print('\nDEBUG shared interesting kmer: ', tail.name, ' --> ',
+              head.name, '\n', tail.sequence, '\n', ' ' * offset,
+              '|' * len(segment1), '\n', ' ' * offset, headseq, '\n', sep='',
+              file=debugstream)
+
     return tail, head, offset
 
 
 def main(args):
-    reads = defaultdict(set)  # key: k-mer (min repr), value: set of reads
+    reads = dict()            # key: read ID, value: record
+    kmers = defaultdict(set)  # key: k-mer (min repr), value: set of read IDs
     for n, record in enumerate(kevlar.parse_augmented_fastq(args.augfastq), 1):
         if n % 10000 == 0:
             print('[kevlar::assemble]    loaded {:d} reads'.format(n),
                   file=args.logfile)
+        reads[record.name] = record
         for kmer in record.ikmers:
             kmerseq = kevlar.revcommin(kmer.sequence)
-            reads[kmerseq].add(record)
+            kmers[kmerseq].add(record.name)
 
+    debugout = None
+    if args.debug:
+        debugout = args.logstream
     graph = networkx.Graph()  # DiGraph?
-    for minkmer in reads:
-        readset = reads[minkmer]
-        assert len(readset) > 1
+    for minkmer in kmers:
+        readnames = kmers[minkmer]
+        assert len(readnames) > 1
+        readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
-            tail, head, offset = calc_offset(read1, read2, minkmer)
+            tail, head, offset = calc_offset(read1, read2, minkmer, debugout)
+            if tail is None:  # Shared k-mer but bad overlap
+                continue
             if tail in graph and head in graph[tail]:
+
                 assert graph[tail][head]['offset'] == offset
             else:
-                graph.add_edge(tail, head, offset=offset)
+                graph.add_edge(tail.name, head.name, offset=offset)
 
-    for n, cc in enumerate(networkx.connected_components(graph)):
-        print('CC', n, len(cc), sep='\t')
+    reads_assembled = 0
+    for n, cc in enumerate(networkx.connected_components(graph), 1):
+        reads_assembled += len(cc)
+        print('CC', n, len(cc), sep='\t', file=args.out)
+
+    message = '[kevlar::assemble] {:d} reads'.format(reads_assembled)
+    message += ' assembled into {:d} contigs'.format(n)
+    print(message, file=args.logfile)
