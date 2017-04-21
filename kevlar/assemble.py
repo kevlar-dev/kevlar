@@ -24,6 +24,11 @@ def subparser(subparsers):
     subparser.add_argument('-o', '--out', metavar='FILE', default=sys.stdout,
                            type=argparse.FileType('w'),
                            help='output file; default is terminal (stdout)')
+    subparser.add_argument('--gml', metavar='FILE',
+                           help='write graph to .gml file')
+    subparser.add_argument('-x', '--max-abund', type=int, metavar='X',
+                           default=500, help='discard interesting k-mers that '
+                           'occur more than X times')
     subparser.add_argument('augfastq', type=argparse.FileType('r'),
                            help='annotated reads in augmented Fastq format')
 
@@ -54,15 +59,15 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
     segment2 = headseq[:(len(headseq)-offset)]
     if segment1 != segment2:
-        return None, None, None
+        return None, None, None, None
 
     if debugstream:
-        print('\nDEBUG shared interesting kmer: ', tail.name, ' --> ',
-              head.name, '\n', tail.sequence, '\n', ' ' * offset,
-              '|' * len(segment1), '\n', ' ' * offset, headseq, '\n', sep='',
-              file=debugstream)
+        print('\nDEBUG shared interesting kmer: ', tail.name,
+              ' --({:d})({})--> '.format(offset, sameorient), head.name, '\n',
+              tail.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
+              headseq, '\n', sep='', file=debugstream)
 
-    return tail, head, offset
+    return tail, head, offset, sameorient
 
 
 def main(args):
@@ -83,25 +88,59 @@ def main(args):
     graph = networkx.Graph()  # DiGraph?
     nkmers = len(kmers)
     for n, minkmer in enumerate(kmers, 1):
-        if n % 1000 == 0:
+        if n % 100 == 0:
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
             print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
         readnames = kmers[minkmer]
+        if len(readnames) > args.max_abund:
+            msg = '            skipping k-mer contained by {:d} reads'.format(
+                len(readnames)
+            )
+            print(msg, file=sys.stderr)
+            continue
+        # print('DDDEBUG', n, len(readnames), file=sys.stderr)
+        # continue
         assert len(readnames) > 1
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
-            tail, head, offset = calc_offset(read1, read2, minkmer, debugout)
+            tail, head, offset, sameorient = calc_offset(read1, read2, minkmer,
+                                                         debugout)
             if tail is None:  # Shared k-mer but bad overlap
                 continue
             if tail in graph and head in graph[tail]:
                 assert graph[tail][head]['offset'] == offset
             else:
-                graph.add_edge(tail.name, head.name, offset=offset)
+                graph.add_edge(tail.name, head.name, offset=offset,
+                               ikmer=minkmer, orient=sameorient)
 
     reads_assembled = 0
     for n, cc in enumerate(networkx.connected_components(graph), 1):
+        countgraph = khmer.Countgraph(31, 1e6, 4)
+        ikmers = set()
+        for readname in cc:
+            countgraph.consume(record.sequence)
+            ikmers.update(set([k.sequence for k in record.ikmers]))
+        contigs = set()
+        for kmer in ikmers:
+            contig = countgraph.assemble_linear_path(kmer)
+            contigs.add(contig)
+            if len(contigs) > 1:
+                unique = set()
+                for ctg in sorted(contigs, key=len, reverse=True):
+                    ctgrc = kevlar.revcom(ctg)
+                    for other in unique:
+                        if ctg in other or ctgrc in other:
+                            break
+                    else:
+                        unique.add(ctg)
+                contigs = unique
         reads_assembled += len(cc)
-        print('CC', n, len(cc), sep='\t', file=args.out)
+        print('CC', n, len(cc), contigs, sep='\t', file=args.out)
+
+    if args.gml:
+        networkx.write_gml(graph, args.gml)
+        message = '[kevlar::assemble] graph written to {}'.format(args.gml)
+        print(message, file=args.logfile)
 
     message = '[kevlar::assemble] {:d} reads'.format(reads_assembled)
     message += ' assembled into {:d} contigs'.format(n)
