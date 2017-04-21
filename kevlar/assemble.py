@@ -8,13 +8,17 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import argparse
 import itertools
 import sys
 import networkx
+import screed
 import khmer
 import kevlar
+
+
+SequenceOverlap = namedtuple('SequenceOverlap', 'seq1 seq2 offset sameorient')
 
 
 def subparser(subparsers):
@@ -70,6 +74,42 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
     return tail, head, offset, sameorient
 
 
+def collapse(seq1, seq2, offset, sameorient):
+    if sameorient is False:
+        seq2 = kevlar.revcom(seq2)
+    firstnewnucl = len(seq2) - (len(seq2) - len(seq1) + offset)
+    seq2suffix = seq2[firstnewnucl:]
+    return seq1 + seq2suffix
+
+
+def annotate_contig(record1, record2, newcontig, newname, offset, sameorient):
+    assert offset > 1
+    newrecord = screed.Record(name=newname, sequence=newcontig,
+                              ikmers=record1.ikmers)
+    ksize = len(record1.ikmers[0].sequence)
+    if sameorient:
+        # Next two lines are at high risk for off-by-one errors
+        minoffset2keep = len(record2.sequence) - offset - ksize
+        keepers = [ik for ik in record2.ikmers if ik.offset > minoffset2keep]
+        for k in keepers:
+            ikmer = kevlar.KmerOfInterest(k.sequence, k.offset + offset,
+                                          k.abund)
+            newrecord.ikmers.append(ikmer)
+    else:
+        maxoffset2keep = offset + ksize
+        keepers = [ik for ik in record2.ikmers if ik.offset < maxoffset2keep]
+        for k in keepers:
+            print()
+            ikmer = kevlar.KmerOfInterest(
+                kevlar.revcom(k.sequence),
+                len(record2.sequence) - k.offset - ksize + offset,
+                k.abund,
+            )
+            newrecord.ikmers.append(ikmer)
+
+    return newrecord
+
+
 def main(args):
     reads = dict()            # key: read ID, value: record
     kmers = defaultdict(set)  # key: k-mer (min repr), value: set of read IDs
@@ -93,13 +133,11 @@ def main(args):
             print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
         readnames = kmers[minkmer]
         if len(readnames) > args.max_abund:
-            msg = '            skipping k-mer contained by {:d} reads'.format(
+            msg = '            skipping k-mer with abundance {:d}'.format(
                 len(readnames)
             )
             print(msg, file=sys.stderr)
             continue
-        # print('DDDEBUG', n, len(readnames), file=sys.stderr)
-        # continue
         assert len(readnames) > 1
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
@@ -107,35 +145,62 @@ def main(args):
                                                          debugout)
             if tail is None:  # Shared k-mer but bad overlap
                 continue
-            if tail in graph and head in graph[tail]:
-                assert graph[tail][head]['offset'] == offset
+            if tail.name in graph and head.name in graph[tail.name]:
+                assert graph[tail.name][head.name]['offset'] == offset
             else:
                 graph.add_edge(tail.name, head.name, offset=offset,
                                ikmer=minkmer, orient=sameorient)
 
     reads_assembled = 0
-    for n, cc in enumerate(networkx.connected_components(graph), 1):
-        countgraph = khmer.Countgraph(31, 1e6, 4)
-        ikmers = set()
-        for readname in cc:
-            countgraph.consume(record.sequence)
-            ikmers.update(set([k.sequence for k in record.ikmers]))
-        contigs = set()
-        for kmer in ikmers:
-            contig = countgraph.assemble_linear_path(kmer)
-            contigs.add(contig)
-            if len(contigs) > 1:
-                unique = set()
-                for ctg in sorted(contigs, key=len, reverse=True):
-                    ctgrc = kevlar.revcom(ctg)
-                    for other in unique:
-                        if ctg in other or ctgrc in other:
-                            break
+    ccs = list(networkx.connected_components(graph))
+    for n, cc in enumerate(ccs, 1):
+        count = 0
+        while len(graph.edges()) > 0:
+            count += 1
+            edges = sorted(graph.edges(),
+                           key=lambda e: graph[e[0]][e[1]]['offset'])
+            read1, read2 = edges[0]  # biggest overlap
+            seq1 = reads[read1].sequence
+            seq2 = reads[read2].sequence
+            offset = graph[read1][read2]['offset']
+            sameorient = graph[read1][read2]['orient']
+
+            if offset == 0:
+                graph.remove_node(read2)
+                continue
+
+            newcontig = collapse(seq1, seq2, offset, sameorient)
+            newname = 'contig{:d}'.format(count)
+            newrecord = annotate_contig(reads[read1], reads[read2], newcontig,
+                                        newname, offset, sameorient)
+            if debugout:
+                print('# DEBUG', read1, read2, offset, sameorient,
+                      file=debugout)
+                kevlar.print_augmented_fastq(newrecord, debugout)
+
+            for kmer in newrecord.ikmers:
+                kmerseq = kevlar.revcommin(kmer.sequence)
+                for readname in kmers[kmerseq]:
+                    if readname not in graph:
+                        continue
+                    otherrecord = reads[readname]
+                    tail, head, poffset, sameorient = calc_offset(
+                        newrecord, otherrecord, kmerseq, debugout
+                    )
+                    if tail is None:
+                        continue
+                    if tail.name in graph and head.name in graph[tail.name]:
+                        assert graph[tail.name][head.name]['offset'] == poffset
                     else:
-                        unique.add(ctg)
-                contigs = unique
+                        graph.add_edge(tail.name, head.name, offset=poffset,
+                                       ikmer=minkmer, orient=sameorient)
+
+            kmers[kmerseq].add(newrecord.name)
+            graph.remove_node(read1)
+            graph.remove_node(read2)
+
         reads_assembled += len(cc)
-        print('CC', n, len(cc), contigs, sep='\t', file=args.out)
+        print('CC', n, len(cc), sep='\t', file=args.out)
 
     if args.gml:
         networkx.write_gml(graph, args.gml)
