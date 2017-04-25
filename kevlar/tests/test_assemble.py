@@ -9,10 +9,11 @@
 
 import pytest
 import screed
+from networkx import connected_components
 import kevlar
 from kevlar import KmerOfInterest
 from kevlar.assemble import (merge_pair, merge_and_reannotate,
-                             OverlappingReadPair, load_reads)
+                             OverlappingReadPair, load_reads, graph_init)
 from kevlar.tests import data_file
 
 
@@ -414,3 +415,26 @@ def test_load_reads():
         'read37f start=9,mutations=0'
     ])
     assert kmers['CCGGTTTTTAGAAGTCTCGACTTTAAGGA'] == testset
+
+
+def test_graph_init():
+    """Test graph initialization."""
+    instream = open(data_file('var1.reads.fq'), 'r')
+    reads, kmers = load_reads(instream, logstream=None)
+    graph = graph_init(reads, kmers, maxabund=None, logstream=None)
+
+    # 10 reads in the file, but read16f has no valid connections due to error
+    assert len(graph.nodes()) == 9
+
+    # The given read shares its interesting k-mer and has compatible overlaps
+    # with 6 other reads (read13f and read15f have errors).
+    r23name = 'read23f start=67,mutations=0'
+    assert len(graph[r23name]) == 6
+
+    # Test the values of one of the edges.
+    r35name = 'read35f start=25,mutations=0'
+    assert graph[r23name][r35name]['offset'] == 42
+    assert graph[r23name][r35name]['overlap'] == 58
+
+    # Should all be a single CC
+    assert len(list(connected_components(graph))) == 1

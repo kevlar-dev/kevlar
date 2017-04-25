@@ -165,12 +165,7 @@ def load_reads(instream, logstream=None):
     return reads, kmers
 
 
-def main(args):
-    reads, kmers = load_reads(args.augfastq, args.logfile)
-
-    debugout = None
-    if args.debug:
-        debugout = args.logfile
+def graph_init(reads, kmers, maxabund=500, logstream=None):
     graph = networkx.Graph()
     nkmers = len(kmers)
     for n, minkmer in enumerate(kmers, 1):
@@ -178,24 +173,35 @@ def main(args):
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
             print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
         readnames = kmers[minkmer]
-        if args.max_abund and len(readnames) > args.max_abund:
+        if maxabund and len(readnames) > maxabund:
             msg = '            skipping k-mer with abundance {:d}'.format(
                 len(readnames)
             )
-            print(msg, file=sys.stderr)
+            print(msg, file=logstream)
             continue
         assert len(readnames) > 1
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
-            pair = calc_offset(read1, read2, minkmer, debugout)
-            if tail is IncompatiblePair:  # Shared k-mer but bad overlap
+            pair = calc_offset(read1, read2, minkmer, logstream)
+            if pair is IncompatiblePair:  # Shared k-mer but bad overlap
                 continue
-            if tail.name in graph and head.name in graph[tail.name]:
-                assert graph[tail.name][head.name]['offset'] == offset
+            tailname, headname = pair.tail.name, pair.head.name
+            if tailname in graph and headname in graph[tailname]:
+                assert graph[tailname][headname]['offset'] == pair.offset
             else:
-                graph.add_edge(pair.tail.name, pair.head.name,
-                               offset=pair.offset, overlap=pair.overlap,
-                               ikmer=minkmer, orient=pair.sameorient)
+                graph.add_edge(tailname, headname, offset=pair.offset,
+                               overlap=pair.overlap, ikmer=minkmer,
+                               orient=pair.sameorient)
+    return graph
+
+
+def main(args):
+    debugout = None
+    if args.debug:
+        debugout = args.logfile
+
+    reads, kmers = load_reads(args.augfastq, debugout)
+    graph = graph_init(reads, kmers, args.max_abund, debugout)
 
     reads_assembled = 0
     ccs = list(networkx.connected_components(graph))
