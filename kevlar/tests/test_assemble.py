@@ -86,6 +86,53 @@ def record6():
     )
 
 
+@pytest.fixture
+def record7():
+    return screed.Record(
+        name='read7',
+        sequence=('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGC'
+                  'GATAACTCAA'),
+        ikmers=[
+            KmerOfInterest('TCCCCACCCGGATACTT', 4, [28, 0, 0]),
+            KmerOfInterest('CCCCACCCGGATACTTG', 5, [26, 0, 0]),
+            KmerOfInterest('CCCGGATACTTGAAGCA', 10, [21, 0, 0]),
+            KmerOfInterest('GGTATGTGAGGCGATAA', 38, [14, 0, 0]),
+            KmerOfInterest('GTATGTGAGGCGATAAC', 39, [15, 1, 0]),
+            KmerOfInterest('TATGTGAGGCGATAACT', 40, [15, 1, 1]),
+        ],
+    )
+
+
+@pytest.fixture
+def record8():
+    return screed.Record(
+        name='read8',
+        sequence=('GTATGTGAGGCGATAACTCAAGACCACGGGAGCTCACTTCGTTGACGCGA'
+                  'GCGCCTTGCT'),
+        ikmers=[
+            KmerOfInterest('GTATGTGAGGCGATAAC', 0, [15, 1, 0]),
+            KmerOfInterest('TATGTGAGGCGATAACT', 1, [15, 1, 1]),
+            KmerOfInterest('TGACGCGAGCGCCTTGC', 42, [39, 0, 0]),
+            KmerOfInterest('GACGCGAGCGCCTTGCT', 43, [25, 0, 0]),
+        ],
+    )
+
+
+@pytest.fixture
+def record9():
+    return screed.Record(
+        name='read9',
+        sequence=('AGCAAGGCGCTCGCGTCAACGAAGTGAGCTCCCGTGGTCTTGAGTTATCG'
+                  'CCTCACATAC'),
+        ikmers=[
+            KmerOfInterest('AGCAAGGCGCTCGCGTC', 0, [25, 0, 0]),
+            KmerOfInterest('GCAAGGCGCTCGCGTCA', 1, [39, 0, 0]),
+            KmerOfInterest('GTTATCGCCTCACATAC', 42, [15, 1, 1]),
+            KmerOfInterest('AGTTATCGCCTCACATA', 43, [15, 1, 0]),
+        ],
+    )
+
+
 def test_calc_offset_same_orientation(record1, record2):
     """
     Compute offset of reads sharing an interesting k-mer, same orientation.
@@ -205,3 +252,75 @@ def test_merge_and_reannotate_opposite_orientation(record1, record3):
     assert len(newrecord.ikmers) == 2
     assert newrecord.ikmers[0].offset == 14
     assert newrecord.ikmers[1].offset == 27
+
+
+def test_merge_and_reannotate_edge_case_same_orientation(record7, record8):
+    """
+    Test merge/reannotation with edge cases to check for fencepost errors.
+
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGCGATAACTCAA
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+                                          |||||||||||||||||
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+                                           GTATGTGAGGCGATAACTCAAGACCACGGGAGCTCACTTCGTTGACGCGAGCGCCTTGCT
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+                                                                                     |||||||||||||||||
+                                                                                      |||||||||||||||||
+    """  # noqa
+    pair = OverlappingReadPair(tail=record7, head=record8, offset=39,
+                               overlap=21, sameorient=True)
+    newrecord = merge_and_reannotate(pair, 'SoMeCoNtIg')
+    assert newrecord.name == 'SoMeCoNtIg'
+    assert newrecord.sequence == ('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTAT'
+                                  'GTGAGGCGATAACTCAAGACCACGGGAGCTCACTTCGTTGACG'
+                                  'CGAGCGCCTTGCT')
+    assert len(newrecord.ikmers) == 8
+
+    testseqs = [
+        'TCCCCACCCGGATACTT', 'CCCCACCCGGATACTTG', 'CCCGGATACTTGAAGCA',
+        'GGTATGTGAGGCGATAA', 'GTATGTGAGGCGATAAC', 'TATGTGAGGCGATAACT',
+    ]
+    testoffsets = [4, 5, 10, 38, 39, 40, 81, 82]
+    for kmer, seq, offset in zip(newrecord.ikmers, testseqs, testoffsets):
+        assert kmer.sequence == seq
+        assert kmer.offset == offset
+
+
+def test_merge_and_reannotate_edge_case_opposite_orientation(record7, record9):
+    """
+    Test merge/reannotation with edge cases to check for fencepost errors.
+
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGCGATAACTCAA
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+                                          |||||||||||||||||
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+               reverse complement  ----->  GTATGTGAGGCGATAACTCAAGACCACGGGAGCTCACTTCGTTGACGCGAGCGCCTTGCT
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+                                                                                     |||||||||||||||||
+                                                                                      |||||||||||||||||
+    """  # noqa
+    pair = OverlappingReadPair(tail=record7, head=record9, offset=39,
+                               overlap=21, sameorient=False)
+    newrecord = merge_and_reannotate(pair, 'SoMeCoNtIg')
+    assert newrecord.name == 'SoMeCoNtIg'
+    assert newrecord.sequence == ('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTAT'
+                                  'GTGAGGCGATAACTCAAGACCACGGGAGCTCACTTCGTTGACG'
+                                  'CGAGCGCCTTGCT')
+    assert len(newrecord.ikmers) == 8
+
+    testseqs = [
+        'TCCCCACCCGGATACTT', 'CCCCACCCGGATACTTG', 'CCCGGATACTTGAAGCA',
+        'GGTATGTGAGGCGATAA', 'GTATGTGAGGCGATAAC', 'TATGTGAGGCGATAACT',
+    ]
+    testoffsets = [4, 5, 10, 38, 39, 40, 81, 82]
+    for kmer, seq, offset in zip(newrecord.ikmers, testseqs, testoffsets):
+        assert kmer.sequence == seq
+        assert kmer.offset == offset
