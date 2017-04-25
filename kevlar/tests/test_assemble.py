@@ -8,56 +8,154 @@
 # -----------------------------------------------------------------------------
 
 import pytest
-import kevlar
 import screed
+import kevlar
 from kevlar import KmerOfInterest
+from kevlar.assemble import merge_pair, OverlappingReadPair
 
 
-def test_calc_offset_same_orientation():
-    """
-    GCTGCACCGATGTACGCAAA
-                  |||||
-                 ACGCAAAGCTATTTAAAACC
-    """
-    record1 = screed.Record(
+@pytest.fixture
+def record1():
+    return screed.Record(
         name='read1',
         sequence='GCTGCACCGATGTACGCAAA',
         ikmers=[KmerOfInterest('CGCAA', 14, [15, 0, 0])],
     )
-    record2 = screed.Record(
+
+
+@pytest.fixture
+def record2():
+    return screed.Record(
         name='read2',
         sequence='ACGCAAAGCTATTTAAAACC',
         ikmers=[KmerOfInterest('CGCAA', 1, [15, 0, 0])],
     )
-    tail, head, offset, sameorient = kevlar.assemble.calc_offset(
-        record1, record2, 'CGCAA'
+
+
+@pytest.fixture
+def record3():
+    # reverse complement of record2
+    return screed.Record(
+        name='read3',
+        sequence='GGTTTTAAATAGCTTTGCGT',
+        ikmers=[KmerOfInterest('TTGCG', 14, [15, 0, 0])],
     )
-    assert tail == record1
-    assert head == record2
-    assert offset == 13
-    assert sameorient is True
 
 
-def test_calc_offset_opposite_orientation():
+@pytest.fixture
+def record4():
+    # similar to record2 but with a single nucleotide mismatch
+    return screed.Record(
+        name='read4',
+        sequence='ACGCAATGCTATTTAAAACC',
+        ikmers=[KmerOfInterest('CGCAA', 1, [15, 0, 0])],
+    )
+
+
+@pytest.fixture
+def record5():
+    return screed.Record(
+        name='read5',
+        sequence='CTCTTCCGGCAGTCACTGTCAAGAGAGGGTGAACT',
+        ikmers=[
+            KmerOfInterest('CTGTCAA', 15, [12, 0, 0]),
+            KmerOfInterest('TGTCAAG', 16, [13, 0, 0]),
+        ],
+    )
+
+
+@pytest.fixture
+def record6():
+    return screed.Record(
+        name='read6',
+        sequence='TCACTGTCAAGAGAGGCCTACGGATTCGGTTACTG',
+        ikmers=[
+            KmerOfInterest('CTGTCAA', 3, [12, 0, 0]),
+            KmerOfInterest('TGTCAAG', 4, [13, 0, 0]),
+        ],
+    )
+
+
+def test_calc_offset_same_orientation(record1, record2):
     """
+    Compute offset of reads sharing an interesting k-mer, same orientation.
+
+    GCTGCACCGATGTACGCAAA
+                  |||||
+                 ACGCAAAGCTATTTAAAACC
+    """
+    pair = kevlar.assemble.calc_offset(record1, record2, 'CGCAA')
+    assert pair.tail == record1
+    assert pair.head == record2
+    assert pair.offset == 13
+    assert pair.overlap == 7
+    assert pair.sameorient is True
+
+
+def test_calc_offset_opposite_orientation(record1, record3):
+    """
+    Compute offset of reads sharing an interesting k-mer, opposite orientation.
+
     GCTGCACCGATGTACGCAAA
                   |||||
                  ACGCAAAGCTATTTAAAACC <-- reverse complement
     """
-    record1 = screed.Record(
-        name='read1',
-        sequence='GCTGCACCGATGTACGCAAA',
-        ikmers=[KmerOfInterest('CGCAA', 14, [15, 0, 0])],
-    )
-    record2 = screed.Record(
-        name='read2',
-        sequence='GGTTTTAAATAGCTTTGCGT',
-        ikmers=[KmerOfInterest('TTGCG', 14, [15, 0, 0])],
-    )
-    tail, head, offset, sameorient = kevlar.assemble.calc_offset(
-        record1, record2, 'CGCAA'
-    )
-    assert tail == record1
-    assert head == record2
-    assert offset == 13
-    assert sameorient is False
+    pair = kevlar.assemble.calc_offset(record1, record3, 'CGCAA')
+    assert pair.tail == record1
+    assert pair.head == record3
+    assert pair.offset == 13
+    assert pair.overlap == 7
+    assert pair.sameorient is False
+
+
+def test_calc_offset_mismatch(record1, record4):
+    """
+    Compute offset of reads sharing an interesting k-mer, but with mismatch.
+
+    GCTGCACCGATGTACGCAAA
+                  |||||X
+                 ACGCAATGCTATTTAAAACC
+
+    The interesting k-mer is simply a seed. The assembler requires that the
+    entire overlap between the two reads matches exactly, so the mismatch here
+    should return a null offset indicating that the pair of reads is
+    incompatible despite sharing an interesting k-mer.
+    """
+    pair = kevlar.assemble.calc_offset(record1, record4, 'CGCAA')
+    assert pair == kevlar.assemble.IncompatiblePair
+
+
+def test_calc_offset_weirdness(record5, record6):
+    """
+    Compute offset of reads sharing an interesting k-mer, but with mismatches.
+
+    CTCTTCCGGCAGTCACTGTCAAGAGAGGGTGAACT
+                   |||||||
+                    |||||||     XXXXXXX
+                TCACTGTCAAGAGAGGCCTACGGATTCGGTTACTG
+
+    Not just a single mismatch, but extensive differences making the reads
+    incompatible for assembly.
+    """
+    for ikmer in ['CTGTCAA', 'TGTCAAG']:
+        pair = kevlar.assemble.calc_offset(record5, record6, ikmer)
+        assert pair == kevlar.assemble.IncompatiblePair
+
+
+def test_merge_pair(record1, record2, record4):
+    """
+    Assemble a compatible overlapping read pair.
+
+    GCTGCACCGATGTACGCAAA
+                  |||||                 -->   GCTGCACCGATGTACGCAAAGCTATTTAAAACC
+                 ACGCAAAGCTATTTAAAACC
+    """
+    pair = OverlappingReadPair(tail=record1, head=record2, offset=13,
+                               overlap=7, sameorient=True)
+    assert merge_pair(pair) == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
+
+    pair = OverlappingReadPair(tail=record1, head=record4, offset=13,
+                               overlap=7, sameorient=True)
+    with pytest.raises(AssertionError) as ae:
+        contig = merge_pair(pair)
+    assert 'attempted to assemble incompatible reads' in str(ae)

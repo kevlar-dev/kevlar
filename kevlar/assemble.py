@@ -18,7 +18,9 @@ import khmer
 import kevlar
 
 
-SequenceOverlap = namedtuple('SequenceOverlap', 'seq1 seq2 offset sameorient')
+OverlappingReadPair = namedtuple('OverlappingReadPair',
+                                 'tail head offset overlap sameorient')
+IncompatiblePair = OverlappingReadPair(None, None, None, None, None)
 
 
 def subparser(subparsers):
@@ -38,6 +40,17 @@ def subparser(subparsers):
 
 
 def calc_offset(read1, read2, minkmer, debugstream=None):
+    """
+    Calculate offset between reads that share an interesting k-mer.
+
+    Each read is annotated with its associated interesting k-mers. These are
+    used to bait pairs of reads sharing interesting k-mers to build a graph of
+    shared interesting k-mers. Given a pair of reads sharing an interesting,
+    k-mer calculate the offset between them and determine whether they are in
+    the same orientation. Any mismatches between the aligned reads (outside the
+    shared k-mer) will render the offset invalid.
+    """
+
     maxkmer = kevlar.revcom(minkmer)
     kmer1 = [k for k in read1.ikmers
              if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
@@ -60,10 +73,12 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         offset = pos2 - pos1
 
     segment1 = tail.sequence[offset:]
+    bpoverlap = len(segment1)
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
     segment2 = headseq[:(len(headseq)-offset)]
+    assert len(segment2) == bpoverlap
     if segment1 != segment2:
-        return None, None, None, None
+        return IncompatiblePair
 
     if debugstream:
         print('\nDEBUG shared interesting kmer: ', tail.name,
@@ -71,10 +86,28 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
               tail.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
               headseq, '\n', sep='', file=debugstream)
 
-    return tail, head, offset, sameorient
+    return OverlappingReadPair(tail=tail, head=head, offset=offset,
+                               overlap=bpoverlap, sameorient=sameorient)
 
 
-def collapse(seq1, seq2, offset, sameorient):
+def merge_pair(pair):
+    """
+    Assemble a pair of overlapping reads.
+
+    Given a pair of compatible overlapping reads, collapse and merge them into
+    a single sequence.
+    """
+    headseq = pair.head.sequence
+    if pair.sameorient is False:
+        headseq = kevlar.revcom(pair.head.sequence)
+    headindex = len(pair.tail.sequence) - pair.offset
+    assert pair.tail.sequence[-headindex:] == headseq[:headindex], \
+        'error: attempted to assemble incompatible reads'
+    headsuffix = headseq[headindex:]
+    return pair.tail.sequence + headsuffix
+
+
+def merge(seq1, seq2, offset, sameorient):
     if sameorient is False:
         seq2 = kevlar.revcom(seq2)
     firstnewnucl = len(seq2) - (len(seq2) - len(seq1) + offset)
@@ -169,7 +202,7 @@ def main(args):
                 graph.remove_node(read2)
                 continue
 
-            newcontig = collapse(seq1, seq2, offset, sameorient)
+            newcontig = merge(seq1, seq2, offset, sameorient)
             newname = 'contig{:d}'.format(count)
             newrecord = annotate_contig(reads[read1], reads[read2], newcontig,
                                         newname, offset, sameorient)
