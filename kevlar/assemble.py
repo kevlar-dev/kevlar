@@ -68,7 +68,7 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
 
     tail, head = read1, read2
     offset = pos1 - pos2
-    if pos2 > pos1:
+    if pos2 > pos1 or len(read2.sequence) > len(read1.sequence):
         tail, head = read2, read1
         offset = pos2 - pos1
 
@@ -97,13 +97,18 @@ def merge_pair(pair):
     Given a pair of compatible overlapping reads, collapse and merge them into
     a single sequence.
     """
+    assert len(pair.tail.sequence) >= len(pair.head.sequence)
     headseq = pair.head.sequence
     if pair.sameorient is False:
         headseq = kevlar.revcom(pair.head.sequence)
     headindex = len(pair.tail.sequence) - pair.offset
-    assert pair.tail.sequence[-headindex:] == headseq[:headindex], \
-        'error: attempted to assemble incompatible reads'
     headsuffix = headseq[headindex:]
+    tailprefix = pair.tail.sequence[pair.offset:pair.offset+pair.overlap]
+    assert tailprefix == headseq[:headindex], \
+        'error: attempted to assemble incompatible reads'
+
+    if headseq in pair.tail.sequence:
+        return pair.tail.sequence
     return pair.tail.sequence + headsuffix
 
 
@@ -114,7 +119,6 @@ def merge_and_reannotate(pair, newname):
     When a pair of compatible reads is merged, the offset of the interesting
     k-mers must be computed for one of the reads.
     """
-    assert pair.offset > 0
     contig = merge_pair(pair)
     newrecord = screed.Record(name=newname, sequence=contig,
                               ikmers=pair.tail.ikmers)
@@ -141,42 +145,6 @@ def merge_and_reannotate(pair, newname):
     return newrecord
 
 
-def merge(seq1, seq2, offset, sameorient):
-    if sameorient is False:
-        seq2 = kevlar.revcom(seq2)
-    firstnewnucl = len(seq2) - (len(seq2) - len(seq1) + offset)
-    seq2suffix = seq2[firstnewnucl:]
-    return seq1 + seq2suffix
-
-
-def annotate_contig(record1, record2, newcontig, newname, offset, sameorient):
-    assert offset > 1
-    newrecord = screed.Record(name=newname, sequence=newcontig,
-                              ikmers=record1.ikmers)
-    ksize = len(record1.ikmers[0].sequence)
-    if sameorient:
-        # Next two lines are at high risk for off-by-one errors
-        minoffset2keep = len(record2.sequence) - offset - ksize
-        keepers = [ik for ik in record2.ikmers if ik.offset > minoffset2keep]
-        for k in keepers:
-            ikmer = kevlar.KmerOfInterest(k.sequence, k.offset + offset,
-                                          k.abund)
-            newrecord.ikmers.append(ikmer)
-    else:
-        maxoffset2keep = offset + ksize
-        keepers = [ik for ik in record2.ikmers if ik.offset < maxoffset2keep]
-        for k in keepers:
-            print()
-            ikmer = kevlar.KmerOfInterest(
-                kevlar.revcom(k.sequence),
-                len(record2.sequence) - k.offset - ksize + offset,
-                k.abund,
-            )
-            newrecord.ikmers.append(ikmer)
-
-    return newrecord
-
-
 def main(args):
     reads = dict()            # key: read ID, value: record
     kmers = defaultdict(set)  # key: k-mer (min repr), value: set of read IDs
@@ -192,14 +160,14 @@ def main(args):
     debugout = None
     if args.debug:
         debugout = args.logfile
-    graph = networkx.Graph()  # DiGraph?
+    graph = networkx.Graph()
     nkmers = len(kmers)
     for n, minkmer in enumerate(kmers, 1):
         if n % 100 == 0:
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
             print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
         readnames = kmers[minkmer]
-        if len(readnames) > args.max_abund:
+        if args.max_abund and len(readnames) > args.max_abund:
             msg = '            skipping k-mer with abundance {:d}'.format(
                 len(readnames)
             )
@@ -208,15 +176,15 @@ def main(args):
         assert len(readnames) > 1
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
-            tail, head, offset, sameorient = calc_offset(read1, read2, minkmer,
-                                                         debugout)
-            if tail is None:  # Shared k-mer but bad overlap
+            pair = calc_offset(read1, read2, minkmer, debugout)
+            if tail is IncompatiblePair:  # Shared k-mer but bad overlap
                 continue
             if tail.name in graph and head.name in graph[tail.name]:
                 assert graph[tail.name][head.name]['offset'] == offset
             else:
-                graph.add_edge(tail.name, head.name, offset=offset,
-                               ikmer=minkmer, orient=sameorient)
+                graph.add_edge(pair.tail.name, pair.head.name,
+                               offset=pair.offset, overlap=pair.overlap,
+                               ikmer=minkmer, orient=pair.sameorient)
 
     reads_assembled = 0
     ccs = list(networkx.connected_components(graph))

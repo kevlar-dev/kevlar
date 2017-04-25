@@ -133,6 +133,28 @@ def record9():
     )
 
 
+@pytest.fixture
+def record10():
+    return screed.Record(
+        name='read10',
+        sequence=('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCT'),
+        ikmers=[
+            KmerOfInterest('TCCCCACCCGGATACTT', 4, [28, 0, 0]),
+            KmerOfInterest('CCCCACCCGGATACTTG', 5, [26, 0, 0]),
+            KmerOfInterest('CCCGGATACTTGAAGCA', 10, [21, 0, 0]),
+        ],
+    )
+
+
+@pytest.fixture
+def record11():
+    return screed.Record(
+        name='read11',
+        sequence='CCCGGATACTTGAAGCAGGCAGC',
+        ikmers=[KmerOfInterest('CCCGGATACTTGAAGCA', 0, [21, 0, 0])],
+    )
+
+
 def test_calc_offset_same_orientation(record1, record2):
     """
     Compute offset of reads sharing an interesting k-mer, same orientation.
@@ -324,3 +346,48 @@ def test_merge_and_reannotate_edge_case_opposite_orientation(record7, record9):
     for kmer, seq, offset in zip(newrecord.ikmers, testseqs, testoffsets):
         assert kmer.sequence == seq
         assert kmer.offset == offset
+
+
+def test_merge_and_reannotate_contained(record7, record10):
+    """
+    Test merge/reannotation with containment.
+
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGCGATAACTCAA
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+                                          |||||||||||||||||
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCT
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+    """
+    pair = OverlappingReadPair(tail=record7, head=record10, offset=0,
+                               overlap=35, sameorient=True)
+    newrecord = merge_and_reannotate(pair, 'ContainedAtOne')
+    assert newrecord.name == 'ContainedAtOne'
+    assert newrecord.sequence == record7.sequence
+    assert newrecord.ikmers == record7.ikmers
+
+
+def test_merge_and_reannotate_contained_with_offset(record7, record11):
+    """
+    Test merge/reannotation with containment and offset.
+
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGCGATAACTCAA
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+                                          |||||||||||||||||
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+              CCCGGATACTTGAAGCAGGCAGC
+              |||||||||||||||||
+    """
+    pair = OverlappingReadPair(tail=record7, head=record11, offset=10,
+                               overlap=23, sameorient=True)
+    newrecord = merge_and_reannotate(pair, 'ContainedAtOffset')
+    assert newrecord.sequence == record7.sequence
+    assert newrecord.ikmers == record7.ikmers
