@@ -107,6 +107,40 @@ def merge_pair(pair):
     return pair.tail.sequence + headsuffix
 
 
+def merge_and_reannotate(pair, newname):
+    """
+    Assemble a pair of overlapping reads and resolve their interesting k-mers.
+
+    When a pair of compatible reads is merged, the offset of the interesting
+    k-mers must be computed for one of the reads.
+    """
+    assert pair.offset > 0
+    contig = merge_pair(pair)
+    newrecord = screed.Record(name=newname, sequence=contig,
+                              ikmers=pair.tail.ikmers)
+    ksize = len(pair.tail.ikmers[0].sequence)
+    if pair.sameorient:
+        minoffset2keep = len(pair.tail.sequence) - pair.offset - ksize
+        keepers = [ik for ik in pair.head.ikmers if ik.offset > minoffset2keep]
+        for k in keepers:
+            ikmer = kevlar.KmerOfInterest(k.sequence, k.offset + pair.offset,
+                                          k.abund)
+            newrecord.ikmers.append(ikmer)
+    else:
+        maxoffset2keep = pair.offset - ksize
+        keepers = [ik for ik in pair.head.ikmers if ik.offset < maxoffset2keep]
+        for k in keepers:
+            print()
+            ikmer = kevlar.KmerOfInterest(
+                kevlar.revcom(k.sequence),
+                len(pair.head.sequence) - k.offset - ksize + pair.offset,
+                k.abund,
+            )
+            newrecord.ikmers.append(ikmer)
+
+    return newrecord
+
+
 def merge(seq1, seq2, offset, sameorient):
     if sameorient is False:
         seq2 = kevlar.revcom(seq2)

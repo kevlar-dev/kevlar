@@ -11,7 +11,8 @@ import pytest
 import screed
 import kevlar
 from kevlar import KmerOfInterest
-from kevlar.assemble import merge_pair, OverlappingReadPair
+from kevlar.assemble import (merge_pair, merge_and_reannotate,
+                             OverlappingReadPair)
 
 
 @pytest.fixture
@@ -28,7 +29,10 @@ def record2():
     return screed.Record(
         name='read2',
         sequence='ACGCAAAGCTATTTAAAACC',
-        ikmers=[KmerOfInterest('CGCAA', 1, [15, 0, 0])],
+        ikmers=[
+            KmerOfInterest('CGCAA', 1, [15, 0, 0]),
+            KmerOfInterest('AAAAC', 14, [19, 1, 0]),
+        ],
     )
 
 
@@ -38,7 +42,10 @@ def record3():
     return screed.Record(
         name='read3',
         sequence='GGTTTTAAATAGCTTTGCGT',
-        ikmers=[KmerOfInterest('TTGCG', 14, [15, 0, 0])],
+        ikmers=[
+            KmerOfInterest('GTTTT', 1, [19, 1, 0]),
+            KmerOfInterest('TTGCG', 14, [15, 0, 0]),
+        ],
     )
 
 
@@ -48,7 +55,10 @@ def record4():
     return screed.Record(
         name='read4',
         sequence='ACGCAATGCTATTTAAAACC',
-        ikmers=[KmerOfInterest('CGCAA', 1, [15, 0, 0])],
+        ikmers=[
+            KmerOfInterest('CGCAA', 1, [15, 0, 0]),
+            KmerOfInterest('AAAAC', 14, [19, 1, 0]),
+        ],
     )
 
 
@@ -159,3 +169,39 @@ def test_merge_pair(record1, record2, record4):
     with pytest.raises(AssertionError) as ae:
         contig = merge_pair(pair)
     assert 'attempted to assemble incompatible reads' in str(ae)
+
+
+def test_merge_and_reannotate_same_orientation(record1, record2):
+    """
+    Assemble a read pair and re-annotate the associated interesting k-mers.
+
+    GCTGCACCGATGTACGCAAA
+                  |||||                 -->   GCTGCACCGATGTACGCAAAGCTATTTAAAACC
+                 ACGCAAAGCTATTTAAAACC                       *****        *****
+    """
+    pair = OverlappingReadPair(tail=record1, head=record2, offset=13,
+                               overlap=7, sameorient=True)
+    newrecord = merge_and_reannotate(pair, 'contig1')
+    assert newrecord.name == 'contig1'
+    assert newrecord.sequence == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
+    assert len(newrecord.ikmers) == 2
+    assert newrecord.ikmers[0].offset == 14
+    assert newrecord.ikmers[1].offset == 27
+
+
+def test_merge_and_reannotate_opposite_orientation(record1, record3):
+    """
+    Assemble a read pair and re-annotate the associated interesting k-mers.
+
+    GCTGCACCGATGTACGCAAA
+                  |||||                 -->   GCTGCACCGATGTACGCAAAGCTATTTAAAACC
+                 ACGCAAAGCTATTTAAAACC                       *****        *****
+    """
+    pair = OverlappingReadPair(tail=record1, head=record3, offset=13,
+                               overlap=7, sameorient=False)
+    newrecord = merge_and_reannotate(pair, 'contig1')
+    assert newrecord.name == 'contig1'
+    assert newrecord.sequence == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
+    assert len(newrecord.ikmers) == 2
+    assert newrecord.ikmers[0].offset == 14
+    assert newrecord.ikmers[1].offset == 27
