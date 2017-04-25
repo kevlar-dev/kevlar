@@ -12,7 +12,8 @@ import screed
 import kevlar
 from kevlar import KmerOfInterest
 from kevlar.assemble import (merge_pair, merge_and_reannotate,
-                             OverlappingReadPair)
+                             OverlappingReadPair, load_reads)
+from kevlar.tests import data_file
 
 
 @pytest.fixture
@@ -391,3 +392,25 @@ def test_merge_and_reannotate_contained_with_offset(record7, record11):
     newrecord = merge_and_reannotate(pair, 'ContainedAtOffset')
     assert newrecord.sequence == record7.sequence
     assert newrecord.ikmers == record7.ikmers
+
+
+def test_load_reads():
+    """Make sure augmented records are loaded correctly."""
+    instream = open(data_file('var1.reads.fq'), 'r')
+    reads, kmers = load_reads(instream, logstream=None)
+    assert len(reads) == 10
+    assert len(kmers) == 7
+
+    readname = 'read8f start=8,mutations=0'
+    assert reads[readname].sequence == ('CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAA'
+                                        'AGAGTTACACCCCGGTTTTTAGAAGTCTCGACTTTAA'
+                                        'GGAAGTGGGCCTACGGCGGAAGCCGT')
+
+    testset = set([
+        'read2f start=13,mutations=0', 'read8f start=8,mutations=0',
+        'read10f start=34,mutations=0', 'read13f start=49,mutations=1',
+        'read15f start=54,mutations=1', 'read16f start=13,mutations=1',
+        'read22f start=5,mutations=0', 'read35f start=25,mutations=0',
+        'read37f start=9,mutations=0'
+    ])
+    assert kmers['CCGGTTTTTAGAAGTCTCGACTTTAAGGA'] == testset

@@ -145,17 +145,28 @@ def merge_and_reannotate(pair, newname):
     return newrecord
 
 
-def main(args):
-    reads = dict()            # key: read ID, value: record
-    kmers = defaultdict(set)  # key: k-mer (min repr), value: set of read IDs
-    for n, record in enumerate(kevlar.parse_augmented_fastq(args.augfastq), 1):
-        if n % 10000 == 0:
+def load_reads(instream, logstream=None):
+    """
+    Load reads into lookup tables for convenient access.
+
+    The first table is a dictionary of reads indexed by read name, and the
+    second table is a dictionary of read sets indexed by an interesting k-mer.
+    """
+    reads = dict()
+    kmers = defaultdict(set)
+    for n, record in enumerate(kevlar.parse_augmented_fastq(instream), 1):
+        if logstream and n % 10000 == 0:
             print('[kevlar::assemble]    loaded {:d} reads'.format(n),
-                  file=args.logfile)
+                  file=logstream)
         reads[record.name] = record
         for kmer in record.ikmers:
             kmerseq = kevlar.revcommin(kmer.sequence)
             kmers[kmerseq].add(record.name)
+    return reads, kmers
+
+
+def main(args):
+    reads, kmers = load_reads(args.augfastq, args.logfile)
 
     debugout = None
     if args.debug:
