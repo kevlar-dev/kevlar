@@ -12,7 +12,7 @@ import screed
 from networkx import connected_components
 import kevlar
 from kevlar import KmerOfInterest
-from kevlar.assemble import (merge_pair, merge_and_reannotate,
+from kevlar.assemble import (merge_pair, merge_and_reannotate, calc_offset,
                              OverlappingReadPair, load_reads, graph_init)
 from kevlar.tests import data_file
 
@@ -153,6 +153,15 @@ def record11():
     return screed.Record(
         name='read11',
         sequence='CCCGGATACTTGAAGCAGGCAGC',
+        ikmers=[KmerOfInterest('CCCGGATACTTGAAGCA', 0, [21, 0, 0])],
+    )
+
+
+@pytest.fixture
+def record12():
+    return screed.Record(
+        name='read12',
+        sequence='CCCGGATACTTGAAGCAGGCAcC',
         ikmers=[KmerOfInterest('CCCGGATACTTGAAGCA', 0, [21, 0, 0])],
     )
 
@@ -395,9 +404,33 @@ def test_merge_and_reannotate_contained_with_offset(record7, record11):
     assert newrecord.ikmers == record7.ikmers
 
 
+def test_merge_contained_with_offset_and_error(record7, record12):
+    """
+    Test merge with containment, offset, and a sequencing error.
+
+    CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTATGTGAGGCGATAACTCAA
+        |||||||||||||||||
+         |||||||||||||||||
+              |||||||||||||||||
+                                          |||||||||||||||||
+                                           |||||||||||||||||
+                                            |||||||||||||||||
+              CCCGGATACTTGAAGCAGGCAcC
+              |||||||||||||||||    *
+    """
+    pair = calc_offset(record7, record12, 'CCCGGATACTTGAAGCA')
+    assert pair == kevlar.assemble.IncompatiblePair
+
+    pair = OverlappingReadPair(tail=record7, head=record12, offset=10,
+                               overlap=23, sameorient=True)
+    with pytest.raises(AssertionError) as ae:
+        newrecord = merge_and_reannotate(pair, 'WontWork')
+    assert 'attempted to assemble incompatible reads' in str(ae)
+
+
 def test_load_reads():
     """Make sure augmented records are loaded correctly."""
-    instream = open(data_file('var1.reads.fq'), 'r')
+    instream = open(data_file('var1.reads.augfastq'), 'r')
     reads, kmers = load_reads(instream, logstream=None)
     assert len(reads) == 10
     assert len(kmers) == 7
@@ -419,7 +452,7 @@ def test_load_reads():
 
 def test_graph_init():
     """Test graph initialization."""
-    instream = open(data_file('var1.reads.fq'), 'r')
+    instream = open(data_file('var1.reads.augfastq'), 'r')
     reads, kmers = load_reads(instream, logstream=None)
     graph = graph_init(reads, kmers, maxabund=None, logstream=None)
 
@@ -438,3 +471,35 @@ def test_graph_init():
 
     # Should all be a single CC
     assert len(list(connected_components(graph))) == 1
+
+    r8name = 'read8f start=8,mutations=0'
+    r37name = 'read37f start=9,mutations=0'
+    assert graph[r37name][r8name]['offset'] == 1
+    assert graph[r37name][r8name]['overlap'] == 99
+    pair = OverlappingReadPair(reads[r8name], reads[r37name], 1, 99, True)
+    assert merge_pair(pair) == ('CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTAC'
+                                'ACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTACGG'
+                                'CGGAAGCCGTC')
+
+
+def test_assembly_round2():
+    instream = open(data_file('var1.round2.augfastq'), 'r')
+    reads, kmers = load_reads(instream, logstream=None)
+    contig, read = reads['contig1'], reads['read22f start=5,mutations=0']
+    pair = calc_offset(contig, read, 'AAGTCTCGACTTTAAGGAAGTGGGCCTAC')
+    assert pair.tail == read
+    assert pair.head == contig
+    assert merge_pair(pair) == ('TATCACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGT'
+                                'TACACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTA'
+                                'CGGCGGAAGCCGTC')
+
+
+def test_assemble_main(capsys):
+    cliargs = ['assemble', data_file('var1.reads.augfastq')]
+    args = kevlar.cli.parser().parse_args(cliargs)
+    kevlar.assemble.main(args)
+    out, err = capsys.readouterr()
+    contig = ('TATCACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTACACCCCGGTTTTTAGA'
+              'AGTCTCGACTTTAAGGAAGTGGGCCTACGGCGGAAGCCGTCTCTAATGGACTCAAGGACCTGA'
+              'ATCCAACTAGAGGAGCTTGCCAa')
+    assert contig in out

@@ -39,6 +39,16 @@ def subparser(subparsers):
                            help='annotated reads in augmented Fastq format')
 
 
+def print_read_pair(read1, pos1, read2, pos2, ksize, offset, overlap,
+                    sameorient, outstream):
+    seq2 = read2.sequence if sameorient else kevlar.revcom(read2.sequence)
+    print('\nDEBUG shared interesting kmer: ', read1.name,
+          ' --(overlap={:d})'.format(overlap),
+          '(offset={:d})({})--> '.format(offset, sameorient), read2.name, '\n',
+          read1.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
+          seq2, '\n', sep='', file=outstream)
+
+
 def calc_offset(read1, read2, minkmer, debugstream=None):
     """
     Calculate offset between reads that share an interesting k-mer.
@@ -50,7 +60,6 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
     the same orientation. Any mismatches between the aligned reads (outside the
     shared k-mer) will render the offset invalid.
     """
-
     maxkmer = kevlar.revcom(minkmer)
     kmer1 = [k for k in read1.ikmers
              if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
@@ -67,27 +76,46 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         pos2 = len(read2.sequence) - (kmer2.offset + ksize)
 
     tail, head = read1, read2
-    offset = pos1 - pos2
-    if pos2 > pos1 or len(read2.sequence) > len(read1.sequence):
+    read1contained = pos1 == pos1 and len(read2.sequence) > len(read1.sequence)
+    if pos2 > pos1 or read1contained:
         tail, head = read2, read1
-        offset = pos2 - pos1
+        pos1, pos2 = pos2, pos1
+    offset = pos1 - pos2
 
-    segment1 = tail.sequence[offset:]
-    bpoverlap = len(segment1)
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
-    segment2 = headseq[:(len(headseq)-offset)]
-    assert len(segment2) == bpoverlap
+    seg2offset = len(head.sequence) - len(tail.sequence) + offset
+    if offset + len(headseq) <= len(tail.sequence):
+        segment1 = tail.sequence[offset:offset+len(headseq)]
+        segment2 = headseq
+        seg2offset = None
+    else:
+        segment1 = tail.sequence[offset:]
+        segment2 = headseq[:-seg2offset]
+
+    overlap1 = len(segment1)
+    overlap2 = len(segment2)
+    if overlap1 != overlap2:
+        print(
+            'DEBUG '
+            'tail="{tail}" head="{head}" offset={offset} altoffset={altoffset}'
+            ' tailoverlap={overlap} headoverlap={headover} tailseq={tailseq}'
+            ' headseq={headseq} kmer={minkmer},{maxkmer}'.format(
+                tail=read1.name, head=read2.name, offset=offset,
+                altoffset=seg2offset, overlap=overlap1,
+                headover=len(segment2), tailseq=segment1, headseq=segment2,
+                minkmer=minkmer, maxkmer=maxkmer
+            )
+        )
+    assert overlap1 == overlap2
     if segment1 != segment2:
         return IncompatiblePair
 
     if debugstream:
-        print('\nDEBUG shared interesting kmer: ', tail.name,
-              ' --({:d})({})--> '.format(offset, sameorient), head.name, '\n',
-              tail.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
-              headseq, '\n', sep='', file=debugstream)
+        print_read_pair(tail, pos1, head, pos2, ksize, offset, overlap1,
+                        sameorient, debugstream)
 
     return OverlappingReadPair(tail=tail, head=head, offset=offset,
-                               overlap=bpoverlap, sameorient=sameorient)
+                               overlap=overlap1, sameorient=sameorient)
 
 
 def merge_pair(pair):
@@ -97,7 +125,6 @@ def merge_pair(pair):
     Given a pair of compatible overlapping reads, collapse and merge them into
     a single sequence.
     """
-    assert len(pair.tail.sequence) >= len(pair.head.sequence)
     headseq = pair.head.sequence
     if pair.sameorient is False:
         headseq = kevlar.revcom(pair.head.sequence)
@@ -134,7 +161,6 @@ def merge_and_reannotate(pair, newname):
         maxoffset2keep = pair.offset - ksize
         keepers = [ik for ik in pair.head.ikmers if ik.offset < maxoffset2keep]
         for k in keepers:
-            print()
             ikmer = kevlar.KmerOfInterest(
                 kevlar.revcom(k.sequence),
                 len(pair.head.sequence) - k.offset - ksize + pair.offset,
@@ -188,11 +214,17 @@ def graph_init(reads, kmers, maxabund=500, logstream=None):
             tailname, headname = pair.tail.name, pair.head.name
             if tailname in graph and headname in graph[tailname]:
                 assert graph[tailname][headname]['offset'] == pair.offset
+                assert graph[tailname][headname]['overlap'] == pair.overlap
+                assert graph[tailname][headname]['tail'] == tailname
             else:
                 graph.add_edge(tailname, headname, offset=pair.offset,
                                overlap=pair.overlap, ikmer=minkmer,
-                               orient=pair.sameorient)
+                               orient=pair.sameorient, tail=tailname)
     return graph
+
+
+def assemble_with_greed(reads, kmers, graph):
+    pass
 
 
 def main(args):
@@ -201,64 +233,74 @@ def main(args):
         debugout = args.logfile
 
     reads, kmers = load_reads(args.augfastq, debugout)
+    inputreads = list(reads.keys())
     graph = graph_init(reads, kmers, args.max_abund, debugout)
-
-    reads_assembled = 0
-    ccs = list(networkx.connected_components(graph))
-    for n, cc in enumerate(ccs, 1):
-        count = 0
-        while len(graph.edges()) > 0:
-            count += 1
-            edges = sorted(graph.edges(),
-                           key=lambda e: graph[e[0]][e[1]]['offset'])
-            read1, read2 = edges[0]  # biggest overlap
-            seq1 = reads[read1].sequence
-            seq2 = reads[read2].sequence
-            offset = graph[read1][read2]['offset']
-            sameorient = graph[read1][read2]['orient']
-
-            if offset == 0:
-                graph.remove_node(read2)
-                continue
-
-            newcontig = merge(seq1, seq2, offset, sameorient)
-            newname = 'contig{:d}'.format(count)
-            newrecord = annotate_contig(reads[read1], reads[read2], newcontig,
-                                        newname, offset, sameorient)
-            if debugout:
-                print('# DEBUG', read1, read2, offset, sameorient,
-                      file=debugout)
-                kevlar.print_augmented_fastq(newrecord, debugout)
-
-            for kmer in newrecord.ikmers:
-                kmerseq = kevlar.revcommin(kmer.sequence)
-                for readname in kmers[kmerseq]:
-                    if readname not in graph:
-                        continue
-                    otherrecord = reads[readname]
-                    tail, head, poffset, sameorient = calc_offset(
-                        newrecord, otherrecord, kmerseq, debugout
-                    )
-                    if tail is None:
-                        continue
-                    if tail.name in graph and head.name in graph[tail.name]:
-                        assert graph[tail.name][head.name]['offset'] == poffset
-                    else:
-                        graph.add_edge(tail.name, head.name, offset=poffset,
-                                       ikmer=minkmer, orient=sameorient)
-
-            kmers[kmerseq].add(newrecord.name)
-            graph.remove_node(read1)
-            graph.remove_node(read2)
-
-        reads_assembled += len(cc)
-        print('CC', n, len(cc), sep='\t', file=args.out)
-
     if args.gml:
         networkx.write_gml(graph, args.gml)
         message = '[kevlar::assemble] graph written to {}'.format(args.gml)
         print(message, file=args.logfile)
 
-    message = '[kevlar::assemble] {:d} reads'.format(reads_assembled)
-    message += ' assembled into {:d} contigs'.format(n)
+    ccs = list(networkx.connected_components(graph))
+    assert len(ccs) == 1
+
+    count = 0
+    while len(graph.edges()) > 0:
+        count += 1
+        edges = sorted(graph.edges(), reverse=True,
+                       key=lambda e: graph[e[0]][e[1]]['overlap'])
+        read1, read2 = edges[0]  # biggest overlap (greedy algorithm)
+        if read2 == graph[read1][read2]['tail']:
+            read1, read2 = read2, read1
+        pair = OverlappingReadPair(
+            tail=reads[read1],
+            head=reads[read2],
+            offset=graph[read1][read2]['offset'],
+            overlap=graph[read1][read2]['overlap'],
+            sameorient=graph[read1][read2]['orient'],
+        )
+        newname = 'contig{:d}'.format(count)
+        newrecord = merge_and_reannotate(pair, newname)
+        if debugout:
+            print('### DEBUG', read1, read2, pair.offset, pair.overlap,
+                  pair.sameorient, file=debugout)
+            kevlar.print_augmented_fastq(newrecord, debugout)
+        for kmer in newrecord.ikmers:
+            kmerseq = kevlar.revcommin(kmer.sequence)
+            for readname in kmers[kmerseq]:
+                if readname not in graph or readname in [read1, read2]:
+                    continue
+                otherrecord = reads[readname]
+                newpair = calc_offset(
+                    newrecord, otherrecord, kmerseq, debugout
+                )
+                if newpair == IncompatiblePair:
+                    continue
+                tn, hn = newpair.tail.name, newpair.head.name
+                if tn in graph and hn in graph[tn]:
+                    assert graph[tn][hn]['offset'] == newpair.offset
+                    assert graph[tn][hn]['overlap'] == newpair.overlap
+                else:
+                    graph.add_edge(tn, hn, offset=newpair.offset,
+                                   overlap=newpair.overlap, ikmer=kmerseq,
+                                   orient=newpair.sameorient, tail=tn)
+            kmers[kmerseq].add(newrecord.name)
+        reads[newrecord.name] = newrecord
+        graph.add_node(newrecord.name)
+        graph.remove_node(read1)
+        graph.remove_node(read2)
+
+    contigcount = 0
+    unassembledcount = 0
+    for seqname in graph.nodes():
+        if seqname in inputreads:
+            unassembledcount += 1
+            continue
+        contigcount += 1
+        contigrecord = reads[seqname]
+        kevlar.print_augmented_fastq(contigrecord, args.out)
+
+    assembledcount = len(inputreads) - unassembledcount
+    message = '[kevlar::assemble] assembled'
+    message += ' {:d}/{:d} reads'.format(assembledcount, len(inputreads))
+    message += ' into {:d} contig(s)'.format(contigcount)
     print(message, file=args.logfile)
