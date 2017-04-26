@@ -76,11 +76,12 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         pos2 = len(read2.sequence) - (kmer2.offset + ksize)
 
     tail, head = read1, read2
-    read1contained = pos1 == pos1 and len(read2.sequence) > len(read1.sequence)
+    tailpos, headpos = pos1, pos2
+    read1contained = pos1 == pos2 and len(read2.sequence) > len(read1.sequence)
     if pos2 > pos1 or read1contained:
         tail, head = read2, read1
-        pos1, pos2 = pos2, pos1
-    offset = pos1 - pos2
+        tailpos, headpos = headpos, tailpos
+    offset = tailpos - headpos
 
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
     seg2offset = len(head.sequence) - len(tail.sequence) + offset
@@ -98,13 +99,15 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         print(
             'DEBUG '
             'tail="{tail}" head="{head}" offset={offset} altoffset={altoffset}'
-            ' tailoverlap={overlap} headoverlap={headover} tailseq={tailseq}'
-            ' headseq={headseq} kmer={minkmer},{maxkmer}'.format(
+            ' tailoverlap={overlap} headoverlap={headover} tailolvp={tailseq}'
+            ' headolvp={headseq} kmer={minkmer},{maxkmer} tailseq={tailread}'
+            ' headseq={headread}'.format(
                 tail=read1.name, head=read2.name, offset=offset,
                 altoffset=seg2offset, overlap=overlap1,
                 headover=len(segment2), tailseq=segment1, headseq=segment2,
-                minkmer=minkmer, maxkmer=maxkmer
-            )
+                minkmer=minkmer, maxkmer=maxkmer, tailread=tail.sequence,
+                headread=head.sequence
+            ), file=sys.stderr
         )
     assert overlap1 == overlap2
     if segment1 != segment2:
@@ -214,8 +217,8 @@ def graph_init(reads, kmers, maxabund=500, logstream=None):
             tailname, headname = pair.tail.name, pair.head.name
             if tailname in graph and headname in graph[tailname]:
                 assert graph[tailname][headname]['offset'] == pair.offset
-                assert graph[tailname][headname]['overlap'] == pair.overlap
-                assert graph[tailname][headname]['tail'] == tailname
+                if graph[tailname][headname]['tail'] == tailname:
+                    assert graph[tailname][headname]['overlap'] == pair.overlap
             else:
                 graph.add_edge(tailname, headname, offset=pair.offset,
                                overlap=pair.overlap, ikmer=minkmer,
@@ -277,8 +280,9 @@ def main(args):
                     continue
                 tn, hn = newpair.tail.name, newpair.head.name
                 if tn in graph and hn in graph[tn]:
-                    assert graph[tn][hn]['offset'] == newpair.offset
                     assert graph[tn][hn]['overlap'] == newpair.overlap
+                    if graph[tn][hn]['tail'] == newpair.tail:
+                        assert graph[tn][hn]['offset'] == newpair.offset
                 else:
                     graph.add_edge(tn, hn, offset=newpair.offset,
                                    overlap=newpair.overlap, ikmer=kmerseq,

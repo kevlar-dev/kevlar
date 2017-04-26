@@ -494,6 +494,22 @@ def test_assembly_round2():
                                 'CGGCGGAAGCCGTC')
 
 
+def test_assembly_contigs():
+    instream = open(data_file('AluContigs.augfastq'), 'r')
+    reads, kmers = load_reads(instream, logstream=None)
+    contig6, contig7 = reads['contig6'], reads['contig7']
+    pair = calc_offset(contig6, contig7, 'AAAGTTTTCTTAAAAACATATATGGCCGGGC')
+    assert pair.offset == 50
+    assert pair.overlap == 85
+    assert pair.tail == contig6
+    newrecord = merge_and_reannotate(pair, 'newcontig')
+    assert newrecord.sequence == ('TTGCCCAGGCTGGTCTCAAACTCCTGAGCTCAAAGCGATCTGT'
+                                  'CGGCCTGGGCATCCAAAAAAAGTTTTCTTAAAAACATATATGG'
+                                  'CCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAG'
+                                  'GCCGAGGCGGGCGGATCACGAGGTCAGGAGATCGAGACCATCC'
+                                  'TGGCTAACACG')
+
+
 def test_assemble_main(capsys):
     cliargs = ['assemble', data_file('var1.reads.augfastq')]
     args = kevlar.cli.parser().parse_args(cliargs)
