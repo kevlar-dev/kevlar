@@ -208,7 +208,13 @@ def graph_init(reads, kmers, maxabund=500, logstream=None):
             )
             print(msg, file=logstream)
             continue
-        assert len(readnames) > 1
+        if len(readnames) < 2:
+            message = '[kevlar::assemble] WARNING: k-mer {}'.format(minkmer)
+            message += ' (rev. comp. {})'.format(kevlar.revcom(minkmer))
+            message += ' only has abundance {:d}'.format(len(readnames))
+            out = logstream if logstream is not None else sys.stderr
+            print(message, file=out)
+            continue
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
             pair = calc_offset(read1, read2, minkmer, logstream)
