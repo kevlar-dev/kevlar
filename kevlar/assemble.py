@@ -114,7 +114,7 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         return IncompatiblePair
 
     if debugstream:
-        print_read_pair(tail, pos1, head, pos2, ksize, offset, overlap1,
+        print_read_pair(tail, tailpos, head, headpos, ksize, offset, overlap1,
                         sameorient, debugstream)
 
     return OverlappingReadPair(tail=tail, head=head, offset=offset,
