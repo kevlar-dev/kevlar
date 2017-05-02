@@ -19,6 +19,7 @@ from kevlar import find
 from kevlar import collect
 from kevlar import filter
 from kevlar import reaugment
+from kevlar import assemble
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
@@ -61,8 +62,10 @@ def revcommin(seq):
     return minseq
 
 
-def same_seq(seq1, seq2):
-    return seq1 == seq2 or seq1 == revcom(seq2)
+def same_seq(seq1, seq2, seq2revcom=None):
+    if seq2revcom is None:
+        seq2revcom = revcom(seq2)
+    return seq1 == seq2 or seq1 == seq2revcom
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

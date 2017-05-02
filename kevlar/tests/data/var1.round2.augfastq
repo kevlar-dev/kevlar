@@ -1,0 +1,22 @@
+@contig1
+CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTACACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTACGGCGGAAGCCGTC
++
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                                        GTTACACCCCGGTTTTTAGAAGTCTCGAC          7 0 0#
+                                         TTACACCCCGGTTTTTAGAAGTCTCGACT          8 0 0#
+                                          TACACCCCGGTTTTTAGAAGTCTCGACTT          8 0 0#
+                                                CCGGTTTTTAGAAGTCTCGACTTTAAGGA          9 0 0#
+                                                 CGGTTTTTAGAAGTCTCGACTTTAAGGAA          9 0 0#
+                                                          GAAGTCTCGACTTTAAGGAAGTGGGCCTA          8 0 0#
+                                                           AAGTCTCGACTTTAAGGAAGTGGGCCTAC          9 0 0#
+@read22f start=5,mutations=0
+TATCACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTACACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTACGGCGGAAGC
++
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+                                           GTTACACCCCGGTTTTTAGAAGTCTCGAC          7 0 0#
+                                            TTACACCCCGGTTTTTAGAAGTCTCGACT          8 0 0#
+                                             TACACCCCGGTTTTTAGAAGTCTCGACTT          8 0 0#
+                                                   CCGGTTTTTAGAAGTCTCGACTTTAAGGA          9 0 0#
+                                                    CGGTTTTTAGAAGTCTCGACTTTAAGGAA          9 0 0#
+                                                             GAAGTCTCGACTTTAAGGAAGTGGGCCTA          8 0 0#
+                                                              AAGTCTCGACTTTAAGGAAGTGGGCCTAC          9 0 0#
