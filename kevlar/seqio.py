@@ -181,6 +181,11 @@ class AnnotatedReadSet(object):
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 
+    def recalc_abund(self, newcounts, minabund=5):
+        for read in self:
+            newcounts.consume(read.sequence)
+        self.validate(newcounts, minabund=minabund)
+
     def group_reads_by_novel_kmers(self, ccprefix, upint=10000,
                                    logstream=None):
         try:

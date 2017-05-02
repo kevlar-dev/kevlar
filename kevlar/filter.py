@@ -163,7 +163,9 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
 
 def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
                        outfile=sys.stdout, augout=None, logfile=sys.stderr):
-    readset.validate(countgraph, refr, contam, minabund)
+    readset.validate(countgraph, refr=refr, contam=contam, minabund=minabund)
+    countgraph = khmer._Countgraph(countgraph.ksize(), countgraph.hashsizes())
+    readset.validate(countgraph, refr=None, contam=None, minabund=minabund)
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
