@@ -200,7 +200,7 @@ def graph_init(reads, kmers, maxabund=500, logstream=None):
     for n, minkmer in enumerate(kmers, 1):
         if n % 100 == 0:
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
-            print('[kevlar::assemble]    ', msg, sep='', file=args.logfile)
+            print('[kevlar::assemble]    ', msg, sep='', file=logstream)
         readnames = kmers[minkmer]
         if maxabund and len(readnames) > maxabund:
             msg = '            skipping k-mer with abundance {:d}'.format(
@@ -255,8 +255,20 @@ def main(args):
     count = 0
     while len(graph.edges()) > 0:
         count += 1
-        edges = sorted(graph.edges(), reverse=True,
-                       key=lambda e: graph[e[0]][e[1]]['overlap'])
+        # Sort the edges using 3 criteria. The first is the primary criterion,
+        # the other two ensure deterministic behavior.
+        #     - overlap (largest first)
+        #     - lexicographically smaller read name
+        #     - lexicographically larger read name
+        edges = sorted(
+            graph.edges(),
+            reverse=True,
+            key=lambda e: (
+                graph[e[0]][e[1]]['overlap'],
+                max(e),
+                min(e),
+            )
+        )
         read1, read2 = edges[0]  # biggest overlap (greedy algorithm)
         if read2 == graph[read1][read2]['tail']:
             read1, read2 = read2, read1
@@ -276,7 +288,9 @@ def main(args):
         for kmer in newrecord.ikmers:
             kmerseq = kevlar.revcommin(kmer.sequence)
             for readname in kmers[kmerseq]:
-                if readname not in graph or readname in [read1, read2]:
+                already_merged = readname not in graph
+                current_contig = readname in [read1, read2, newname]
+                if already_merged or current_contig:
                     continue
                 otherrecord = reads[readname]
                 newpair = calc_offset(
