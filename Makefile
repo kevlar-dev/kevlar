@@ -15,6 +15,3 @@ testall:
 
 doc:
 	cd docs && make html
-
-install:
-	pip install .
