@@ -14,9 +14,9 @@ import versioneer
 setup(name='kevlar',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
-      description=('Reference-free variant discovery in large '
+      description=('Reference-free variant discovery scalable to large '
                    'eukaryotic genomes'),
-      url='http://github.com/standage/kevlar',
+      url='https://github.com/dib-lab/kevlar',
       author='Daniel Standage',
       author_email='daniel.standage@gmail.com',
       license='MIT',
