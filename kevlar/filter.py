@@ -78,6 +78,10 @@ def subparser(subparsers):
                              help='minimum abundance required to call a '
                              'k-mer novel; should be the same value used for '
                              '--case_min in `kevlar find`; default is 5')
+    filter_args.add_argument('--skip2', default=False, action='store_true',
+                             help='skip the second pass over the reads that '
+                             'recalculates abundance after reference and '
+                             'contaminant k-mers are discarded')
     filter_args.add_argument('--ignore', metavar='KM', nargs='+',
                              help='ignore the specified k-mer(s)')
 
@@ -162,10 +166,16 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
 
 
 def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
-                       outfile=sys.stdout, augout=None, logfile=sys.stderr):
+                       skip2=False, outfile=sys.stdout, augout=None,
+                       logfile=sys.stderr):
     readset.validate(countgraph, refr=refr, contam=contam, minabund=minabund)
-    countgraph = khmer._Countgraph(countgraph.ksize(), countgraph.hashsizes())
-    readset.validate(countgraph, refr=None, contam=None, minabund=minabund)
+    if not skip2:
+        ksize, tablesizes = countgraph.ksize(), countgraph.hashsizes()
+        countgraph = khmer._Countgraph(ksize, tablesizes)
+        for read in readset:
+            countgraph.consume(read.sequence)
+        readset.validate(countgraph, minabund=minabund)
+
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
@@ -252,7 +262,7 @@ def main(args):
     print('[kevlar::filter] Validate k-mers and print reads',
           file=args.logfile)
     validate_and_print(readset, countgraph, refr, contam, args.min_abund,
-                       args.out, args.aug_out, args.logfile)
+                       args.skip2, args.out, args.aug_out, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
