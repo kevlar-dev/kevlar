@@ -8,3 +8,4 @@ __pycache__
 scratch/
 *.swp
 .coverage
+docs/_build

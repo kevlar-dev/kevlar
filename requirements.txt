@@ -1,0 +1,2 @@
+networkx
+-e git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit#egg=khmer

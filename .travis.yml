@@ -11,12 +11,13 @@ python:
     - 2.7
     - 3.5
 install:
-    - pip install --upgrade pip setuptools pytest-cov pep8 cython
-    - pip install pysam networkx
-    - pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
+    - make devenv
+    - pip install pysam
+    - pip install -r requirements.txt
     - pip install .
 script:
     - make testall
     - make style
+    - make doc
 after_success:
     - bash <(curl -s https://codecov.io/bash)

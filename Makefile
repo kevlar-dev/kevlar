@@ -1,8 +1,5 @@
-depend:
-	pip install pysam git+https://github.com/dib-lab/khmer.git
-
-devenv: depend
-	pip install pep8 pytest-cov
+devenv:
+	pip install --upgrade pip setuptools pytest pytest-cov pep8 cython sphinx
 
 style:
 	pep8 kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
@@ -12,3 +9,6 @@ test:
 
 testall:
 	py.test -v --cov=kevlar kevlar/tests/*.py
+
+doc:
+	cd docs && make html
