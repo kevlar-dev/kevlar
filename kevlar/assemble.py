@@ -12,7 +12,10 @@ from collections import defaultdict, namedtuple
 import argparse
 import itertools
 import sys
-import networkx
+try:
+    import networkx
+except:
+    pass
 import screed
 import khmer
 import kevlar
