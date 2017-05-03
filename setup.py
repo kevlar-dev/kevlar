@@ -28,8 +28,8 @@ setup(name='kevlar',
       entry_points={
           'console_scripts': ['kevlar = kevlar.__main__:main']
       },
-      install_requires=['khmer'],
-      dependency_links=['https://github.com/dib-lab/khmer/tarball/master'],
+      install_requires=['khmer', 'networkx'],
+      dependency_links=['https://github.com/dib-lab/khmer/tarball/master#egg=khmer'],
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',
