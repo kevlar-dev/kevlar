@@ -172,9 +172,7 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
     if not skip2:
         ksize, tablesizes = countgraph.ksize(), countgraph.hashsizes()
         countgraph = khmer._Countgraph(ksize, tablesizes)
-        for read in readset:
-            countgraph.consume(read.sequence)
-        readset.validate(countgraph, minabund=minabund)
+        readset.recalc_abund(countgraph, minabund)
 
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
