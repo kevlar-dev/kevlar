@@ -12,3 +12,6 @@ test:
 
 testall:
 	py.test -v --cov=kevlar kevlar/tests/*.py
+
+doc:
+	cd docs && make html
