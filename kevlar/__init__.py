@@ -90,4 +90,25 @@ def load_sketch(filename, count=False, graph=False, smallcount=False):
     return sketch
 
 
+def allocate_sketch(ksize, target_tablesize, num_tables=4, count=False,
+                    graph=False, smallcount=False):
+    if count and graph:
+        if smallcount:
+            createfunc = khmer.SmallCountgraph
+        else:
+            createfunc = khmer.Countgraph
+    elif count and not graph:
+        if smallcount:
+            createfunc = khmer.SmallCounttable
+        else:
+            createfunc = khmer.Counttable
+    elif not count and graph:
+        createfunc = khmer.Nodegraph
+    elif not count and not graph:
+        createfunc = khmer.Nodetable
+
+    sketch = createfunc(ksize, target_tablesize, num_tables)
+    return sketch
+
+
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')
