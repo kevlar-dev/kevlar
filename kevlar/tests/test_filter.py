@@ -107,6 +107,30 @@ def test_validate_withrefr():
             assert kevlar.revcom(ikmer.sequence) != kmer
 
 
+def test_validate_withcontam():
+    contam = khmer.Nodetable(19, 1e3, 2)
+    contam.consume('CCAGCTGCAGGCCAGGGATCGCCGTGGGCGGACGCCCATACCGCGATAGC')
+    filelist = kevlar.tests.data_glob('collect.gamma.txt')
+
+    # First, without second pass
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph, contam=contam,
+                                     minabund=8, skip2=True)
+    assert readset.valid == (5, 35)
+    assert readset.lowabund == (0, 0)
+    assert readset.discarded == 0
+    assert readset.contam == 9
+
+    # Then, with second pass
+    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    kevlar.filter.validate_and_print(readset, countgraph, contam=contam,
+                                     minabund=8)
+    assert readset.valid == (4, 32)
+    assert readset.lowabund == (2, 21)
+    assert readset.discarded == 12
+    assert readset.contam == 9
+
+
 def test_ctrl3(ctrl3):
     readset, countgraph = ctrl3
     kevlar.filter.validate_and_print(readset, countgraph, minabund=6)
