@@ -24,6 +24,7 @@ from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 from gzip import open as gzopen
+import khmer
 import screed
 
 from kevlar._version import get_versions
@@ -66,6 +67,27 @@ def same_seq(seq1, seq2, seq2revcom=None):
     if seq2revcom is None:
         seq2revcom = revcom(seq2)
     return seq1 == seq2 or seq1 == seq2revcom
+
+
+def load_sketch(filename, count=False, graph=False, smallcount=False):
+    if count and graph:
+        if smallcount:
+            createfunc = khmer._SmallCountgraph
+        else:
+            createfunc = khmer._Countgraph
+    elif count and not graph:
+        if smallcount:
+            createfunc = khmer._SmallCounttable
+        else:
+            createfunc = khmer._Counttable
+    elif not count and graph:
+        createfunc = khmer._Nodegraph
+    elif not count and not graph:
+        createfunc = khmer._Nodetable
+
+    sketch = createfunc(1, [1])
+    sketch.load(filename)
+    return sketch
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')
