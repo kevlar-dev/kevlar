@@ -42,6 +42,43 @@ def open(filename, mode):
     return openfunc(filename, mode)
 
 
+def sketch_autoload(infile, count=True, graph=False,
+                    ksize=31, table_size=1e4, num_tables=4,
+                    num_bands=0, band=0):
+    """
+    Use file extension to conditionally load sketch into memory.
+
+    If the file extension is one of the following, treat the file as a sketch
+    that has been written to disk and load it with `kevlar.load_sketch`.
+    Sketch attributes such as ksize, table size, and number of tables will
+    be set automatically.
+
+    - `.ct` or `.counttable`: `Counttable`
+    - `.nt` or `.nodetable`: `Nodetable`
+    - `.cg` or `.countgraph`: `Countgraph`
+    - `.ng` or `.nodegraph`: `Nodegraph`
+
+    Otherwise, a sketch will be created using the specified arguments and the
+    input file will be treated as a Fasta/Fastq file to be loaded with
+    `.consume_seqfile` or `.consume_seqfile_banding`.
+    """
+    sketch_extensions = (
+        '.ct', '.counttable', '.nt', '.nodetable',
+        '.cg', '.countgraph', '.ng', '.nodegraph',
+    )
+
+    if infile.endswith(sketch_extensions):
+        return load_sketch(infile, count=count, graph=graph, smallcount=False)
+    else:
+        sketch = allocate_sketch(ksize, table_size, num_tables, count=count,
+                                 graph=graph, smallcount=False)
+        if num_bands > 1:
+            sketch.consume_seqfile_banding(infile, num_bands, band)
+        else:
+            sketch.consume_seqfile(infile)
+        return sketch
+
+
 def calc_fpr(table):
     """Stolen shamelessly from khmer/__init__.py"""
     sizes = table.hashsizes()
@@ -70,6 +107,7 @@ def same_seq(seq1, seq2, seq2revcom=None):
 
 
 def load_sketch(filename, count=False, graph=False, smallcount=False):
+    """Convenience function for loading a sketch from the specified file."""
     if count and graph:
         if smallcount:
             createfunc = khmer._SmallCountgraph
@@ -92,6 +130,7 @@ def load_sketch(filename, count=False, graph=False, smallcount=False):
 
 def allocate_sketch(ksize, target_tablesize, num_tables=4, count=False,
                     graph=False, smallcount=False):
+    """Convenience function for allocating memory for a new sketch."""
     if count and graph:
         if smallcount:
             createfunc = khmer.SmallCountgraph

@@ -44,9 +44,9 @@ def test_allocate_sketch_graphy(count, smallcount):
 
 
 @pytest.mark.parametrize('count,smallcount', [
-    (True, True),
+    # (True, True),
     (True, False),
-    (False, False),
+    # (False, False),
 ])
 def test_allocate_sketch_non_graphy(count, smallcount):
     sequence = 'TGCCACGATCCGGCTATGGCGGAAGGGCACACCTAACCGCGATGACGGAGTAACTCGCAGCA'
