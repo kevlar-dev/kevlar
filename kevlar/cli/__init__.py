@@ -20,6 +20,7 @@ mains = {
     'filter': kevlar.filter.main,
     'reaugment': kevlar.reaugment.main,
     'assemble': kevlar.assemble.main,
+    'mutate': kevlar.mutate.main,
 }
 
 
@@ -54,5 +55,6 @@ def parser():
     kevlar.filter.subparser(subparsers)
     kevlar.reaugment.subparser(subparsers)
     kevlar.assemble.subparser(subparsers)
+    kevlar.mutate.subparser(subparsers)
 
     return parser
