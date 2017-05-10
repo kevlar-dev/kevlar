@@ -24,6 +24,15 @@ Mutation = NamedTuple('Mutation', 'seq pos type data')
 # deletion: contig8 8837 del 5
 # inversion: X 2884322 inv 2766
 
+char_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
+index_to_char = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
+mutation_functions = {
+    'snv': mutate_snv,
+    'ins': mutate_insertion,
+    'del': mutate_deletion,
+    'inv': mutate_inversion,
+}
+
 
 def subparser(subparsers):
     subparser = subparsers.add_parser('mutate')
@@ -55,10 +64,42 @@ def load_mutations(instream, logstream):
     return mutations
 
 
+def mutate_snv(sequence, mutation):
+    refrbase = sequence[mutation.pos]
+    nuclindex = char_to_index[refrbase]
+    newindex = nuclindex + int(mutation.data)
+    while newindex > 3:
+        newindex -= 4
+    newbase = index_to_char[newindex]
+    prefix, suffix = sequence[:mutation.pos], sequence[mutation.pos+1:]
+    return prefix + newbase + suffix
+
+
+def mutate_insertion(sequence, mutation):
+    prefix, suffix = sequence[:mutation.pos], sequence[mutation.pos:]
+    return prefix + mutation.data + suffix
+
+
+def mutate_deletion(sequence, mutation):
+    del_length = int(mutation.data)
+    prefix = sequence[:mutation.pos]
+    suffix = sequence[mutation.pos+del_length:]
+    return prefix + suffix
+
+
+def mutate_inversion(sequence, mutation):
+    inv_length = int(mutation.data)
+    prefix = sequence[:mutation.pos]
+    suffix = sequence[mutation.pos+del_length:]
+    invseq = sequence[mutation.pos:mutation.pos+inv_length:-1]
+    return prefix + invseq + suffix
+
+
 def mutate_sequence(sequence, mutlist):
     for mutation in mutlist:
-        if mutation.type == 'snv':
-            pass
+        mutfunc = mutation_functions[mutation.type]
+        sequence = mutfunc(sequence, mutation)
+    return sequence
 
 
 def mutate_genome(infile, mutations):
