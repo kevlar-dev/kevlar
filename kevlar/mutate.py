@@ -28,7 +28,7 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('mutations', type=argparse.FileType('r'),
                            help='mutations file')
-    subparser.add_argument('genome', metavar='FILE', help='genome to mutate')
+    subparser.add_argument('genome', help='genome to mutate')
 
 
 def load_mutations(instream, logstream):
