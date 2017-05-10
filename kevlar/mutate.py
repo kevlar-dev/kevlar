@@ -17,13 +17,6 @@ import kevlar
 
 
 Mutation = namedtuple('Mutation', 'seq pos type data')
-
-
-# SNV: chr1 5087 snv 2
-# insertion: scaffold14 19983 ins AGCTACCCCAGTGAGTCGGTAATGTGATC
-# deletion: contig8 8837 del 5
-# inversion: X 2884322 inv 2766
-
 char_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_char = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 
@@ -64,6 +57,8 @@ def mutate_snv(sequence, mutation):
     newindex = nuclindex + int(mutation.data)
     while newindex > 3:
         newindex -= 4
+    while newindex < 0:
+        newindex += 4
     newbase = index_to_char[newindex]
     prefix, suffix = sequence[:mutation.pos], sequence[mutation.pos+1:]
     return prefix + newbase + suffix
@@ -84,8 +79,8 @@ def mutate_deletion(sequence, mutation):
 def mutate_inversion(sequence, mutation):
     inv_length = int(mutation.data)
     prefix = sequence[:mutation.pos]
-    suffix = sequence[mutation.pos+del_length:]
-    invseq = sequence[mutation.pos:mutation.pos+inv_length:-1]
+    suffix = sequence[mutation.pos+inv_length:]
+    invseq = sequence[mutation.pos+inv_length-1:mutation.pos-1:-1]
     return prefix + invseq + suffix
 
 
@@ -99,20 +94,12 @@ def mutate_sequence(sequence, mutlist):
 def mutate_genome(infile, mutations):
     parser = khmer.ReadParser(infile)
     for record in parser:
+        sequence = record.sequence
         if record.name in mutations:
             mutlist = sorted(mutations[record.name], key=lambda m: m.pos,
                              reverse=True)
-            record.sequence = mutate_sequence(record.sequence, mutlist)
-        yield record
-
-
-def main(args):
-    print('[kevlar::mutate] loading mutations', file=args.logfile)
-    mutations = load_mutations(args.mutations, args.logstream)
-
-    print('[kevlar::mutate] mutating genome', file=args.logfile)
-    for record in mutate_genome(args.genome, mutations):
-        write_record(record, args.out)
+            sequence = mutate_sequence(sequence, mutlist)
+        yield khmer.Read(name=record.name, sequence=sequence)
 
 
 mutation_functions = {
@@ -121,3 +108,12 @@ mutation_functions = {
     'del': mutate_deletion,
     'inv': mutate_inversion,
 }
+
+
+def main(args):
+    print('[kevlar::mutate] loading mutations', file=args.logfile)
+    mutations = load_mutations(args.mutations, args.logfile)
+
+    print('[kevlar::mutate] mutating genome', file=args.logfile)
+    for record in mutate_genome(args.genome, mutations):
+        write_record(record, args.out)
