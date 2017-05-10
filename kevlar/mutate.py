@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
-from collections import defaultdict, NamedTuple
+from collections import defaultdict, namedtuple
 import argparse
 import sys
 import khmer
@@ -16,7 +16,7 @@ from khmer.utils import write_record
 import kevlar
 
 
-Mutation = NamedTuple('Mutation', 'seq pos type data')
+Mutation = namedtuple('Mutation', 'seq pos type data')
 
 
 # SNV: chr1 5087 snv 2
@@ -26,12 +26,6 @@ Mutation = NamedTuple('Mutation', 'seq pos type data')
 
 char_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_char = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-mutation_functions = {
-    'snv': mutate_snv,
-    'ins': mutate_insertion,
-    'del': mutate_deletion,
-    'inv': mutate_inversion,
-}
 
 
 def subparser(subparsers):
@@ -119,3 +113,11 @@ def main(args):
     print('[kevlar::mutate] mutating genome', file=args.logfile)
     for record in mutate_genome(args.genome, mutations):
         write_record(record, args.out)
+
+
+mutation_functions = {
+    'snv': mutate_snv,
+    'ins': mutate_insertion,
+    'del': mutate_deletion,
+    'inv': mutate_inversion,
+}
