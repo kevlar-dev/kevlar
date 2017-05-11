@@ -16,9 +16,9 @@ import kevlar
     ('test.countgraph', True, True, False, 'TGGAACCGGCAACGACGAAAA'),
     ('test.smallcountgraph', True, True, True, 'CTGTACTACAGCTACTACAGT'),
     ('test.counttable', True, False, False, 'CCTGATATCCGGAATCTTAGC'),
-    ('test.smallcounttable', True, False, True, 'TTGGTATTAAGTAGCACTCGG'),
+    ('test.smallcounttable', True, False, True, 'GGGCCCCCATCTCTATCTTGC'),
     ('test.nodegraph', False, True, False, 'GGGAACTTACCTGGGGGTGCG'),
-    ('test.nodetable', False, False, False, 'GCTTACGCGCAAGCGCCCCCA'),
+    ('test.nodetable', False, False, False, 'CTGTTCGATATGAGGAATCTG'),
 ])
 def test_load_sketch(filename, count, graph, smallcount, testkmer):
     infile = kevlar.tests.data_file(filename)
@@ -44,9 +44,9 @@ def test_allocate_sketch_graphy(count, smallcount):
 
 
 @pytest.mark.parametrize('count,smallcount', [
-    # (True, True),
+    (True, True),
     (True, False),
-    # (False, False),
+    (False, False),
 ])
 def test_allocate_sketch_non_graphy(count, smallcount):
     sequence = 'TGCCACGATCCGGCTATGGCGGAAGGGCACACCTAACCGCGATGACGGAGTAACTCGCAGCA'
