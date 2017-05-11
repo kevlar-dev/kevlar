@@ -58,7 +58,7 @@ def subparser(subparsers):
 
     filter_args = subparser.add_argument_group(
         'Filtering k-mers',
-        'Memory constraints often require running `kevlar find` with false '
+        'Memory constraints often require running `kevlar novel` with false '
         'positive rates (FPRs) in the 0.1 - 0.2 range, resulting in some '
         'k-mers reported with highly inflated abundances. This script handles '
         'a much smaller amount of data, and in limited memory can achieve a '
@@ -77,7 +77,7 @@ def subparser(subparsers):
     filter_args.add_argument('--min-abund', type=int, default=5, metavar='Y',
                              help='minimum abundance required to call a '
                              'k-mer novel; should be the same value used for '
-                             '--case_min in `kevlar find`; default is 5')
+                             '--case_min in `kevlar novel`; default is 5')
     filter_args.add_argument('--skip2', default=False, action='store_true',
                              help='skip the second pass over the reads that '
                              'recalculates abundance after reference and '
@@ -92,11 +92,9 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE', default=sys.stdout,
+    misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
-    misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
-                           metavar='FILE',
+    misc_args.add_argument('--aug-out', metavar='FILE',
                            help='optional augmented Fastq output')
     misc_args.add_argument('--cc-prefix', metavar='PREFIX',
                            help='group reads by novel k-mers, and use the '
@@ -104,7 +102,7 @@ def subparser(subparsers):
                            'file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
-                           '"augmented" Fastq format (a la `kevlar find` '
+                           '"augmented" Fastq format (a la `kevlar novel` '
                            'output)')
 
 
@@ -259,8 +257,10 @@ def main(args):
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
           file=args.logfile)
+    outstream = kevlar.open(args.out, 'w')
+    augstream = kevlar.open(args.aug_out, 'w') if args.aug_out else None
     validate_and_print(readset, countgraph, refr, contam, args.min_abund,
-                       args.skip2, args.out, args.aug_out, args.logfile)
+                       args.skip2, outstream, augstream, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)

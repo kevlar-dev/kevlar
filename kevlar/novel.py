@@ -21,7 +21,7 @@ import screed
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('find', add_help=False)
+    subparser = subparsers.add_parser('novel', add_help=False)
 
     samp_args = subparser.add_argument_group(
         'Case and control configuration',
@@ -53,12 +53,12 @@ def subparser(subparsers):
     band_args = subparser.add_argument_group(
         'K-mer banding',
         'If memory is a limiting factor, it is possible to get a linear '
-        'decrease in memory consumption by running `kevlar find` in "banded" '
+        'decrease in memory consumption by running `kevlar novel` in "banded" '
         'mode. Splitting the hashed k-mer space into N bands and only '
         'considering k-mers from one band at a time reduces the memory '
         'consumption to approximately 1/N of the total memory required. This '
-        'implements a scatter/gather approach in which `kevlar find` is run N '
-        'times, after the results are combined using `kevlar filter`.'
+        'implements a scatter/gather approach in which `kevlar novel` is run N'
+        ' times, after the results are combined using `kevlar filter`.'
     )
     band_args.add_argument('--num-bands', type=int, metavar='N', default=None,
                            help='number of bands into which to divide the '
@@ -74,8 +74,7 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE',
+    misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
@@ -86,7 +85,7 @@ def load_samples(samples, ksize, memory, max_fpr=0.2, numbands=None, band=None,
                  logfile=sys.stderr):
     tables = list()
     for sample in samples:
-        print('[kevlar::find]     Loading counttable', sample, '...', end='',
+        print('[kevlar::novel]     Loading counttable', sample, '...', end='',
               file=logfile)
         ct = khmer.Counttable(ksize, memory / 4, 4)
         if numbands:
@@ -140,33 +139,34 @@ def main(args):
     timer = kevlar.Timer()
     timer.start()
 
-    print('[kevlar::find] Loading case samples', file=args.logfile)
+    print('[kevlar::novel] Loading case samples', file=args.logfile)
     timer.start('loadall')
     timer.start('loadcase')
     cases = load_samples(args.cases, args.ksize, args.memory, args.max_fpr,
                          args.num_bands, args.band, args.logfile)
     elapsed = timer.stop('loadcase')
-    print('[kevlar::find] Case samples loaded in {:.2f} sec'.format(elapsed),
+    print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
     elapsed = timer.start('loadctrl')
-    print('[kevlar::find] Loading control samples', file=args.logfile)
+    print('[kevlar::novel] Loading control samples', file=args.logfile)
     controls = load_samples(args.controls, args.ksize, args.memory,
                             args.max_fpr, args.num_bands, args.band,
                             args.logfile)
     elapsed = timer.stop('loadctrl')
-    print('[kevlar::find] Cntrl samples loaded in {:.2f} sec'.format(elapsed),
+    print('[kevlar::novel] Cntrl samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
     elapsed = timer.stop('loadall')
-    print('[kevlar::find] All samples loaded in {:.2f} sec'.format(elapsed),
+    print('[kevlar::novel] All samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
     timer.start('iter')
-    print('[kevlar::find] Iterating over case reads', args.cases,
+    print('[kevlar::novel] Iterating over case reads', args.cases,
           file=args.logfile)
     nkmers = 0
     nreads = 0
     unique_kmers = set()
+    outstream = kevlar.open(args.out, 'w')
     for n, record in enumerate(iter_screed(args.cases)):
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
@@ -197,17 +197,17 @@ def main(args):
         if read_kmers > 0:
             nreads += 1
             nkmers += read_kmers
-            kevlar.print_augmented_fastq(record, args.out)
+            kevlar.print_augmented_fastq(record, outstream)
 
     elapsed = timer.stop('iter')
     message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)
-    print('[kevlar::find]', message, file=args.logfile)
+    print('[kevlar::novel]', message, file=args.logfile)
 
     message = 'Found {:d} instances'.format(nkmers)
     message += ' of {:d} unique novel kmers'.format(len(unique_kmers))
     message += ' in {:d} reads'.format(nreads)
-    print('[kevlar::find]', message, file=args.logfile)
+    print('[kevlar::novel]', message, file=args.logfile)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
-    print('[kevlar::find]', message, file=args.logfile)
+    print('[kevlar::novel]', message, file=args.logfile)

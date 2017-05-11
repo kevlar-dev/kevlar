@@ -29,7 +29,7 @@ def subparser(subparsers):
                            help='minimum case abundance required to call a '
                            'k-mer novel; used to filter out k-mers with '
                            'inflated abundances; should equal the value of '
-                           '--case_min used in "kevlar find"; default is 5')
+                           '--case_min used in "kevlar novel"; default is 5')
     subparser.add_argument('--max-fpr', type=float, metavar='FPR',
                            default=0.001, help='terminate if the expected '
                            'false positive rate is higher than the specified '
@@ -37,7 +37,7 @@ def subparser(subparsers):
     subparser.add_argument('--refr', metavar='FILE', type=str, default=None,
                            help='reference genome in Fasta/Fastq format; any '
                            'k-mers designated as "interesting" by "kevlar '
-                           'find" are ignored if they are present in the '
+                           'novel" are ignored if they are present in the '
                            'reference genome')
     subparser.add_argument('--refr-memory', metavar='MEM', default='1e6',
                            type=khmer_args.memory_setting,
@@ -52,8 +52,8 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--collapse', action='store_true', help='collapse '
                            'linear paths contained in other linear paths')
-    subparser.add_argument('find_output', nargs='+', help='one or more output '
-                           'files from the "kevlar find" command')
+    subparser.add_argument('novel_output', nargs='+', help='one or more output'
+                           ' files from the "kevlar novel" command')
 
 
 def load_refr(refrfile, ksize, memory, logfile=sys.stderr):
@@ -169,9 +169,9 @@ def main(args):
     refr = None
     if args.refr:
         refr = load_refr(args.refr, args.ksize, args.refr_memory)
-    countgraph = recalc_abund(args.find_output, args.ksize, args.memory,
+    countgraph = recalc_abund(args.novel_output, args.ksize, args.memory,
                               args.max_fpr, args.logfile)
-    variants = load_novel_kmers(args.find_output, countgraph, refr,
+    variants = load_novel_kmers(args.novel_output, countgraph, refr,
                                 args.minabund, args.logfile)
     assemble_contigs(countgraph, variants, args.ignore, args.collapse,
                      args.debug, args.logfile)

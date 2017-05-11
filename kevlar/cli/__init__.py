@@ -15,7 +15,7 @@ import sys
 
 mains = {
     'dump': kevlar.dump.main,
-    'find': kevlar.find.main,
+    'novel': kevlar.novel.main,
     'collect': kevlar.collect.main,
     'filter': kevlar.filter.main,
     'reaugment': kevlar.reaugment.main,
@@ -50,7 +50,7 @@ def parser():
     subparsers = parser.add_subparsers(dest='cmd', metavar='cmd',
                                        help='"' + subcommandstr + '"')
     kevlar.dump.subparser(subparsers)
-    kevlar.find.subparser(subparsers)
+    kevlar.novel.subparser(subparsers)
     kevlar.collect.subparser(subparsers)
     kevlar.filter.subparser(subparsers)
     kevlar.reaugment.subparser(subparsers)

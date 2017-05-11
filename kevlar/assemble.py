@@ -30,16 +30,15 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('assemble')
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')
-    subparser.add_argument('-o', '--out', metavar='FILE', default=sys.stdout,
-                           type=argparse.FileType('w'),
+    subparser.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--gml', metavar='FILE',
                            help='write graph to .gml file')
     subparser.add_argument('-x', '--max-abund', type=int, metavar='X',
                            default=500, help='discard interesting k-mers that '
                            'occur more than X times')
-    subparser.add_argument('augfastq', type=argparse.FileType('r'),
-                           help='annotated reads in augmented Fastq format')
+    subparser.add_argument('augfastq', help='annotated reads in augmented '
+                           'Fastq format')
 
 
 def print_read_pair(read1, pos1, read2, pos2, ksize, offset, overlap,
@@ -244,7 +243,7 @@ def main(args):
     if args.debug:
         debugout = args.logfile
 
-    reads, kmers = load_reads(args.augfastq, debugout)
+    reads, kmers = load_reads(kevlar.open(args.augfastq, 'r'), debugout)
     inputreads = list(reads.keys())
     graph = graph_init(reads, kmers, args.max_abund, debugout)
     if args.gml:
@@ -318,13 +317,14 @@ def main(args):
 
     contigcount = 0
     unassembledcount = 0
+    outstream = kevlar.open(args.out, 'w')
     for seqname in graph.nodes():
         if seqname in inputreads:
             unassembledcount += 1
             continue
         contigcount += 1
         contigrecord = reads[seqname]
-        kevlar.print_augmented_fastq(contigrecord, args.out)
+        kevlar.print_augmented_fastq(contigrecord, outstream)
 
     assembledcount = len(inputreads) - unassembledcount
     message = '[kevlar::assemble] assembled'

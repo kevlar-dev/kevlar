@@ -18,7 +18,7 @@ from khmer import Counttable
 
 def test_cli():
     args = kevlar.cli.parser().parse_args([
-        'find', '--controls', 'cntl1.fq', 'cntl2.fq', '--cases', 'case1.fq',
+        'novel', '--controls', 'cntl1.fq', 'cntl2.fq', '--cases', 'case1.fq',
         '-k', '17'
     ])
     assert args.ksize == 17
@@ -28,7 +28,7 @@ def test_cli():
     assert args.band is None
 
     args = kevlar.cli.parser().parse_args([
-        'find', '--controls', 'cntl1.fq', 'cntl2.fq', '--cases', 'case1.fq',
+        'novel', '--controls', 'cntl1.fq', 'cntl2.fq', '--cases', 'case1.fq',
         '--num-bands', '8', '--band', '1'
     ])
     assert args.ksize == 31
@@ -39,10 +39,10 @@ def test_cli():
 
     with pytest.raises(ValueError) as ve:
         args = kevlar.cli.parser().parse_args([
-            'find', '--controls', 'cntl1.fq', '--cases', 'case1.fq',
+            'novel', '--controls', 'cntl1.fq', '--cases', 'case1.fq',
             '--band', '1'
         ])
-        kevlar.find.main(args)
+        kevlar.novel.main(args)
     assert 'Must specify --num-bands and --band together' in str(ve)
 
 
@@ -60,24 +60,22 @@ def test_assumptions(kmer):
 
 @pytest.mark.parametrize('case,ctrl,mem', [
     ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case2.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case3.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
     ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
 ])
-def test_find_single_mutation(case, ctrl, mem, capsys):
+def test_novel_single_mutation(case, ctrl, mem, capsys):
     from sys import stdout, stderr
     casestr = kevlar.tests.data_file(case)
     ctrls = kevlar.tests.data_glob(ctrl)
-    arglist = ['find', '--ksize', '13', '--case_min', '8', '--ctrl_max', '0',
+    arglist = ['novel', '--ksize', '13', '--case_min', '8', '--ctrl_max', '0',
                '--memory', mem, '--cases', casestr, '--controls'] + ctrls
     args = kevlar.cli.parser().parse_args(arglist)
-    args.out = stdout
+    args.out = None
     args.err = stderr
-    kevlar.find.main(args)
+    kevlar.novel.main(args)
     out, err = capsys.readouterr()
 
     for line in out.split('\n'):
@@ -92,18 +90,18 @@ def test_find_single_mutation(case, ctrl, mem, capsys):
         assert ctl1 == 0 and ctl2 == 0, line
 
 
-def test_find_two_cases(capsys):
+def test_novel_two_cases(capsys):
     from sys import stdout, stderr
     pattern = 'tests/data/trio1/case{}.fq'
     cases = kevlar.tests.data_glob('trio1/case6*.fq')
     ctrls = kevlar.tests.data_glob('trio1/ctrl[5,6].fq')
-    arglist = ['find', '--ksize', '19', '--memory', '1e7', '--ctrl_max', '1',
+    arglist = ['novel', '--ksize', '19', '--memory', '1e7', '--ctrl_max', '1',
                '--case_min', '7']
     arglist += ['--cases'] + cases + ['--controls'] + ctrls
     args = kevlar.cli.parser().parse_args(arglist)
-    args.out = stdout
+    args.out = None
     args.err = stderr
-    kevlar.find.main(args)
+    kevlar.novel.main(args)
     out, err = capsys.readouterr()
 
     assert out.strip() != ''
@@ -146,5 +144,5 @@ def test_kmer_rep_in_read(capsys):
 def test_iter_screed():
     infiles = kevlar.tests.data_glob('bogus-genome/mask-chr[1,2].fa')
     print(infiles)
-    records = [r for r in kevlar.find.iter_screed(infiles)]
+    records = [r for r in kevlar.novel.iter_screed(infiles)]
     assert len(records) == 4
