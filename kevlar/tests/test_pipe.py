@@ -19,22 +19,22 @@ import kevlar.__main__
 def test_trio2(capsys):
     from sys import stdout, stderr
     tempdir = tempfile.mkdtemp()
-    findouts = ['{}/out{}'.format(tempdir, i) for i in range(4)]
+    novelouts = ['{}/out{}'.format(tempdir, i) for i in range(4)]
     case = kevlar.tests.data_file('trio2/case1.fq.gz')
     controls = kevlar.tests.data_glob('trio2/ctrl[1,2].fq.gz')
     for i in range(4):
         arglist = [
-            'find', '--cases', case, '--band', str(i+1), '--num-bands', '4',
-            '--out', findouts[i], '--memory', '200K', '--ksize', '31',
+            'novel', '--cases', case, '--band', str(i+1), '--num-bands', '4',
+            '--out', novelouts[i], '--memory', '200K', '--ksize', '31',
             '--case_min', '8', '--ctrl_max', '1', '--controls'
         ] + controls
         args = kevlar.cli.parser().parse_args(arglist)
-        kevlar.find.main(args)
+        kevlar.novel.main(args)
 
     arglist = [
         'collect', '--memory', '5K', '--ksize', '31', '--minabund', '8',
         '--collapse'
-    ] + findouts
+    ] + novelouts
     args = kevlar.cli.parser().parse_args(arglist)
     args.out = stdout
     args.logfile = stderr

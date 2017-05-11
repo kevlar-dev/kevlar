@@ -13,16 +13,4 @@ Although a reference genome is not required, it can be utilized to reduce data v
 
 ## Quick start
 
-```
-# Discard reads that match the reference genome perfectly --> trivially uninteresting
-kevlar dump --out mother.fq mother.bam reference.fasta.gz
-kevlar dump --out father.fq father.bam reference.fasta.gz
-kevlar dump --out proband.fq proband.bam reference.fasta.gz
-
-# Find "interesting" (putatively novel) k-mers in the proband
-# 8G memory per sample x 3 samples = 24G
-kevlar find --controls mother.fq father.fq --ctrl_max 1 --case_min 8 --ksize 27 --memory 8G --out interesting-kmers.txt proband.fq
-
-# Filter "interesting" k-mers, group, and assemble contigs representing variants
-kevlar collect --memory 1G --minabund 8 --refr reference.fasta.gz --refr-memory 4G --ksize 27 --collapse --out variants.tsv interestng-kmers.txt
-```
+Coming soon!
