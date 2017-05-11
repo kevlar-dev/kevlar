@@ -60,11 +60,9 @@ def test_assumptions(kmer):
 
 @pytest.mark.parametrize('case,ctrl,mem', [
     ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case2.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case3.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '1M'),
     ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
     ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
 ])
@@ -75,7 +73,7 @@ def test_find_single_mutation(case, ctrl, mem, capsys):
     arglist = ['find', '--ksize', '13', '--case_min', '8', '--ctrl_max', '0',
                '--memory', mem, '--cases', casestr, '--controls'] + ctrls
     args = kevlar.cli.parser().parse_args(arglist)
-    args.out = stdout
+    args.out = None
     args.err = stderr
     kevlar.find.main(args)
     out, err = capsys.readouterr()
@@ -101,7 +99,7 @@ def test_find_two_cases(capsys):
                '--case_min', '7']
     arglist += ['--cases'] + cases + ['--controls'] + ctrls
     args = kevlar.cli.parser().parse_args(arglist)
-    args.out = stdout
+    args.out = None
     args.err = stderr
     kevlar.find.main(args)
     out, err = capsys.readouterr()

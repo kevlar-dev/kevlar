@@ -92,11 +92,9 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE', default=sys.stdout,
+    misc_args.add_argument('-o', '--out', metavar='FILE', default=sys.stdout,
                            help='output file; default is terminal (stdout)')
-    misc_args.add_argument('--aug-out', type=argparse.FileType('w'),
-                           metavar='FILE',
+    misc_args.add_argument('--aug-out', metavar='FILE',
                            help='optional augmented Fastq output')
     misc_args.add_argument('--cc-prefix', metavar='PREFIX',
                            help='group reads by novel k-mers, and use the '
@@ -259,8 +257,10 @@ def main(args):
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
           file=args.logfile)
+    outstream = kevlar.open(args.out, 'w')
+    augstream = kevlar.open(args.aug_out, 'w') if args.aug_out else None
     validate_and_print(readset, countgraph, refr, contam, args.min_abund,
-                       args.skip2, args.out, args.aug_out, args.logfile)
+                       args.skip2, outstream, augstream, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
