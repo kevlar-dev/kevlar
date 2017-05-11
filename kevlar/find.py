@@ -74,8 +74,7 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', type=argparse.FileType('w'),
-                           metavar='FILE',
+    misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
@@ -167,6 +166,7 @@ def main(args):
     nkmers = 0
     nreads = 0
     unique_kmers = set()
+    outstream = kevlar.open(args.out, 'w')
     for n, record in enumerate(iter_screed(args.cases)):
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
@@ -197,7 +197,7 @@ def main(args):
         if read_kmers > 0:
             nreads += 1
             nkmers += read_kmers
-            kevlar.print_augmented_fastq(record, args.out)
+            kevlar.print_augmented_fastq(record, outstream)
 
     elapsed = timer.stop('iter')
     message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)
