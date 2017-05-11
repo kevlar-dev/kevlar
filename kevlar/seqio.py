@@ -89,7 +89,7 @@ class AnnotatedReadSet(object):
     """
     Data structure for de-duplicating reads and combining annotated k-mers.
 
-    The `kevlar find` command produces output in an "augmented Fastq" format,
+    The `kevlar novel` command produces output in an "augmented Fastq" format,
     with "interesting" (potentially novel) k-mers annotated like so.
 
             @read1
@@ -100,10 +100,10 @@ class AnnotatedReadSet(object):
                            GGGCGTGACTTAATAAGGT          8 0 0#
 
     Each line ending with a # shows an interesting k-mer and its abundances
-    in the case and control samples. If `kevlar find` is run in "k-mer banding"
-    mode (with the `--batch` flag), the same read will typically show up in
-    multiple output files, with different "interesting" k-mers annotated in
-    each. This data structure supports de-duplicating reads that appear in
+    in the case and control samples. If `kevlar novel` is run in "k-mer
+    banding" mode (with the `--batch` flag), the same read will typically show
+    up in multiple output files, with different "interesting" k-mers annotated
+    in each. This data structure supports de-duplicating reads that appear in
     multiple augmented Fastq files and combining their annotated k-mers.
     """
 

@@ -58,7 +58,7 @@ def subparser(subparsers):
 
     filter_args = subparser.add_argument_group(
         'Filtering k-mers',
-        'Memory constraints often require running `kevlar find` with false '
+        'Memory constraints often require running `kevlar novel` with false '
         'positive rates (FPRs) in the 0.1 - 0.2 range, resulting in some '
         'k-mers reported with highly inflated abundances. This script handles '
         'a much smaller amount of data, and in limited memory can achieve a '
@@ -77,7 +77,7 @@ def subparser(subparsers):
     filter_args.add_argument('--min-abund', type=int, default=5, metavar='Y',
                              help='minimum abundance required to call a '
                              'k-mer novel; should be the same value used for '
-                             '--case_min in `kevlar find`; default is 5')
+                             '--case_min in `kevlar novel`; default is 5')
     filter_args.add_argument('--skip2', default=False, action='store_true',
                              help='skip the second pass over the reads that '
                              'recalculates abundance after reference and '
@@ -102,7 +102,7 @@ def subparser(subparsers):
                            'file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
-                           '"augmented" Fastq format (a la `kevlar find` '
+                           '"augmented" Fastq format (a la `kevlar novel` '
                            'output)')
 
 
