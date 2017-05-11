@@ -12,6 +12,7 @@ try:
 except:  # pragma: no cover
     import builtins
 from collections import namedtuple
+import sys
 from kevlar import seqio
 from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
 from kevlar import dump
@@ -35,6 +36,9 @@ del get_versions
 def open(filename, mode):
     if mode not in ['r', 'w']:
         raise ValueError('invalid mode "{}"'.format(mode))
+    if filename in ['-', None]:
+        filehandle = sys.stdin if mode == 'r' else sys.stdout
+        return filehandle
     openfunc = builtins.open
     if filename.endswith('.gz'):
         openfunc = gzopen

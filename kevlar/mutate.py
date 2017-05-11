@@ -23,11 +23,9 @@ index_to_char = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 
 def subparser(subparsers):
     subparser = subparsers.add_parser('mutate')
-    subparser.add_argument('-o', '--out', metavar='FILE', default=sys.stdout,
-                           type=argparse.FileType('w'),
+    subparser.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
-    subparser.add_argument('mutations', type=argparse.FileType('r'),
-                           help='mutations file')
+    subparser.add_argument('mutations', help='mutations file')
     subparser.add_argument('genome', help='genome to mutate')
 
 
@@ -112,8 +110,8 @@ mutation_functions = {
 
 def main(args):
     print('[kevlar::mutate] loading mutations', file=args.logfile)
-    mutations = load_mutations(args.mutations, args.logfile)
+    mutations = load_mutations(kevlar.open(args.mutations, 'r'), args.logfile)
 
     print('[kevlar::mutate] mutating genome', file=args.logfile)
     for record in mutate_genome(args.genome, mutations):
-        write_record(record, args.out)
+        write_record(record, kevlar.open(args.out, 'w'))

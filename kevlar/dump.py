@@ -40,9 +40,8 @@ def subparser(subparsers):
                            ' is 2G')
     subparser.add_argument('--mask-k', metavar='K', default=31, type=int,
                            help='k size for genome mask')
-    subparser.add_argument('--out', metavar='FILE',
-                           type=argparse.FileType('w'),
-                           help='output file; default is terminal (stdout)')
+    subparser.add_argument('--out', metavar='FILE', help='output file; default'
+                           ' is terminal (stdout)')
     subparser.add_argument('refr', help='reference sequence in Fasta format')
     subparser.add_argument('reads', help='read alignments in BAM format')
 
@@ -66,6 +65,7 @@ def main(args):
         genomemask.consume_seqfile(args.genomemask)
 
     bam = pysam.AlignmentFile(args.reads, 'rb')
+    fastq = kevlar.open(args.out, 'w')
     for i, record in enumerate(bam):
         if i > 0 and i % 50000 == 0:
             print('...processed', i, 'records', file=args.logfile)
@@ -116,4 +116,4 @@ def main(args):
                 name += suffix
 
         print('@', name, '\n', record.seq, '\n+\n', record.qual, sep='',
-              file=args.out)
+              file=fastq)
