@@ -72,10 +72,10 @@ def subparser(subparsers):
         'implements a scatter/gather approach in which `kevlar novel` is run N'
         ' times, after which the results are combined using `kevlar filter`.'
     )
-    band_args.add_argument('--num-bands', type=int, metavar='N', default=None,
+    band_args.add_argument('--num-bands', type=int, metavar='N', default=0,
                            help='number of bands into which to divide the '
                            'hashed k-mer space')
-    band_args.add_argument('--band', type=int, metavar='I', default=None,
+    band_args.add_argument('--band', type=int, metavar='I', default=0,
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
@@ -173,7 +173,7 @@ def load_case(sample, controls, ksize, memory, memfraction=0.1, max_fpr=0.2,
     return ct
 
 
-def table_filename(sample):
+def table_filename(sample, band=0):
     suffixes = ['.fa', '.fasta', '.fna', '.fq', '.fastq']
     gzipsuffixes = [s + '.gz' for s in suffixes]
     if sample.endswith(tuple(suffixes)):
@@ -182,11 +182,13 @@ def table_filename(sample):
         prefix = '.'.join(sample.split('.')[:-2])
     else:
         prefix = sample
+    if band:
+        prefix += '.band{:d}'.format(band)
     return prefix + '.counttable'
 
 
-def save_tables(case, casetable, controls, controltables):
-    casename = table_filename(case)
+def save_tables(case, casetable, controls, controltables, band=0):
+    casename = table_filename(case, band)
     casetable.save(casename)
 
     for control, controltable in zip(controls, controltables):
@@ -225,7 +227,7 @@ def main(args):
 
     print('[kevlar::count] Saving count tables', file=args.logfile)
     timer.start('savetables')
-    save_tables(args.case, case, args.controls, controls)
+    save_tables(args.case, case, args.controls, controls, args.band)
     elapsed = timer.stop('savetables')
     print('[kevlar::count] Count tables saved in {:.2f} sec'.format(elapsed),
           file=args.logfile)
