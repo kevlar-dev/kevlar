@@ -9,3 +9,4 @@ scratch/
 *.swp
 .coverage
 docs/_build
+kevlar/tests/data/simple-*.counttable

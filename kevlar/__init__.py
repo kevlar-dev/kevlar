@@ -16,6 +16,7 @@ import sys
 from kevlar import seqio
 from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
 from kevlar import dump
+from kevlar import count
 from kevlar import novel
 from kevlar import collect
 from kevlar import filter
