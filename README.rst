@@ -6,8 +6,6 @@ kevlar
 .. figure:: docs/_static/morpheus-kevlar.jpg
    :alt: What if I told you we don't need alignments to find variants?
 
-   What if I told you we don't need alignments to find variants?
-
 Welcome to **kevlar**, software for variant discovery independent of a reference genome!
 
 Where can I find kevlar online?
@@ -22,7 +20,7 @@ If you have questions or need help with kevlar, the `GitHub issue tracker <https
 How do I use kevlar?
 --------------------
 
-See kevlar's `installation instructions <http://kevlar.readthedocs.io/en/latest/install.html>`__ and quick start guide (NEED LINK) to learn how to use kevlar.
+See kevlar's `installation instructions <http://kevlar.readthedocs.io/en/latest/install.html>`__ and `quick start guide <http://kevlar.readthedocs.io/en/latest/quick-start.html>`__ to learn how to use kevlar.
 
 **Note**: Although a reference genome is not required, it can be utilized to reduce data volume at an early stage in the workflow and reduce the computational demands of subsequent steps.
 
