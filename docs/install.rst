@@ -47,6 +47,13 @@ Once the dependencies are installed, **kevlar** can be installed with the :code:
 
     pip install git+https://github.com/dib-lab/kevlar.git
 
+If you want to test whether kevlar is installed and running correctly, use pytest.
+
+.. code::
+
+    pip install pytest
+    pytest --pyargs kevlar
+
 Development environment
 -----------------------
 
