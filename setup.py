@@ -11,7 +11,7 @@ from setuptools import setup
 import versioneer
 
 
-setup(name='kevlar',
+setup(name='biokevlar',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
       description=('Reference-free variant discovery scalable to large '
