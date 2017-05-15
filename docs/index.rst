@@ -16,6 +16,7 @@ That said, the core features of the software are reasonbly well tested, and leve
 
    conduct
    install
+   quick-start
    cli
 
 

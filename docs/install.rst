@@ -11,7 +11,7 @@ For the impatient
     # pip install pysam  # You probably don't need this
     pip install networkx
     pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
-    pip install git+https://github.com/dib-lab/kevlar.git
+    pip install biokevlar
 
 Virtual environment
 -------------------
@@ -41,11 +41,17 @@ Installation
 ------------
 
 Once the dependencies are installed, **kevlar** can be installed with the :code:`pip` command.
-**kevlar** has not yet been registered with PyPI, so it must be installed directly from Github.
 
 .. code::
 
-    pip install git+https://github.com/dib-lab/kevlar.git
+    pip install biokevlar
+
+If you want to test whether kevlar is installed and running correctly, use pytest.
+
+.. code::
+
+    pip install pytest
+    pytest --pyargs kevlar
 
 Development environment
 -----------------------

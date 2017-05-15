@@ -22,6 +22,7 @@ from kevlar import filter
 from kevlar import reaugment
 from kevlar import mutate
 from kevlar import assemble
+from kevlar import count
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
