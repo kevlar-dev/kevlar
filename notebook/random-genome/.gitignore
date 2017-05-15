@@ -1,0 +1,10 @@
+mother-genome.fa
+father-genome.fa
+proband-genome.fa
+mother-reads-*
+father-reads-*
+proband-reads-*
+*augfastq*
+*augfasta*
+bogus-genome.fa*
+proband-cc*
