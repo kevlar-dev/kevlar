@@ -36,16 +36,6 @@ def subparser(subparsers):
                            'Fastq format')
 
 
-def print_read_pair(read1, pos1, read2, pos2, ksize, offset, overlap,
-                    sameorient, outstream):
-    seq2 = read2.sequence if sameorient else kevlar.revcom(read2.sequence)
-    print('\nDEBUG shared interesting kmer: ', read1.name,
-          ' --(overlap={:d})'.format(overlap),
-          '(offset={:d})({})--> '.format(offset, sameorient), read2.name, '\n',
-          read1.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
-          seq2, '\n', sep='', file=outstream)
-
-
 def merge_pair(pair):
     """
     Assemble a pair of overlapping reads.

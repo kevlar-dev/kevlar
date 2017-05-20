@@ -103,7 +103,7 @@ def determine_relative_orientation(read1, read2, kmer1, kmer2):
 
 
 def validate_read_overlap(tail, head, offset, sameorient, minkmer):
-    """Verify that the overlap between two read is identical."""
+    """Verify that the overlap between two reads is identical."""
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
     seg2offset = len(head.sequence) - len(tail.sequence) + offset
     if offset + len(headseq) <= len(tail.sequence):
