@@ -31,16 +31,16 @@ def print_read_pair(pair, position, outstream=sys.stderr):
         seq2 = kevlar.revcom(pair.head.sequence)
     ksize = len(pair.head.ikmers[0].sequence)
 
-    details = '--(overlap={:d}, offset={:d}, sameorient={:r})-->'.format(
+    details = '--(overlap={:d}, offset={:d}, sameorient={})-->'.format(
         pair.overlap, pair.offset, pair.sameorient
     )
     info = '[kevlar::overlap] DEBUG: shared interesting k-mer '
     info += '{:s} {:s} {:s}'.format(pair.tail.name, details, pair.head.name)
 
-    print('\n', info, '\n',
-          pair.head.sequence, '\n',
+    print('≠' * 80, '\n', info, '\n', '-' * 80, '\n',
+          pair.tail.sequence, '\n',
           ' ' * position, '|' * ksize, '\n',
-          ' ' * pair.offset, seq2, '\n',
+          ' ' * pair.offset, seq2, '\n', '≠' * 80, '\n',
           sep='', file=outstream)
 
 
@@ -68,7 +68,7 @@ def check_kmer_freq_in_read_pair(read1, read2, minkmer, debugstream=None):
                 )
             )
             print('[kevlar::overlap] INFO', message, file=debugstream)
-            return None, None
+        return None, None
 
     kmer1 = matches1[0]
     kmer2 = matches2[0]
@@ -116,7 +116,7 @@ def validate_read_overlap(tail, head, offset, sameorient, minkmer):
 
     overlap1 = len(segment1)
     overlap2 = len(segment2)
-    if overlap1 != overlap2:
+    if overlap1 != overlap2:  # pragma: no cover
         maxkmer = kevlar.revcom(minkmer)
         print(
             '[kevlar::overlap] ERROR '
