@@ -14,6 +14,7 @@ except:  # pragma: no cover
 from collections import namedtuple
 import sys
 from kevlar import seqio
+from kevlar import overlap
 from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
 from kevlar import dump
 from kevlar import novel

@@ -12,8 +12,10 @@ import screed
 from networkx import connected_components
 import kevlar
 from kevlar import KmerOfInterest
-from kevlar.assemble import (merge_pair, merge_and_reannotate, calc_offset,
-                             OverlappingReadPair, load_reads, graph_init)
+from kevlar.seqio import load_reads_and_kmers
+from kevlar.assemble import (merge_pair, merge_and_reannotate)
+from kevlar.overlap import (OverlappingReadPair, INCOMPATIBLE_PAIR,
+                            calc_offset, graph_init)
 from kevlar.tests import data_file
 
 
@@ -164,72 +166,6 @@ def record12():
         sequence='CCCGGATACTTGAAGCAGGCAcC',
         ikmers=[KmerOfInterest('CCCGGATACTTGAAGCA', 0, [21, 0, 0])],
     )
-
-
-def test_calc_offset_same_orientation(record1, record2):
-    """
-    Compute offset of reads sharing an interesting k-mer, same orientation.
-
-    GCTGCACCGATGTACGCAAA
-                  |||||
-                 ACGCAAAGCTATTTAAAACC
-    """
-    pair = kevlar.assemble.calc_offset(record1, record2, 'CGCAA')
-    assert pair.tail == record1
-    assert pair.head == record2
-    assert pair.offset == 13
-    assert pair.overlap == 7
-    assert pair.sameorient is True
-
-
-def test_calc_offset_opposite_orientation(record1, record3):
-    """
-    Compute offset of reads sharing an interesting k-mer, opposite orientation.
-
-    GCTGCACCGATGTACGCAAA
-                  |||||
-                 ACGCAAAGCTATTTAAAACC <-- reverse complement
-    """
-    pair = kevlar.assemble.calc_offset(record1, record3, 'CGCAA')
-    assert pair.tail == record1
-    assert pair.head == record3
-    assert pair.offset == 13
-    assert pair.overlap == 7
-    assert pair.sameorient is False
-
-
-def test_calc_offset_mismatch(record1, record4):
-    """
-    Compute offset of reads sharing an interesting k-mer, but with mismatch.
-
-    GCTGCACCGATGTACGCAAA
-                  |||||X
-                 ACGCAATGCTATTTAAAACC
-
-    The interesting k-mer is simply a seed. The assembler requires that the
-    entire overlap between the two reads matches exactly, so the mismatch here
-    should return a null offset indicating that the pair of reads is
-    incompatible despite sharing an interesting k-mer.
-    """
-    pair = kevlar.assemble.calc_offset(record1, record4, 'CGCAA')
-    assert pair == kevlar.assemble.IncompatiblePair
-
-
-def test_calc_offset_weirdness(record5, record6):
-    """
-    Compute offset of reads sharing an interesting k-mer, but with mismatches.
-
-    CTCTTCCGGCAGTCACTGTCAAGAGAGGGTGAACT
-                   |||||||
-                    |||||||     XXXXXXX
-                TCACTGTCAAGAGAGGCCTACGGATTCGGTTACTG
-
-    Not just a single mismatch, but extensive differences making the reads
-    incompatible for assembly.
-    """
-    for ikmer in ['CTGTCAA', 'TGTCAAG']:
-        pair = kevlar.assemble.calc_offset(record5, record6, ikmer)
-        assert pair == kevlar.assemble.IncompatiblePair
 
 
 def test_merge_pair(record1, record2, record4):
@@ -419,7 +355,7 @@ def test_merge_contained_with_offset_and_error(record7, record12):
               |||||||||||||||||    *
     """
     pair = calc_offset(record7, record12, 'CCCGGATACTTGAAGCA')
-    assert pair == kevlar.assemble.IncompatiblePair
+    assert pair == INCOMPATIBLE_PAIR
 
     pair = OverlappingReadPair(tail=record7, head=record12, offset=10,
                                overlap=23, sameorient=True)
@@ -428,10 +364,10 @@ def test_merge_contained_with_offset_and_error(record7, record12):
     assert 'attempted to assemble incompatible reads' in str(ae)
 
 
-def test_load_reads():
+def test_load_reads_and_kmers():
     """Make sure augmented records are loaded correctly."""
     instream = open(data_file('var1.reads.augfastq'), 'r')
-    reads, kmers = load_reads(instream, logstream=None)
+    reads, kmers = load_reads_and_kmers(instream, logstream=None)
     assert len(reads) == 10
     assert len(kmers) == 7
 
@@ -453,7 +389,7 @@ def test_load_reads():
 def test_graph_init():
     """Test graph initialization."""
     instream = open(data_file('var1.reads.augfastq'), 'r')
-    reads, kmers = load_reads(instream, logstream=None)
+    reads, kmers = load_reads_and_kmers(instream, logstream=None)
     graph = graph_init(reads, kmers, maxabund=None, logstream=None)
 
     # 10 reads in the file, but read16f has no valid connections due to error
@@ -484,7 +420,7 @@ def test_graph_init():
 
 def test_assembly_round2():
     instream = open(data_file('var1.round2.augfastq'), 'r')
-    reads, kmers = load_reads(instream, logstream=None)
+    reads, kmers = load_reads_and_kmers(instream, logstream=None)
     contig, read = reads['contig1'], reads['read22f start=5,mutations=0']
     pair = calc_offset(contig, read, 'AAGTCTCGACTTTAAGGAAGTGGGCCTAC')
     assert pair.tail == read
@@ -496,7 +432,7 @@ def test_assembly_round2():
 
 def test_assembly_contigs():
     instream = open(data_file('AluContigs.augfastq'), 'r')
-    reads, kmers = load_reads(instream, logstream=None)
+    reads, kmers = load_reads_and_kmers(instream, logstream=None)
     contig6, contig7 = reads['contig6'], reads['contig7']
     pair = calc_offset(contig6, contig7, 'AAAGTTTTCTTAAAAACATATATGGCCGGGC')
     assert pair.offset == 50
