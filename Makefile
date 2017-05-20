@@ -12,3 +12,7 @@ testall:
 
 doc:
 	cd docs && make html
+
+loc:
+	cloc --exclude-list-file=<(echo kevlar/_version.py) kevlar/*.py kevlar/cli/*.py
+	cloc kevlar/tests/test_*.py

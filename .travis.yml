@@ -1,5 +1,9 @@
 dist: trusty
 language: python
+addons:
+    apt:
+        packages:
+            - cloc
 branches:
   only:  # don't build "pushes" except on the master branch
     - master
@@ -20,4 +24,5 @@ script:
     - make style
     - make doc
 after_success:
+    - make loc
     - bash <(curl -s https://codecov.io/bash)
