@@ -19,6 +19,7 @@ except:
 import screed
 import khmer
 import kevlar
+from kevlar.seqio import load_reads_and_kmers
 
 
 def subparser(subparsers):
@@ -29,6 +30,9 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--gml', metavar='FILE',
                            help='write graph to .gml file')
+    subparser.add_argument('-n', '--min-abund', type=int, metavar='N',
+                           default=2, help='discard interesting k-mers that '
+                           'occur fewer than N times')
     subparser.add_argument('-x', '--max-abund', type=int, metavar='X',
                            default=500, help='discard interesting k-mers that '
                            'occur more than X times')
@@ -87,92 +91,6 @@ def merge_and_reannotate(pair, newname):
             newrecord.ikmers.append(ikmer)
 
     return newrecord
-
-
-def load_reads(instream, logstream=None):
-    """
-    Load reads into lookup tables for convenient access.
-
-    The first table is a dictionary of reads indexed by read name, and the
-    second table is a dictionary of read sets indexed by an interesting k-mer.
-    """
-    reads = dict()
-    kmers = defaultdict(set)
-    for n, record in enumerate(kevlar.parse_augmented_fastq(instream), 1):
-        if logstream and n % 10000 == 0:  # pragma: no cover
-            print('[kevlar::assemble]    loaded {:d} reads'.format(n),
-                  file=logstream)
-        reads[record.name] = record
-        for kmer in record.ikmers:
-            kmerseq = kevlar.revcommin(kmer.sequence)
-            kmers[kmerseq].add(record.name)
-    return reads, kmers
-
-
-def graph_init_abund_check_pass(numreads, minkmer, minabund=5, maxabund=500,
-                                logstream=None):
-    """Check whether the k-mer falls within the expected range of abundance."""
-    if maxabund and numreads > maxabund:
-        msg = '            skipping k-mer with abundance {:d}'.format(numreads)
-        print(msg, file=logstream)
-        return False
-    if minabund and numreads < minabund:
-        message = '[kevlar::assemble] WARNING: k-mer {}'.format(minkmer)
-        message += ' (rev. comp. {})'.format(kevlar.revcom(minkmer))
-        message += ' only has abundance {:d}'.format(len(readnames))
-        out = logstream if logstream is not None else sys.stderr
-        print(message, file=out)
-        return False
-    return True
-
-
-def graph_add_edge(graph, pair, minkmer):
-    """
-    Add edge between two nodes in the "shared interesting k-mer" read graph.
-
-    If the edge already exists, make sure that the existing edge matches the
-    edge that would have been added.
-    """
-    tailname, headname = pair.tail.name, pair.head.name
-    if tailname in graph and headname in graph[tailname]:
-        assert graph[tailname][headname]['offset'] == pair.offset
-        if graph[tailname][headname]['tail'] == tailname:
-            assert graph[tailname][headname]['overlap'] == pair.overlap
-        graph[tailname][headname]['ikmers'].add(minkmer)
-    else:
-        graph.add_edge(tailname, headname, offset=pair.offset,
-                       overlap=pair.overlap, ikmers=set([minkmer]),
-                       orient=pair.sameorient, tail=tailname)
-
-
-def graph_init(reads, kmers, minabund=5, maxabund=500, logstream=None):
-    """
-    Initialize the "shared interesting k-mer" read graph.
-
-    Iterate through each interesting k-mer, consider every pair of reads
-    containing that k-mer, and determine whether there should be a edge between
-    the pair of reads in the graph.
-    """
-    graph = networkx.Graph()
-    nkmers = len(kmers)
-    for n, minkmer in enumerate(kmers, 1):
-        if n % 100 == 0:  # pragma: no cover
-            msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
-            print('[kevlar::assemble]    ', msg, sep='', file=logstream)
-
-        readnames = kmers[minkmer]
-        if not graph_init_abund_check_pass(len(readnames), minkmer, minabund,
-                                           maxabund, logstream):
-            continue
-
-        readset = [reads[rn] for rn in readnames]
-        for read1, read2 in itertools.combinations(readset, 2):
-            pair = kevlar.overlap.calc_offset(read1, read2, minkmer, logstream)
-            if pair is kevlar.overlap.INCOMPATIBLE_PAIR:
-                # Shared k-mer but bad overlap
-                continue
-            graph_add_edge(graph, pair, minkmer)
-    return graph
 
 
 def fetch_largest_overlapping_pair(graph, reads):
@@ -255,9 +173,11 @@ def main(args):
     if args.debug:
         debugout = args.logfile
 
-    reads, kmers = load_reads(kevlar.open(args.augfastq, 'r'), debugout)
+    reads, kmers = load_reads_and_kmers(kevlar.open(args.augfastq, 'r'),
+                                        debugout)
     inputreads = list(reads)
-    graph = graph_init(reads, kmers, 2, args.max_abund, debugout)
+    graph = kevlar.overlap.graph_init(reads, kmers, args.min_abund,
+                                      args.max_abund, debugout)
     if args.gml:
         networkx.write_gml(graph, args.gml)
         message = '[kevlar::assemble] graph written to {}'.format(args.gml)

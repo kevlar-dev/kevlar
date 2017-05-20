@@ -85,6 +85,26 @@ def print_augmented_fastq(record, outstream=stdout):
               sep='', file=outstream)
 
 
+def load_reads_and_kmers(instream, logstream=None):
+    """
+    Load reads into lookup tables for convenient access.
+
+    The first table is a dictionary of reads indexed by read name, and the
+    second table is a dictionary of read sets indexed by an interesting k-mer.
+    """
+    reads = dict()
+    kmers = defaultdict(set)
+    for n, record in enumerate(kevlar.parse_augmented_fastq(instream), 1):
+        if logstream and n % 10000 == 0:  # pragma: no cover
+            print('[kevlar::assemble]    loaded {:d} reads'.format(n),
+                  file=logstream)
+        reads[record.name] = record
+        for kmer in record.ikmers:
+            kmerseq = kevlar.revcommin(kmer.sequence)
+            kmers[kmerseq].add(record.name)
+    return reads, kmers
+
+
 class AnnotatedReadSet(object):
     """
     Data structure for de-duplicating reads and combining annotated k-mers.
