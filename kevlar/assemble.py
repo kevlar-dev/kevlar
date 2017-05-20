@@ -21,11 +21,6 @@ import khmer
 import kevlar
 
 
-OverlappingReadPair = namedtuple('OverlappingReadPair',
-                                 'tail head offset overlap sameorient')
-IncompatiblePair = OverlappingReadPair(None, None, None, None, None)
-
-
 def subparser(subparsers):
     subparser = subparsers.add_parser('assemble')
     subparser.add_argument('-d', '--debug', action='store_true',
@@ -49,78 +44,6 @@ def print_read_pair(read1, pos1, read2, pos2, ksize, offset, overlap,
           '(offset={:d})({})--> '.format(offset, sameorient), read2.name, '\n',
           read1.sequence, '\n', ' ' * pos1, '|' * ksize, '\n', ' ' * offset,
           seq2, '\n', sep='', file=outstream)
-
-
-def calc_offset(read1, read2, minkmer, debugstream=None):
-    """
-    Calculate offset between reads that share an interesting k-mer.
-
-    Each read is annotated with its associated interesting k-mers. These are
-    used to bait pairs of reads sharing interesting k-mers to build a graph of
-    shared interesting k-mers. Given a pair of reads sharing an interesting,
-    k-mer calculate the offset between them and determine whether they are in
-    the same orientation. Any mismatches between the aligned reads (outside the
-    shared k-mer) will render the offset invalid.
-    """
-    maxkmer = kevlar.revcom(minkmer)
-    kmer1 = [k for k in read1.ikmers
-             if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
-    kmer2 = [k for k in read2.ikmers
-             if kevlar.same_seq(k.sequence, minkmer, maxkmer)][0]
-    ksize = len(kmer1.sequence)
-
-    pos1 = kmer1.offset
-    pos2 = kmer2.offset
-    sameorient = True
-    if kmer1.sequence != kmer2.sequence:
-        assert kmer1.sequence == kevlar.revcom(kmer2.sequence)
-        sameorient = False
-        pos2 = len(read2.sequence) - (kmer2.offset + ksize)
-
-    tail, head = read1, read2
-    tailpos, headpos = pos1, pos2
-    read1contained = pos1 == pos2 and len(read2.sequence) > len(read1.sequence)
-    if pos2 > pos1 or read1contained:
-        tail, head = read2, read1
-        tailpos, headpos = headpos, tailpos
-    offset = tailpos - headpos
-
-    headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
-    seg2offset = len(head.sequence) - len(tail.sequence) + offset
-    if offset + len(headseq) <= len(tail.sequence):
-        segment1 = tail.sequence[offset:offset+len(headseq)]
-        segment2 = headseq
-        seg2offset = None
-    else:
-        segment1 = tail.sequence[offset:]
-        segment2 = headseq[:-seg2offset]
-
-    overlap1 = len(segment1)
-    overlap2 = len(segment2)
-    if overlap1 != overlap2:
-        print(
-            'DEBUG '
-            'tail="{tail}" head="{head}" offset={offset} altoffset={altoffset}'
-            ' tailoverlap={overlap} headoverlap={headover} tailolvp={tailseq}'
-            ' headolvp={headseq} kmer={minkmer},{maxkmer} tailseq={tailread}'
-            ' headseq={headread}'.format(
-                tail=read1.name, head=read2.name, offset=offset,
-                altoffset=seg2offset, overlap=overlap1,
-                headover=len(segment2), tailseq=segment1, headseq=segment2,
-                minkmer=minkmer, maxkmer=maxkmer, tailread=tail.sequence,
-                headread=head.sequence
-            ), file=sys.stderr
-        )
-    assert overlap1 == overlap2
-    if segment1 != segment2:
-        return IncompatiblePair
-
-    if debugstream:
-        print_read_pair(tail, tailpos, head, headpos, ksize, offset, overlap1,
-                        sameorient, debugstream)
-
-    return OverlappingReadPair(tail=tail, head=head, offset=offset,
-                               overlap=overlap1, sameorient=sameorient)
 
 
 def merge_pair(pair):
@@ -219,8 +142,9 @@ def graph_init(reads, kmers, maxabund=500, logstream=None):
             continue
         readset = [reads[rn] for rn in readnames]
         for read1, read2 in itertools.combinations(readset, 2):
-            pair = calc_offset(read1, read2, minkmer, logstream)
-            if pair is IncompatiblePair:  # Shared k-mer but bad overlap
+            pair = kevlar.overlap.calc_offset(read1, read2, minkmer, logstream)
+            if pair is kevlar.overlap.INCOMPATIBLE_PAIR:
+                # Shared k-mer but bad overlap
                 continue
             tailname, headname = pair.tail.name, pair.head.name
             if tailname in graph and headname in graph[tailname]:
@@ -274,7 +198,7 @@ def main(args):
         read1, read2 = edges[0]  # biggest overlap (greedy algorithm)
         if read2 == graph[read1][read2]['tail']:
             read1, read2 = read2, read1
-        pair = OverlappingReadPair(
+        pair = kevlar.overlap.OverlappingReadPair(
             tail=reads[read1],
             head=reads[read2],
             offset=graph[read1][read2]['offset'],
@@ -295,10 +219,10 @@ def main(args):
                 if already_merged or current_contig:
                     continue
                 otherrecord = reads[readname]
-                newpair = calc_offset(
+                newpair = kevlar.overlap.calc_offset(
                     newrecord, otherrecord, kmerseq, debugout
                 )
-                if newpair == IncompatiblePair:
+                if newpair == kevlar.overlap.INCOMPATIBLE_PAIR:
                     continue
                 tn, hn = newpair.tail.name, newpair.head.name
                 if tn in graph and hn in graph[tn]:
