@@ -24,6 +24,7 @@ from kevlar import reaugment
 from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
+from kevlar import partition
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
@@ -155,6 +156,16 @@ def allocate_sketch(ksize, target_tablesize, num_tables=4, count=False,
 
     sketch = createfunc(ksize, target_tablesize, num_tables)
     return sketch
+
+
+def to_gml(graph, outfilename, logfile=sys.stderr):
+    """Write the given read graph to a GML file."""
+    if not outfilename.endswith('.gml'):
+        print('[kevlar] WARNING: GML files usually need extension .gml',
+              file=logile)
+    networkx.write_gml(graph, outfilename)
+    message = '[kevlar] graph written to {}'.format(args.gml)
+    print(message, file=logfile)
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

@@ -236,3 +236,21 @@ def graph_init(reads, kmers, minabund=5, maxabund=500, logstream=None):
                 continue
             graph_add_edge(graph, pair, minkmer)
     return graph
+
+
+def write_partitions(read_graph, reads, ccprefix, logstream):
+    """Given a read graph, write distinct partitions to separate files."""
+    n = 0
+    reads_in_ccs = 0
+    cclog = open(ccprefix + '.cc.log', 'w')
+    for n, cc in enumerate(networkx.connected_components(read_graph)):
+        print('CC', n, len(cc), cc, sep='\t', file=cclog)
+        reads_in_ccs += len(cc)
+        outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)
+        with kevlar.open(outfilename, 'w') as outfile:
+            for readid in cc:
+                record = reads[readid]
+                kevlar.print_augmented_fastq(record, outfile)
+    message = '[kevlar::overlap] grouped {:d} reads'.format(reads_in_ccs)
+    message += ' into {:d} connected components'.format(n + 1)
+    print(message, file=logstream)
