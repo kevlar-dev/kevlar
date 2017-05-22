@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from __future__ import print_function
 try:
     import __builtin__ as builtins
 except:  # pragma: no cover
@@ -162,7 +163,7 @@ def to_gml(graph, outfilename, logfile=sys.stderr):
     """Write the given read graph to a GML file."""
     if not outfilename.endswith('.gml'):
         print('[kevlar] WARNING: GML files usually need extension .gml',
-              file=logile)
+              file=logfile)
     networkx.write_gml(graph, outfilename)
     message = '[kevlar] graph written to {}'.format(args.gml)
     print(message, file=logfile)

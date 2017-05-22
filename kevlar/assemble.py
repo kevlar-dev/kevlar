@@ -176,8 +176,8 @@ def main(args):
     reads, kmers = load_reads_and_kmers(kevlar.open(args.augfastq, 'r'),
                                         debugout)
     inputreads = list(reads)
-    graph = kevlar.overlap.graph_init(reads, kmers, args.min_abund,
-                                      args.max_abund, debugout)
+    graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
+                                             args.max_abund, debugout)
     if args.gml:
         networkx.write_gml(graph, args.gml)
         message = '[kevlar::assemble] graph written to {}'.format(args.gml)

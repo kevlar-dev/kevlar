@@ -199,7 +199,7 @@ def graph_init_abund_check_pass(numreads, minkmer, minabund=5, maxabund=500,
         print(msg, file=logstream)
         return False
     if minabund and numreads < minabund:
-        message = '[kevlar::assemble] WARNING: k-mer {}'.format(minkmer)
+        message = '[kevlar::overlap] WARNING: k-mer {}'.format(minkmer)
         message += ' (rev. comp. {})'.format(kevlar.revcom(minkmer))
         message += ' only has abundance {:d}'.format(numreads)
         out = logstream if logstream is not None else sys.stderr
@@ -208,7 +208,7 @@ def graph_init_abund_check_pass(numreads, minkmer, minabund=5, maxabund=500,
     return True
 
 
-def graph_init(reads, kmers, minabund=5, maxabund=500, logstream=None):
+def graph_init_strict(reads, kmers, minabund=5, maxabund=500, logstream=None):
     """
     Initialize the "shared interesting k-mer" read graph.
 
@@ -221,7 +221,7 @@ def graph_init(reads, kmers, minabund=5, maxabund=500, logstream=None):
     for n, minkmer in enumerate(kmers, 1):
         if n % 100 == 0:  # pragma: no cover
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
-            print('[kevlar::assemble]    ', msg, sep='', file=logstream)
+            print('[kevlar::overlap]    ', msg, sep='', file=logstream)
 
         readnames = kmers[minkmer]
         if not graph_init_abund_check_pass(len(readnames), minkmer, minabund,
@@ -236,6 +236,23 @@ def graph_init(reads, kmers, minabund=5, maxabund=500, logstream=None):
                 continue
             graph_add_edge(graph, pair, minkmer)
     return graph
+
+
+def graph_init_basic(reads_by_kmer, upint=1000, logstream=None):
+    """
+    Initialize read graph by shared interesting k-mers.
+
+    Reads do not require perfect matching in the overlap to be connected by an
+    edge in the graph.
+    """
+    read_graph = networkx.Graph()
+    for n, kmer in enumerate(reads_by_kmer):
+        if logstream and n > 0 and n % upint == 0:
+            print('    build shared novel k-mer graph:', n, file=logstream)
+        readset = reads_by_kmer[kmer]
+        for read1, read2 in itertools.combinations(readset, 2):
+            read_graph.add_edge(read1, read2)
+    return read_graph
 
 
 def write_partitions(read_graph, reads, ccprefix, logstream):

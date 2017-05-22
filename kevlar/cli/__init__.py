@@ -22,7 +22,7 @@ mains = {
     'reaugment': kevlar.reaugment.main,
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
-    'partition': kevlar.mutate.main,
+    'partition': kevlar.partition.main,
 }
 
 
