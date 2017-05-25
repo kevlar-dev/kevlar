@@ -72,9 +72,9 @@ def main(args):
         kevlar.to_gml(graph, args.gml, args.logfile)
 
     timer.start('writeoutput')
-    print('[kevlar::partition] Writing output to prefix', args.ccprefix,
+    print('[kevlar::partition] Writing output to prefix', args.outprefix,
           file=args.logfile)
-    kevlar.overlap.write_partitions(graph, reads, args.ccprefix, args.logfile)
+    kevlar.overlap.write_partitions(graph, reads, args.outprefix, args.logfile)
     elapsed = timer.stop('writeoutput')
     print('[kevlar::partition]',
           'Output written in {:.2f} sec'.format(elapsed), file=args.logfile)
