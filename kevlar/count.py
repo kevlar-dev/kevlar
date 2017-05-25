@@ -114,8 +114,8 @@ def load_controls(samples, ksize, memory, memfraction=0.1, max_fpr=0.2,
                         if table.get(kmer) > maxabund:
                             break
                     else:
-                            ct.add(kmer)
-                            kmers_stored += 1
+                        ct.add(kmer)
+                        kmers_stored += 1
 
         message = 'done loading control {:d}'.format(n + 1)
         if numbands:
@@ -128,6 +128,9 @@ def load_controls(samples, ksize, memory, memfraction=0.1, max_fpr=0.2,
             message += ' (FPR too high, bailing out!!!)'
             raise SystemExit(message)
         else:
+            savename = table_filename(sample, band)
+            ct.save(savename)
+            message += '; saved to "{:s}"'.format(savename)
             print('[kevlar::count]    ', message, file=logfile)
 
         tables.append(ct)
@@ -168,6 +171,9 @@ def load_case(sample, controls, ksize, memory, memfraction=0.1, max_fpr=0.2,
         message += ' (FPR too high, bailing out!!!)'
         raise SystemExit(message)
     else:
+        savename = table_filename(sample, band)
+        ct.save(savename)
+        message += '; saved to "{:s}"'.format(savename)
         print('[kevlar::count]    ', message, file=logfile)
 
     return ct
@@ -185,15 +191,6 @@ def table_filename(sample, band=0):
     if band:
         prefix += '.band{:d}'.format(band)
     return prefix + '.counttable'
-
-
-def save_tables(case, casetable, controls, controltables, band=0):
-    casename = table_filename(case, band)
-    casetable.save(casename)
-
-    for control, controltable in zip(controls, controltables):
-        controlname = table_filename(control)
-        controltable.save(controlname)
 
 
 def main(args):
@@ -223,13 +220,6 @@ def main(args):
                      args.num_bands, args.band, args.logfile)
     elapsed = timer.stop('loadcase')
     print('[kevlar::count] Case samples loaded in {:.2f} sec'.format(elapsed),
-          file=args.logfile)
-
-    print('[kevlar::count] Saving count tables', file=args.logfile)
-    timer.start('savetables')
-    save_tables(args.case, case, args.controls, controls, args.band)
-    elapsed = timer.stop('savetables')
-    print('[kevlar::count] Count tables saved in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
     total = timer.stop()
