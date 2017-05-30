@@ -21,32 +21,50 @@ import screed
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('novel', add_help=False)
+    dsc = (
+        'Identify "interesting" (potentially novel) k-mers and output the '
+        'corresponding reads. Here we define "interesting" k-mers as those '
+        'which are high abundance in each case sample and effectively absent '
+        '(below some specified abundance) in each control sample.'
+    )
+    subparser = subparsers.add_parser('novel', description=dsc, add_help=False)
 
     samp_args = subparser.add_argument_group(
         'Case and control configuration',
-        'Specify input files and thresholds for identifying "interesting" '
-        'k-mers, which are high abundance in each case sample and absent (or '
-        'low abundance) in each control sample.'
+        'Specify input files, as well as thresholds for selecting '
+        '"interesting" k-mers. A single pass is made over input files for '
+        'control samples (to compute k-mer abundances), while two passes are '
+        'made over input files for case samples (to compute k-mer abundances, '
+        'and then to identify "interesting" k-mers). The k-mer abundance '
+        'computing steps can be skipped if pre-computed k-mer abunandances '
+        'are provided using the "--case-counts" and/or "--control-counts" '
+        'settings. If "--control-counts" is declared, then all "--control" '
+        'flags are ignored. If "--case-counts" is declared, FASTA/FASTQ files '
+        ' must still be provided with "--case" for selecting "interesting" '
+        'k-mers and reads.'
     )
-    samp_args.add_argument('case', nargs='+',
-                           help='one or more Fastq files containing reads from'
-                           ' the case sample; if no counttables are provided '
-                           'using the "--case-tab" setting, then "kevlar '
-                           'novel" makes two passes over the files, one to '
-                           'compute k-mer abundances, and a second to identify'
-                           ' novel k-mers; if counttables are specified, the '
-                           'Fastq files are used only to identify novel k-mers'
-                           ' in a single pass')
-    samp_args.add_argument('--case-counts', metavar='F',
-                           help='counttable file corresponding to the case '
-                           'sample; if not provided, will be computed from '
-                           'Fastq input')
-    samp_args.add_argument('--controls', metavar='F', nargs='+', required=True,
-                           help='one or more Fastq files, each corresponding '
-                           'to a distinct control sample; alternatively, '
-                           'counttable files with k-mer abundances '
-                           'pre-computed by "kevlar count" may be provided')
+    samp_args.add_argument('--case', metavar='F', nargs='+', required=True,
+                           action='append',
+                           help='one or more FASTA/FASTQ files containing '
+                           'reads from a case sample; can be declared '
+                           'multiple times corresponding to multiple case '
+                           'samples, see examples below')
+    samp_args.add_argument('--case-counts', metavar='F', nargs='+',
+                           help='counttable file(s) corresponding to each '
+                           'case sample; if not provided, k-mer abundances '
+                           'will be computed from FASTA/FASTQ input; only one '
+                           'counttable per sample, see examples below')
+    samp_args.add_argument('--control', metavar='F', nargs='+',
+                           action='append',
+                           help='one or more FASTA/FASTQ files containing '
+                           'reads from a control sample; can be declared '
+                           'multiple times corresponding to multiple control '
+                           'samples, see examples below')
+    samp_args.add_argument('--control-counts', metavar='F', nargs='+',
+                           help='counttable file(s) corresponding to each '
+                           'control sample; if not provided, k-mer abundances '
+                           'will be computed from FASTA/FASTQ input; only one '
+                           'counttable per sample, see examples below')
     samp_args.add_argument('-x', '--ctrl-max', metavar='X', type=int,
                            default=1, help='k-mers with abund > X in any '
                            'control sample are uninteresting; default=1')
