@@ -24,10 +24,12 @@ def test_trio2(capsys):
     controls = kevlar.tests.data_glob('trio2/ctrl[1,2].fq.gz')
     for i in range(4):
         arglist = [
-            'novel', '--cases', case, '--band', str(i+1), '--num-bands', '4',
-            '--out', novelouts[i], '--memory', '200K', '--ksize', '31',
-            '--case_min', '8', '--ctrl_max', '1', '--controls'
-        ] + controls
+            'novel', '--case', case,
+            '--control', controls[0], '--control', controls[1],
+            '--band', str(i+1), '--num-bands', '4', '--out', novelouts[i],
+            '--memory', '200K', '--ksize', '31',
+            '--case-min', '8', '--ctrl-max', '1'
+        ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
 

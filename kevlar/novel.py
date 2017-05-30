@@ -242,7 +242,7 @@ def main(args):
     timer.start('loadcases')
     cases = load_samples(
         args.case, args.ksize, args.memory, counttables=args.case_counts,
-        max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band,
+        max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band-1,
         logfile=args.logfile
     )
     if args.case_counts:
@@ -258,7 +258,7 @@ def main(args):
     print('[kevlar::novel] Loading control samples', file=args.logfile)
     controls = load_samples(
         args.control, args.ksize, args.memory, counttables=args.control_counts,
-        max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band,
+        max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band-1,
         logfile=args.logfile
     )
     elapsed = timer.stop('loadctrl')
