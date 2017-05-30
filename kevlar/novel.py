@@ -72,10 +72,10 @@ def subparser(subparsers):
         'implements a scatter/gather approach in which `kevlar novel` is run N'
         ' times, after the results are combined using `kevlar filter`.'
     )
-    band_args.add_argument('--num-bands', type=int, metavar='N', default=None,
+    band_args.add_argument('--num-bands', type=int, metavar='N', default=0,
                            help='number of bands into which to divide the '
                            'hashed k-mer space')
-    band_args.add_argument('--band', type=int, metavar='I', default=None,
+    band_args.add_argument('--band', type=int, metavar='I', default=0,
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
@@ -98,10 +98,10 @@ def load_sample(sample, ksize, memory, max_fpr=0.2, numbands=0, band=0,
     print('[kevlar::novel]     Loading sample ', sample, '...', sep='', end='',
           file=logfile)
     sketch = kevlar.sketch_autoload(
-        sample, count=True, graph=False, ksize=ksize, tablesize=memory/4,
+        sample, count=True, graph=False, ksize=ksize, table_size=memory/4,
         num_bands=numbands, band=band
     )
-    fpr = kevlar.calc_fpr(ct)
+    fpr = kevlar.calc_fpr(sketch)
     message = 'done! estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > max_fpr:
         message += ' (FPR too high, bailing out!!!)'
@@ -120,7 +120,7 @@ def load_case(fastqs, ksize, memory, ct=None, max_fpr=0.2, numbands=0, band=0,
             print('[kevlar::novel] WARNING:', message, file=args.logfile)
         return load_sample(ct, ksize, 1, max_fpr=max_fpr, logfile=logfile)
     else:
-        sketch = allocate_sketch(ksize, memory / 4, count=True)
+        sketch = kevlar.allocate_sketch(ksize, memory / 4, count=True)
         for fastq in fastqs:
             if numbands > 1:
                 sketch.consume_seqfile_banding(fastq, numbands, band)
@@ -165,7 +165,7 @@ def iter_screed(filenames):
 
 
 def main(args):
-    if (args.num_bands is None) is not (args.band is None):
+    if (args.num_bands == 0) is not (args.band == 0):
         raise ValueError('Must specify --num-bands and --band together')
 
     timer = kevlar.Timer()
@@ -176,7 +176,7 @@ def main(args):
     timer.start('loadcase')
     case = load_case(
         args.case, args.ksize, args.memory, ct=args.case_counts,
-        max_fpr=args.max_fpx, numbands=args.num_bands, band=args.band,
+        max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band,
         logfile=sys.stderr
     )
     elapsed = timer.stop('loadcase')
@@ -196,7 +196,7 @@ def main(args):
           file=args.logfile)
 
     timer.start('iter')
-    print('[kevlar::novel] Iterating over case reads', args.cases,
+    print('[kevlar::novel] Iterating over case reads', args.case,
           file=args.logfile)
     nkmers = 0
     nreads = 0
@@ -214,12 +214,12 @@ def main(args):
             continue
 
         record.ikmers = list()
-        for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
+        for i, kmer in enumerate(case.get_kmers(record.sequence)):
             if args.num_bands:
-                khash = cases[0].hash(kmer)
+                khash = case.hash(kmer)
                 if khash & (args.num_bands - 1) != args.band - 1:
                     continue
-            abund = kmer_is_interesting(kmer, cases, controls, args.case_min,
+            abund = kmer_is_interesting(kmer, [case], controls, args.case_min,
                                         args.ctrl_max)
             if not abund:
                 continue
