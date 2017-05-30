@@ -226,7 +226,7 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
 
 def iter_read_multi_file(filenames):
     for filename in filenames:
-        for record in khmer.ReadParser(filename):
+        for record in screed.open(filename):
             yield record
 
 
@@ -241,7 +241,7 @@ def main(args):
     timer.start('loadall')
     timer.start('loadcases')
     cases = load_samples(
-        args.case, args.ksize, args.memory, ct=args.case_counts,
+        args.case, args.ksize, args.memory, counttables=args.case_counts,
         max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band,
         logfile=args.logfile
     )
@@ -257,7 +257,7 @@ def main(args):
     timer.start('loadctrl')
     print('[kevlar::novel] Loading control samples', file=args.logfile)
     controls = load_samples(
-        args.control, args.ksize, args.memory, ct=args.control_counts,
+        args.control, args.ksize, args.memory, counttables=args.control_counts,
         max_fpr=args.max_fpr, numbands=args.num_bands, band=args.band,
         logfile=args.logfile
     )
@@ -270,13 +270,14 @@ def main(args):
 
     timer.start('iter')
     ncases = len(args.case)
-    message = 'Iterating over reads from {:d} case sample(s)'.format(ncase)
+    message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
     print('[kevlar::novel]', message, file=args.logfile)
     nkmers = 0
     nreads = 0
     unique_kmers = set()
     outstream = kevlar.open(args.out, 'w')
-    for n, record in enumerate(iter_read_multi_file(args.case)):
+    infiles = [f for filelist in args.case for f in filelist]
+    for n, record in enumerate(iter_read_multi_file(infiles)):
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
             msg = '    processed {} reads'.format(n)
