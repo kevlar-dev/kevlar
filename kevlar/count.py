@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -31,15 +31,23 @@ def subparser(subparsers):
         'at which a k-mer can be considered effectively "absent" from a '
         'control sample.'
     )
-    samp_args.add_argument('--case', metavar='F', required=True,
-                           help='one or more Fastq files corresponding to '
-                           'case sample(s)')
-    samp_args.add_argument('--controls', metavar='F', nargs='+',
-                           required=True, help='one or more Fastq files '
-                           'corresponding to control sample(s)')
-    samp_args.add_argument('-x', '--ctrl_max', metavar='X', type=int,
-                           default=1, help='k-mers with abund > X in any '
-                           'control sample are uninteresting; default=1')
+    samp_args.add_argument(
+        '--case', metavar='F', nargs='+', required=True, action='append',
+        help='one or more FASTA/FASTQ files containing reads from a case '
+        'sample; can be declared multiple times corresponding to multiple '
+        'case samples'
+    )
+    samp_args.add_argument(
+        '--control', metavar='F', nargs='+', action='append',
+        help='one or more FASTA/FASTQ files containing reads from a control '
+        'sample; can be declared multiple times corresponding to multiple '
+        'control samples'
+    )
+    samp_args.add_argument(
+        '-x', '--ctrl-max', metavar='X', type=int, default=1,
+        help='k-mers with abund > X in any control sample are uninteresting; '
+        'default is X=1'
+    )
 
     memory_args = subparser.add_argument_group(
         'Memory allocation',
@@ -86,6 +94,60 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+
+
+def load_samples(samples, ksize, memory, memfraction=0.1, max_fpr=0.2,
+                 maxabund=1, numbands=None, band=None, mask=None,
+                 logfile=sys.stderr):
+    tables = list()
+    for n, sample in enumerate(samples):
+        message = 'loading sample {:d} from "{:s}"'.format(n + 1, sample)
+        print('[kevlar::count]    ', message, file=logfile)
+        fullmem = n == 0 and mask is None
+        sketchmem = memory if fullmem else memory * memfraction
+        ct = khmer.Counttable(ksize, sketchmem / 4, 4)
+        kmers_stored = 0
+        for seqfile in sample:
+            reads = khmer.ReadParser(sample)
+            for i, record in enumerate(reads):
+                for j, kmer in enumerate(ct.get_kmers(record.sequence)):
+                    if re.search('[^ACGT]', kmer):
+                        continue
+                    if numbands:
+                        khash = ct.hash(kmer)
+                        if khash & (numbands - 1) != band - 1:
+                            continue
+                    if n == 0:
+                        ct.add(kmer)
+                        kmers_stored += 1
+                    else:
+                        for table in tables:
+                            if table.get(kmer) > maxabund:
+                                break
+                        else:
+                            ct.add(kmer)
+                            kmers_stored += 1
+
+        message = 'done loading control {:d}'.format(n + 1)
+        if numbands:
+            message += ' (band {:d}/{:d})'.format(band, numbands)
+        fpr = kevlar.calc_fpr(ct)
+        message += '; {:d} reads processed'.format(i + 1)
+        message += ', {:d} k-mers stored'.format(kmers_stored)
+        message += '; estimated false positive rate is {:1.3f}'.format(fpr)
+        if fpr > max_fpr:
+            message += ' (FPR too high, bailing out!!!)'
+            raise SystemExit(message)
+        else:
+            savename = table_filename(sample, band)
+            ct.save(savename)
+            message += '; saved to "{:s}"'.format(savename)
+            print('[kevlar::count]    ', message, file=logfile)
+
+        tables.append(ct)
+        if fullmem:
+            mask = ct
+    return tables
 
 
 def load_controls(samples, ksize, memory, memfraction=0.1, max_fpr=0.2,
@@ -203,7 +265,7 @@ def main(args):
     timer.start('loadall')
     timer.start('loadctrl')
     print('[kevlar::count] Loading control samples', file=args.logfile)
-    controls = load_controls(args.controls, args.ksize, args.memory,
+    controls = load_controls(args.control, args.ksize, args.memory,
                              args.mem_frac, args.max_fpr, args.ctrl_max,
                              args.num_bands, args.band, args.logfile)
     elapsed = timer.stop('loadctrl')
@@ -213,7 +275,7 @@ def main(args):
     print('[kevlar::count] All samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
-    print('[kevlar::count] Loading case sample', file=args.logfile)
+    print('[kevlar::count] Loading case samples', file=args.logfile)
     timer.start('loadcase')
     case = load_case(args.case, controls, args.ksize, args.memory,
                      args.mem_frac, args.max_fpr, args.ctrl_max,

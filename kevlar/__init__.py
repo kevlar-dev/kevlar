@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2016 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -167,6 +167,24 @@ def to_gml(graph, outfilename, logfile=sys.stderr):
     networkx.write_gml(graph, outfilename)
     message = '[kevlar] graph written to {}'.format(args.gml)
     print(message, file=logfile)
+
+
+def multi_file_iter_screed(filenames):
+    for filename in filenames:
+        for record in screed.open(filename):
+            yield record
+
+
+def multi_file_iter_khmer(filenames):
+    for filename in filenames:
+        for record in khmer.ReadParser(filename):
+            yield record
+
+
+def clean_subseqs(sequence, ksize):
+    for subseq in re.split('[^ACGT]', sequence):
+        if len(subseq) >= ksize:
+            yield subseq
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')
