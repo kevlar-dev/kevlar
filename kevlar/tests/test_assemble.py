@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ from kevlar import KmerOfInterest
 from kevlar.seqio import load_reads_and_kmers
 from kevlar.assemble import (merge_pair, merge_and_reannotate)
 from kevlar.overlap import (OverlappingReadPair, INCOMPATIBLE_PAIR,
-                            calc_offset, graph_init)
+                            calc_offset, graph_init_strict)
 from kevlar.tests import data_file
 
 
@@ -390,7 +390,7 @@ def test_graph_init():
     """Test graph initialization."""
     instream = open(data_file('var1.reads.augfastq'), 'r')
     reads, kmers = load_reads_and_kmers(instream, logstream=None)
-    graph = graph_init(reads, kmers, maxabund=None, logstream=None)
+    graph = graph_init_strict(reads, kmers, maxabund=None, logstream=None)
 
     # 10 reads in the file, but read16f has no valid connections due to error
     assert len(graph.nodes()) == 9

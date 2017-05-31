@@ -3,63 +3,130 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2016 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
-from collections import defaultdict
 import argparse
 import re
 import sys
+import textwrap
 
 import khmer
-from khmer.utils import write_record
 from khmer import khmer_args
 import kevlar
-import screed
+
+
+class KevlarCaseSampleMismatchError(ValueError):
+    pass
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('novel', add_help=False)
+    """Define the `kevlar novel` command-line interface."""
 
-    samp_args = subparser.add_argument_group(
-        'Case and control configuration',
-        'Specify input files and thresholds for identifying "interesting" '
-        'k-mers, which are high abundance in each case sample and absent (or '
-        'low abundance) in each control sample.'
-    )
-    samp_args.add_argument('--cases', metavar='F', nargs='+',
-                           required=True, help='one or more Fastq files '
-                           'corresponding to case sample(s)')
-    samp_args.add_argument('--controls', metavar='F', nargs='+',
-                           required=True, help='one or more Fastq files '
-                           'corresponding to control sample(s)')
-    samp_args.add_argument('-x', '--ctrl_max', metavar='X', type=int,
-                           default=1, help='k-mers with abund > X in any '
-                           'control sample are uninteresting; default=1')
-    samp_args.add_argument('-y', '--case_min', metavar='Y',
-                           type=int, default=5, help='ignore k-mers from case '
-                           'with abund < Y; default=5')
-    samp_args.add_argument('-M', '--memory', default='1e6',
-                           type=khmer_args.memory_setting, metavar='MEM',
-                           help='total memory to allocate for each sample; '
-                           'default is 1M')
-    samp_args.add_argument('--max-fpr', type=float, default=0.2, metavar='FPR',
-                           help='terminate if the expected false positive rate'
-                           ' for any sample is higher than the specified FPR; '
-                           'default is 0.2')
+    desc = """\
+    Identify "interesting" (potentially novel) k-mers and output the
+    corresponding reads. Here we define "interesting" k-mers as those which are
+    high abundance in each case sample and effectively absent (below some
+    specified abundance threshold) in each control sample."""
+    desc = textwrap.dedent(desc)
+    epilog = """\
+    Example::
 
-    band_args = subparser.add_argument_group(
-        'K-mer banding',
-        'If memory is a limiting factor, it is possible to get a linear '
-        'decrease in memory consumption by running `kevlar novel` in "banded" '
-        'mode. Splitting the hashed k-mer space into N bands and only '
-        'considering k-mers from one band at a time reduces the memory '
-        'consumption to approximately 1/N of the total memory required. This '
-        'implements a scatter/gather approach in which `kevlar novel` is run N'
-        ' times, after the results are combined using `kevlar filter`.'
+        kevlar novel --out novel-reads.augfastq --case proband-reads.fq.gz \\
+            --control father-reads-r1.fq.gz father-reads-r2.fq.gz \\
+            --control mother-reads.fq.gz
+
+    Example::
+
+        kevlar novel --out novel-reads.augfastq.gz \\
+            --control-counts father.counttable mother.counttable \\
+            --case-counts proband.counttable --case proband-reads.fastq \\
+            --ctrl-max 0 --case-min 10 --ksize 27
+
+    Example::
+
+        kevlar novel --out output.augfastq \\
+            --case proband1.fq --case proband2.fq \\
+            --control control1a.fq control1b.fq \\
+            --control control2a.fq control2b.fq"""
+    epilog = textwrap.dedent(epilog)
+    subparser = subparsers.add_parser(
+        'novel', description=desc, epilog=epilog, add_help=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
+
+    samp_desc = """\
+    Specify input files, as well as thresholds for selecting "interesting"
+    k-mers. A single pass is made over input files for control samples (to
+    compute k-mer abundances), while two passes are made over input files for
+    case samples (to compute k-mer abundances, and then to identify
+    "interesting" k-mers). The k-mer abundance computing steps can be skipped
+    if pre-computed k-mer abunandances are provided using the "--case-counts"
+    and/or "--control-counts" settings. If "--control-counts" is declared, then
+    all "--control" flags are ignored. If "--case-counts" is declared,
+    FASTA/FASTQ files must still be provided with "--case" for selecting
+    "interesting" k-mers and reads."""
+    samp_desc = textwrap.dedent(samp_desc)
+    samp_args = subparser.add_argument_group('Case/control config', samp_desc)
+    samp_args.add_argument(
+        '--case', metavar='F', nargs='+', required=True, action='append',
+        help='one or more FASTA/FASTQ files containing reads from a case '
+        'sample; can be declared multiple times corresponding to multiple '
+        'case samples, see examples below'
+    )
+    samp_args.add_argument(
+        '--case-counts', metavar='F', nargs='+',
+        help='counttable file(s) corresponding to each case sample; if not '
+        'provided, k-mer abundances will be computed from FASTA/FASTQ input; '
+        'only one counttable per sample, see examples below'
+    )
+    samp_args.add_argument(
+        '--control', metavar='F', nargs='+', action='append',
+        help='one or more FASTA/FASTQ files containing reads from a control '
+        'sample; can be declared multiple times corresponding to multiple '
+        'control samples, see examples below'
+    )
+    samp_args.add_argument(
+        '--control-counts', metavar='F', nargs='+',
+        help='counttable file(s) corresponding to each control sample; if not '
+        'provided, k-mer abundances will be computed from FASTA/FASTQ input; '
+        'only one counttable per sample, see examples below'
+    )
+    samp_args.add_argument(
+        '-x', '--ctrl-max', metavar='X', type=int, default=1,
+        help='k-mers with abund > X in any control sample are uninteresting; '
+        'default is X=1'
+    )
+    samp_args.add_argument(
+        '-y', '--case-min', metavar='Y', type=int, default=5,
+        help='k-mers with abund < Y in any case sample are uninteresting; '
+        'default is Y=5'
+    )
+    samp_args.add_argument(
+        '-M', '--memory', default='1e6', type=khmer_args.memory_setting,
+        metavar='MEM',
+        help='total memory allocated to k-mer abundance for each sample; '
+        'default is 1M; ignored when pre-computed k-mer abundances are '
+        'supplied via counttable'
+    )
+    samp_args.add_argument(
+        '--max-fpr', type=float, default=0.2, metavar='FPR',
+        help='terminate if the expected false positive rate for any sample is '
+        'higher than the specified FPR; default is 0.2'
+    )
+
+    band_desc = """\
+    If memory is a limiting factor, it is possible to get a linear decrease in
+    memory consumption by running `kevlar novel` in "banded" mode. Splitting
+    the hashed k-mer space into N bands and only considering k-mers from one
+    band at a time reduces the memory consumption to approximately 1/N of the
+    total memory required. This implements a scatter/gather approach in which
+    `kevlar novel` is run N times, after the results are combined using
+    `kevlar filter`."""
+    band_desc = textwrap.dedent(band_desc)
+    band_args = subparser.add_argument_group('K-mer banding', band_desc)
     band_args.add_argument('--num-bands', type=int, metavar='N', default=None,
                            help='number of bands into which to divide the '
                            'hashed k-mer space')
@@ -67,9 +134,7 @@ def subparser(subparsers):
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
-    misc_args = subparser.add_argument_group(
-        'Miscellaneous settings'
-    )
+    misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
@@ -79,32 +144,6 @@ def subparser(subparsers):
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
                            '1000000 (1 update message per millon reads)')
-
-
-def load_samples(samples, ksize, memory, max_fpr=0.2, numbands=None, band=None,
-                 logfile=sys.stderr):
-    tables = list()
-    for sample in samples:
-        print('[kevlar::novel]     Loading counttable', sample, '...', end='',
-              file=logfile)
-        ct = khmer.Counttable(ksize, memory / 4, 4)
-        if numbands:
-            nr, nk = ct.consume_seqfile_banding(sample, numbands, band - 1)
-            message = 'batch {:d}/{:d} done'.format(band, numbands)
-        else:
-            message = 'done'
-            nr, nk = ct.consume_seqfile(sample)
-        fpr = kevlar.calc_fpr(ct)
-        message += ', k={:d}'.format(ct.ksize())
-        message += '; {:d} reads and {:d} k-mers consumed'.format(nr, nk)
-        message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-        if fpr > max_fpr:
-            raise SystemExit(message)
-        else:
-            print(message, file=logfile)
-        tables.append(ct)
-
-    return tables
 
 
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
@@ -126,48 +165,71 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     return caseabunds + ctrlabunds
 
 
-def iter_screed(filenames):
-    for filename in filenames:
-        for record in screed.open(filename):
-            yield record
-
-
 def main(args):
-    if (args.num_bands is None) is not (args.band is None):
+    if (not args.num_bands) is not (not args.band):
         raise ValueError('Must specify --num-bands and --band together')
 
     timer = kevlar.Timer()
     timer.start()
 
-    print('[kevlar::novel] Loading case samples', file=args.logfile)
     timer.start('loadall')
-    timer.start('loadcase')
-    cases = load_samples(args.cases, args.ksize, args.memory, args.max_fpr,
-                         args.num_bands, args.band, args.logfile)
-    elapsed = timer.stop('loadcase')
-    print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),
-          file=args.logfile)
-
-    elapsed = timer.start('loadctrl')
     print('[kevlar::novel] Loading control samples', file=args.logfile)
-    controls = load_samples(args.controls, args.ksize, args.memory,
-                            args.max_fpr, args.num_bands, args.band,
-                            args.logfile)
+    timer.start('loadctrl')
+    if args.control_counts:
+        numctrls = len(args.control_counts)
+        message = 'counttables for {:d} samples provided'.format(numctrls)
+        message += ', any corresponding FASTA/FASTQ input will be ignored '
+        message += 'for computing k-mer abundances'
+        print('[kevlar::novel]    INFO:', message, file=logfile)
+        controls = kevlar.counting.load_samples_sketchfiles(
+            args.control_counts, args.max_fpr, args.logfile
+        )
+    else:
+        controls = kevlar.counting.load_samples(
+            args.control, args.ksize, args.memory, maxfpr=args.max_fpr,
+            numbands=args.num_bands, band=args.band, logfile=args.logfile
+        )
     elapsed = timer.stop('loadctrl')
-    print('[kevlar::novel] Cntrl samples loaded in {:.2f} sec'.format(elapsed),
+    message = 'Control samples loaded in {:.2f}'.format(elapsed)
+    print('[kevlar::novel]', message, file=args.logfile)
+
+    print('[kevlar::novel] Loading case samples', file=args.logfile)
+    timer.start('loadcases')
+    if args.case_counts:
+        numcases = len(args.case_counts)
+        if numcases != len(args.case):
+            message = '{:d} case samples declared '.format(len(args.case))
+            message += 'but {:d} counttables provided'.format(numcases)
+            raise KevlarCaseSampleMismatchError(message)
+        message = 'counttables for {:d} samples provided'.format(numcases)
+        message += ', any corresponding FASTA/FASTQ input will be ignored '
+        message += 'for computing k-mer abundances'
+        print('[kevlar::novel]    INFO:', message, file=logfile)
+        cases = kevlar.counting.load_samples_sketchfiles(
+            args.case_counts, args.max_fpr, args.logfile
+        )
+    else:
+        cases = kevlar.counting.load_samples(
+            args.case, args.ksize, args.memory, maxfpr=args.max_fpr,
+            numbands=args.num_bands, band=args.band, logfile=args.logfile
+        )
+    elapsed = timer.stop('loadcases')
+    print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
     elapsed = timer.stop('loadall')
     print('[kevlar::novel] All samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
     timer.start('iter')
-    print('[kevlar::novel] Iterating over case reads', args.cases,
-          file=args.logfile)
+    ncases = len(args.case)
+    message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
+    print('[kevlar::novel]', message, file=args.logfile)
     nkmers = 0
     nreads = 0
     unique_kmers = set()
     outstream = kevlar.open(args.out, 'w')
-    for n, record in enumerate(iter_screed(args.cases)):
+    infiles = [f for filelist in args.case for f in filelist]
+    for n, record in enumerate(kevlar.multi_file_iter_screed(infiles)):
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
             msg = '    processed {} reads'.format(n)

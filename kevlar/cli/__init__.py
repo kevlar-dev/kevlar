@@ -22,6 +22,7 @@ mains = {
     'reaugment': kevlar.reaugment.main,
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
+    'partition': kevlar.partition.main,
 }
 
 
@@ -58,5 +59,6 @@ def parser():
     kevlar.reaugment.subparser(subparsers)
     kevlar.assemble.subparser(subparsers)
     kevlar.mutate.subparser(subparsers)
+    kevlar.partition.subparser(subparsers)
 
     return parser

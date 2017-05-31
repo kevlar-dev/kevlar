@@ -3,13 +3,14 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
 import glob
 import pytest
 import re
+from tempfile import NamedTemporaryFile
 import screed
 import kevlar
 from kevlar.tests import data_file, data_glob
@@ -21,13 +22,21 @@ from kevlar.tests import data_file, data_glob
     (16, 7, 1218),
 ])
 def test_count_simple(numbands, band, kmers_stored, capsys):
-    case = data_file('simple-genome-case-reads.fa.gz')
-    ctrls = data_glob('simple-genome-ctrl[1,2]-reads.fa.gz')
-    arglist = ['count', '--ksize', '25', '--memory', '5K', '--ctrl_max', '0',
-               '--num-bands', str(numbands), '--band', str(band),
-               '--case', case, '--controls'] + ctrls
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.count.main(args)
+    with NamedTemporaryFile(suffix='.counttable') as ctrl1out, \
+            NamedTemporaryFile(suffix='.counttable') as ctrl2out, \
+            NamedTemporaryFile(suffix='.counttable') as caseout:
+        case = data_file('simple-genome-case-reads.fa.gz')
+        ctrls = data_glob('simple-genome-ctrl[1,2]-reads.fa.gz')
+        arglist = [
+            'count',
+            '--case', caseout.name, case,
+            '--control', ctrl1out.name, ctrls[0],
+            '--control', ctrl2out.name, ctrls[1],
+            '--ksize', '25', '--memory', '5K', '--ctrl-max', '0',
+            '--num-bands', str(numbands), '--band', str(band),
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.count.main(args)
     out, err = capsys.readouterr()
 
     assert '600 reads processed' in str(err)

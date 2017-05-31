@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -124,14 +124,14 @@ def fetch_largest_overlapping_pair(graph, reads):
     )
 
 
-def assemble_with_greed(reads, kmers, graph, debugout=None):
+def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
     """Find shortest common superstring using a greedy assembly algorithm."""
     count = 0
     while len(graph.edges()) > 0:
         count += 1
 
         pair = fetch_largest_overlapping_pair(graph, reads)
-        newname = 'contig{:d}'.format(count)
+        newname = 'contig{:d};cc={:d}'.format(count, ccindex)
         newrecord = merge_and_reannotate(pair, newname)
         if debugout:
             print('### DEBUG', pair.tail.name, pair.head.name, pair.offset,
@@ -176,31 +176,36 @@ def main(args):
     reads, kmers = load_reads_and_kmers(kevlar.open(args.augfastq, 'r'),
                                         debugout)
     inputreads = list(reads)
-    graph = kevlar.overlap.graph_init(reads, kmers, args.min_abund,
-                                      args.max_abund, debugout)
+    graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
+                                             args.max_abund, debugout)
     if args.gml:
         networkx.write_gml(graph, args.gml)
         message = '[kevlar::assemble] graph written to {}'.format(args.gml)
         print(message, file=args.logfile)
 
-    ccs = list(networkx.connected_components(graph))
-    assert len(ccs) == 1
-
-    assemble_with_greed(reads, kmers, graph, debugout)
+    num_ccs = networkx.number_connected_components(graph)
+    if num_ccs > 1:
+        message = 'assembly graph contains {:d}'.format(num_ccs)
+        message += ' connected components; designated in the output by cc=N'
+        print('[kevlar::assemble] WARNING:', message, file=args.logfile)
 
     contigcount = 0
     unassembledcount = 0
     outstream = kevlar.open(args.out, 'w')
-    for seqname in graph.nodes():
-        if seqname in inputreads:
-            unassembledcount += 1
-            continue
-        contigcount += 1
-        contigrecord = reads[seqname]
-        kevlar.print_augmented_fastq(contigrecord, outstream)
+    cc_stream = networkx.connected_component_subgraphs(graph)
+    for n, cc in enumerate(cc_stream, 1):
+        assemble_with_greed(reads, kmers, cc, n, debugout)
+        for seqname in cc.nodes():
+            if seqname in inputreads:
+                unassembledcount += 1
+                continue
+            contigcount += 1
+            contigrecord = reads[seqname]
+            kevlar.print_augmented_fastq(contigrecord, outstream)
 
     assembledcount = len(inputreads) - unassembledcount
     message = '[kevlar::assemble] assembled'
     message += ' {:d}/{:d} reads'.format(assembledcount, len(inputreads))
+    message += ' from {:d} connected component(s)'.format(num_ccs)
     message += ' into {:d} contig(s)'.format(contigcount)
     print(message, file=args.logfile)

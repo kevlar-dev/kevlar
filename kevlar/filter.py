@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ def load_refr(refrfile, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
     refr = khmer.Nodetable(ksize, buckets, 4)
     nr, nk = refr.consume_seqfile(refrfile)
-    fpr = kevlar.calc_fpr(refr)
+    fpr = kevlar.sketch.estimate_fpr(refr)
     message = '    {:d} sequences and {:d} k-mers consumed'.format(nr, nk)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logfile)
@@ -150,7 +150,7 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
                     int_kmers_parsed.add(minkmer)
     n_kmers_distinct = len(int_kmers_parsed)
 
-    fpr = kevlar.calc_fpr(countgraph)
+    fpr = kevlar.sketch.estimate_fpr(countgraph)
     message = '    {:d} instances'.format(read_inst_consumed)
     message += ' of {:d} reads consumed'.format(len(readset))
     message += ', annotated with {:d} instances '.format(int_kmer_instances)

@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Copyright (c) 2017 The Regents of the University of California
 #
-# This file is part of kevlar (http://github.com/standage/kevlar) and is
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ def recalc_abund(filelist, ksize, memory, maxfpr=0.1, logfile=sys.stderr):
                     # Ignore the novel k-mers in the first pass
                     continue
 
-    fpr = kevlar.calc_fpr(countgraph)
+    fpr = kevlar.sketch.estimate_fpr(countgraph)
     message = '    {:d} reads'.format(reads_consumed)
     message += ' and {:d} k-mers consumed'.format(kmers_consumed)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
