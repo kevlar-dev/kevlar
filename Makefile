@@ -15,7 +15,7 @@ doc:
 
 loc:
 	@- echo "\n\n===== Core kevlar ====="
-	cloc --exclude-list-file=<(echo kevlar/_version.py) kevlar/*.py
+	cloc --exclude-list-file=.cloc.exclude kevlar/*.py
 	@- echo "\n\n===== kevlar CLI ====="
 	cloc kevlar/cli/*.py
 	@- echo "\n\n===== kevlar tests ====="
