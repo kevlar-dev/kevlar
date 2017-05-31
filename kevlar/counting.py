@@ -15,26 +15,13 @@ import khmer
 import kevlar
 
 
-def table_filename(seqfile, band=None):
-    """
-    asdf
-    """
-    suffixes = ['.fa', '.fasta', '.fna', '.fq', '.fastq']
-    gzipsuffixes = [s + '.gz' for s in suffixes]
-    if seqfile.endswith(tuple(suffixes)):
-        prefix = '.'.join(seqfile.split('.')[:-1])
-    elif sample.endswith(tuple(gzipsuffixes)):
-        prefix = '.'.join(seqfile.split('.')[:-2])
-    else:
-        prefix = seqfile
-    if band:
-        prefix += '.band{:d}'.format(band)
-    return prefix + '.counttable'
+class KevlarSampleIOError(ValueError):
+    pass
 
 
-def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, masks=None,
-                        maskmaxabund=1, numbands=None, band=None,
-                        skipsave=False, logfile=sys.stderr):
+def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
+                        masks=None, maskmaxabund=1, numbands=None, band=None,
+                        outfile=None, logfile=sys.stderr):
     """
     asdf
     """
@@ -43,17 +30,20 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, masks=None,
 
     sketch = khmer.Counttable(ksize, memory / 4, 4)
     n, nkmers = 0, 0
-    for n, read in kevlar.multi_file_iter_khmer(seqfiles, 1):
-        cleansubseqs = kevlar.clean_subseqs(read.sequence)
-        for kmer in sketch.get_kmers(cleansubseqs):
-            if numbands:
-                khash = sketch.hash(kmer)
-                if sketch & (numbands - 1) != band - 1:
-                    continue
-            if masks:
-                for mask in masks:
-                    if mask.get(kmer) > maskmaxabund:
-                        break
+    for n, read in enumerate(kevlar.multi_file_iter_khmer(seqfiles), 1):
+        for subseq in kevlar.clean_subseqs(read.sequence, ksize):
+            for kmer in sketch.get_kmers(subseq):
+                if numbands:
+                    khash = sketch.hash(kmer)
+                    if khash & (numbands - 1) != band - 1:
+                        continue
+                if masks:
+                    for mask in masks:
+                        if mask.get(kmer) > maskmaxabund:
+                            break
+                    else:
+                        sketch.add(kmer)
+                        nkmers += 1
                 else:
                     sketch.add(kmer)
                     nkmers += 1
@@ -61,36 +51,42 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, masks=None,
     message = 'done loading reads'
     if numbands:
         message += ' (band {:d}/{:d})'.format(band, numbands)
-    fpr = kevlar.calc_fpr(ct)
+    fpr = kevlar.calc_fpr(sketch)
     message += '; {:d} reads processed'.format(n)
     message += ', {:d} k-mers stored'.format(nkmers)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-    if fpr > max_fpr:
+    if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
         raise SystemExit(message)
     else:
-        if not skipsave:
-            savename = table_filename(sample, band)
-            sketch.save(savename)
-            message += '; saved to "{:s}"'.format(savename)
+        if outfile:
+            if not outfile.endswith(('.ct', '.counttable')):
+                outfile += '.counttable'
+            sketch.save(outfile)
+            message += '; saved to "{:s}"'.format(outfile)
         print('[kevlar::counting]    ', message, file=logfile)
 
     return sketch
 
 
-def load_samples_with_dilution(seqfilelists, ksize, memory, memfraction=0.1,
+def load_samples_with_dilution(samplelists, ksize, memory, memfraction=0.1,
                                maxfpr=0.2, maxabund=1, masks=None,
                                numbands=None, band=None, skipsave=False,
                                logfile=sys.stderr):
     """
     asdf
     """
-    numsamples = len(seqfilelists)
+    numsamples = len(samplelists)
     message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
     print('[kevlar::counting]    ', message, file=logfile)
 
     sketches = list()
-    for seqfiles in seqfilelists:
+    for samplelist in samplelists:
+        if len(samplelist) < 2:
+            message = 'must specify an output file and at least one input file'
+            raise KevlarSampleIOError(message)
+        outfile = samplelist[0]
+        seqfiles = samplelist[1:]
         if masks:
             mymasks = masks
             sketchmem = memory * memfraction
@@ -103,7 +99,7 @@ def load_samples_with_dilution(seqfilelists, ksize, memory, memfraction=0.1,
         sketch = load_sample_seqfile(
             seqfiles, ksize, sketchmem, maxfpr=maxfpr, masks=mymasks,
             maskmaxabund=maxabund, numbands=numbands, band=band,
-            skipsave=skipsave, logfile=logfile
+            outfile=outfile, logfile=logfile
         )
         sketches.append(sketch)
     return sketches

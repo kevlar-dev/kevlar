@@ -13,6 +13,7 @@ try:
 except:  # pragma: no cover
     import builtins
 from collections import namedtuple
+import re
 import sys
 from kevlar import seqio
 from kevlar import overlap

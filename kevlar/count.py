@@ -10,12 +10,9 @@
 from __future__ import print_function
 from collections import defaultdict
 import argparse
-import re
-import sys
 import textwrap
 
 import khmer
-from khmer.utils import write_record
 from khmer import khmer_args
 import kevlar
 
@@ -28,16 +25,17 @@ def subparser(subparsers):
     Example::
 
         kevlar count --ksize 31 --memory 4G --mem-frac 0.25 \\
-            --case proband-reads.fq.gz \\
-            --control father-reads-r1.fq.gz father-reads-r2.fq.gz \\
-            --control mother-reads.fq.gz
+            --case proband.counttable proband-reads.fq.gz \\
+            --control father.counttable father-r1.fq.gz father-r2.fq.gz \\
+            --control mother.counttable mother-reads.fq.gz
 
     Example::
 
         kevlar count --ksize 25 --memory 500M \\
-            --case case_x.fq --case case_y.fq \\
-            --control control1a.fq control1b.fq \\
-            --control control2a.fq control2b.fq"""
+            --case case_x.ct case_x.fq \\
+            --case case_y.ct case_y.fq \\
+            --control control1.ct control1a.fq control1b.fq \\
+            --control control2.ct control2a.fq control2b.fq"""
     epilog = textwrap.dedent(epilog)
 
     subparser = subparsers.add_parser(
@@ -125,7 +123,7 @@ def main(args):
 
     timer.start('loadctrl')
     print('[kevlar::count] Loading control samples', file=args.logfile)
-    controls = kevlar.load_samples_with_dilution(
+    controls = kevlar.counting.load_samples_with_dilution(
         args.control, args.ksize, args.memory, memfraction=args.mem_frac,
         maxfpr=args.max_fpr, maxabund=args.ctrl_max, masks=None,
         numbands=args.num_bands, band=args.band, logfile=args.logfile
@@ -137,14 +135,14 @@ def main(args):
 
     print('[kevlar::count] Loading case samples', file=args.logfile)
     timer.start('loadcase')
-    cases = kevlar.load_samples_with_dilution(
+    cases = kevlar.counting.load_samples_with_dilution(
         args.case, args.ksize, args.memory, memfraction=args.mem_frac,
         maxfpr=args.max_fpr, maxabund=args.ctrl_max, masks=controls,
         numbands=args.num_bands, band=args.band, logfile=args.logfile
     )
     elapsed = timer.stop('loadcase')
     numcases = len(cases)
-    message = '{:d} samples loaded in {:.2f} sec'.format(numcases, elapsed)
+    message = '{:d} sample(s) loaded in {:.2f} sec'.format(numcases, elapsed)
     print('[kevlar::count]', message, file=args.logfile)
 
     total = timer.stop()
