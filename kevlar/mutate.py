@@ -9,7 +9,6 @@
 
 from __future__ import print_function
 from collections import defaultdict, namedtuple
-import argparse
 import sys
 import khmer
 from khmer.utils import write_record
@@ -19,14 +18,6 @@ import kevlar
 Mutation = namedtuple('Mutation', 'seq pos type data')
 char_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_char = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
-
-
-def subparser(subparsers):
-    subparser = subparsers.add_parser('mutate')
-    subparser.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
-    subparser.add_argument('mutations', help='mutations file')
-    subparser.add_argument('genome', help='genome to mutate')
 
 
 def load_mutations(instream, logstream):

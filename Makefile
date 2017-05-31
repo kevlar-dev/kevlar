@@ -14,5 +14,9 @@ doc:
 	cd docs && make html
 
 loc:
-	cloc --exclude-list-file=<(echo kevlar/_version.py) kevlar/*.py kevlar/cli/*.py
+	@- echo "\n\n===== Core kevlar ====="
+	cloc --exclude-list-file=<(echo kevlar/_version.py) kevlar/*.py
+	@- echo "\n\n===== kevlar CLI ====="
+	cloc kevlar/cli/*.py
+	@- echo "\n\n===== kevlar tests ====="
 	cloc kevlar/tests/test_*.py

@@ -9,7 +9,6 @@
 
 from __future__ import print_function
 from collections import defaultdict, namedtuple
-import argparse
 import itertools
 import sys
 try:
@@ -20,24 +19,6 @@ import screed
 import khmer
 import kevlar
 from kevlar.seqio import load_reads_and_kmers
-
-
-def subparser(subparsers):
-    subparser = subparsers.add_parser('assemble')
-    subparser.add_argument('-d', '--debug', action='store_true',
-                           help='print debugging output')
-    subparser.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
-    subparser.add_argument('--gml', metavar='FILE',
-                           help='write graph to .gml file')
-    subparser.add_argument('-n', '--min-abund', type=int, metavar='N',
-                           default=2, help='discard interesting k-mers that '
-                           'occur fewer than N times')
-    subparser.add_argument('-x', '--max-abund', type=int, metavar='X',
-                           default=500, help='discard interesting k-mers that '
-                           'occur more than X times')
-    subparser.add_argument('augfastq', help='annotated reads in augmented '
-                           'Fastq format')
 
 
 def merge_pair(pair):
