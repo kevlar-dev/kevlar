@@ -26,6 +26,7 @@ from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
 from kevlar import partition
+from kevlar import counting
 from kevlar import cli
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer

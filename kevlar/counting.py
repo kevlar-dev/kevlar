@@ -79,8 +79,9 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, masks=None,
 
 
 def load_samples_with_dilution(seqfilelists, ksize, memory, memfraction=0.1,
-                               maxfpr=0.2, maxabund=1, numbands=None,
-                               band=None, skipsave=False, logfile=sys.stderr):
+                               maxfpr=0.2, maxabund=1, masks=None,
+                               numbands=None, band=None, skipsave=False,
+                               logfile=sys.stderr):
     """
     asdf
     """
@@ -90,14 +91,17 @@ def load_samples_with_dilution(seqfilelists, ksize, memory, memfraction=0.1,
 
     sketches = list()
     for seqfiles in seqfilelists:
-        if len(sketches) == 0:
-            masks = None
+        if masks:
+            mymasks = masks
+            sketchmem = memory * memfraction
+        elif len(sketches) == 0:
+            mymasks = None
             sketchmem = memory
         else:
-            masks = sketches
+            mymasks = sketches
             sketchmem = memory * memfraction
         sketch = load_sample_seqfile(
-            seqfiles, ksize, sketchmem, maxfpr=maxfpr, masks=masks,
+            seqfiles, ksize, sketchmem, maxfpr=maxfpr, masks=mymasks,
             maskmaxabund=maxabund, numbands=numbands, band=band,
             skipsave=skipsave, logfile=logfile
         )

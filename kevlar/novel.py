@@ -72,10 +72,7 @@ def subparser(subparsers):
     FASTA/FASTQ files must still be provided with "--case" for selecting
     "interesting" k-mers and reads."""
     samp_desc = textwrap.dedent(samp_desc)
-    samp_args = subparser.add_argument_group(
-        'Case and control configuration',
-        samp_desc
-    )
+    samp_args = subparser.add_argument_group('Case/control config', samp_desc)
     samp_args.add_argument(
         '--case', metavar='F', nargs='+', required=True, action='append',
         help='one or more FASTA/FASTQ files containing reads from a case '
@@ -140,9 +137,7 @@ def subparser(subparsers):
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
-    misc_args = subparser.add_argument_group(
-        'Miscellaneous settings'
-    )
+    misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
