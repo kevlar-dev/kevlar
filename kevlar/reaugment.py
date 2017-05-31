@@ -9,18 +9,9 @@
 
 from __future__ import print_function
 from collections import defaultdict
-import argparse
 import sys
 import khmer
 import kevlar
-
-
-def subparser(subparsers):
-    subparser = subparsers.add_parser('reaugment')
-    subparser.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
-    subparser.add_argument('augfastq', help='original augmented Fastq file')
-    subparser.add_argument('fastq', help='processed Fastq file to re-annotate')
 
 
 def main(args):

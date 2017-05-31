@@ -9,9 +9,17 @@
 # -----------------------------------------------------------------------------
 
 import argparse
-import kevlar
 import sys
-
+import kevlar
+from . import dump
+from . import count
+from . import novel
+from . import collect
+from . import filter
+from . import reaugment
+from . import assemble
+from . import mutate
+from . import partition
 
 mains = {
     'dump': kevlar.dump.main,
@@ -23,6 +31,18 @@ mains = {
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
     'partition': kevlar.partition.main,
+}
+
+subparser_funcs = {
+    'dump': dump.subparser,
+    'count': count.subparser,
+    'novel': novel.subparser,
+    'collect': collect.subparser,
+    'filter': filter.subparser,
+    'reaugment': reaugment.subparser,
+    'assemble': assemble.subparser,
+    'mutate': mutate.subparser,
+    'partition': partition.subparser,
 }
 
 
@@ -51,14 +71,7 @@ def parser():
                         'diagnostic messages, warnings, and errors')
     subparsers = parser.add_subparsers(dest='cmd', metavar='cmd',
                                        help='"' + subcommandstr + '"')
-    kevlar.dump.subparser(subparsers)
-    kevlar.count.subparser(subparsers)
-    kevlar.novel.subparser(subparsers)
-    kevlar.collect.subparser(subparsers)
-    kevlar.filter.subparser(subparsers)
-    kevlar.reaugment.subparser(subparsers)
-    kevlar.assemble.subparser(subparsers)
-    kevlar.mutate.subparser(subparsers)
-    kevlar.partition.subparser(subparsers)
+    for func in subparser_funcs.values():
+        func(subparsers)
 
     return parser
