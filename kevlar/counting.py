@@ -55,7 +55,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     message = 'done loading reads'
     if numbands:
         message += ' (band {:d}/{:d})'.format(band, numbands)
-    fpr = kevlar.calc_fpr(sketch)
+    fpr = kevlar.sketch.estimate_fpr(sketch)
     message += '; {:d} reads processed'.format(n)
     message += ', {:d} k-mers stored'.format(nkmers)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
@@ -145,7 +145,7 @@ def load_samples_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
         message = 'loading sketchfile ' + sketchfile,
         print('[kevlar::counting]    ', message, end='', file=logfile)
         sketch = kevlar.sketch_autoload(sketchfile)
-        fpr = kevlar.calc_fpr(sketch)
+        fpr = kevlar.sketch.estimate_fpr(sketch)
         message = 'done! estimated false positive rate is {:1.3f}'.format(fpr)
         if fpr > maxfpr:
             message += ' (FPR too high, bailing out!!!)'
