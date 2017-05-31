@@ -23,7 +23,11 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
                         masks=None, maskmaxabund=1, numbands=None, band=None,
                         outfile=None, logfile=sys.stderr):
     """
-    asdf
+    Compute k-mer abundances for the specified sequence input.
+
+    Expected input is a list of one or more FASTA/FASTQ files corresponding
+    to a single sample. A counttable is created and populated with abundances
+    of all k-mers observed in the input.
     """
     message = 'loading sample from ' + ','.join(seqfiles)
     print('[kevlar::counting]    ', message, file=logfile)
@@ -69,12 +73,41 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     return sketch
 
 
+def load_samples(samplelists, ksize, memory, maxfpr=0.2, numbands=None,
+                 band=None, logfile=sys.stderr):
+    """
+    Load a group of related samples using a memory-efficient strategy.
+
+    Samples loaded initially are used as masks for subsequently loaded samples.
+    The first sample is allocated the full amount of memory, while subsequent
+    samples require only a fraction since they are first checked against the
+    mask(s).
+    """
+    numsamples = len(samplelists)
+    message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
+    print('[kevlar::counting]    ', message, file=logfile)
+
+    sketches = list()
+    for seqfiles in samplelists:
+        sketch = load_sample_seqfile(
+            seqfiles, ksize, memory, maxfpr=maxfpr, numbands=numbands,
+            band=band, outfile=None, logfile=logfile
+        )
+        sketches.append(sketch)
+    return sketches
+
+
 def load_samples_with_dilution(samplelists, ksize, memory, memfraction=0.1,
                                maxfpr=0.2, maxabund=1, masks=None,
                                numbands=None, band=None, skipsave=False,
                                logfile=sys.stderr):
     """
-    asdf
+    Load a group of related samples using a memory-efficient strategy.
+
+    Samples loaded initially are used as masks for subsequently loaded samples.
+    The first sample is allocated the full amount of memory, while subsequent
+    samples require only a fraction since they are first checked against the
+    mask(s).
     """
     numsamples = len(samplelists)
     message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
@@ -106,9 +139,7 @@ def load_samples_with_dilution(samplelists, ksize, memory, memfraction=0.1,
 
 
 def load_samples_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
-    """
-    asdf
-    """
+    """Load samples from pre-computed k-mer abundances."""
     sketches = list()
     for sketchfile in sketchfiles:
         message = 'loading sketchfile ' + sketchfile,

@@ -98,11 +98,11 @@ def subparser(subparsers):
     band_desc = textwrap.dedent(band_desc)
     band_args = subparser.add_argument_group('K-mer banding', band_desc)
     band_args.add_argument(
-        '--num-bands', type=int, metavar='N', default=0,
+        '--num-bands', type=int, metavar='N', default=None,
         help='number of bands into which to divide the hashed k-mer space'
     )
     band_args.add_argument(
-        '--band', type=int, metavar='I', default=0,
+        '--band', type=int, metavar='I', default=None,
         help='a number between 1 and N (inclusive) indicating the band to be '
         'processed'
     )

@@ -18,14 +18,14 @@ from khmer import Counttable
 
 def test_cli():
     args = kevlar.cli.parser().parse_args([
-        'novel', '--case', 'case1.fq', '--control', 'cntl1.fq', 'cntl2.fq',
-        '-k', '17',
+        'novel', '--case', 'case1.fq', '--control', 'cntl1.fq', '--control',
+        'cntl2.fq', '-k', '17',
     ])
     assert args.ksize == 17
     assert args.case_min == 5
     assert args.ctrl_max == 1
-    assert args.num_bands is 0
-    assert args.band is 0
+    assert args.num_bands is None
+    assert args.band is None
 
     args = kevlar.cli.parser().parse_args([
         'novel', '--num-bands', '8', '--band', '1', '--case', 'case1.fq',
@@ -144,5 +144,5 @@ def test_kmer_rep_in_read(capsys):
 def test_iter_read_multi_file():
     infiles = kevlar.tests.data_glob('bogus-genome/mask-chr[1,2].fa')
     print(infiles)
-    records = [r for r in kevlar.novel.iter_read_multi_file(infiles)]
+    records = [r for r in kevlar.multi_file_iter_khmer(infiles)]
     assert len(records) == 4
