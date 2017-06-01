@@ -142,9 +142,9 @@ def load_samples_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
     """Load samples from pre-computed k-mer abundances."""
     sketches = list()
     for sketchfile in sketchfiles:
-        message = 'loading sketchfile ' + sketchfile,
+        message = 'loading sketchfile "{}"...'.format(sketchfile)
         print('[kevlar::counting]    ', message, end='', file=logfile)
-        sketch = kevlar.sketch_autoload(sketchfile)
+        sketch = kevlar.sketch.autoload(sketchfile)
         fpr = kevlar.sketch.estimate_fpr(sketch)
         message = 'done! estimated false positive rate is {:1.3f}'.format(fpr)
         if fpr > maxfpr:

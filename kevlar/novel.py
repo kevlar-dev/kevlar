@@ -51,10 +51,10 @@ def main(args):
     timer.start('loadctrl')
     if args.control_counts:
         numctrls = len(args.control_counts)
-        message = 'counttables for {:d} samples provided'.format(numctrls)
+        message = 'counttables for {:d} sample(s) provided'.format(numctrls)
         message += ', any corresponding FASTA/FASTQ input will be ignored '
         message += 'for computing k-mer abundances'
-        print('[kevlar::novel]    INFO:', message, file=logfile)
+        print('[kevlar::novel]    INFO:', message, file=args.logfile)
         controls = kevlar.counting.load_samples_sketchfiles(
             args.control_counts, args.max_fpr, args.logfile
         )
@@ -64,7 +64,7 @@ def main(args):
             numbands=args.num_bands, band=args.band, logfile=args.logfile
         )
     elapsed = timer.stop('loadctrl')
-    message = 'Control samples loaded in {:.2f}'.format(elapsed)
+    message = 'Control samples loaded in {:.2f} sec'.format(elapsed)
     print('[kevlar::novel]', message, file=args.logfile)
 
     print('[kevlar::novel] Loading case samples', file=args.logfile)
@@ -78,7 +78,7 @@ def main(args):
         message = 'counttables for {:d} samples provided'.format(numcases)
         message += ', any corresponding FASTA/FASTQ input will be ignored '
         message += 'for computing k-mer abundances'
-        print('[kevlar::novel]    INFO:', message, file=logfile)
+        print('[kevlar::novel]    INFO:', message, file=args.logfile)
         cases = kevlar.counting.load_samples_sketchfiles(
             args.case_counts, args.max_fpr, args.logfile
         )
