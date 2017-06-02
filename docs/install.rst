@@ -10,7 +10,7 @@ For the impatient
     source kevlar-env/bin/activate  # Execute this with every new terminal session
     # pip install pysam  # You probably don't need this
     pip install networkx
-    pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
+    pip install git+https://github.com/dib-lab/khmer.git
     pip install biokevlar
 
 Virtual environment
@@ -33,7 +33,7 @@ The :code:`kevlar dump` command also depends on **pysam**, while :code:`kevlar f
 
     pip install pysam
     pip install networkx
-    pip install git+https://github.com/dib-lab/khmer.git@feature/consume_bitsplit
+    pip install git+https://github.com/dib-lab/khmer.git
 
 The **pysam** dependency will eventually be dropped.
 
