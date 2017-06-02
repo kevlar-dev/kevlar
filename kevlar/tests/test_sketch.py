@@ -79,5 +79,5 @@ def test_autoload():
 
     sketch3 = kevlar.sketch.autoload(infile, ksize=25, table_size=1e7,
                                      count=True, graph=True, num_bands=4,
-                                     band=3)
+                                     band=0)
     assert sketch3.get('CAGCTGACCCACCGACACATAGGTT') > 0

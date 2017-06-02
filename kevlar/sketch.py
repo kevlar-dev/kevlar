@@ -113,7 +113,7 @@ def autoload(infile, count=True, graph=False, ksize=31, table_size=1e4,
         sketch = allocate(ksize, table_size, num_tables, count=count,
                           graph=graph, smallcount=False)
         if num_bands:
-            assert band > 0 and band <= num_bands
+            assert band >= 0 and band < num_bands
             sketch.consume_seqfile_banding(infile, num_bands, band)
         else:
             sketch.consume_seqfile(infile)

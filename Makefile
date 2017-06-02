@@ -1,3 +1,5 @@
+SHELL=bash
+
 devenv:
 	pip install --upgrade pip setuptools pytest pytest-cov pep8 cython sphinx
 
@@ -14,9 +16,9 @@ doc:
 	cd docs && make html
 
 loc:
-	@- echo "\n\n===== Core kevlar ====="
+	@- echo -e "\n\n===== Core kevlar ====="
 	cloc --exclude-list-file=.cloc.exclude kevlar/*.py
-	@- echo "\n\n===== kevlar CLI ====="
+	@- echo -e "\n\n===== kevlar CLI ====="
 	cloc kevlar/cli/*.py
-	@- echo "\n\n===== kevlar tests ====="
+	@- echo -e "\n\n===== kevlar tests ====="
 	cloc kevlar/tests/test_*.py
