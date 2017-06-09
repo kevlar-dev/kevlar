@@ -1,0 +1,15 @@
+*.log
+*-reads-[1,2].fq
+part.cc?.trim.*.gz
+human.random.fa
+proband-genome.fa
+mother-genome.fa
+father-genome.fa
+*.counttable
+*-reads-dump.fq.gz
+part.cc?.fq.gz
+part.cc?.augfastq.gz
+part.cc?.asmbl.augfasta.gz
+proband.novel.augfastq.gz
+proband.novel.*.gz
+human.random.fa.*
