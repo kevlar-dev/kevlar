@@ -29,6 +29,10 @@ class KevlarVariantLocalizationError(ValueError):
     pass
 
 
+class KevlarRefrSeqNotFound(ValueError):
+    pass
+
+
 def get_unique_kmers(infile, ksize=31):
     ct = khmer._Counttable(ksize, [1])
     kmers = set()
@@ -80,8 +84,19 @@ def select_region(matchlist, maxdiff=1000, delta=100):
     return seqids.pop(), minpos-delta, maxpos+delta+1
 
 
+def extract_region(refr, seqid, start, end):
+    for defline, sequence in kevlar.seqio.parse_fasta(refr):
+        testseqid = defline[1:].split()[0]
+        if seqid == testseqid:
+            subseqid = '{}_{}-{}'.format(seqid, start, end)
+            subseq = sequence[start:end]
+            return subseqid, subseq
+    raise KevlarRefrSeqNotFound()
+
+
 def main(args):
-    matchgen = get_exact_matches(args.contigs, args.index, args.ksize)
+    output = args.out if args.out else sys.stdout
+    matchgen = get_exact_matches(args.contigs, args.refr, args.ksize)
     kmer_matches = [m for m in matchgen]
     if len(kmer_matches) == 0:
         raise KevlarNoReferenceMatchesError()
@@ -90,4 +105,7 @@ def main(args):
     if region is None:
         raise KevlarVariantLocalizationError()
     else:
-        print(region)
+        seqid, start, end = region
+        instream = kevlar.open(args.refr, 'r')
+        subseqid, subseq = extract_region(instream, seqid, start, end)
+        print('>', subseqid, '\n', subseq, sep='', file=output)

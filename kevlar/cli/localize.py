@@ -17,7 +17,9 @@ def subparser(subparsers):
                            default=100, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
                            'of all k-mer starting positions by D bp')
+    subparser.add_argument('-o', '--out', metavar='FILE',
+                           help='output file; default is terminal (stdout)')
     subparser.add_argument('-k', '--ksize', type=int, metavar='K', default=31,
                            help='k-mer size; default is 31')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
-    subparser.add_argument('index', help='BWA indexed reference genome')
+    subparser.add_argument('refr', help='BWA indexed reference genome')
