@@ -41,6 +41,7 @@ from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
 from kevlar import partition
+from kevlar import localize
 from kevlar import cli
 
 from kevlar._version import get_versions

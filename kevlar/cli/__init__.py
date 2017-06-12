@@ -20,6 +20,7 @@ from . import reaugment
 from . import assemble
 from . import mutate
 from . import partition
+from . import localize
 
 mains = {
     'dump': kevlar.dump.main,
@@ -31,6 +32,7 @@ mains = {
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
     'partition': kevlar.partition.main,
+    'localize': kevlar.localize.main,
 }
 
 subparser_funcs = {
@@ -43,6 +45,7 @@ subparser_funcs = {
     'assemble': assemble.subparser,
     'mutate': mutate.subparser,
     'partition': partition.subparser,
+    'localize': localize.subparser,
 }
 
 
