@@ -58,3 +58,13 @@ def test_select_region():
     matches = [('chr1', 4000), ('chr1', 4032), ('chr1', 3990)]
     region = ('chr1', 3890, 4133)
     assert kevlar.localize.select_region(matches, delta=100) == region
+
+
+def test_extract_region():
+    instream = open(data_file('bogus-genome/refr.fa'), 'r')
+    seq = kevlar.localize.extract_region(instream, 'bogus-genome-chr2', 10, 20)
+    assert seq == ('bogus-genome-chr2_10-20', 'GTTACATTAC')
+
+    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seq = kevlar.localize.extract_region(instream, 'simple', 44, 85)
+    assert seq == ('simple_44-85', 'AATACTATGCCGATTTATTCTTACACAATTAAATTGCTAGT')
