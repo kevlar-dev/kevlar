@@ -27,7 +27,7 @@ from kevlar import seqio
 from kevlar import overlap
 from kevlar import counting
 from kevlar import sketch
-from kevlar.seqio import parse_augmented_fastq, print_augmented_fastq
+from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 
@@ -41,6 +41,7 @@ from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
 from kevlar import partition
+from kevlar import localize
 from kevlar import cli
 
 from kevlar._version import get_versions

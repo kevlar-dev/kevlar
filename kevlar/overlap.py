@@ -219,7 +219,7 @@ def graph_init_strict(reads, kmers, minabund=5, maxabund=500, logstream=None):
     graph = networkx.Graph()
     nkmers = len(kmers)
     for n, minkmer in enumerate(kmers, 1):
-        if n % 100 == 0:  # pragma: no cover
+        if n % 100 == 0 and logstream:  # pragma: no cover
             msg = 'processed {:d}/{:d} shared novel k-mers'.format(n, nkmers)
             print('[kevlar::overlap]    ', msg, sep='', file=logstream)
 
@@ -267,7 +267,7 @@ def write_partitions(read_graph, reads, ccprefix, logstream):
         with kevlar.open(outfilename, 'w') as outfile:
             for readid in cc:
                 record = reads[readid]
-                kevlar.print_augmented_fastq(record, outfile)
+                kevlar.print_augmented_fastx(record, outfile)
     message = '[kevlar::overlap] grouped {:d} reads'.format(reads_in_ccs)
     message += ' into {:d} connected components'.format(n + 1)
     print(message, file=logstream)

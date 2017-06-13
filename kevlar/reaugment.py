@@ -17,7 +17,7 @@ import kevlar
 def main(args):
     reads = dict()
     instream = kevlar.open(args.augfastq, 'r')
-    for record in kevlar.parse_augmented_fastq(instream):
+    for record in kevlar.parse_augmented_fastx(instream):
         reads[record.name] = record
 
     reader = khmer.ReadParser(args.fastq)
@@ -36,4 +36,4 @@ def main(args):
             if len(ikmers) == 0:
                 continue
             augrecord.ikmers = ikmers
-        kevlar.print_augmented_fastq(augrecord, outstream)
+        kevlar.print_augmented_fastx(augrecord, outstream)

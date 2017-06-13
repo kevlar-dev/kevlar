@@ -136,7 +136,7 @@ def test_kmer_rep_in_read(capsys):
     )
     record.ikmers.extend([k1, k2])
 
-    kevlar.print_augmented_fastq(record, stdout)
+    kevlar.print_augmented_fastx(record, stdout)
     out, err = capsys.readouterr()
     assert read in out
 

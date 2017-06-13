@@ -3,6 +3,7 @@ language: python
 addons:
     apt:
         packages:
+            - bwa
             - cloc
 branches:
   only:  # don't build "pushes" except on the master branch
