@@ -62,6 +62,11 @@ def test_select_region():
     region = ('chr1', 3890, 4133)
     assert kevlar.localize.select_region(matches, delta=100) == region
 
+    # Close to beginning of sequence, does not go negative
+    matches = [('contig42', 63), ('contig42', 68), ('contig42', 69)]
+    region = ('contig42', 0, 170)
+    assert kevlar.localize.select_region(matches, delta=100) == region
+
 
 def test_extract_region():
     instream = open(data_file('bogus-genome/refr.fa'), 'r')
@@ -71,3 +76,13 @@ def test_extract_region():
     instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
     seq = kevlar.localize.extract_region(instream, 'simple', 44, 85)
     assert seq == ('simple_44-85', 'AATACTATGCCGATTTATTCTTACACAATTAAATTGCTAGT')
+
+
+def test_main(capsys):
+    contig = data_file('localize-contig.fa')
+    refr = data_file('localize-refr.fa')
+    arglist = ['localize', '--ksize', '23', contig, refr]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.localize.main(args)
+    out, err = capsys.readouterr()
+    assert '>seq1_0-219' in out

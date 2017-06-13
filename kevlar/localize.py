@@ -109,7 +109,11 @@ def select_region(matchlist, maxdiff=1000, delta=100):
     maxpos = max([p for s, p in matchlist])
     if maxpos - minpos > maxdiff:
         return None
-    return seqids.pop(), minpos-delta, maxpos+delta+1
+
+    minpos = 0 if delta > minpos else minpos - delta
+    maxpos += delta + 1
+
+    return seqids.pop(), minpos, maxpos
 
 
 def extract_region(refr, seqid, start, end):
@@ -117,6 +121,8 @@ def extract_region(refr, seqid, start, end):
     for defline, sequence in kevlar.seqio.parse_fasta(refr):
         testseqid = defline[1:].split()[0]
         if seqid == testseqid:
+            if end > len(sequence):
+                end = len(sequence)
             subseqid = '{}_{}-{}'.format(seqid, start, end)
             subseq = sequence[start:end]
             return subseqid, subseq
