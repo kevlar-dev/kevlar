@@ -267,7 +267,7 @@ def write_partitions(read_graph, reads, ccprefix, logstream):
         with kevlar.open(outfilename, 'w') as outfile:
             for readid in cc:
                 record = reads[readid]
-                kevlar.print_augmented_fastq(record, outfile)
+                kevlar.print_augmented_fastx(record, outfile)
     message = '[kevlar::overlap] grouped {:d} reads'.format(reads_in_ccs)
     message += ' into {:d} connected components'.format(n + 1)
     print(message, file=logstream)

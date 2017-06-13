@@ -40,7 +40,7 @@ def test_seq_dict(bogusseqs):
 def test_aug_fastq_reader():
     infilename = kevlar.tests.data_file('collect.beta.1.txt')
     infile = open(infilename, 'r')
-    for n, record in enumerate(kevlar.parse_augmented_fastq(infile)):
+    for n, record in enumerate(kevlar.parse_augmented_fastx(infile)):
         assert record.name.startswith('good')
         assert record.sequence == (
             'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
@@ -54,7 +54,7 @@ def test_aug_fastq_reader():
 def test_aug_fastq_reader_e1():
     infilename = kevlar.tests.data_file('example1.augfastq')
     infile = open(infilename, 'r')
-    record = next(kevlar.parse_augmented_fastq(infile))
+    record = next(kevlar.parse_augmented_fastx(infile))
 
     assert record.name == 'e1'
     assert record.sequence == (
@@ -74,7 +74,7 @@ def test_aug_fastq_reader_e1():
 def test_aug_fastq_reader_e2():
     infilename = kevlar.tests.data_file('example2.augfastq')
     infile = open(infilename, 'r')
-    record = next(kevlar.parse_augmented_fastq(infile))
+    record = next(kevlar.parse_augmented_fastx(infile))
 
     assert record.name == 'ERR894724.125497791/1'
     assert record.sequence == (
@@ -99,7 +99,7 @@ def test_aug_fastq_reader_e2():
 def test_kevlar_open(basename):
     infilename = kevlar.tests.data_file(basename)
     infile = kevlar.open(infilename, 'r')
-    record = next(kevlar.parse_augmented_fastq(infile))
+    record = next(kevlar.parse_augmented_fastx(infile))
 
     assert record.name == 'ERR894724.125497791/1'
     assert record.sequence == (
@@ -116,7 +116,7 @@ def test_group_by_novel_kmers(capsys):
     tempdir = tempfile.mkdtemp()
     prefix = '{:s}/cc'.format(tempdir)
     with kevlar.open(infilename, 'r') as infile:
-        for record in kevlar.parse_augmented_fastq(infile):
+        for record in kevlar.parse_augmented_fastx(infile):
             readset.add(record)
     readset.group_reads_by_novel_kmers(prefix, logstream=sys.stderr)
     out, err = capsys.readouterr()

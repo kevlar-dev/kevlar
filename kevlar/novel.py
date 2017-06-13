@@ -133,7 +133,7 @@ def main(args):
         if read_kmers > 0:
             nreads += 1
             nkmers += read_kmers
-            kevlar.print_augmented_fastq(record, outstream)
+            kevlar.print_augmented_fastx(record, outstream)
 
     elapsed = timer.stop('iter')
     message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)

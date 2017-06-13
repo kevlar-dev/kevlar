@@ -37,13 +37,19 @@ class KevlarRefrSeqNotFound(ValueError):
     pass
 
 
-def get_unique_kmers(infile, ksize=31, augmented=False):
-    """Grab all unique k-mers from the specified sequence file."""
+def get_unique_kmers(infile, ksize=31):
+    """
+    Grab all unique k-mers from the specified sequence file.
+
+    The input file is expected to contain contigs in augmented FASTA format.
+    The absence of annotated k-mers is not problematic, but the contigs should
+    be on a single line.
+    """
     ct = khmer._Counttable(ksize, [1])
     kmers = set()
     instream = kevlar.open(infile, 'r')
-    for defline, sequence in kevlar.seqio.parse_fasta(instream):
-        for kmer in ct.get_kmers(sequence):
+    for record in kevlar.parse_augmented_fastx(instream):
+        for kmer in ct.get_kmers(record.sequence):
             minkmer = kevlar.revcommin(kmer)
             if minkmer not in kmers:
                 kmers.add(minkmer)

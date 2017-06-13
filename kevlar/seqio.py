@@ -52,18 +52,22 @@ def parse_seq_dict(data):
     return seqs
 
 
-def parse_augmented_fastq(instream):
+def parse_augmented_fastx(instream):
     record = None
     for line in instream:
-        if line.startswith('@'):
+        if line.startswith(('@', '>')):
             if record is not None:
                 yield record
             readid = line[1:].strip()
             seq = next(instream).strip()
-            _ = next(instream)
-            qual = next(instream).strip()
-            record = screed.Record(name=readid, sequence=seq, quality=qual,
-                                   ikmers=list())
+            if line.startswith('@'):
+                _ = next(instream)
+                qual = next(instream).strip()
+                record = screed.Record(name=readid, sequence=seq, quality=qual,
+                                       ikmers=list())
+            else:
+                record = screed.Record(name=readid, sequence=seq,
+                                       ikmers=list())
         elif line.endswith('#\n'):
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
@@ -77,7 +81,7 @@ def parse_augmented_fastq(instream):
         yield record
 
 
-def print_augmented_fastq(record, outstream=stdout):
+def print_augmented_fastx(record, outstream=stdout):
     khmer.utils.write_record(record, outstream)
     for kmer in sorted(record.ikmers, key=lambda k: k.offset):
         abundstr = ' '.join([str(a) for a in kmer.abund])
@@ -94,7 +98,7 @@ def load_reads_and_kmers(instream, logstream=None):
     """
     reads = dict()
     kmers = defaultdict(set)
-    for n, record in enumerate(kevlar.parse_augmented_fastq(instream), 1):
+    for n, record in enumerate(kevlar.parse_augmented_fastx(instream), 1):
         if logstream and n % 10000 == 0:  # pragma: no cover
             print('[kevlar::assemble]    loaded {:d} reads'.format(n),
                   file=logstream)
@@ -256,7 +260,7 @@ class AnnotatedReadSet(object):
             with kevlar.open(outfilename, 'w') as outfile:
                 for readid in cc:
                     record = self._reads[readid]
-                    kevlar.print_augmented_fastq(record, outfile)
+                    kevlar.print_augmented_fastx(record, outfile)
 
         message = '        grouped {:d} reads'.format(reads_in_ccs)
         message += ' into {:d} connected components'.format(n + 1)

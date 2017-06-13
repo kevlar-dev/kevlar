@@ -49,7 +49,7 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     for filename in filelist:
         print('    -', filename, file=logfile)
         with kevlar.open(filename, 'r') as infile:
-            for record in kevlar.parse_augmented_fastq(infile):
+            for record in kevlar.parse_augmented_fastx(infile):
                 if record.name not in readset._reads:
                     countgraph.consume(record.sequence)
                 readset.add(record)
@@ -86,7 +86,7 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
     for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
         if augout:
-            kevlar.print_augmented_fastq(record, augout)
+            kevlar.print_augmented_fastx(record, augout)
 
     int_distinct = readset.masked[0] + readset.lowabund[0] + readset.valid[0]
     int_instances = readset.masked[1] + readset.lowabund[1] + readset.valid[1]

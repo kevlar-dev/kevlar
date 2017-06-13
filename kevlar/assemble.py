@@ -117,7 +117,7 @@ def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
         if debugout:
             print('### DEBUG', pair.tail.name, pair.head.name, pair.offset,
                   pair.overlap, pair.sameorient, file=debugout)
-            kevlar.print_augmented_fastq(newrecord, debugout)
+            kevlar.print_augmented_fastx(newrecord, debugout)
         for kmer in newrecord.ikmers:
             kmerseq = kevlar.revcommin(kmer.sequence)
             for readname in kmers[kmerseq]:
@@ -182,7 +182,7 @@ def main(args):
                 continue
             contigcount += 1
             contigrecord = reads[seqname]
-            kevlar.print_augmented_fastq(contigrecord, outstream)
+            kevlar.print_augmented_fastx(contigrecord, outstream)
 
     assembledcount = len(inputreads) - unassembledcount
     message = '[kevlar::assemble] assembled'
