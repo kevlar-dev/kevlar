@@ -43,3 +43,18 @@ def test_unique_kmer_string():
     print(sorted(kmers))
     print(sorted(testkmers))
     assert kmers == testkmers
+
+
+def test_select_region():
+    # Different sequences
+    matches = [('chr1', 100), ('chr2', 450)]
+    assert kevlar.localize.select_region(matches) == None
+
+    # Too distant
+    matches = [('chr1', 100), ('chr1', 45000)]
+    assert kevlar.localize.select_region(matches, maxdiff=1000) == None
+
+    # On the same sequence, close together, passes!
+    matches = [('chr1', 4000), ('chr1', 4032), ('chr1', 3990)]
+    region = ('chr1', 3890, 4133)
+    assert kevlar.localize.select_region(matches, delta=100) == region
