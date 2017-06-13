@@ -100,6 +100,12 @@ def select_region(matchlist, maxdiff=1000, delta=100):
     List contents should be tuples of (seqid, startpos). Returns `None` if the
     matches correspond to more than one location, as determined by sequence IDs
     or by a large difference in min and max positions.
+
+    Returns a region in the form of a tuple (seqid, startpos, endpos), where
+    startpos and endpos define a 0-based half-open interval. Bounds checking is
+    performed on startpos (it is never less than 0), but no bounds checking is
+    performed on endpos (this is compensated for in the `extract_region`
+    function).
     """
     seqids = set([s for s, p in matchlist])
     if len(seqids) > 1:
@@ -117,7 +123,12 @@ def select_region(matchlist, maxdiff=1000, delta=100):
 
 
 def extract_region(refr, seqid, start, end):
-    """Extract the specified genomic region from the provided file object."""
+    """
+    Extract the specified genomic region from the provided file object.
+
+    The start and end parameters define a 0-based half-open genomic interval.
+    Bounds checking must be performed on the end parameter.
+    """
     for defline, sequence in kevlar.seqio.parse_fasta(refr):
         testseqid = defline[1:].split()[0]
         if seqid == testseqid:
