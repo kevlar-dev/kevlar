@@ -23,7 +23,7 @@ The command :code:`source kevlar-env/bin/activate` will need to be re-executed a
 Dependencies
 ------------
 
-The **kevlar** software has three non-standard dependencies: the `networkx package <https://networkx.github.io/>`_, the `pysam <http://pysam.readthedocs.io/>` package, and the `khmer package <http://khmer.readthedocs.io/>`.
+The **kevlar** software has three non-standard dependencies: the `networkx package <https://networkx.github.io/>`_, the `pysam <http://pysam.readthedocs.io/>`_ package, and the `khmer package <http://khmer.readthedocs.io/>`_.
 Currently, the **kevlar** installation procedure handles the first two dependencies automatically, but since it relies on an unreleased version of **khmer** this last dependency must be install manually.
 
 .. code::
@@ -42,7 +42,7 @@ Once **khmer** is installed, **kevlar** can be installed with the :code:`pip` co
 This installs the most recent stable release.
 If you want to install the latest (possibly unstable) version, pip can install **kevlar** directly from GitHub.
 
-.. code:
+.. code::
 
     pip install git+https://github.com/dib-lab/kevlar.git
 
