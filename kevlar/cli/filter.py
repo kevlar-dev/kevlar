@@ -90,10 +90,6 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--aug-out', metavar='FILE',
                            help='optional augmented Fastq output')
-    misc_args.add_argument('--cc-prefix', metavar='PREFIX',
-                           help='group reads by novel k-mers, and use the '
-                           'specified prefix to write each group to its own '
-                           'file')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar novel` '

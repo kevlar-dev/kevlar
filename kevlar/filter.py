@@ -117,15 +117,6 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
 
 
 def main(args):
-    if args.cc_prefix:  # pragma: no cover
-        try:
-            import networkx
-        except ImportError:
-            print('[kevlar::filter] FATAL ERROR: cannot group reads by novel '
-                  'k-mers (--cc-prefix flag) unless the "networkx" module is '
-                  'installed', file=sys.stderr)
-            sys.exit(1)
-
     timer = kevlar.Timer()
     timer.start()
 
@@ -174,16 +165,6 @@ def main(args):
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
-
-    if args.cc_prefix:
-        timer.start('graph')
-        print('[kevlar::filter] Group reads by novel k-mers',
-              file=args.logfile)
-        readset.group_reads_by_novel_kmers(args.cc_prefix,
-                                           logstream=args.logfile)
-        elapsed = timer.stop('graph')
-        print('[kevlar::filter] reads grouped by novel k-mers',
-              'in {:.2f} sec'.format(elapsed), file=args.logfile)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)

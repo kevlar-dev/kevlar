@@ -8,8 +8,6 @@ For the impatient
 
     virtualenv kevlar-env
     source kevlar-env/bin/activate  # Execute this with every new terminal session
-    # pip install pysam  # You probably don't need this
-    pip install networkx
     pip install git+https://github.com/dib-lab/khmer.git
     pip install biokevlar
 
@@ -25,26 +23,28 @@ The command :code:`source kevlar-env/bin/activate` will need to be re-executed a
 Dependencies
 ------------
 
-Upcoming releases of **kevlar** will install dependencies automatically, but for now these must be installed manually.
-Currently the only hard non-standard dependency is the **khmer** library—to be precise, its :code:`feature/consume_bitsplit` development branch.
-The :code:`kevlar dump` command also depends on **pysam**, while :code:`kevlar filter` and :code:`kevlar assemble` depend on **networkx**.
+The **kevlar** software has three non-standard dependencies: the `networkx package <https://networkx.github.io/>`_, the `pysam <http://pysam.readthedocs.io/>` package, and the `khmer package <http://khmer.readthedocs.io/>`.
+Currently, the **kevlar** installation procedure handles the first two dependencies automatically, but since it relies on an unreleased version of **khmer** this last dependency must be install manually.
 
 .. code::
 
-    pip install pysam
-    pip install networkx
     pip install git+https://github.com/dib-lab/khmer.git
-
-The **pysam** dependency will eventually be dropped.
 
 Installation
 ------------
 
-Once the dependencies are installed, **kevlar** can be installed with the :code:`pip` command.
+Once **khmer** is installed, **kevlar** can be installed with the :code:`pip` command.
 
 .. code::
 
     pip install biokevlar
+
+This installs the most recent stable release.
+If you want to install the latest (possibly unstable) version, pip can install **kevlar** directly from GitHub.
+
+.. code:
+
+    pip install git+https://github.com/dib-lab/kevlar.git
 
 If you want to test whether kevlar is installed and running correctly, use pytest.
 

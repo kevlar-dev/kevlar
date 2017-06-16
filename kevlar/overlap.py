@@ -12,10 +12,7 @@ from __future__ import print_function
 from collections import defaultdict, namedtuple
 import itertools
 import sys
-try:
-    import networkx
-except:
-    pass
+import networkx
 import screed
 import kevlar
 
