@@ -98,6 +98,52 @@ def record6():
         ],
     )
 
+@pytest.fixture
+def picorecord1():
+    return screed.Record(
+        name='seq1_901350_901788_1:0:0_0:0:0_21ca1/2',
+        sequence=('GTTTTTTTTTTGTTTCCCAAAGTAAGGCTGAGTGAACAATATTTTCTCATAGTTTTGAC'
+                  'AAAAACAAAGGAATCCTTAGTTATTAAACTCGGGAGTTTGA'),
+        ikmers=[
+            KmerOfInterest('TTTTTTGTTTCCCAAAGTAAGGCTG', 5, [19, 0, 0]),
+            KmerOfInterest('TTTTTGTTTCCCAAAGTAAGGCTGA', 6, [18, 1, 0]),
+            KmerOfInterest('TTTTGTTTCCCAAAGTAAGGCTGAG', 7, [18, 1, 0]),
+            KmerOfInterest('TTTGTTTCCCAAAGTAAGGCTGAGT', 8, [18, 0, 0]),
+            KmerOfInterest('TTGTTTCCCAAAGTAAGGCTGAGTG', 9, [17, 0, 0]),
+        ],
+    )
+
+
+@pytest.fixture
+def picorecord2():
+    return screed.Record(
+        name='seq1_901428_901847_3:0:0_0:0:0_87d/1',
+        sequence=('TTACATTTATTCGTTTGTGCAGGCTGAGACCTCACTTCCAACTGTAATCCAAAAGCTTA'
+                  'GTTTTTTTTTTGTTTCCCAAAGTAAGGCTGAGTGAACAATA'),
+        ikmers=[
+            KmerOfInterest('TTTTTTGTTTCCCAAAGTAAGGCTG', 64, [19, 0, 0]),
+            KmerOfInterest('TTTTTGTTTCCCAAAGTAAGGCTGA', 65, [18, 1, 0]),
+            KmerOfInterest('TTTTGTTTCCCAAAGTAAGGCTGAG', 66, [18, 1, 0]),
+            KmerOfInterest('TTTGTTTCCCAAAGTAAGGCTGAGT', 67, [18, 0, 0]),
+            KmerOfInterest('TTGTTTCCCAAAGTAAGGCTGAGTG', 68, [17, 0, 0]),
+        ],
+    )
+
+@pytest.fixture
+def picorecord3():
+    return screed.Record(
+        name='seq1_901428_901847_3:0:0_0:0:0_87d/1',
+        sequence=('TATTGTTCACTCAGCCTTACTTTGGGAAACAAAAAAAAAACTAAGCTTTTGGATTACAG'
+                  'TTGGAAGTGAGGTCTCAGCCTGCACAAACGAATAAATGTAA'),
+        ikmers=[
+            KmerOfInterest('CAGCCTTACTTTGGGAAACAAAAAA', 11, [17, 0, 0]),
+            KmerOfInterest('TCAGCCTTACTTTGGGAAACAAAAA', 10, [18, 0, 0]),
+            KmerOfInterest('CTCAGCCTTACTTTGGGAAACAAAA', 9, [18, 1, 0]),
+            KmerOfInterest('ACTCAGCCTTACTTTGGGAAACAAA', 8, [18, 1, 0]),
+            KmerOfInterest('CACTCAGCCTTACTTTGGGAAACAA', 7, [19, 0, 0]),
+        ],
+    )
+
 
 def test_print_read_pair_same_orient(record1, record2, capsys):
     pair = kevlar.overlap.calc_offset(record1, record2, 'CGCAA')
@@ -202,3 +248,30 @@ def test_calc_offset_weirdness(record5, record6):
     for ikmer in ['CTGTCAA', 'TGTCAAG']:
         pair = kevlar.overlap.calc_offset(record5, record6, ikmer)
         assert pair == INCOMPATIBLE_PAIR
+
+
+def test_pico_offset(picorecord1, picorecord2, picorecord3):
+    pair = kevlar.overlap.calc_offset(picorecord1, picorecord2,
+                                      'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert pair.offset == 59
+    assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
+    contig = kevlar.assemble.merge_pair(pair)
+    print(contig)
+
+    k1, k3 = kevlar.overlap.check_kmer_freq_in_read_pair(picorecord1, picorecord3, 'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert k1.offset == 5
+    assert k3.offset == 11
+    tail, head, offset, sameorient, tailpos = kevlar.overlap.determine_relative_orientation(picorecord1, picorecord3, k1, k3)
+    assert head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
+    assert offset == 59
+    assert sameorient is False
+    assert tailpos == 64
+    overlap = kevlar.overlap.validate_read_overlap(tail, head, offset, sameorient, 'TTTTTTGTTTCCCAAAGTAAGGCTG', True)
+    print(overlap)
+
+    pair = kevlar.overlap.calc_offset(picorecord1, picorecord3,
+                                      'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
+    contig = kevlar.assemble.merge_pair(pair)
+    print(contig)
+    assert False

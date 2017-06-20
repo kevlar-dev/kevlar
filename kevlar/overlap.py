@@ -18,8 +18,8 @@ import kevlar
 
 
 OverlappingReadPair = namedtuple('OverlappingReadPair',
-                                 'tail head offset overlap sameorient')
-INCOMPATIBLE_PAIR = OverlappingReadPair(None, None, None, None, None)
+                                 'tail head offset overlap sameorient swapped')
+INCOMPATIBLE_PAIR = OverlappingReadPair(None, None, None, None, None, None)
 
 
 def print_read_pair(pair, position, outstream=sys.stderr):
@@ -100,7 +100,7 @@ def determine_relative_orientation(read1, read2, kmer1, kmer2):
     return tail, head, offset, sameorient, tailpos
 
 
-def validate_read_overlap(tail, head, offset, sameorient, minkmer):
+def validate_read_overlap(tail, head, offset, sameorient, minkmer, swapped):
     """Verify that the overlap between two reads is identical."""
     headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
     seg2offset = len(head.sequence) - len(tail.sequence) + offset
@@ -108,6 +108,9 @@ def validate_read_overlap(tail, head, offset, sameorient, minkmer):
         segment1 = tail.sequence[offset:offset+len(headseq)]
         segment2 = headseq
         seg2offset = None
+    elif swapped:
+        segment1 = tail.sequence[:-offset]
+        segment2 = headseq[seg2offset:]
     else:
         segment1 = tail.sequence[offset:]
         segment2 = headseq[:-seg2offset]
@@ -157,12 +160,15 @@ def calc_offset(read1, read2, minkmer, debugstream=None):
         read1, read2, kmer1, kmer2
     )
 
-    overlap = validate_read_overlap(tail, head, offset, sameorient, minkmer)
+    swapped = read1.name != tail.name and sameorient is False
+    overlap = validate_read_overlap(tail, head, offset, sameorient, minkmer,
+                                    swapped)
     if overlap is None:
         return INCOMPATIBLE_PAIR
 
     pair = OverlappingReadPair(tail=tail, head=head, offset=offset,
-                               overlap=overlap, sameorient=sameorient)
+                               overlap=overlap, sameorient=sameorient,
+                               swapped=swapped)
     if debugstream:
         print_read_pair(pair, tailpos, debugstream)
 
@@ -185,7 +191,8 @@ def graph_add_edge(graph, pair, minkmer):
     else:
         graph.add_edge(tailname, headname, offset=pair.offset,
                        overlap=pair.overlap, ikmers=set([minkmer]),
-                       orient=pair.sameorient, tail=tailname)
+                       orient=pair.sameorient, tail=tailname,
+                       swapped=pair.swapped)
 
 
 def graph_init_abund_check_pass(numreads, minkmer, minabund=5, maxabund=500,

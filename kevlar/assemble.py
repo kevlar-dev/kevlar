@@ -25,18 +25,26 @@ def merge_pair(pair):
     Given a pair of compatible overlapping reads, collapse and merge them into
     a single sequence.
     """
+    tailseq = pair.tail.sequence
     headseq = pair.head.sequence
+    offset = pair.offset
     if pair.sameorient is False:
         headseq = kevlar.revcom(pair.head.sequence)
-    headindex = len(pair.tail.sequence) - pair.offset
+    if headseq in pair.tail.sequence:
+        return pair.tail.sequence
+    if pair.swapped:
+        tailseq, headseq = headseq, tailseq
+        offset += len(tailseq) - len(headseq)
+
+    headindex = len(tailseq) - offset
     headsuffix = headseq[headindex:]
-    tailprefix = pair.tail.sequence[pair.offset:pair.offset+pair.overlap]
+    tailprefix = tailseq[offset:offset+pair.overlap]
+    #print('DEBUG\n    ', tailprefix, '\n    ', headseq[:headindex], '\n', sep='', file=sys.stderr)
+    #print('DEBUG\n    ', tailseq, '\n    ', headseq, '\n', sep='', file=sys.stderr)
     assert tailprefix == headseq[:headindex], \
         'error: attempted to assemble incompatible reads'
 
-    if headseq in pair.tail.sequence:
-        return pair.tail.sequence
-    return pair.tail.sequence + headsuffix
+    return tailseq + headsuffix
 
 
 def merge_and_reannotate(pair, newname):
@@ -99,6 +107,7 @@ def fetch_largest_overlapping_pair(graph, reads):
         offset=graph[read1][read2]['offset'],
         overlap=graph[read1][read2]['overlap'],
         sameorient=graph[read1][read2]['orient'],
+        swapped=graph[read1][read2]['swapped'],
     )
 
 
@@ -138,7 +147,8 @@ def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
                 else:
                     graph.add_edge(tn, hn, offset=newpair.offset,
                                    overlap=newpair.overlap, ikmer=kmerseq,
-                                   orient=newpair.sameorient, tail=tn)
+                                   orient=newpair.sameorient, tail=tn,
+                                   swapped=newpair.swapped)
             kmers[kmerseq].add(newrecord.name)
         reads[newrecord.name] = newrecord
         graph.add_node(newrecord.name)
@@ -157,7 +167,12 @@ def main(args):
     graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
                                              args.max_abund, debugout)
     if args.gml:
-        networkx.write_gml(graph, args.gml)
+        tempgraph = graph.copy()
+        for n1, n2 in tempgraph.edges():
+            ikmerset = tempgraph[n1][n2]['ikmers']
+            ikmerstr = ','.join(ikmerset)
+            tempgraph[n1][n2]['ikmers'] = ikmerstr
+        networkx.write_gml(tempgraph, args.gml)
         message = '[kevlar::assemble] graph written to {}'.format(args.gml)
         print(message, file=args.logfile)
 
