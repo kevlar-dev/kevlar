@@ -39,8 +39,6 @@ def merge_pair(pair):
     headindex = len(tailseq) - offset
     headsuffix = headseq[headindex:]
     tailprefix = tailseq[offset:offset+pair.overlap]
-    #print('DEBUG\n    ', tailprefix, '\n    ', headseq[:headindex], '\n', sep='', file=sys.stderr)
-    #print('DEBUG\n    ', tailseq, '\n    ', headseq, '\n', sep='', file=sys.stderr)
     assert tailprefix == headseq[:headindex], \
         'error: attempted to assemble incompatible reads'
 

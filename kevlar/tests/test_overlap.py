@@ -98,6 +98,7 @@ def record6():
         ],
     )
 
+
 @pytest.fixture
 def picorecord1():
     return screed.Record(
@@ -128,6 +129,7 @@ def picorecord2():
             KmerOfInterest('TTGTTTCCCAAAGTAAGGCTGAGTG', 68, [17, 0, 0]),
         ],
     )
+
 
 @pytest.fixture
 def picorecord3():
@@ -255,23 +257,15 @@ def test_pico_offset(picorecord1, picorecord2, picorecord3):
                                       'TTTTTTGTTTCCCAAAGTAAGGCTG')
     assert pair.offset == 59
     assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
+    assert pair.swapped is False
     contig = kevlar.assemble.merge_pair(pair)
     print(contig)
-
-    k1, k3 = kevlar.overlap.check_kmer_freq_in_read_pair(picorecord1, picorecord3, 'TTTTTTGTTTCCCAAAGTAAGGCTG')
-    assert k1.offset == 5
-    assert k3.offset == 11
-    tail, head, offset, sameorient, tailpos = kevlar.overlap.determine_relative_orientation(picorecord1, picorecord3, k1, k3)
-    assert head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
-    assert offset == 59
-    assert sameorient is False
-    assert tailpos == 64
-    overlap = kevlar.overlap.validate_read_overlap(tail, head, offset, sameorient, 'TTTTTTGTTTCCCAAAGTAAGGCTG', True)
-    print(overlap)
 
     pair = kevlar.overlap.calc_offset(picorecord1, picorecord3,
                                       'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert pair.offset == 59
     assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
-    contig = kevlar.assemble.merge_pair(pair)
-    print(contig)
-    assert False
+    assert pair.swapped is True
+    newcontig = kevlar.assemble.merge_pair(pair)
+    print(newcontig)
+    assert kevlar.same_seq(contig, newcontig)
