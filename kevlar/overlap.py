@@ -257,7 +257,10 @@ def write_partitions(read_graph, reads, ccprefix, logstream):
     n = 0
     reads_in_ccs = 0
     cclog = open(ccprefix + '.cc.log', 'w')
-    for n, cc in enumerate(networkx.connected_components(read_graph)):
+    ccs = sorted(networkx.connected_components(read_graph), reverse=True,
+                 # Sort first by number of reads, then by read names
+                 key=lambda c: (len(c), sorted(c)))
+    for n, cc in enumerate(ccs):
         print('CC', n, len(cc), cc, sep='\t', file=cclog)
         reads_in_ccs += len(cc)
         outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)

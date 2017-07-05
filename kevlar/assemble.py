@@ -152,8 +152,12 @@ def main(args):
         debugout = args.logfile
 
     reads, kmers = load_reads_and_kmers(kevlar.open(args.augfastq, 'r'),
-                                        debugout)
+                                        args.logfile)
     inputreads = list(reads)
+    message = 'loaded {:d} reads'.format(len(inputreads))
+    message += ' and {:d} interesting k-mers'.format(len(kmers))
+    print('[kevlar::assemble]', message, file=args.logfile)
+
     graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
                                              args.max_abund, debugout)
     if args.gml:

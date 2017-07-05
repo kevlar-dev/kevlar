@@ -97,7 +97,7 @@ def load_reads_and_kmers(instream, logstream=None):
     kmers = defaultdict(set)
     for n, record in enumerate(kevlar.parse_augmented_fastx(instream), 1):
         if logstream and n % 10000 == 0:  # pragma: no cover
-            print('[kevlar::assemble]    loaded {:d} reads'.format(n),
+            print('[kevlar::seqio]    loaded {:d} reads'.format(n),
                   file=logstream)
         reads[record.name] = record
         for kmer in record.ikmers:
