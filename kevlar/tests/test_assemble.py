@@ -177,11 +177,11 @@ def test_merge_pair(record1, record2, record4):
                  ACGCAAAGCTATTTAAAACC
     """
     pair = OverlappingReadPair(tail=record1, head=record2, offset=13,
-                               overlap=7, sameorient=True)
+                               overlap=7, sameorient=True, swapped=False)
     assert merge_pair(pair) == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
 
     pair = OverlappingReadPair(tail=record1, head=record4, offset=13,
-                               overlap=7, sameorient=True)
+                               overlap=7, sameorient=True, swapped=False)
     with pytest.raises(AssertionError) as ae:
         contig = merge_pair(pair)
     assert 'attempted to assemble incompatible reads' in str(ae)
@@ -196,7 +196,7 @@ def test_merge_and_reannotate_same_orientation(record1, record2):
                  ACGCAAAGCTATTTAAAACC                       *****        *****
     """
     pair = OverlappingReadPair(tail=record1, head=record2, offset=13,
-                               overlap=7, sameorient=True)
+                               overlap=7, sameorient=True, swapped=False)
     newrecord = merge_and_reannotate(pair, 'contig1')
     assert newrecord.name == 'contig1'
     assert newrecord.sequence == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
@@ -214,7 +214,7 @@ def test_merge_and_reannotate_opposite_orientation(record1, record3):
                  ACGCAAAGCTATTTAAAACC                       *****        *****
     """
     pair = OverlappingReadPair(tail=record1, head=record3, offset=13,
-                               overlap=7, sameorient=False)
+                               overlap=7, sameorient=False, swapped=False)
     newrecord = merge_and_reannotate(pair, 'contig1')
     assert newrecord.name == 'contig1'
     assert newrecord.sequence == 'GCTGCACCGATGTACGCAAAGCTATTTAAAACC'
@@ -241,7 +241,7 @@ def test_merge_and_reannotate_edge_case_same_orientation(record7, record8):
                                                                                       |||||||||||||||||
     """  # noqa
     pair = OverlappingReadPair(tail=record7, head=record8, offset=39,
-                               overlap=21, sameorient=True)
+                               overlap=21, sameorient=True, swapped=False)
     newrecord = merge_and_reannotate(pair, 'SoMeCoNtIg')
     assert newrecord.name == 'SoMeCoNtIg'
     assert newrecord.sequence == ('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTAT'
@@ -277,7 +277,7 @@ def test_merge_and_reannotate_edge_case_opposite_orientation(record7, record9):
                                                                                       |||||||||||||||||
     """  # noqa
     pair = OverlappingReadPair(tail=record7, head=record9, offset=39,
-                               overlap=21, sameorient=False)
+                               overlap=21, sameorient=False, swapped=False)
     newrecord = merge_and_reannotate(pair, 'SoMeCoNtIg')
     assert newrecord.name == 'SoMeCoNtIg'
     assert newrecord.sequence == ('CAGGTCCCCACCCGGATACTTGAAGCAGGCAGCCTCAAGGTAT'
@@ -312,7 +312,7 @@ def test_merge_and_reannotate_contained(record7, record10):
               |||||||||||||||||
     """
     pair = OverlappingReadPair(tail=record7, head=record10, offset=0,
-                               overlap=35, sameorient=True)
+                               overlap=35, sameorient=True, swapped=False)
     newrecord = merge_and_reannotate(pair, 'ContainedAtOne')
     assert newrecord.name == 'ContainedAtOne'
     assert newrecord.sequence == record7.sequence
@@ -334,7 +334,7 @@ def test_merge_and_reannotate_contained_with_offset(record7, record11):
               |||||||||||||||||
     """
     pair = OverlappingReadPair(tail=record7, head=record11, offset=10,
-                               overlap=23, sameorient=True)
+                               overlap=23, sameorient=True, swapped=False)
     newrecord = merge_and_reannotate(pair, 'ContainedAtOffset')
     assert newrecord.sequence == record7.sequence
     assert newrecord.ikmers == record7.ikmers
@@ -358,7 +358,7 @@ def test_merge_contained_with_offset_and_error(record7, record12):
     assert pair == INCOMPATIBLE_PAIR
 
     pair = OverlappingReadPair(tail=record7, head=record12, offset=10,
-                               overlap=23, sameorient=True)
+                               overlap=23, sameorient=True, swapped=False)
     with pytest.raises(AssertionError) as ae:
         newrecord = merge_and_reannotate(pair, 'WontWork')
     assert 'attempted to assemble incompatible reads' in str(ae)
@@ -412,7 +412,10 @@ def test_graph_init():
     r37name = 'read37f start=9,mutations=0'
     assert graph[r37name][r8name]['offset'] == 1
     assert graph[r37name][r8name]['overlap'] == 99
-    pair = OverlappingReadPair(reads[r8name], reads[r37name], 1, 99, True)
+    pair = OverlappingReadPair(
+        tail=reads[r8name], head=reads[r37name], offset=1, overlap=99,
+        sameorient=True, swapped=False
+    )
     assert merge_pair(pair) == ('CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTAC'
                                 'ACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTACGG'
                                 'CGGAAGCCGTC')
