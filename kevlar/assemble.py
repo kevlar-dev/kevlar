@@ -83,6 +83,7 @@ def fetch_largest_overlapping_pair(graph, reads):
 
     Sort the edges using 3 criteria. The first is the primary criterion, the
     other two ensure deterministic behavior.
+        - FIXME
         - overlap (largest first)
         - lexicographically smaller read name
         - lexicographically larger read name
@@ -91,6 +92,7 @@ def fetch_largest_overlapping_pair(graph, reads):
         graph.edges(),
         reverse=True,
         key=lambda e: (
+            sum(graph.degree([e[0], e[1]]).values()),
             graph[e[0]][e[1]]['overlap'],
             max(e),
             min(e),
@@ -189,6 +191,7 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     cc_stream = networkx.connected_component_subgraphs(graph)
     for n, cc in enumerate(cc_stream, 1):
+        print('DEBUG cc={} edges={}'.format(n, len(cc)), file=sys.stderr)
         assemble_with_greed(reads, kmers, cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:
