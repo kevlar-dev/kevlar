@@ -168,6 +168,13 @@ def main(args):
 
     graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
                                              args.max_abund, debugout)
+    message = 'initialized "shared interesting k-mers" graph'
+    message += ' with {:d} nodes'.format(graph.number_of_nodes())
+    message += ' and {:d} edges'.format(graph.number_of_edges())
+    # If number of nodes is less than number of reads, it's probably because
+    # some reads have no valid overlaps with other reads.
+    print('[kevlar::assemble]', message, file=args.logfile)
+
     if args.gml:
         tempgraph = graph.copy()
         for n1, n2 in tempgraph.edges():
