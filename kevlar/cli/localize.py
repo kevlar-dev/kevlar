@@ -17,7 +17,7 @@ def subparser(subparsers):
                            default=100, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
                            'of all k-mer starting positions by D bp')
-    subparser.add_argument('-o', '--out', metavar='FILE',
+    subparser.add_argument('-o', '--out', metavar='FILE', default='-',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('-k', '--ksize', type=int, metavar='K', default=31,
                            help='k-mer size; default is 31')
