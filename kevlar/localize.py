@@ -141,7 +141,7 @@ def extract_region(refr, seqid, start, end):
 
 
 def main(args):
-    output = args.out if args.out else sys.stdout
+    output = kevlar.open(args.out, 'w')
     matchgen = get_exact_matches(args.contigs, args.refr, args.ksize)
     kmer_matches = [m for m in matchgen]
     if len(kmer_matches) == 0:
