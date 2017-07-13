@@ -31,7 +31,7 @@ Contributing
 ------------
 
 We welcome contributions to kevlar from the community!
-If you're interested in modifying kevlar or contributing to its ongoing development feel free to send us a message or submit a pull request!.
+If you're interested in modifying kevlar or contributing to its ongoing development, feel free to send us a message or submit a pull request!.
 
 The kevlar software is a project of the `Lab for Data Intensive Biology <http://ivory.idyll.org/lab/>`__ at UC Davis.
 
