@@ -20,7 +20,7 @@ install:
 script:
     - make testall
     - make style
-    - make doc
+    - PYTHONPATH=$(pwd) make doc
 after_success:
     - make loc
     - bash <(curl -s https://codecov.io/bash)

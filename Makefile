@@ -13,7 +13,7 @@ testall:
 	py.test -v --cov=kevlar kevlar/tests/*.py
 
 doc:
-	cd docs && make html
+	make -C docs/ html
 
 loc:
 	@- echo -e "\n\n===== Core kevlar ====="
