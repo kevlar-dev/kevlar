@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 MAINTAINER Daniel Standage <daniel.standage@gmail.com>
 
 WORKDIR /src/
-COPY ../ /src/
+COPY ./ /src/
 
 RUN apt-get update && apt-get install -y git build-essential python-dev python-pip bwa
 RUN pip install --upgrade pip setuptools==32.0.0
