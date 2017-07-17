@@ -1,4 +1,4 @@
-|kevlar build status| |Test coverage| |MIT licensed|
+|kevlar build status| |Test coverage| |Docker build status| |MIT licensed|
 
 kevlar
 ======
@@ -39,5 +39,7 @@ The kevlar software is a project of the `Lab for Data Intensive Biology <http://
    :target: https://travis-ci.org/dib-lab/kevlar
 .. |Test coverage| image:: https://img.shields.io/codecov/c/github/dib-lab/kevlar.svg
    :target: https://codecov.io/github/dib-lab/kevlar
+.. |Docker build status| image:: https://quay.io/repository/dib-lab/kevlar/status
+   :target: https://quay.io/repository/dib-lab/kevlar
 .. |MIT licensed| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :target: https://github.com/dib-lab/kevlar/blob/master/LICENSE
