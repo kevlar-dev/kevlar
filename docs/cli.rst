@@ -7,4 +7,65 @@ From this one command, a variety of tasks and procedures can be invoked using se
 Once **kevlar** is installed, available subcommands can be listed by executing :code:`kevlar -h`.
 To see instructions for running a specific subcommand, execute :code:`kevlar <subcommand> -h` (of course replacing :code:`subcommand` with the actual name of the subcommand).
 
-More information will be posted here soon!
+kevlar dump
+-----------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: dump
+
+kevlar count
+------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: count
+
+kevlar novel
+------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: novel
+
+kevlar filter
+-------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: filter
+
+kevlar assemble
+---------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: assemble
+
+kevlar localize
+---------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: localize
+
+kevlar mutate
+-------------
+
+.. argparse::
+   :module: kevlar.cli
+   :func: parser
+   :prog: kevlar
+   :path: mutate
