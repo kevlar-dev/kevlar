@@ -12,42 +12,48 @@ A complete listing of all available configuration options for each script can be
    .. code:: bash
 
        kevlar count \
-           --case kevlar/tests/data/trio1/case1.fq \
-           --controls kevlar/tests/data/trio1/ctrl[1,2].fq \
+           --case case.counttable case-1.fq.gz case-2.fq.gz \
+           --control control1.counttable control-a-1.fq.gz control-a-2.fq.gz \
+           --control control2.counttable control-b-1.fq.gz control-b-2.fq.gz \
            --ksize 21 \
-           --ctrl_max 0
+           --ctrl-max 0
 
 #. Find "interesting" (potentially novel) k-mers
 
    .. code:: bash
 
        kevlar novel \
-           --cases kevlar/tests/data/trio1/case1.counttable \
-           --case_min 8 \
-           --controls kevlar/tests/data/trio1/ctrl[1,2].counttable \
-           --ctrl_max 0 \
+           --case-counts case-1.counttable \
+           --case-min 8 \
+           --controls control-1.counttable control-2.counttable \
+           --ctrl-max 0 \
            --ksize 21 \
-           --out case1.novel.unfiltered.augfastq.gz
-           kevlar/tests/data/trio1/case1.fq
+           --out case-1.novel.unfiltered.augfastq.gz
+           case-1.fq.gz
 
-#. Recompute k-mer abundances to discard false positives, partition reads by shared novel k-mers
+#. Recompute k-mer abundances to discard false positives
 
    .. code:: bash
 
        kevlar filter \
-           --refr kevlar/tests/data/bogus-genome/refr.fa \
-           --contam kevlar/tests/data/bogus-genome/contam1.fa \
+           --refr refr.fa.gz \
+           --contam contaminants.fa \
            --min-abund 8 \
            --ksize 21 \
-           --aug-out case1.novel.filtered.augfastq.gz \
-           --out case1.novel.filtered.fq.gz \
-           --cc-prefix case1 \
-           case1.novel.unfiltered.augfastq.gz
+           --aug-out case-1.novel.filtered.augfastq.gz \
+           --out case-1.novel.filtered.fq.gz \
+           case-1.novel.unfiltered.augfastq.gz
 
-   Currently partitioning is done by ``kevlar filter``, but this will soon be handled by a dedicated ``kevlar partition`` command.
+#. Partition reads by shared novel k-mers
+
+   .. code:: bash
+
+       kevlar partition case-1-partition case-1.novel.filtered.augfastq.gz
 
 #. Assemble partitioned reads
 
    .. code:: bash
 
-       kevlar assemble --out case1.cc0.augfasta case1.cc0.augfastq.gz
+       kevlar assemble \
+           --out case-1-partition.cc0.augfasta \
+           case-1-partition.cc0.augfastq.gz
