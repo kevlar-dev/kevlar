@@ -1,9 +1,17 @@
 Quick start
 ===========
 
+Currently, **kevlar** development is focused heavily on trio and quad experimental designs.
+This document gives a bare-bones walkthrough of the **kevlar** workflow, from raw data to contig assembly.
+Final variant calling comming soon.
+
+Eventually, this should hopefully be cleaned up into a smaller sequence of commands, but for now things are changing frequently enough that thorough documentation isn't yet feasible.
+
+----------
+
 If you have not already done so, install **kevlar** using :doc:`the following instructions <install>`.
 
-A complete listing of all available configuration options for each script can be shown by executing ``kevlar <subcommand> -h`` in the terminal.
+A complete listing of all available configuration options for each script can be found in :doc:`the CLI documentation <cli>`, or by executing ``kevlar <subcommand> -h`` in the terminal.
 
 ----------
 

@@ -4,6 +4,9 @@ Installing **kevlar**
 For the impatient
 -----------------
 
+If this isn't your first time in the wing, the following 4 commands should be sufficient to install **kevlar** in the majority of cases.
+Otherwise, we suggest reading through the entire installation instructions before beginning.
+
 .. code::
 
     virtualenv kevlar-env
@@ -58,7 +61,7 @@ Development environment
 
 If you'd like to contribute to **kevlar**'s development or simply poke around, the source code can be cloned from Github.
 In addition to the dependencies listed above, a few additional dependencies are required for a complete development environment.
-These can be installed with `make` for your convenience.
+These can be installed with ``make`` for your convenience.
 
 .. code::
 
