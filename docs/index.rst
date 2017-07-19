@@ -9,5 +9,7 @@
    install
    running
    quick-start
+   formats
+   sim
    cli
    conduct
