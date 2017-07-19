@@ -14,7 +14,7 @@ import versioneer
 align = Extension(
     'kevlar.alignment',
     sources=[
-        'kevlar/alignment.pyx', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
+        'kevlar/alignment.c', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
     ],
     include_dirs=['inc/', 'third-party/ksw2/'],
     language='c',
