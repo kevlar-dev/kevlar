@@ -1,5 +1,5 @@
-Comprehensive command-line interface
-====================================
+Comprehensive command-line interface reference
+==============================================
 
 The **kevlar** command-line interface is designed around a single command :code:`kevlar`.
 From this one command, a variety of tasks and procedures can be invoked using several *subcommands*.

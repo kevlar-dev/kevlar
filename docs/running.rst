@@ -12,7 +12,7 @@ Once installed, the **kevlar** software can be invoked from the shell using the 
 The **kevlar** command line interface (CLI) uses the *subcommand* pattern, in which a single master command supports several different operations by defining multiple subcommands (such as ``kevlar novel`` and ``kevlar partition``).
 Comprehensive documentation of the **kevlar** CLI is available :doc:`here <cli>`.
 
-Starting with version 1.0, the CLI will be under `semantic versioning <http://semver.org/>`.
+Starting with version 1.0, the CLI will be under `semantic versioning <http://semver.org/>`_.
 
 
 Python interface
@@ -27,7 +27,7 @@ The following example shows how to execute ``kevlar reaugment`` from a standalon
 
    # Declare arguments just like you would on the command line
    arglist = ['reaugment', '-o', 'new.augfastq', 'old.augfastq', 'new.fastq']
-   
+
    args = kevlar.cli.parser().parse_args(arglist)
    kevlar.reaugment.main(args)
 

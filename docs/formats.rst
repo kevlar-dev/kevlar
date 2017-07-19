@@ -41,7 +41,7 @@ Here is an example of an augmented Fastq file.
    BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
           AGGGTTAGTTTGCGGCCTT          11 0 0#
 
-As with a normal Fastq, each record contains 4 lines to declare the read sequence and qualities.
+As with a normal Fastq file, each record contains 4 lines to declare the read sequence and qualities.
 However, these 4 lines are followed by one or more lines indicating the "interesing *k*-mers", showing their sequence followed by their abundance in each sample (case first, then controls), with a ``#`` as the final character.
 Augmented Fastq files are easily converted to normal Fastq files by invoking a command like ``grep -v '#$' reads.augfastq > reads.fastq`` (same for augmented Fasta files).
 
