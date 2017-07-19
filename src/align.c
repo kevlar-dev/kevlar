@@ -20,9 +20,9 @@ static uint8_t* encode(const char *sequence)
 {
     uint8_t table[256];
     memset(table, 4, 256);
-	table[(int)'A'] = table[(int)'a'] = 0;
+    table[(int)'A'] = table[(int)'a'] = 0;
     table[(int)'C'] = table[(int)'c'] = 1;
-	table[(int)'G'] = table[(int)'g'] = 2;
+    table[(int)'G'] = table[(int)'g'] = 2;
     table[(int)'T'] = table[(int)'t'] = 3;
 
     uint8_t *int_seq = (uint8_t *)malloc(strlen(sequence));
@@ -40,7 +40,7 @@ char* align(const char *target, const char *query, int match,
 {
     int8_t a = match; // a > 0
     int8_t b = mismatch < 0 ? mismatch : -mismatch; // b < 0
-	int8_t matrix[25] = {
+    int8_t matrix[25] = {
         a,b,b,b,0,
         b,a,b,b,0,
         b,b,a,b,0,
