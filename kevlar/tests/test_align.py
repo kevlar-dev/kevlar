@@ -10,7 +10,6 @@
 import pytest
 import sys
 import kevlar
-from kevlar.align import align
 
 
 def test_align_basic():
@@ -21,4 +20,4 @@ def test_align_basic():
     query = ('TCTGGTGTTTGAGGCAAAAAGGCAGACTTAAATTCTAAATCACACCTGTGCTTCCAGCACTACC'
              'TTCAAGCGCAGGTTCGAGCCAGTCAGGACTGCTCCCCCACTTCCTCAAGTCTCATCGTGTTTTT'
              'TTTAGAGCTAGTTTCTTAGTCTCATTAGGCTTCAGTCACCATCATTTCTTATAGGAATACCA')
-    assert align(target, query, 2, 1, 5, 0) == '10D91M69D79M20I'
+    assert kevlar.align(target, query, 2, 1, 5, 0) == '10D91M69D79M20I'
