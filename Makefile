@@ -1,7 +1,7 @@
 SHELL=bash
 
 devenv:
-	pip install --upgrade pip setuptools pytest pytest-cov pep8 cython sphinx
+	pip install --upgrade pip setuptools pytest pytest-cov pep8 cython sphinx sphinx-argparse
 
 style:
 	pep8 kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
@@ -13,7 +13,7 @@ testall:
 	py.test -v --cov=kevlar kevlar/tests/*.py
 
 doc:
-	cd docs && make html
+	PYTHONPATH=$$(pwd) make -C docs/ html
 
 loc:
 	@- echo -e "\n\n===== Core kevlar ====="

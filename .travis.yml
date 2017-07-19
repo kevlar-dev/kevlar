@@ -8,18 +8,15 @@ addons:
 branches:
   only:  # don't build "pushes" except on the master branch
     - master
-cache:
-    directories:
-        - $HOME/virtualenv/python2.7
-        - $HOME/virtualenv/python3.5
+cache: pip
 python:
     - 2.7
     - 3.5
 install:
     - make devenv
+    - pip install wheel
     - pip install pysam>=0.11.2
     - pip install -r requirements.txt
-    - pip install .
 script:
     - make testall
     - make style
