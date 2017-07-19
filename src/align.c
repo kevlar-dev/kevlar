@@ -35,8 +35,8 @@ static uint8_t* encode(const char *sequence)
 
 
 // See align.h for documentation.
-char* align(const char *target, const char *query, int match,
-            int mismatch, int gapopen, int gapextend)
+void align(const char *target, const char *query, int match, int mismatch,
+           int gapopen, int gapextend, char *cigar)
 {
     int8_t a = match; // a > 0
     int8_t b = mismatch < 0 ? mismatch : -mismatch; // b < 0
@@ -66,7 +66,6 @@ char* align(const char *target, const char *query, int match,
     );
 
     // Stolen shamelessly from ksw2/cli.c
-    char cigar[4096];
     size_t ci = 0;
     for (size_t i = 0; i < ez.n_cigar; ++i) {
         ci += sprintf(
@@ -74,9 +73,6 @@ char* align(const char *target, const char *query, int match,
         );
     }
 
-    char *cigarstring = malloc(strlen(cigar) + 1);
-    strcpy(cigarstring, cigar);
     free(query_enc);
     free(target_enc);
-    return cigarstring;
 }

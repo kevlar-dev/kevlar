@@ -10,9 +10,11 @@
 # cython: c_string_type=str, c_string_encoding=ascii
 
 cdef extern from 'align.h':
-    char *align(const char *target, const char *query, int match, int mismatch,
-                int gapopen, int gapextend)
+    void align(const char *target, const char *query, int match, int mismatch,
+               int gapopen, int gapextend, char *cigar)
 
 def contig_align(str target, str query, int match, int mismatch, int gapopen,
                  int gapextend):
-    return align(target, query, match, mismatch, gapopen, gapextend)
+    cdef char cigar[4096];
+    align(target, query, match, mismatch, gapopen, gapextend, cigar)
+    return cigar

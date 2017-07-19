@@ -15,8 +15,7 @@
  * @param mismatch    penalty for a nucleotide mismatch
  * @param gapopen     gap open penalty
  * @param gapextend   gap extension penalty
- * @returns           CIGAR string of the alignment; calling function is
-                      responsible for freeing heap-allocated memory
+ * @param cigar       string to which the CIGAR will be written
  */
-char *align(const char *target, const char *query, int match,
-            int mismatch, int gapopen, int gapextend);
+void align(const char *target, const char *query, int match, int mismatch,
+           int gapopen, int gapextend, char *cigar);
