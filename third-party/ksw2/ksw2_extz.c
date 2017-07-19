@@ -13,6 +13,7 @@ void ksw_extz(void *km, int qlen, const uint8_t *query, int tlen, const uint8_t 
 	ksw_reset_extz(ez);
 
 	// allocate memory
+	if (w < 0) w = tlen > qlen? tlen : qlen;
 	n_col = qlen < 2*w+1? qlen : 2*w+1; // maximum #columns of the backtrack matrix
 	qp = (int8_t*)kmalloc(km, qlen * m);
 	eh = (eh_t*)kcalloc(km, qlen + 1, 8);
@@ -77,11 +78,11 @@ void ksw_extz(void *km, int qlen, const uint8_t *query, int tlen, const uint8_t 
 				max   = max > h? max   : h;
 				h -= gapoe;
 				e -= gape;
-				d |= e > h? 1<<2 : 0;
+				d |= e > h? 0x08 : 0;
 				e  = e > h? e    : h;
 				p->e = e;
 				f -= gape;
-				d |= f > h? 2<<4 : 0; // if we want to halve the memory, use one bit only, instead of two
+				d |= f > h? 0x10 : 0; // if we want to halve the memory, use one bit only, instead of two
 				f  = f > h? f    : h;
 				zi[j - st] = d; // z[i,j] keeps h for the current cell and e/f for the next cell
 			}
@@ -103,11 +104,11 @@ void ksw_extz(void *km, int qlen, const uint8_t *query, int tlen, const uint8_t 
 				max   = max >= h? max   : h;
 				h -= gapoe;
 				e -= gape;
-				d |= e >= h? 1<<2 : 0;
+				d |= e >= h? 0x08 : 0;
 				e  = e >= h? e    : h;
 				p->e = e;
 				f -= gape;
-				d |= f >= h? 2<<4 : 0; // if we want to halve the memory, use one bit only, instead of two
+				d |= f >= h? 0x10 : 0; // if we want to halve the memory, use one bit only, instead of two
 				f  = f >= h? f    : h;
 				zi[j - st] = d; // z[i,j] keeps h for the current cell and e/f for the next cell
 			}
@@ -118,16 +119,7 @@ void ksw_extz(void *km, int qlen, const uint8_t *query, int tlen, const uint8_t 
 			ez->mqe = eh[qlen].h, ez->mqe_t = i;
 		if (i == tlen - 1)
 			ez->mte = max, ez->mte_q = max_j;
-		if (max > (int32_t)ez->max) {
-			ez->max = max, ez->max_t = i, ez->max_q = max_j;
-		} else if (max_j > ez->max_q) {
-			int tl = i - ez->max_t, ql = max_j - ez->max_q, l;
-			l = tl > ql? tl - ql : ql - tl;
-			if (ez->max - max > zdrop + l * gape) {
-				ez->zdropped = 1;
-				break;
-			}
-		}
+		if (ksw_apply_zdrop(ez, 0, max, i, max_j, zdrop, gape)) break;
 		if (i == tlen - 1 && en == qlen - 1)
 			ez->score = eh[qlen].h;
 	}
