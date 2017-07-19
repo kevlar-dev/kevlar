@@ -12,9 +12,9 @@ import versioneer
 
 
 align = Extension(
-    'kevlar.align',
+    'kevlar.alignment',
     sources=[
-        'kevlar/align.pyx', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
+        'kevlar/alignment.pyx', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
     ],
     include_dirs=['inc/', 'third-party/ksw2/'],
     language='c',

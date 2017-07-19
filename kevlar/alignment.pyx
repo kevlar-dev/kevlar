@@ -12,3 +12,7 @@
 cdef extern from 'align.h':
     char *align(const char *target, const char *query, int match, int mismatch,
                 int gapopen, int gapextend)
+
+def contig_align(str target, str query, int match, int mismatch, int gapopen,
+                 int gapextend):
+    return align(target, query, match, mismatch, gapopen, gapextend)
