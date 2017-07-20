@@ -12,6 +12,7 @@ Documentation for **kevlar**
    install
    running
    quick-start
+   tutorial
    formats
    sim
    cli
