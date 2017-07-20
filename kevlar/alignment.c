@@ -706,10 +706,6 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
     const char* function_name);
 
-/* ArgTypeTest.proto */
-static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
-    const char *name, int exact);
-
 /* CodeObjectCache.proto */
 typedef struct {
     PyCodeObject* code_object;
@@ -781,8 +777,8 @@ static PyObject *__pyx_codeobj__2;
 /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
- *                  int gapopen=5, int gapextend=0):
+ * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
+ *                  int gapextend=0):
  *     cdef char cigar[4096];
  */
 
@@ -861,8 +857,8 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_target = ((PyObject*)values[0]);
-    __pyx_v_query = ((PyObject*)values[1]);
+    __pyx_v_target = values[0];
+    __pyx_v_query = values[1];
     if (values[2]) {
       __pyx_v_match = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_match == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
     } else {
@@ -874,7 +870,7 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
       __pyx_v_mismatch = ((int)2);
     }
     if (values[4]) {
-      __pyx_v_gapopen = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_gapopen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L3_error)
+      __pyx_v_gapopen = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_gapopen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
     } else {
       __pyx_v_gapopen = ((int)5);
     }
@@ -892,15 +888,9 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_target), (&PyString_Type), 1, "target", 1))) __PYX_ERR(0, 16, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_query), (&PyString_Type), 1, "query", 1))) __PYX_ERR(0, 16, __pyx_L1_error)
   __pyx_r = __pyx_pf_6kevlar_9alignment_contig_align(__pyx_self, __pyx_v_target, __pyx_v_query, __pyx_v_match, __pyx_v_mismatch, __pyx_v_gapopen, __pyx_v_gapextend);
 
   /* function exit code */
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __pyx_r = NULL;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -915,7 +905,7 @@ static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject
   __Pyx_RefNannySetupContext("contig_align", 0);
 
   /* "kevlar/alignment.pyx":19
- *                  int gapopen=5, int gapextend=0):
+ *                  int gapextend=0):
  *     cdef char cigar[4096];
  *     align(target, query, match, mismatch, gapopen, gapextend, cigar)             # <<<<<<<<<<<<<<
  *     return cigar
@@ -939,8 +929,8 @@ static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
- *                  int gapopen=5, int gapextend=0):
+ * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
+ *                  int gapextend=0):
  *     cdef char cigar[4096];
  */
 
@@ -1003,8 +993,8 @@ static int __Pyx_InitCachedConstants(void) {
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
- *                  int gapopen=5, int gapextend=0):
+ * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
+ *                  int gapextend=0):
  *     cdef char cigar[4096];
  */
   __pyx_tuple_ = PyTuple_Pack(7, __pyx_n_s_target, __pyx_n_s_query, __pyx_n_s_match, __pyx_n_s_mismatch, __pyx_n_s_gapopen, __pyx_n_s_gapextend, __pyx_n_s_cigar); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 16, __pyx_L1_error)
@@ -1120,8 +1110,8 @@ PyMODINIT_FUNC PyInit_alignment(void)
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
- *                  int gapopen=5, int gapextend=0):
+ * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
+ *                  int gapextend=0):
  *     cdef char cigar[4096];
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6kevlar_9alignment_1contig_align, NULL, __pyx_n_s_kevlar_alignment); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
@@ -1319,33 +1309,6 @@ invalid_keyword:
     #endif
 bad:
     return -1;
-}
-
-/* ArgTypeTest */
-static void __Pyx_RaiseArgumentTypeInvalid(const char* name, PyObject *obj, PyTypeObject *type) {
-    PyErr_Format(PyExc_TypeError,
-        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
-        name, type->tp_name, Py_TYPE(obj)->tp_name);
-}
-static CYTHON_INLINE int __Pyx_ArgTypeTest(PyObject *obj, PyTypeObject *type, int none_allowed,
-    const char *name, int exact)
-{
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    if (none_allowed && obj == Py_None) return 1;
-    else if (exact) {
-        if (likely(Py_TYPE(obj) == type)) return 1;
-        #if PY_MAJOR_VERSION == 2
-        else if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
-        #endif
-    }
-    else {
-        if (likely(PyObject_TypeCheck(obj, type))) return 1;
-    }
-    __Pyx_RaiseArgumentTypeInvalid(name, obj, type);
-    return 0;
 }
 
 /* CodeObjectCache */
