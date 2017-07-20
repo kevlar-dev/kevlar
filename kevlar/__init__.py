@@ -44,6 +44,9 @@ from kevlar import partition
 from kevlar import localize
 from kevlar import cli
 
+# C extension(s)
+from kevlar.alignment import contig_align as align
+
 from kevlar._version import get_versions
 __version__ = get_versions()['version']
 del get_versions

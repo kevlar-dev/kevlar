@@ -11,3 +11,5 @@ scratch/
 docs/_build
 kevlar/tests/data/simple-*.counttable
 env2/
+build/
+kevlar/alignment.cpython-*.so

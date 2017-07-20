@@ -58,6 +58,7 @@ def test_assumptions(kmer):
     assert ct.get_kmer_hashes(kmer)[0] == ct.get_kmer_hashes(kmer_rc)[0]
 
 
+@pytest.mark.long
 @pytest.mark.parametrize('case,ctrl,mem', [
     ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '500K'),
     ('trio1/case2.fq', 'trio1/ctrl[1,2].fq', '1M'),

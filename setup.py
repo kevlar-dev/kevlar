@@ -7,8 +7,18 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from setuptools import setup
+from setuptools import setup, Extension
 import versioneer
+
+
+align = Extension(
+    'kevlar.alignment',
+    sources=[
+        'kevlar/alignment.c', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
+    ],
+    include_dirs=['inc/', 'third-party/ksw2/'],
+    language='c',
+)
 
 
 setup(name='biokevlar',
@@ -25,7 +35,8 @@ setup(name='biokevlar',
           'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
       },
       include_package_data=True,
-      setup_requires=['pysam', 'networkx', 'pandas'],
+      ext_modules=[align],
+      setup_requires=['pysam', 'networkx', 'pandas', 'cython'],
       install_requires=['pysam', 'networkx', 'pandas'],
       entry_points={
           'console_scripts': ['kevlar = kevlar.__main__:main']
