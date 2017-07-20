@@ -9,8 +9,24 @@
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('call')
-    subparser.add_argument('-o', '--out', metavar='FILE',
+    subparser = subparsers.add_parser('call', add_help=False)
+    subparser._positionals.title = 'Required inputs'
+
+    score_args = subparser.add_argument_group('Alignment scoring')
+    score_args.add_argument('-A', '--match', type=int, default=1, metavar='A',
+                            help='match score; default is 1')
+    score_args.add_argument('-B', '--mismatch', type=int, default=-2,
+                            metavar='B',
+                            help='mismatch penalty; default is -2')
+    score_args.add_argument('-O', '--open', type=int, default=5, metavar='O',
+                            help='gap open penalty; default is 5')
+    score_args.add_argument('-E', '--extend', type=int, default=0, metavar='E',
+                            help='gap extension penalty; default is 0')
+
+    misc_args = subparser.add_argument_group('Miscellaneous settings')
+    misc_args.add_argument('-h', '--help', action='help',
+                           help='show this help message and exit')
+    misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('queryseq', help='contigs assembled by "kevlar '
                            'assemble"')
