@@ -781,7 +781,7 @@ static PyObject *__pyx_codeobj__2;
 /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
  *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
@@ -866,12 +866,12 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
     if (values[2]) {
       __pyx_v_match = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_match == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
     } else {
-      __pyx_v_match = ((int)2);
+      __pyx_v_match = ((int)1);
     }
     if (values[3]) {
       __pyx_v_mismatch = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_mismatch == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
     } else {
-      __pyx_v_mismatch = ((int)1);
+      __pyx_v_mismatch = ((int)2);
     }
     if (values[4]) {
       __pyx_v_gapopen = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_gapopen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L3_error)
@@ -939,7 +939,7 @@ static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
  *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
@@ -1003,7 +1003,7 @@ static int __Pyx_InitCachedConstants(void) {
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
  *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
@@ -1120,7 +1120,7 @@ PyMODINIT_FUNC PyInit_alignment(void)
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ * def contig_align(str target, str query, int match=1, int mismatch=2,             # <<<<<<<<<<<<<<
  *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
