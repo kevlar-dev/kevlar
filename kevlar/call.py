@@ -18,6 +18,8 @@ class KevlarAmbiguousTargetError(ValueError):
 
 
 def main(args):
+    outstream = kevlar.open(args.out, 'w')
+
     queryseqs = [record for record in khmer.ReadParser(args.queryseq)]
     targetseqs = [record for record in khmer.ReadParser(args.targetseq)]
     nquerys = len(queryseqs)
@@ -27,4 +29,9 @@ def main(args):
         raise KevlarAmbiguousTargetError(message)
 
     queryseqs = sorted(queryseqs, reverse=True, key=len)
-    print(kevlar.align(targetseqs[0].sequence, queryseqs[0].sequence))
+
+    target = targetseqs[0].sequence
+    query = queryseqs[0].sequence
+    cigar = kevlar.align(target, query, args.match, args.mismatch, args.open,
+                         args.extend)
+    print(cigar, file=outstream)
