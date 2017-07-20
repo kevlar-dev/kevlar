@@ -45,6 +45,7 @@ from kevlar import localize
 from kevlar import cli
 
 # C extension(s)
+import kevlar.alignment
 from kevlar.alignment import contig_align as align
 
 from kevlar._version import get_versions
