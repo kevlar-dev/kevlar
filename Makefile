@@ -23,7 +23,7 @@ test: ext
 	py.test -v --cov=kevlar kevlar/tests/*.py -m 'not long'
 
 ## testall:  execute the automated test suite, including long-running tests
-testall:
+testall: ext
 	py.test -v --cov=kevlar kevlar/tests/*.py
 
 ## doc:      build the documentation locally
