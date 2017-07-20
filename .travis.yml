@@ -17,8 +17,9 @@ install:
     - pip install wheel
     - pip install pysam>=0.11.2
     - pip install -r requirements.txt
+    - pip install .
 script:
-    - PYTHONPATH=$(pwd) make testall
+    - make testall
     - make style
     - make doc
 after_success:
