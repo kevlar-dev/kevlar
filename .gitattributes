@@ -3,3 +3,4 @@ kevlar/_version.py linguist-vendored
 versioneer.py linguist-vendored
 *.ipynb linguist-documentation
 *.mm linguist-documentation
+third-party/ linguist-vendored
