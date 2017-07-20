@@ -26,7 +26,8 @@ static uint8_t* encode(const char *sequence)
     table[(int)'T'] = table[(int)'t'] = 3;
 
     uint8_t *int_seq = (uint8_t *)malloc(strlen(sequence));
-    for (size_t i = 0; i < strlen(sequence); i++) {
+    size_t i = 0;
+    for (i = 0; i < strlen(sequence); i++) {
         int_seq[i] = table[(uint8_t)sequence[i]];
     }
 
@@ -67,7 +68,8 @@ void align(const char *target, const char *query, int match, int mismatch,
 
     // Stolen shamelessly from ksw2/cli.c
     size_t ci = 0;
-    for (size_t i = 0; i < ez.n_cigar; ++i) {
+    size_t i = 0;
+    for (i = 0; i < ez.n_cigar; ++i) {
         ci += sprintf(
             cigar + ci, "%d%c", ez.cigar[i] >> 4,"MID"[ez.cigar[i]&0xf]
         );
