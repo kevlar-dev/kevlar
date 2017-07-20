@@ -5,6 +5,7 @@
 // licensed under the MIT license: see LICENSE.
 //------------------------------------------------------------------------------
 
+#include <stdio.h>
 #include <string.h>
 #include "ksw2.h"
 

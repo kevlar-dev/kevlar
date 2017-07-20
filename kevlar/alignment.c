@@ -781,8 +781,8 @@ static PyObject *__pyx_codeobj__2;
 /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match, int mismatch, int gapopen,             # <<<<<<<<<<<<<<
- *                  int gapextend):
+ * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
 
@@ -823,52 +823,70 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_query)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, 1); __PYX_ERR(0, 16, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("contig_align", 0, 2, 6, 1); __PYX_ERR(0, 16, __pyx_L3_error)
         }
         case  2:
-        if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_match)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, 2); __PYX_ERR(0, 16, __pyx_L3_error)
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_match);
+          if (value) { values[2] = value; kw_args--; }
         }
         case  3:
-        if (likely((values[3] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_mismatch)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, 3); __PYX_ERR(0, 16, __pyx_L3_error)
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_mismatch);
+          if (value) { values[3] = value; kw_args--; }
         }
         case  4:
-        if (likely((values[4] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_gapopen)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, 4); __PYX_ERR(0, 16, __pyx_L3_error)
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_gapopen);
+          if (value) { values[4] = value; kw_args--; }
         }
         case  5:
-        if (likely((values[5] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_gapextend)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, 5); __PYX_ERR(0, 16, __pyx_L3_error)
+        if (kw_args > 0) {
+          PyObject* value = PyDict_GetItem(__pyx_kwds, __pyx_n_s_gapextend);
+          if (value) { values[5] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
         if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "contig_align") < 0)) __PYX_ERR(0, 16, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 6) {
-      goto __pyx_L5_argtuple_error;
     } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-      values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
-      values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+      switch (PyTuple_GET_SIZE(__pyx_args)) {
+        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        break;
+        default: goto __pyx_L5_argtuple_error;
+      }
     }
     __pyx_v_target = ((PyObject*)values[0]);
     __pyx_v_query = ((PyObject*)values[1]);
-    __pyx_v_match = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_match == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
-    __pyx_v_mismatch = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_mismatch == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
-    __pyx_v_gapopen = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_gapopen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
-    __pyx_v_gapextend = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_gapextend == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L3_error)
+    if (values[2]) {
+      __pyx_v_match = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_match == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
+    } else {
+      __pyx_v_match = ((int)2);
+    }
+    if (values[3]) {
+      __pyx_v_mismatch = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_mismatch == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 16, __pyx_L3_error)
+    } else {
+      __pyx_v_mismatch = ((int)1);
+    }
+    if (values[4]) {
+      __pyx_v_gapopen = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_gapopen == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L3_error)
+    } else {
+      __pyx_v_gapopen = ((int)5);
+    }
+    if (values[5]) {
+      __pyx_v_gapextend = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_gapextend == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 17, __pyx_L3_error)
+    } else {
+      __pyx_v_gapextend = ((int)0);
+    }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("contig_align", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 16, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("contig_align", 0, 2, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 16, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("kevlar.alignment.contig_align", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -897,7 +915,7 @@ static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject
   __Pyx_RefNannySetupContext("contig_align", 0);
 
   /* "kevlar/alignment.pyx":19
- *                  int gapextend):
+ *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  *     align(target, query, match, mismatch, gapopen, gapextend, cigar)             # <<<<<<<<<<<<<<
  *     return cigar
@@ -921,8 +939,8 @@ static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match, int mismatch, int gapopen,             # <<<<<<<<<<<<<<
- *                  int gapextend):
+ * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
 
@@ -985,8 +1003,8 @@ static int __Pyx_InitCachedConstants(void) {
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match, int mismatch, int gapopen,             # <<<<<<<<<<<<<<
- *                  int gapextend):
+ * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
   __pyx_tuple_ = PyTuple_Pack(7, __pyx_n_s_target, __pyx_n_s_query, __pyx_n_s_match, __pyx_n_s_mismatch, __pyx_n_s_gapopen, __pyx_n_s_gapextend, __pyx_n_s_cigar); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 16, __pyx_L1_error)
@@ -1102,8 +1120,8 @@ PyMODINIT_FUNC PyInit_alignment(void)
   /* "kevlar/alignment.pyx":16
  *                int gapopen, int gapextend, char *cigar)
  * 
- * def contig_align(str target, str query, int match, int mismatch, int gapopen,             # <<<<<<<<<<<<<<
- *                  int gapextend):
+ * def contig_align(str target, str query, int match=2, int mismatch=1,             # <<<<<<<<<<<<<<
+ *                  int gapopen=5, int gapextend=0):
  *     cdef char cigar[4096];
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6kevlar_9alignment_1contig_align, NULL, __pyx_n_s_kevlar_alignment); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
