@@ -31,7 +31,11 @@ class KevlarSketchTypeError(ValueError):
 
 
 def estimate_fpr(sketch):
-    """Stolen shamelessly from khmer/__init__.py"""
+    """
+    Get a rough estimate of the false positive rate of this sketch.
+
+    Stolen shamelessly from khmer/__init__.py
+    """
     sizes = sketch.hashsizes()
     n_ht = float(len(sizes))
     occupancy = float(sketch.n_occupied())
