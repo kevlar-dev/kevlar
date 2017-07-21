@@ -11,7 +11,7 @@ kevlar dump
 -----------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -21,7 +21,7 @@ kevlar count
 ------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -31,7 +31,7 @@ kevlar novel
 ------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -41,7 +41,7 @@ kevlar filter
 -------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -51,7 +51,7 @@ kevlar assemble
 ---------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -61,7 +61,7 @@ kevlar localize
 ---------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
@@ -71,7 +71,7 @@ kevlar mutate
 -------------
 
 .. argparse::
-   :module: kevlar.cli
+   :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
