@@ -8,7 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
     - `partition`: group reads by shared interesting k-mers
     - `localize`: determine an assembled contig's location in the reference genome
     - `call`: align assembled contigs to reference and call variant
-- Documentation suite in `docs/`, hosted at https://kevlar.readthedocs.io 
+- Documentation suite in `docs/`, hosted at https://kevlar.readthedocs.io
+- New third-party dependency `ksw2` for computing alignments. Wrapped with Cython, which is a new development-time dependency (but not install or run time).
+- The `pandas` package is now a dependency, and `pysam` and `networkx` are now hard dependencies (rather than conditional).
 
 ### Fixed
 - Bug with assembly when the order of a read pair was swapped and they had the opposite orientation (see #85).
