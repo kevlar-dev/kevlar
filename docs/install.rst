@@ -11,7 +11,7 @@ Otherwise, we suggest reading through the entire installation instructions befor
 
     virtualenv kevlar-env
     source kevlar-env/bin/activate  # Execute this with every new terminal session
-    pip install git+https://github.com/dib-lab/khmer.git
+    pip install pysam networkx pandas git+https://github.com/dib-lab/khmer.git
     pip install biokevlar
 
 Virtual environment
@@ -21,17 +21,25 @@ We recommend installing **kevlar** and its dependencies in a dedicated `virtual 
 The command :code:`virtualenv kevlar-env` will create a new virtual environment, and only needs to be executed once.
 The command :code:`source kevlar-env/bin/activate` will need to be re-executed any time you open a new session in your terminal.
 
-.. note:: The label :code:`kevlar-env` can be replaced with an alternative label if desired.
+.. note:: The label ``kevlar-env`` can be replaced with an alternative label if desired.
 
 Dependencies
 ------------
 
-The **kevlar** software has three non-standard dependencies: the `networkx package <https://networkx.github.io/>`_, the `pysam <http://pysam.readthedocs.io/>`_ package, and the `khmer package <http://khmer.readthedocs.io/>`_.
-Currently, the **kevlar** installation procedure handles the first two dependencies automatically, but since it relies on an unreleased version of **khmer** this last dependency must be install manually.
+The **kevlar** software has four non-standard dependencies: the `networkx <https://networkx.github.io/>`_ package, the `pysam <http://pysam.readthedocs.io/>`_ package, the `pandas <http://pandas.pydata.org/>`_ package, and the `khmer package <http://khmer.readthedocs.io/>`_.
+The **kevlar** installation procedure *should* handle the first three dependencies automatically, but since it relies on an unreleased version of **khmer** this last dependency must be install manually.
 
 .. code::
 
     pip install git+https://github.com/dib-lab/khmer.git
+
+.. note::
+
+   In some cases pip cannot install all dependencies automatically, and so manual installation is required.
+
+   .. code::
+
+      pip install pysam networkx pandas git+https://github.com/dib-lab/khmer.git
 
 Installation
 ------------

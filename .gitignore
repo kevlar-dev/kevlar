@@ -13,3 +13,5 @@ kevlar/tests/data/simple-*.counttable
 env2/
 build/
 kevlar/alignment.cpython-*.so
+dist/
+*.egg-info
