@@ -9,7 +9,14 @@
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('call', add_help=False)
+    """Define the `kevlar call` command-line interface."""
+
+    desc = """\
+    Align variant-related reads to the reference genome and call the variant
+    from the alignment.
+    """
+
+    subparser = subparsers.add_parser('call', description=desc, add_help=False)
     subparser._positionals.title = 'Required inputs'
 
     score_args = subparser.add_argument_group('Alignment scoring')

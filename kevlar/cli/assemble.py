@@ -9,7 +9,11 @@
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('assemble')
+    """Define the `kevlar assemble` command-line interface."""
+
+    desc = "Use a simple greedy algorithm to assemble a single variant's reads"
+
+    subparser = subparsers.add_parser('assemble', description=desc)
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')
     subparser.add_argument('-o', '--out', metavar='FILE',

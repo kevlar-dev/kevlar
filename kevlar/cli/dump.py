@@ -12,7 +12,11 @@ from khmer import khmer_args
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('dump')
+    """Define the `kevlar dump` command-line interface."""
+
+    desc = 'Discard reads that align perfectly to the reference genome.'
+
+    subparser = subparsers.add_parser('dump', description=desc)
     subparser.add_argument('--seqid', metavar='SEQ',
                            help='dump reads not mapped to SEQ')
     subparser.add_argument('--genomemask', metavar='FILE', help='dump reads '
