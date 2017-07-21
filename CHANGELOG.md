@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.0] - 2017-07-21
+### Added
+- New subcommands
+    - `partition`: group reads by shared interesting k-mers
+    - `localize`: determine an assembled contig's location in the reference genome
+    - `call`: align assembled contigs to reference and call variant
+- Documentation suite in `docs/`, hosted at https://kevlar.readthedocs.io 
+
+### Fixed
+- Bug with assembly when the order of a read pair was swapped and they had the opposite orientation (see #85).
+
 ## [0.1.0] - 2017-05-13
 ### Added
 - Command-line interface with 8 subcommands
