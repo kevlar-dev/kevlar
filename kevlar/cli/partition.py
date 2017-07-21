@@ -9,7 +9,17 @@
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('partition')
+    """Define the `kevlar novel` command-line interface."""
+
+    desc = """\
+    Construct a graph to group reads by shared interesting k-mers. Nodes in the
+    graph represent reads, and edges between a pair of nodes indicate that the
+    two corresponding reads have one or more interesting k-mers in common.
+    Connected components in the undirected graph correspond to distinct
+    variants (or variant-related breakpoints).
+    """
+
+    subparser = subparsers.add_parser('partition', description=desc)
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')
     subparser.add_argument('-s', '--strict', action='store_true',

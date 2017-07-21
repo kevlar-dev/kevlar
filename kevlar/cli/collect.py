@@ -13,6 +13,8 @@ from khmer import khmer_args
 
 
 def subparser(subparsers):
+    """Define the `kevlar collect` command-line interface."""
+
     subparser = subparsers.add_parser('collect')
     subparser.add_argument('-d', '--debug', action='store_true',
                            help='print debugging output')

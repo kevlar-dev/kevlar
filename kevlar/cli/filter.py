@@ -12,7 +12,15 @@ from khmer import khmer_args
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('filter', add_help=False)
+    """Define the `kevlar filter` command-line interface."""
+
+    desc = """\
+    Discard k-mers and reads that are contaminant in origin or whose abundances
+    were inflated at the "kevlar count" or "kevlar novel" stage.
+    """
+
+    subparser = subparsers.add_parser('filter', description=desc,
+                                      add_help=False)
     subparser._positionals.title = 'Required inputs'
 
     refr_args = subparser.add_argument_group(

@@ -9,7 +9,16 @@
 
 
 def subparser(subparsers):
-    subparser = subparsers.add_parser('localize')
+    """Define the `kevlar localize` command-line interface."""
+
+    desc = """\
+    Given a reference genome and a contig (or set of contigs) assembled from
+    variant-related reads, retrieve the portion of the reference genome
+    corresponding to the variant. NOTE: this command relies on the `bwa`
+    program being in the PATH environmental variable.
+    """
+
+    subparser = subparsers.add_parser('localize', description=desc)
     subparser.add_argument('-x', '--max-diff', type=int, metavar='X',
                            default=1000, help='span of all k-mer starting '
                            'positions should not exceed X bp')

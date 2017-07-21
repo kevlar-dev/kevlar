@@ -22,6 +22,13 @@ class KevlarCaseSampleMismatchError(ValueError):
 
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
                         ctrl_max=1):
+    """
+    Well, is it?
+
+    Consult the k-mer's abundance in each sample to determine whether it is
+    "interesting". It must be >= `case_min` in each of `casecounts`, and must
+    be <= `ctrl_max` in each of `controlcounts`.
+    """
     caseabunds = list()
     for ct in casecounts:
         abund = ct.get(kmer)
