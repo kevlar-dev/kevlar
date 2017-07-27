@@ -33,7 +33,8 @@ def test_count_simple(numbands, band, kmers_stored, capsys):
             '--case', caseout.name, case,
             '--control', ctrl1out.name, ctrls[0],
             '--control', ctrl2out.name, ctrls[1],
-            '--ksize', '25', '--memory', '50K', '--ctrl-max', '0',
+            '--ksize', '25',  '--ctrl-max', '0',
+            '--mem-frac', '0.1', '--memory', '50K',
             '--num-bands', str(numbands), '--band', str(band),
         ]
         args = kevlar.cli.parser().parse_args(arglist)
