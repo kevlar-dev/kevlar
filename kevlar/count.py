@@ -15,6 +15,12 @@ from khmer import khmer_args
 import kevlar
 
 
+def split_infiles_outfiles(filelist):
+    outfiles = [flist[0] for flist in filelist]
+    infilelists = [flist[1:] for flist in filelist]
+    return outfiles, infilelists
+
+
 def main(args):
     if (args.num_bands is None) is not (args.band is None):
         raise ValueError('Must specify --num-bands and --band together')
@@ -24,10 +30,12 @@ def main(args):
 
     timer.start('loadctrl')
     print('[kevlar::count] Loading control samples', file=args.logfile)
+    outfiles, infilelists = split_infiles_outfiles(args.control)
     controls = kevlar.counting.load_samples_with_dilution(
-        args.control, args.ksize, args.memory, memfraction=args.mem_frac,
-        maxfpr=args.max_fpr, maxabund=args.ctrl_max, masks=None,
-        numbands=args.num_bands, band=args.band, logfile=args.logfile
+        infilelists, args.ksize, args.memory, outfiles=outfiles,
+        memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
+        mask=None, numbands=args.num_bands, band=args.band,
+        logfile=args.logfile
     )
     elapsed = timer.stop('loadctrl')
     numcontrols = len(controls)
@@ -36,10 +44,12 @@ def main(args):
 
     print('[kevlar::count] Loading case samples', file=args.logfile)
     timer.start('loadcase')
+    outfiles, infilelists = split_infiles_outfiles(args.case)
     cases = kevlar.counting.load_samples_with_dilution(
-        args.case, args.ksize, args.memory, memfraction=args.mem_frac,
-        maxfpr=args.max_fpr, maxabund=args.ctrl_max, masks=controls,
-        numbands=args.num_bands, band=args.band, logfile=args.logfile
+        infilelists, args.ksize, args.memory, outfiles=outfiles,
+        memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
+        mask=controls[0], numbands=args.num_bands, band=args.band,
+        logfile=args.logfile
     )
     elapsed = timer.stop('loadcase')
     numcases = len(cases)
