@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
+import multiprocessing
 import re
 import sys
 
@@ -109,7 +110,7 @@ def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
 
     sketches = list()
     for seqfiles, outfile in zip(samplelists, outfiles):
-        if mask:
+        if mask and memfraction is not None:
             mymask = mask
             sketchmem = memory * memfraction
         elif len(sketches) == 0 or memfraction is None:
@@ -124,6 +125,37 @@ def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
         )
         sketches.append(sketch)
     return sketches
+
+
+def load_simplex_parallel(samplelists, ksize, memory, mask=None,
+                          memfraction=None, maxfpr=0.2, maxabund=1,
+                          numbands=None, band=None, outfiles=None,
+                          logfile=sys.stderr):
+    numsamples = len(samplelists)
+    if outfiles is None or numsamples != len(outfiles):
+        message = '# of samples ({:d}) '.format(numsamples)
+        message += 'does not match # of outfiles ({:d})'.format(len(outfiles))
+        raise KevlarOutfileMismatchError(message)
+    message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
+    print('[kevlar::counting]    ', message, file=logfile)
+
+    procs = list()
+    mymask = None
+    sketchmem = memory
+    for seqfiles, outfile in zip(samplelists, outfiles):
+        process = multiprocessing.Process(
+            target=load_sample_seqfile,
+            args=(seqfiles, ksize, sketchmem),
+            kwargs={
+                'maxfpr': maxfpr, 'mask': mymask, 'numbands': numbands,
+                'band': band, 'outfile': outfile, 'logfile': logfile
+            },
+        )
+        process.start()
+        procs.append(process)
+
+    for process in procs:
+        process.join()
 
 
 def load_samples_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):

@@ -31,8 +31,9 @@ def main(args):
     timer.start('loadctrl')
     print('[kevlar::count] Loading control samples', file=args.logfile)
     outfiles, infilelists = split_infiles_outfiles(args.control)
-    controls = kevlar.counting.load_samples(
-        infilelists, args.ksize, args.memory, outfiles=outfiles,
+    o2, i2 = split_infiles_outfiles(args.case)
+    kevlar.counting.load_simplex_parallel(
+        infilelists + i2, args.ksize, args.memory, outfiles=outfiles + o2,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
         mask=None, numbands=args.num_bands, band=args.band,
         logfile=args.logfile
@@ -42,19 +43,19 @@ def main(args):
     message = '{:d} samples loaded in {:.2f} sec'.format(numcontrols, elapsed)
     print('[kevlar::count]', message, file=args.logfile)
 
-    print('[kevlar::count] Loading case samples', file=args.logfile)
-    timer.start('loadcase')
-    outfiles, infilelists = split_infiles_outfiles(args.case)
-    cases = kevlar.counting.load_samples(
-        infilelists, args.ksize, args.memory, outfiles=outfiles,
-        memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
-        mask=controls[0], numbands=args.num_bands, band=args.band,
-        logfile=args.logfile
-    )
-    elapsed = timer.stop('loadcase')
-    numcases = len(cases)
-    message = '{:d} sample(s) loaded in {:.2f} sec'.format(numcases, elapsed)
-    print('[kevlar::count]', message, file=args.logfile)
+    #print('[kevlar::count] Loading case samples', file=args.logfile)
+    #timer.start('loadcase')
+    #outfiles, infilelists = split_infiles_outfiles(args.case)
+    #cases = kevlar.counting.load_samples(
+    #    infilelists, args.ksize, args.memory, outfiles=outfiles,
+    #    memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
+    #    mask=controls[0], numbands=args.num_bands, band=args.band,
+    #    logfile=args.logfile
+    #)
+    #elapsed = timer.stop('loadcase')
+    #numcases = len(cases)
+    #message = '{:d} sample(s) loaded in {:.2f} sec'.format(numcases, elapsed)
+    #print('[kevlar::count]', message, file=args.logfile)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
