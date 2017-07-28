@@ -66,7 +66,7 @@ def main(args):
             args.control_counts, args.max_fpr, args.logfile
         )
     else:
-        controls = kevlar.counting.load_samples_with_dilution(
+        controls = kevlar.counting.load_samples(
             args.control, args.ksize, args.memory, maxfpr=args.max_fpr,
             memfraction=None, numbands=args.num_bands, band=args.band,
             logfile=args.logfile
@@ -91,7 +91,7 @@ def main(args):
             args.case_counts, args.max_fpr, args.logfile
         )
     else:
-        cases = kevlar.counting.load_samples_with_dilution(
+        cases = kevlar.counting.load_samples(
             args.case, args.ksize, args.memory, maxfpr=args.max_fpr,
             memfraction=None, numbands=args.num_bands, band=args.band,
             logfile=args.logfile

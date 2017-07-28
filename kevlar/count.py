@@ -31,7 +31,7 @@ def main(args):
     timer.start('loadctrl')
     print('[kevlar::count] Loading control samples', file=args.logfile)
     outfiles, infilelists = split_infiles_outfiles(args.control)
-    controls = kevlar.counting.load_samples_with_dilution(
+    controls = kevlar.counting.load_samples(
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
         mask=None, numbands=args.num_bands, band=args.band,
@@ -45,7 +45,7 @@ def main(args):
     print('[kevlar::count] Loading case samples', file=args.logfile)
     timer.start('loadcase')
     outfiles, infilelists = split_infiles_outfiles(args.case)
-    cases = kevlar.counting.load_samples_with_dilution(
+    cases = kevlar.counting.load_samples(
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
         mask=controls[0], numbands=args.num_bands, band=args.band,

@@ -78,10 +78,9 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     return sketch
 
 
-def load_samples_with_dilution(samplelists, ksize, memory, mask=None,
-                               memfraction=None, maxfpr=0.2, maxabund=1,
-                               numbands=None, band=None,
-                               outfiles=None, logfile=sys.stderr):
+def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
+                 maxfpr=0.2, maxabund=1, numbands=None, band=None,
+                 outfiles=None, logfile=sys.stderr):
     """
     Load a group of related samples using a memory-efficient strategy.
 
