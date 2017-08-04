@@ -70,10 +70,6 @@ def subparser(subparsers):
                              help='minimum abundance required to call a '
                              'k-mer novel; should be the same value used for '
                              '--case_min in `kevlar novel`; default is 5')
-    filter_args.add_argument('--skip2', default=False, action='store_true',
-                             help='skip the second pass over the reads that '
-                             'recalculates abundance after reference and '
-                             'contaminant k-mers are discarded')
     filter_args.add_argument('--ignore', metavar='KM', nargs='+',
                              help='ignore the specified k-mer(s)')
 

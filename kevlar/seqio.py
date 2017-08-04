@@ -154,8 +154,6 @@ class AnnotatedReadSet(object):
             record = self._reads[readid]
             if len(record.ikmers) == 0:
                 continue
-            elif hasattr(record, 'contam') and record.contam is True:
-                continue
             yield record
 
     @property
@@ -199,56 +197,3 @@ class AnnotatedReadSet(object):
             record.ikmers = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
-
-    def recalc_abund(self, newcounts, minabund=5):
-        for read in self:
-            newcounts.consume(read.sequence)
-        self._valid = defaultdict(int)
-        self._novalidkmers_count = 0
-        self.validate(newcounts, minabund=minabund)
-
-    def group_reads_by_novel_kmers(self, ccprefix, upint=10000,
-                                   logstream=None):
-        n = 0
-        reads_by_novel_kmer = defaultdict(set)
-        novel_kmers = set()  # just for reporting numbers; free memory ASAP
-        for n, read_name in enumerate(self._reads):
-            if logstream and n > 0 and n % upint == 0:
-                print('    store reads by novel k-mers:', n, file=logstream)
-            record = self._reads[read_name]
-            for novel_kmer in record.ikmers:
-                kmer_seq = novel_kmer.sequence
-                kmer_seq_rc = kevlar.revcom(novel_kmer.sequence)
-                reads_by_novel_kmer[kmer_seq].add(record.name)
-                reads_by_novel_kmer[kmer_seq_rc].add(record.name)
-                # Using ternary here instead of kmer.revcommin to avoid
-                # recomputing the reverse complement.
-                min_kmer = kmer_seq if kmer_seq < kmer_seq_rc else kmer_seq_rc
-                novel_kmers.add(min_kmer)
-        num_novel_kmers = len(novel_kmers)
-        del novel_kmers
-
-        read_graph = Graph()
-        for n, read_name in enumerate(self._reads):
-            if logstream and n > 0 and n % upint == 0:
-                print('    build shared novel k-mer graph:', n, file=logstream)
-            record = self._reads[read_name]
-            for kmer in record.ikmers:
-                for other_record_name in reads_by_novel_kmer[kmer.sequence]:
-                    read_graph.add_edge(read_name, other_record_name)
-
-        reads_in_ccs = 0
-        cclog = open(ccprefix + '.cc.log', 'w')
-        for n, cc in enumerate(connected_components(read_graph)):
-            print('CC', n, len(cc), cc, sep='\t', file=cclog)
-            reads_in_ccs += len(cc)
-            outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)
-            with kevlar.open(outfilename, 'w') as outfile:
-                for readid in cc:
-                    record = self._reads[readid]
-                    kevlar.print_augmented_fastx(record, outfile)
-
-        message = '        grouped {:d} reads'.format(reads_in_ccs)
-        message += ' into {:d} connected components'.format(n + 1)
-        message += ' by {:d} shared novel k-mers'.format(num_novel_kmers)
-        print(message, file=logstream)

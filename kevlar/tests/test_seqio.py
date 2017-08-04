@@ -107,20 +107,3 @@ def test_kevlar_open(basename):
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
     assert len(record.ikmers) == 2
-
-
-def test_group_by_novel_kmers(capsys):
-    import sys
-    readset = kevlar.seqio.AnnotatedReadSet()
-    infilename = kevlar.tests.data_file('topartition.augfastq')
-    tempdir = tempfile.mkdtemp()
-    prefix = '{:s}/cc'.format(tempdir)
-    with kevlar.open(infilename, 'r') as infile:
-        for record in kevlar.parse_augmented_fastx(infile):
-            readset.add(record)
-    readset.group_reads_by_novel_kmers(prefix, logstream=sys.stderr)
-    out, err = capsys.readouterr()
-
-    assert 'grouped 4 reads into 2 connected components' in err
-
-    shutil.rmtree(tempdir)

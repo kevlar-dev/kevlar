@@ -120,27 +120,6 @@ def test_validate_with_mask():
             assert kevlar.revcom(ikmer.sequence) != kmer
 
 
-def test_validate_with_mask_2pass():
-    mask = khmer.Nodetable(19, 1e3, 2)
-    mask.consume('CCAGCTGCAGGCCAGGGATCGCCGTGGGCGGACGCCCATACCGCGATAGC')
-    filelist = kevlar.tests.data_glob('collect.gamma.txt')
-
-    # First, without second pass
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, mask, minabund=8,
-                                     skip2=True)
-    assert readset.valid == (4, 32)
-    assert readset.lowabund == (0, 0)
-    assert readset.discarded == 12
-
-    # Then, with second pass
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, mask, minabund=8)
-    assert readset.valid == (4, 32)
-    assert readset.lowabund == (0, 0)
-    assert readset.discarded == 12
-
-
 def test_ctrl3(ctrl3):
     readset, countgraph = ctrl3
     kevlar.filter.validate_and_print(readset, countgraph, minabund=6)

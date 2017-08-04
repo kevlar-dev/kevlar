@@ -86,14 +86,9 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     return readset, countgraph
 
 
-def validate_and_print(readset, countgraph, mask=None, minabund=5, skip2=False,
+def validate_and_print(readset, countgraph, mask=None, minabund=5,
                        outfile=sys.stdout, augout=None, logfile=sys.stderr):
     readset.validate(countgraph, mask=mask, minabund=minabund)
-    if not skip2:
-        ksize, tablesizes = countgraph.ksize(), countgraph.hashsizes()
-        countgraph = khmer._Countgraph(ksize, tablesizes)
-        readset.recalc_abund(countgraph, minabund)
-
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
@@ -135,7 +130,7 @@ def main(args):
         timer.start('loadmask')
         print('[kevlar::filter] Loading mask from', args.mask,
               file=args.logfile)
-        mask = load_refr(args.mask, args.ksize, args.mask_memory,
+        mask = load_mask(args.mask, args.ksize, args.mask_memory,
                          maxfpr=args.mask_max_fpr, savefile=args.save_mask,
                          logfile=args.logfile)
         elapsed = timer.stop('loadmask')
