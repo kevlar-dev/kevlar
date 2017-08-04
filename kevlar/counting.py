@@ -19,38 +19,43 @@ class KevlarSampleIOError(ValueError):
     pass
 
 
+class KevlarOutfileMismatchError(ValueError):
+    pass
+
+
 def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
-                        masks=None, maskmaxabund=1, numbands=None, band=None,
+                        mask=None, maskmaxabund=1, numbands=None, band=None,
                         outfile=None, logfile=sys.stderr):
     """
     Compute k-mer abundances for the specified sequence input.
 
     Expected input is a list of one or more FASTA/FASTQ files corresponding
     to a single sample. A counttable is created and populated with abundances
-    of all k-mers observed in the input.
+    of all k-mers observed in the input. If `mask` is provided, only k-mers not
+    present in the mask will be loaded.
     """
     message = 'loading sample from ' + ','.join(seqfiles)
     print('[kevlar::counting]    ', message, file=logfile)
 
     sketch = khmer.Counttable(ksize, memory / 4, 4)
     n, nkmers = 0, 0
-    for n, read in enumerate(kevlar.multi_file_iter_khmer(seqfiles), 1):
-        for subseq in kevlar.clean_subseqs(read.sequence, ksize):
-            for kmer in sketch.get_kmers(subseq):
-                if numbands:
-                    khash = sketch.hash(kmer)
-                    if khash & (numbands - 1) != band - 1:
-                        continue
-                if masks:
-                    for mask in masks:
-                        if mask.get(kmer) > maskmaxabund:
-                            break
-                    else:
-                        sketch.add(kmer)
-                        nkmers += 1
-                else:
-                    sketch.add(kmer)
-                    nkmers += 1
+    for seqfile in seqfiles:
+        if mask:
+            if numbands:
+                nr, nk = sketch.consume_seqfile_banding_with_mask(
+                    seqfile, numbands, band, mask
+                )
+            else:
+                nr, nk = sketch.consume_seqfile_with_mask(seqfile, mask)
+        else:
+            if numbands:
+                nr, nk = sketch.consume_seqfile_banding(
+                    seqfile, numbands, band
+                )
+            else:
+                nr, nk = sketch.consume_seqfile(seqfile)
+        n += nr
+        nkmers += nk
 
     message = 'done loading reads'
     if numbands:
@@ -62,77 +67,55 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
         raise SystemExit(message)
-    else:
-        if outfile:
-            if not outfile.endswith(('.ct', '.counttable')):
-                outfile += '.counttable'
-            sketch.save(outfile)
-            message += '; saved to "{:s}"'.format(outfile)
-        print('[kevlar::counting]    ', message, file=logfile)
+
+    if outfile:
+        if not outfile.endswith(('.ct', '.counttable')):
+            outfile += '.counttable'
+        sketch.save(outfile)
+        message += '; saved to "{:s}"'.format(outfile)
+    print('[kevlar::counting]    ', message, file=logfile)
 
     return sketch
 
 
-def load_samples(samplelists, ksize, memory, maxfpr=0.2, numbands=None,
-                 band=None, logfile=sys.stderr):
+def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
+                 maxfpr=0.2, maxabund=1, numbands=None, band=None,
+                 outfiles=None, logfile=sys.stderr):
     """
     Load a group of related samples using a memory-efficient strategy.
 
-    Samples loaded initially are used as masks for subsequently loaded samples.
-    The first sample is allocated the full amount of memory, while subsequent
-    samples require only a fraction since they are first checked against the
-    mask(s).
+    By default, each sample is loaded into a dedicated counttable, which occupy
+    `memory` bytes of memory each. Setting `memfraction` to a value between 0.0
+    and 1.0 will activate "masked" mode.
+
+    If `mask` is provided, it serves as a mask for all other samples. If it is
+    not provided, the first sample is loaded normally and then serves as a mask
+    for all subsequent samples.
+
+    In "masked mode", sample uses only `memory * memfraction` bytes of memory,
+    and any k-mer present in the mask (above a given threshold `maxabund`) is
+    ignored. In this way, we avoid taking up space storing abundances for
+    k-mers we know we're not interested in.
     """
     numsamples = len(samplelists)
+    if outfiles is None:
+        outfiles = [None] * numsamples
+    if numsamples != len(outfiles):
+        message = '# of samples ({:d}) '.format(numsamples)
+        message += 'does not match # of outfiles ({:d})'.format(len(outfiles))
+        raise KevlarOutfileMismatchError(message)
     message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
     print('[kevlar::counting]    ', message, file=logfile)
 
     sketches = list()
-    for seqfiles in samplelists:
+    for seqfiles, outfile in zip(samplelists, outfiles):
+        sketchmem = memory if memfraction is None else memory * memfraction
+        mymask = mask
+        if memfraction is not None and len(sketches) == 0 and mask is None:
+            mymask = sketches[0]
         sketch = load_sample_seqfile(
-            seqfiles, ksize, memory, maxfpr=maxfpr, numbands=numbands,
-            band=band, outfile=None, logfile=logfile
-        )
-        sketches.append(sketch)
-    return sketches
-
-
-def load_samples_with_dilution(samplelists, ksize, memory, memfraction=0.1,
-                               maxfpr=0.2, maxabund=1, masks=None,
-                               numbands=None, band=None, skipsave=False,
-                               logfile=sys.stderr):
-    """
-    Load a group of related samples using a memory-efficient strategy.
-
-    Samples loaded initially are used as masks for subsequently loaded samples.
-    The first sample is allocated the full amount of memory, while subsequent
-    samples require only a fraction since they are first checked against the
-    mask(s).
-    """
-    numsamples = len(samplelists)
-    message = 'computing k-mer abundances for {:d} samples'.format(numsamples)
-    print('[kevlar::counting]    ', message, file=logfile)
-
-    sketches = list()
-    for samplelist in samplelists:
-        if len(samplelist) < 2:
-            message = 'must specify an output file and at least one input file'
-            raise KevlarSampleIOError(message)
-        outfile = samplelist[0]
-        seqfiles = samplelist[1:]
-        if masks:
-            mymasks = masks
-            sketchmem = memory * memfraction
-        elif len(sketches) == 0:
-            mymasks = None
-            sketchmem = memory
-        else:
-            mymasks = sketches
-            sketchmem = memory * memfraction
-        sketch = load_sample_seqfile(
-            seqfiles, ksize, sketchmem, maxfpr=maxfpr, masks=mymasks,
-            maskmaxabund=maxabund, numbands=numbands, band=band,
-            outfile=outfile, logfile=logfile
+            seqfiles, ksize, sketchmem, maxfpr=maxfpr, mask=mymask,
+            numbands=numbands, band=band, outfile=outfile, logfile=logfile
         )
         sketches.append(sketch)
     return sketches
@@ -150,7 +133,6 @@ def load_samples_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
         if fpr > maxfpr:
             message += ' (FPR too high, bailing out!!!)'
             raise SystemExit(message)
-        else:
-            print(message, file=logfile)
+        print(message, file=logfile)
         sketches.append(sketch)
     return sketches
