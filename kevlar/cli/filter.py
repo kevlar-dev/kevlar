@@ -23,40 +23,30 @@ def subparser(subparsers):
                                       add_help=False)
     subparser._positionals.title = 'Required inputs'
 
-    refr_args = subparser.add_argument_group(
-        'Reference genome',
-        'A reference genome is not required, but if available can be supplied '
-        'to discard "interesting" k-mers that turn out not to be novel.'
+    mask_args = subparser.add_argument_group(
+        'Reference and contaminant masking',
+        'Two classes of "interesting k-mers" (ikmers) need to be filtered out '
+        'when identifying novel germline mutations: those in the reference '
+        'genome, and those of contaminant origin. When available, provide '
+        'reference genome assemblies and contaminant databases to "mask" out '
+        'these k-mers and remove their "interesting" classification.'
     )
-    refr_args.add_argument('--refr', metavar='FILE', type=str, default=None,
-                           help='reference genome in Fasta/Fastq format')
-    refr_args.add_argument('--refr-memory', metavar='MEM', default='1e6',
+    mask_args.add_argument('--mask', metavar='FA', type=str, default=None,
+                           nargs='+', help='sequences to mask (reference '
+                           'genomes, contaminants); can provide as one or more'
+                           ' Fasta/Fastq files or as a single pre-computed '
+                           'nodetable file; see `--save-mask` option')
+    mask_args.add_argument('--mask-memory', metavar='MEM', default='1e9',
                            type=khmer_args.memory_setting,
-                           help='memory to allocate for storing the reference '
-                           'genome; default is 1M')
-    refr_args.add_argument('--refr-max-fpr', type=float, metavar='FPR',
+                           help='memory to allocate for storing the mask; '
+                           'default is 1G')
+    mask_args.add_argument('--mask-max-fpr', type=float, metavar='FPR',
                            default=0.001, help='terminate if the expected '
                            'false positive rate is higher than the specified '
                            'FPR; default is 0.001')
-
-    contam_args = subparser.add_argument_group(
-        'Screening for known contaminants',
-        'It may not be possible to anticipate every possible contaminant that '
-        'may be present in a sample, but if there is a common or known set of '
-        'contaminants these can be filtered out at this step. Unknown '
-        'contaminants will have to be filtered out after read partitioning.'
-    )
-    contam_args.add_argument('--contam', metavar='FILE', type=str,
-                             default=None, help='database of contaminant '
-                             'sequences in Fasta/Fastq format')
-    contam_args.add_argument('--contam-memory', metavar='MEM', default='1e6',
-                             type=khmer_args.memory_setting,
-                             help='memory to allocate for storing contaminant '
-                             'sequences; default is 1M')
-    contam_args.add_argument('--contam-max-fpr', type=float, metavar='FPR',
-                             default=0.001, help='terminate if the expected '
-                             'false positive rate is higher than the specified'
-                             ' FPR; default is 0.001')
+    mask_args.add_argument('--save-mask', type=str, metavar='FILE',
+                           default=None, help='save mask nodetable to the '
+                           'specified FILE to save time with future runs')
 
     filter_args = subparser.add_argument_group(
         'Filtering k-mers',

@@ -16,18 +16,18 @@ import kevlar
 
 @pytest.fixture
 def bogusrefr():
-    refr = khmer.Nodetable(13, 1e7 / 4, 4)
-    refrfile = kevlar.tests.data_file('bogus-genome/refr.fa')
-    refr.consume_seqfile(refrfile)
-    return refr
+    mask = khmer.Nodetable(13, 1e7 / 4, 4)
+    maskfile = kevlar.tests.data_file('bogus-genome/refr.fa')
+    mask.consume_seqfile(maskfile)
+    return mask
 
 
 @pytest.fixture
-def contaminants():
-    contam = khmer.Nodetable(13, 1e7 / 4, 4)
-    contamfile = kevlar.tests.data_file('bogus-genome/contam1.fa')
-    contam.consume_seqfile(contamfile)
-    return contam
+def bogusrefrcontam():
+    mask = khmer.Nodetable(13, 1e7 / 4, 4)
+    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/refr.fa'))
+    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/contam1.fa'))
+    return mask
 
 
 @pytest.fixture
@@ -37,12 +37,25 @@ def ctrl3():
     return readset, countgraph
 
 
-def test_load_refr():
+def test_load_mask():
     infile = kevlar.tests.data_file('bogus-genome/refr.fa')
-    refr = kevlar.filter.load_refr(infile, 25, 1e7)
-    assert refr.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
-    assert refr.get('GCTGGCTAAATTTTCATACTAACTA') > 0
-    assert refr.get('G' * 25) == 0
+    mask = kevlar.filter.load_mask([infile], 25, 1e7)
+    assert mask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
+    assert mask.get('GCTGGCTAAATTTTCATACTAACTA') > 0
+    assert mask.get('G' * 25) == 0
+
+
+def test_load_mask_multi_file():
+    infiles = [
+        kevlar.tests.data_file('bogus-genome/refr.fa'),
+        kevlar.tests.data_file('bogus-genome/contam1.fa')
+    ]
+    mask = kevlar.filter.load_mask(infiles, 25, 1e7)
+    assert mask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0  # reference
+    assert mask.get('GCTGGCTAAATTTTCATACTAACTA') > 0  # reference
+    assert mask.get('AATGTAGGTAGTTTTGTGCACAGTT') > 0  # contam
+    assert mask.get('TCGCGCGCGTCCAAGTCGAGACCGC') > 0  # contam
+    assert mask.get('G' * 25) == 0
 
 
 def test_load_input():
@@ -92,14 +105,14 @@ def test_validate_minabund():
     assert readset.valid == (0, 0)
 
 
-def test_validate_withrefr():
+def test_validate_with_mask():
     kmer = 'AGGGGCGTGACTTAATAAG'
-    refr = khmer.Nodetable(19, 1e3, 2)
-    refr.add(kmer)
+    mask = khmer.Nodetable(19, 1e3, 2)
+    mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, refr)
+    kevlar.filter.validate_and_print(readset, countgraph, mask)
     assert readset.valid == (3, 24)
     for record in readset:
         for ikmer in record.ikmers:
@@ -107,28 +120,25 @@ def test_validate_withrefr():
             assert kevlar.revcom(ikmer.sequence) != kmer
 
 
-def test_validate_withcontam():
-    contam = khmer.Nodetable(19, 1e3, 2)
-    contam.consume('CCAGCTGCAGGCCAGGGATCGCCGTGGGCGGACGCCCATACCGCGATAGC')
+def test_validate_with_mask_2pass():
+    mask = khmer.Nodetable(19, 1e3, 2)
+    mask.consume('CCAGCTGCAGGCCAGGGATCGCCGTGGGCGGACGCCCATACCGCGATAGC')
     filelist = kevlar.tests.data_glob('collect.gamma.txt')
 
     # First, without second pass
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, contam=contam,
-                                     minabund=8, skip2=True)
-    assert readset.valid == (5, 35)
+    kevlar.filter.validate_and_print(readset, countgraph, mask, minabund=8,
+                                     skip2=True)
+    assert readset.valid == (4, 32)
     assert readset.lowabund == (0, 0)
-    assert readset.discarded == 0
-    assert readset.contam == 9
+    assert readset.discarded == 12
 
     # Then, with second pass
     readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, contam=contam,
-                                     minabund=8)
+    kevlar.filter.validate_and_print(readset, countgraph, mask, minabund=8)
     assert readset.valid == (4, 32)
-    assert readset.lowabund == (2, 21)
+    assert readset.lowabund == (0, 0)
     assert readset.discarded == 12
-    assert readset.contam == 9
 
 
 def test_ctrl3(ctrl3):
@@ -139,13 +149,13 @@ def test_ctrl3(ctrl3):
 
 def test_ctrl3_refr(ctrl3, bogusrefr):
     readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, refr=bogusrefr,
+    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefr,
                                      minabund=6)
     assert readset.valid == (424, 5782)
 
 
-def test_ctrl3_refr_contam(ctrl3, bogusrefr, contaminants):
+def test_ctrl3_refr_contam(ctrl3, bogusrefr, bogusrefrcontam):
     readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, refr=bogusrefr,
-                                     contam=contaminants, minabund=6)
+    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefrcontam,
+                                     minabund=6)
     assert readset.valid == (13, 171)
