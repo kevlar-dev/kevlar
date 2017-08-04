@@ -16,19 +16,32 @@ from khmer import khmer_args
 import kevlar
 
 
-def load_refr(refrfile, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
+def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
+              logfile=sys.stderr):
     """Load reference genome or contaminant database from a file."""
-    buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
-    refr = khmer.Nodetable(ksize, buckets, 4)
-    nr, nk = refr.consume_seqfile(refrfile)
-    fpr = kevlar.sketch.estimate_fpr(refr)
-    message = '    {:d} sequences and {:d} k-mers consumed'.format(nr, nk)
+    if len(maskfiles) == 1 and maskfiles[0].endswith(('.nt', '.nodetable')):
+        mask = kevlar.sketch.load(maskfiles[0])
+        message = '    nodetable loaded'
+    else:
+        buckets = memory * khmer._buckets_per_byte['nodegraph'] / 4
+        mask = khmer.Nodetable(ksize, buckets, 4)
+        nr, nk = 0, 0
+        for maskfile in maskfiles:
+            numreads, numkmers = mask.consume_seqfile(maskfile)
+            nr += numreads
+            nk += numkmers
+        message = '    {:d} sequences and {:d} k-mers consumed'.format(nr, nk)
+    fpr = kevlar.sketch.estimate_fpr(mask)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logfile)
     if fpr > maxfpr:
         print('[kevlar::filter] FPR too high, bailing out', file=logfile)
         sys.exit(1)
-    return refr
+    if savefile:
+        mask.save(savefile)
+        message = '    nodetable saved to "{:s}"'.format(savefile)
+        print(message, file=logfile)
+    return mask
 
 
 def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
@@ -73,15 +86,9 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     return readset, countgraph
 
 
-def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
-                       skip2=False, outfile=sys.stdout, augout=None,
-                       logfile=sys.stderr):
-    readset.validate(countgraph, refr=refr, contam=contam, minabund=minabund)
-    if not skip2:
-        ksize, tablesizes = countgraph.ksize(), countgraph.hashsizes()
-        countgraph = khmer._Countgraph(ksize, tablesizes)
-        readset.recalc_abund(countgraph, minabund)
-
+def validate_and_print(readset, countgraph, mask=None, minabund=5,
+                       outfile=sys.stdout, augout=None, logfile=sys.stderr):
+    readset.validate(countgraph, mask=mask, minabund=minabund)
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
         khmer.utils.write_record(record, outfile)
@@ -110,8 +117,6 @@ def validate_and_print(readset, countgraph, refr=None, contam=None, minabund=5,
     message += '{:d} reads'.format(readset.discarded)
     message += ' with no surviving valid k-mers ignored'
     message += '\n        '
-    message += '{:d} contaminant reads discarded'.format(readset.contam)
-    message += '\n        '
     message += '{:d} reads written to output'.format(n + 1)
     print(message, file=logfile)
 
@@ -120,28 +125,16 @@ def main(args):
     timer = kevlar.Timer()
     timer.start()
 
-    refr = None
-    if args.refr:
-        timer.start('loadrefr')
-        print('[kevlar::filter] Loading reference genome from',
-              args.refr, file=args.logfile)
-        refr = load_refr(args.refr, args.ksize, args.refr_memory,
-                         args.refr_max_fpr, args.logfile)
-        elapsed = timer.stop('loadrefr')
-        print('[kevlar::filter]',
-              'Reference genome loaded in {:.2f} sec'.format(elapsed),
+    mask = None
+    if args.mask:
+        timer.start('loadmask')
+        print('[kevlar::filter] Loading mask from', args.mask,
               file=args.logfile)
-
-    contam = None
-    if args.contam:
-        timer.start('loadcontam')
-        print('[kevlar::filter] Loading contaminants from', args.contam,
-              file=args.logfile)
-        contam = load_refr(args.contam, args.ksize, args.contam_memory,
-                           args.contam_max_fpr, args.logfile)
-        elapsed = timer.stop('loadcontam')
-        print('[kevlar::filter]',
-              'Contaminant database loaded in {:.2f} sec'.format(elapsed),
+        mask = load_mask(args.mask, args.ksize, args.mask_memory,
+                         maxfpr=args.mask_max_fpr, savefile=args.save_mask,
+                         logfile=args.logfile)
+        elapsed = timer.stop('loadmask')
+        print('[kevlar::filter]', 'Mask loaded in {:.2f} sec'.format(elapsed),
               file=args.logfile)
 
     timer.start('recalc')
@@ -160,8 +153,8 @@ def main(args):
           file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
     augstream = kevlar.open(args.aug_out, 'w') if args.aug_out else None
-    validate_and_print(readset, countgraph, refr, contam, args.min_abund,
-                       args.skip2, outstream, augstream, args.logfile)
+    validate_and_print(readset, countgraph, mask, args.min_abund, outstream,
+                       augstream, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
