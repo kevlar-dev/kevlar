@@ -138,3 +138,24 @@ def test_ctrl3_refr_contam(ctrl3, bogusrefr, bogusrefrcontam):
     kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefrcontam,
                                      minabund=6)
     assert readset.valid == (13, 171)
+
+
+def test_filter_main(capsys):
+    arglist = [
+        'filter',
+        '--mask',
+        kevlar.tests.data_file('bogus-genome/refr.fa'),
+        kevlar.tests.data_file('bogus-genome/contam1.fa'),
+        '--mask-memory', '10M',
+        '--mask-max-fpr', '0.001',
+        '--abund-memory', '10M',
+        '--abund-max-fpr', '0.001',
+        '--min-abund', '6',
+        '--ksize', '13',
+        kevlar.tests.data_file('trio1/novel_3_1,2.txt'),
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.filter.main(args)
+
+    out, err = capsys.readouterr()
+    assert '171 instances of 13 distinct k-mers validated as novel' in err

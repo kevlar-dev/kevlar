@@ -153,8 +153,8 @@ def main(args):
           file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
     augstream = kevlar.open(args.aug_out, 'w') if args.aug_out else None
-    validate_and_print(readset, countgraph, mask, args.min_abund,
-                       args.skip2, outstream, augstream, args.logfile)
+    validate_and_print(readset, countgraph, mask, args.min_abund, outstream,
+                       augstream, args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
