@@ -111,7 +111,8 @@ def assemble_contigs(countgraph, variants, kmers_to_ignore=None,
             print('[kevlar::collect]     DEBUG kmer:', kmer, file=logfile)
         contigs = asm.assemble(kmer)
         for i, contig in enumerate(contigs):
-            contig = contig.decode()
+            if hasattr(contig, 'decode'):
+                contig = contig.decode()
             if contig == '':
                 print('    WARNING: no linear path found for k-mer', kmer,
                       file=logfile)
