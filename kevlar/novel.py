@@ -21,29 +21,38 @@ class KevlarCaseSampleMismatchError(ValueError):
 
 
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
-                        ctrl_max=1):
+                        ctrl_max=1, screen_thresh=None):
     """
     Well, is it?
 
     Consult the k-mer's abundance in each sample to determine whether it is
     "interesting". It must be >= `case_min` in each of `casecounts`, and must
     be <= `ctrl_max` in each of `controlcounts`.
+
+    Returns 4 values: 2 booleans, and 2 lists of integers
+    - boolean indicating whether the k-mer is interesting
+    - boolean indicating whether the entire read should be discarded
+    - list of case sample abundances (empty if k-mer not interesting)
+    - list of control sample abundances (empty if k-mer not interesting)
     """
     caseabunds = list()
     for ct in casecounts:
         abund = ct.get(kmer)
         if abund < case_min:
-            return False
+            discard = False
+            if screen_thresh and abund < screen_thresh:
+                discard = True
+            return False, discard, [], []
         caseabunds.append(abund)
 
     ctrlabunds = list()
     for count in controlcounts:
         abund = count.get(kmer)
         if abund > ctrl_max:
-            return False
+            return False, False, [], []
         ctrlabunds.append(abund)
 
-    return caseabunds + ctrlabunds
+    return True, False, caseabunds, ctrlabunds
 
 
 def main(args):
@@ -110,7 +119,7 @@ def main(args):
     unique_kmers = set()
     outstream = kevlar.open(args.out, 'w')
     infiles = [f for filelist in args.case for f in filelist]
-    for n, record in enumerate(kevlar.multi_file_iter_screed(infiles)):
+    for n, record in enumerate(kevlar.multi_file_iter_screed(infiles), 1):
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
             msg = '    processed {} reads'.format(n)
@@ -121,26 +130,35 @@ def main(args):
             # this soon.
             continue
 
+        discard_read = False
         record.ikmers = list()
         for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
             if args.num_bands:
                 khash = cases[0].hash(kmer)
                 if khash & (args.num_bands - 1) != args.band - 1:
                     continue
-            abund = kmer_is_interesting(kmer, cases, controls, args.case_min,
-                                        args.ctrl_max)
-            if not abund:
+            interesting, discard, caseabund, ctrlabund = kmer_is_interesting(
+                kmer, cases, controls, case_min=args.case_min,
+                ctrl_max=args.ctrl_max, screen_thresh=args.abund_screen,
+            )
+            if discard:
+                discard_read = True
+                break
+            if not interesting:
                 continue
+            abund = caseabund + ctrlabund
             ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=i, abund=abund)
             record.ikmers.append(ikmer)
             minkmer = kevlar.revcommin(kmer)
             unique_kmers.add(minkmer)
 
         read_kmers = len(record.ikmers)
-        if read_kmers > 0:
-            nreads += 1
-            nkmers += read_kmers
-            kevlar.print_augmented_fastx(record, outstream)
+        if discard_read or read_kmers < 0:
+            continue
+
+        nreads += 1
+        nkmers += read_kmers
+        kevlar.print_augmented_fastx(record, outstream)
 
     elapsed = timer.stop('iter')
     message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)

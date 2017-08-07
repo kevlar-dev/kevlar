@@ -147,3 +147,15 @@ def test_iter_read_multi_file():
     print(infiles)
     records = [r for r in kevlar.multi_file_iter_khmer(infiles)]
     assert len(records) == 4
+
+
+def test_novel_abund_screen(capsys):
+    case = kevlar.tests.data_file('screen-case.fa')
+    ctrl = kevlar.tests.data_file('screen-ctrl.fa')
+    arglist = ['novel', '--ksize', '25', '--ctrl-max', '1', '--case-min', '8',
+               '--case', case, '--control', ctrl, '--abund-screen', '3']
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.novel.main(args)
+
+    out, err = capsys.readouterr()
+    assert '>seq_error' not in out
