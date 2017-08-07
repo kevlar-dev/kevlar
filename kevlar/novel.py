@@ -153,7 +153,7 @@ def main(args):
             unique_kmers.add(minkmer)
 
         read_kmers = len(record.ikmers)
-        if discard_read or read_kmers < 0:
+        if discard_read or read_kmers == 0:
             continue
 
         nreads += 1
