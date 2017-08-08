@@ -27,14 +27,14 @@ def test_trio2(capsys):
             'novel', '--case', case,
             '--control', controls[0], '--control', controls[1],
             '--band', str(i+1), '--num-bands', '4', '--out', novelouts[i],
-            '--memory', '400K', '--ksize', '31',
+            '--memory', '350K', '--ksize', '31',
             '--case-min', '8', '--ctrl-max', '1'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
 
     arglist = [
-        'collect', '--memory', '10K', '--ksize', '31', '--minabund', '8',
+        'collect', '--memory', '5K', '--ksize', '31', '--minabund', '8',
         '--collapse'
     ] + novelouts
     args = kevlar.cli.parser().parse_args(arglist)
