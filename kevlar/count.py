@@ -24,6 +24,7 @@ def split_infiles_outfiles(filelist):
 def main(args):
     if (args.num_bands is None) is not (args.band is None):
         raise ValueError('Must specify --num-bands and --band together')
+    myband = args.band - 1 if args.band else None
 
     timer = kevlar.Timer()
     timer.start()
@@ -34,8 +35,7 @@ def main(args):
     controls = kevlar.counting.load_samples(
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
-        mask=None, numbands=args.num_bands, band=args.band,
-        logfile=args.logfile
+        mask=None, numbands=args.num_bands, band=myband, logfile=args.logfile
     )
     elapsed = timer.stop('loadctrl')
     numcontrols = len(controls)
@@ -49,7 +49,7 @@ def main(args):
     cases = kevlar.counting.load_samples(
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
-        mask=casemask, numbands=args.num_bands, band=args.band,
+        mask=casemask, numbands=args.num_bands, band=myband,
         logfile=args.logfile
     )
     elapsed = timer.stop('loadcase')

@@ -58,6 +58,7 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
 def main(args):
     if (not args.num_bands) is not (not args.band):
         raise ValueError('Must specify --num-bands and --band together')
+    myband = args.band - 1 if args.band else None
 
     timer = kevlar.Timer()
     timer.start()
@@ -77,7 +78,7 @@ def main(args):
     else:
         controls = kevlar.counting.load_samples(
             args.control, args.ksize, args.memory, maxfpr=args.max_fpr,
-            memfraction=None, numbands=args.num_bands, band=args.band,
+            memfraction=None, numbands=args.num_bands, band=myband,
             logfile=args.logfile
         )
     elapsed = timer.stop('loadctrl')
@@ -102,7 +103,7 @@ def main(args):
     else:
         cases = kevlar.counting.load_samples(
             args.case, args.ksize, args.memory, maxfpr=args.max_fpr,
-            memfraction=None, numbands=args.num_bands, band=args.band,
+            memfraction=None, numbands=args.num_bands, band=myband,
             logfile=args.logfile
         )
     elapsed = timer.stop('loadcases')
