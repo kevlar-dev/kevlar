@@ -60,9 +60,10 @@ def subparser(subparsers):
 
     mem_desc = """\
     Specify how much memory to allocate for the sketch data structures
-    used to store k-mer counts. The first control sample will be
-    allocated the full amount of specifed `--memory`, and all subsequent
-    samples will be allocated a fraction thereof.
+    used to store k-mer counts. If `--mem-frac` is not set, all samples will be
+    allocated `MEM` bytes. If `--mem-frac` is set, then the first control
+    sample will be allocated `MEM` bytes, and all other samples will be
+    allocated `MEM * F` bytes.
     """
     mem_desc = textwrap.dedent(mem_desc)
     memory_args = subparser.add_argument_group('Memory allocation', mem_desc)
@@ -72,9 +73,9 @@ def subparser(subparsers):
         'the initial control sample; default is 1M'
     )
     memory_args.add_argument(
-        '-f', '--mem-frac', type=float, default=0.1, metavar='F',
+        '-f', '--mem-frac', type=float, default=None, metavar='F',
         help='fraction of the total memory to allocate to subsequent samples; '
-        'default is 0.1'
+        'must be between 0.0 and 1.0'
     )
     memory_args.add_argument(
         '--max-fpr', type=float, default=0.2, metavar='FPR',
