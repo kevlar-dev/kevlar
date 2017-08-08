@@ -10,6 +10,7 @@
 from __future__ import print_function
 import re
 import sys
+import threading
 
 import khmer
 import kevlar
@@ -25,7 +26,7 @@ class KevlarOutfileMismatchError(ValueError):
 
 def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
                         mask=None, maskmaxabund=1, numbands=None, band=None,
-                        outfile=None, logfile=sys.stderr):
+                        outfile=None, numthreads=1, logfile=sys.stderr):
     """
     Compute k-mer abundances for the specified sequence input.
 
@@ -40,29 +41,43 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     sketch = khmer.Counttable(ksize, memory / 4, 4)
     n, nkmers = 0, 0
     for seqfile in seqfiles:
-        if mask:
-            if numbands:
-                nr, nk = sketch.consume_seqfile_banding_with_mask(
-                    seqfile, numbands, band, mask
-                )
+        parser = khmer.ReadParser(seqfile)
+        threads = list()
+        for _ in range(numthreads):
+            if mask:
+                if numbands:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_banding_with_mask_with_reads_parser,  # noqa
+                        args=(parser, numbands, band, mask),
+                    )
+                else:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_with_mask_with_reads_parser,  # noqa
+                        args=(parser, mask),
+                    )
             else:
-                nr, nk = sketch.consume_seqfile_with_mask(seqfile, mask)
-        else:
-            if numbands:
-                nr, nk = sketch.consume_seqfile_banding(
-                    seqfile, numbands, band
-                )
-            else:
-                nr, nk = sketch.consume_seqfile(seqfile)
-        n += nr
-        nkmers += nk
+                if numbands:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_banding_with_reads_parser,  # noqa
+                        args=(parser, numbands, band),
+                    )
+                else:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_with_reads_parser,
+                        args=(parser),
+                    )
+            threads.append(thread)
+            thread.start()
+
+    for thread in threads:
+        thread.join()
 
     message = 'done loading reads'
     if numbands:
         message += ' (band {:d}/{:d})'.format(band, numbands)
     fpr = kevlar.sketch.estimate_fpr(sketch)
-    message += '; {:d} reads processed'.format(n)
-    message += ', {:d} k-mers stored'.format(nkmers)
+    message += '; {:d} reads processed'.format(parser.num_reads)
+    message += ', {:d} distinct k-mers stored'.format(sketch.n_unique_kmers())
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
@@ -80,7 +95,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
 
 def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
                  maxfpr=0.2, maxabund=1, numbands=None, band=None,
-                 outfiles=None, logfile=sys.stderr):
+                 outfiles=None, numthreads=1, logfile=sys.stderr):
     """
     Load a group of related samples using a memory-efficient strategy.
 
@@ -115,7 +130,8 @@ def load_samples(samplelists, ksize, memory, mask=None, memfraction=None,
             mymask = sketches[0]
         sketch = load_sample_seqfile(
             seqfiles, ksize, sketchmem, maxfpr=maxfpr, mask=mymask,
-            numbands=numbands, band=band, outfile=outfile, logfile=logfile
+            numbands=numbands, band=band, outfile=outfile,
+            numthreads=numthreads, logfile=logfile
         )
         sketches.append(sketch)
     return sketches
