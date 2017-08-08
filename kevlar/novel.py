@@ -79,7 +79,7 @@ def main(args):
         controls = kevlar.counting.load_samples(
             args.control, args.ksize, args.memory, maxfpr=args.max_fpr,
             memfraction=None, numbands=args.num_bands, band=myband,
-            logfile=args.logfile
+            numthreads=args.threads, logfile=args.logfile
         )
     elapsed = timer.stop('loadctrl')
     message = 'Control samples loaded in {:.2f} sec'.format(elapsed)
@@ -104,7 +104,7 @@ def main(args):
         cases = kevlar.counting.load_samples(
             args.case, args.ksize, args.memory, maxfpr=args.max_fpr,
             memfraction=None, numbands=args.num_bands, band=myband,
-            logfile=args.logfile
+            numthreads=args.threads, logfile=args.logfile
         )
     elapsed = timer.stop('loadcases')
     print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),

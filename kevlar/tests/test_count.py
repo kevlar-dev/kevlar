@@ -41,3 +41,23 @@ def test_count_simple(numbands, band, kmers_stored, capsys):
 
     assert '600 reads processed' in str(err)
     assert '{:d} distinct k-mers stored'.format(kmers_stored) in str(err)
+
+
+def test_count_threading():
+    with NamedTemporaryFile(suffix='.counttable') as ctrl1out, \
+            NamedTemporaryFile(suffix='.counttable') as ctrl2out, \
+            NamedTemporaryFile(suffix='.counttable') as caseout:
+        case = data_file('trio1/case1.fq')
+        ctrls = data_glob('trio1/ctrl[1,2].fq')
+        arglist = [
+            'count',
+            '--ksize', '19', '--memory', '500K', '--threads', '2',
+            '--case', caseout.name, case,
+            '--control', ctrl1out.name, ctrls[0],
+            '--control', ctrl2out.name, ctrls[1],
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.count.main(args)
+
+    # No checks, just doing a "smoke test" to make sure things don't explode
+    # when counting is done in "threaded" mode.
