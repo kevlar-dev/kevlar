@@ -17,9 +17,9 @@ from kevlar.tests import data_file, data_glob
 
 
 @pytest.mark.parametrize('numbands,band,kmers_stored', [
-    (0, 0, 15600),
-    (2, 1, 7937),
-    (16, 7, 1068),
+    (0, 0, 947),
+    (2, 1, 500),
+    (16, 7, 68),
 ])
 def test_count_simple(numbands, band, kmers_stored, capsys):
     with NamedTemporaryFile(suffix='.counttable') as ctrl1out, \
@@ -40,4 +40,4 @@ def test_count_simple(numbands, band, kmers_stored, capsys):
     out, err = capsys.readouterr()
 
     assert '600 reads processed' in str(err)
-    assert '{:d} k-mers stored'.format(kmers_stored) in str(err)
+    assert '{:d} distinct k-mers stored'.format(kmers_stored) in str(err)

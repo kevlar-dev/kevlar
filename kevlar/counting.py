@@ -64,7 +64,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
                 else:
                     thread = threading.Thread(
                         target=sketch.consume_seqfile_with_reads_parser,
-                        args=(parser),
+                        args=(parser, ),  # Comma and space directly after "parser is critical" # noqa
                     )
             threads.append(thread)
             thread.start()
@@ -74,7 +74,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
 
     message = 'done loading reads'
     if numbands:
-        message += ' (band {:d}/{:d})'.format(band, numbands)
+        message += ' (band {:d}/{:d})'.format(band+1, numbands)
     fpr = kevlar.sketch.estimate_fpr(sketch)
     message += '; {:d} reads processed'.format(parser.num_reads)
     message += ', {:d} distinct k-mers stored'.format(sketch.n_unique_kmers())
