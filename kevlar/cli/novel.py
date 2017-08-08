@@ -135,3 +135,6 @@ def subparser(subparsers):
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
                            '1000000 (1 update message per millon reads)')
+    misc_args.add_argument('--abund-screen', type=int, default=None,
+                           metavar='INT', help='discard reads with any k-mers '
+                           'whose abundance is < INT')
