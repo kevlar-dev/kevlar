@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
+from collections import defaultdict
 import itertools
 import networkx
 import kevlar
@@ -24,9 +25,9 @@ class ReadGraph(networkx.Graph):
         build out the graph edges.
         """
         self.ikmers = defaultdict(set)
-        super(ReadGraph, self).__init__(data, attr)
+        super(ReadGraph, self).__init__(data, **attr)
 
-    def load(instream, minabund=None, maxabund=None, dedup=False):
+    def load(self, instream, minabund=None, maxabund=None, dedup=False):
         """
         Load reads and interesting k-mers into a graph structure.
 
@@ -86,7 +87,13 @@ class ReadGraph(networkx.Graph):
                           orient=pair.sameorient, tail=tailname,
                           swapped=pair.swapped)
 
-    def populate_edges(strict=False):
+    def populate_edges(self, strict=False):
+        """
+        Instantiate edges between nodes that share an interesting k-mer.
+
+        Setting `strict=True` will result in edges between reads only when they
+        have a perfect match in their overlap.
+        """
         for kmer in self.ikmers:
             readset = self.ikmers[kmer]
             for read1, read2 in itertools.combinations(readset, 2):

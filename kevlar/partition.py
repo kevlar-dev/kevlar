@@ -27,22 +27,18 @@ def main(args):
     print('[kevlar::partition] Loading reads from', args.augfastq,
           file=args.logfile)
     inputfile = kevlar.open(args.augfastq, 'r')
-    reads, kmers = load_reads_and_kmers(inputfile, debugout)
+    graph = kevlar.ReadGraph()
+    graph.load(inputfile, minabund=args.min_abund, maxabund=args.max_abund)
     elapsed = timer.stop('loadreads')
     print('[kevlar::partition]', 'Reads loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
     timer.start('buildgraph')
-    if args.strict:
-        print('[kevlar::partition] Building read graph in strict mode',
-              '(perfect match in read overlap required)', file=args.logfile)
-        graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
-                                                 args.max_abund, debugout)
-    else:
-        print('[kevlar::partition] Building read graph in relaxed mode',
-              '(shared novel k-mer required)', file=args.logfile)
-        graph = kevlar.overlap.graph_init_basic(kmers, logstream=debugout)
-    elapsed = timer.stop('loadreads')
+    mode = 'strict' if args.strict else 'relaxed'
+    message = 'Building read graph in {:s} mode'.format(mode)
+    print('[kevlar::partition]', message, file=args.logfile)
+    graph.populate_edges(strict=args.strict)
+    elapsed = timer.stop('buildgraph')
     print('[kevlar::partition]', 'Graph built in {:.2f} sec'.format(elapsed),
           file=args.logfile)
 
