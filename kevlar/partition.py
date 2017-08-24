@@ -15,6 +15,27 @@ import kevlar
 from kevlar.seqio import load_reads_and_kmers
 
 
+def write_partitions(graph, ccprefix, dedup=True, minabund=None, maxabund=None,
+                     logstream=sys.stderr):
+    """Given a read graph, write distinct partitions to separate files."""
+    n = 0
+    reads_in_ccs = 0
+    cclog = open(ccprefix + '.cc.log', 'w')
+    part_iter = graph.partitions(dedup, minabund, maxabund)
+    for n, cc in enumerate(part_iter):
+        readnames = [r for r in cc]
+        print('CC', n, len(cc), readnames, sep='\t', file=cclog)
+        reads_in_ccs += len(cc)
+        outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)
+        with kevlar.open(outfilename, 'w') as outfile:
+            for readid in cc:
+                record = graph.node[readid]['record']
+                kevlar.print_augmented_fastx(record, outfile)
+    message = '[kevlar::overlap] grouped {:d} reads'.format(reads_in_ccs)
+    message += ' into {:d} connected components'.format(n + 1)
+    print(message, file=logstream)
+
+
 def main(args):
     debugout = None
     if args.debug:
@@ -27,8 +48,9 @@ def main(args):
     print('[kevlar::partition] Loading reads from', args.augfastq,
           file=args.logfile)
     inputfile = kevlar.open(args.augfastq, 'r')
+    readstream = kevlar.parse_augmented_fastx(inputfile)
     graph = kevlar.ReadGraph()
-    graph.load(inputfile, minabund=args.min_abund, maxabund=args.max_abund)
+    graph.load(readstream, minabund=args.min_abund, maxabund=args.max_abund)
     elapsed = timer.stop('loadreads')
     print('[kevlar::partition]', 'Reads loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
@@ -48,7 +70,9 @@ def main(args):
     timer.start('writeoutput')
     print('[kevlar::partition] Writing output to prefix', args.outprefix,
           file=args.logfile)
-    kevlar.overlap.write_partitions(graph, reads, args.outprefix, args.logfile)
+    write_partitions(graph, args.outprefix, dedup=args.dedup,
+                     minabund=args.min_abund, maxabund=args.max_abund,
+                     logstream=args.logfile)
     elapsed = timer.stop('writeoutput')
     print('[kevlar::partition]',
           'Output written in {:.2f} sec'.format(elapsed), file=args.logfile)

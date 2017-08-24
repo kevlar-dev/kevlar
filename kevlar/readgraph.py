@@ -27,7 +27,7 @@ class ReadGraph(networkx.Graph):
         self.ikmers = defaultdict(set)
         super(ReadGraph, self).__init__(data, **attr)
 
-    def load(self, instream, minabund=None, maxabund=None, dedup=False):
+    def load(self, readstream, minabund=None, maxabund=None, dedup=False):
         """
         Load reads and interesting k-mers into a graph structure.
 
@@ -46,11 +46,12 @@ class ReadGraph(networkx.Graph):
         temp_ikmers = defaultdict(set)
         unique_reads = set()
 
-        for record in kevlar.parse_augmented_fastx(instream):
-            minread = kevlar.revcommin(record.sequence)
-            if minread in unique_reads:
-                continue
-            unique_reads.add(minread)
+        for record in readstream:
+            if dedup:
+                minread = kevlar.revcommin(record.sequence)
+                if minread in unique_reads:
+                    continue
+                unique_reads.add(minread)
 
             self.add_node(record.name, record=record)
             for kmer in record.ikmers:
@@ -98,8 +99,8 @@ class ReadGraph(networkx.Graph):
             readset = self.ikmers[kmer]
             for read1, read2 in itertools.combinations(readset, 2):
                 if strict:
-                    record1 = self[read1]['record']
-                    record2 = self[read2]['record']
+                    record1 = self.node[read1]['record']
+                    record2 = self.node[read2]['record']
                     pair = kevlar.overlap.calc_offset(record1, record2, kmer)
                     if pair is kevlar.overlap.INCOMPATIBLE_PAIR:
                         # Shared k-mer but bad overlap
@@ -107,3 +108,16 @@ class ReadGraph(networkx.Graph):
                     self.check_edge(pair, kmer)
                 else:
                     self.add_edge(read1, read2)
+
+    def partitions(self, dedup=True, minabund=None, maxabund=None):
+        for cc in sorted(networkx.connected_components(self), reverse=True,
+                         # Sort first by number of reads, then by read names
+                         key=lambda c: (len(c), sorted(c))):
+            if dedup:
+                partition = ReadGraph()
+                readstream = [self.node[readid]['record'] for readid in cc]
+                partition.load(readstream, minabund, maxabund, dedup=True)
+                assert networkx.number_of_nodes(partition) > 0
+                yield partition
+            else:
+                yield cc
