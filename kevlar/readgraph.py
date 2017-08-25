@@ -117,7 +117,7 @@ class ReadGraph(networkx.Graph):
                 partition = ReadGraph()
                 readstream = [self.node[readid]['record'] for readid in cc]
                 partition.load(readstream, minabund, maxabund, dedup=True)
-                assert networkx.number_of_nodes(partition) > 0
+                assert partition.number_of_nodes() > 0
                 yield partition
             else:
                 yield cc

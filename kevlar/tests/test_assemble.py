@@ -456,5 +456,7 @@ def test_assemble_main(capsys):
     out, err = capsys.readouterr()
     contig = ('TATCACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTACACCCCGGTTTTTAGA'
               'AGTCTCGACTTTAAGGAAGTGGGCCTACGGCGGAAGCCGTCTCTAATGGACTCAAGGACCTGA'
-              'ATCCAACTAGAGGAGCTTGCCAa')
+              'ATC')
+    print('DEBUG', contig)
+    print('DEBUG', out)
     assert contig in out
