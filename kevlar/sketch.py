@@ -10,19 +10,19 @@
 import khmer
 
 
-sketch_constructor_by_filename_extension = {
-    '.nt': khmer._Nodetable,
-    '.ng': khmer._Nodegraph,
-    '.ct': khmer._Counttable,
-    '.cg': khmer._Countgraph,
-    '.sct': khmer._SmallCounttable,
-    '.scg': khmer._SmallCountgraph,
-    '.nodetable': khmer._Nodetable,
-    '.nodegraph': khmer._Nodegraph,
-    '.counttable': khmer._Counttable,
-    '.countgraph': khmer._Countgraph,
-    '.smallcounttable': khmer._SmallCounttable,
-    '.smallcountgraph': khmer._SmallCountgraph,
+sketch_loader_by_filename_extension = {
+    '.nt':  (khmer.load_nodetable, False),
+    '.ng':  (khmer.load_nodegraph, False),
+    '.ct':  (khmer.load_counttable, False),
+    '.cg':  (khmer.load_countgraph, False),
+    '.sct': (khmer.load_counttable, True),
+    '.scg': (khmer.load_countgraph, True),
+    '.nodetable':       (khmer.load_nodetable, False),
+    '.nodegraph':       (khmer.load_nodegraph, False),
+    '.counttable':      (khmer.load_counttable, False),
+    '.countgraph':      (khmer.load_countgraph, False),
+    '.smallcounttable': (khmer.load_counttable, True),
+    '.smallcountgraph': (khmer.load_countgraph, True),
 }
 
 
@@ -54,16 +54,17 @@ def load(filename):
     itself and enables loading directly from file contents, this is the best we
     can do.
     """
-    extensions = tuple(sketch_constructor_by_filename_extension)
+    extensions = tuple(sketch_loader_by_filename_extension)
     if not filename.endswith(extensions):
         message = 'unable to determine sketch type from filename ' + filename
         raise KevlarSketchTypeError(message)
 
     ext = '.' + filename.split('.')[-1]
-    constructor = sketch_constructor_by_filename_extension[ext]
-
-    sketch = constructor(1, [1])
-    sketch.load(filename)
+    loader, issmall = sketch_loader_by_filename_extension[ext]
+    if issmall:
+        sketch = loader(filename, small=issmall)
+    else:
+        sketch = loader(filename)
     return sketch
 
 

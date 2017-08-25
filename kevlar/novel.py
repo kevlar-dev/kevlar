@@ -128,6 +128,8 @@ def main(args):
             msg = '    processed {} reads'.format(n)
             msg += ' in {:.2f} seconds...'.format(elapsed)
             print(msg, file=args.logfile)
+        if len(record.sequence) < args.ksize:
+            continue
         if re.search('[^ACGT]', record.sequence):
             # This check should be temporary; hopefully khmer will handle
             # this soon.
