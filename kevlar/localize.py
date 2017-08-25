@@ -45,7 +45,7 @@ def get_unique_kmers(infile, ksize=31):
     The absence of annotated k-mers is not problematic, but the contigs should
     be on a single line.
     """
-    ct = khmer._Counttable(ksize, [1])
+    ct = khmer.Counttable(ksize, 1, 1)
     kmers = set()
     instream = kevlar.open(infile, 'r')
     for record in kevlar.parse_augmented_fastx(instream):
