@@ -9,6 +9,10 @@
 
 import pytest
 import kevlar
+from kevlar import KmerOfInterest
+from kevlar.seqio import AnnotatedReadSet as ReadSet
+import khmer
+import screed
 import tempfile
 import shutil
 
@@ -107,3 +111,31 @@ def test_kevlar_open(basename):
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
     assert len(record.ikmers) == 2
+
+
+def test_ikmer_abund_after_recalc():
+    """
+    Ensure interesting k-mer abundances are correct after recalculation.
+
+    The interesting k-mer has an advertised abundance of 28, but a true
+    abundance (in `counts`) of 10. The readset "validate" function should check
+    and correct this.
+    """
+    read = screed.Record(
+        name='read1',
+        sequence='AAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGT',
+        ikmers=[KmerOfInterest('CATTGTCCTCGGGACTC', 13, [28, 0, 0])],
+    )
+
+    counts = khmer.Counttable(17, 1e5, 4)
+    seq = 'TTCGTTCCCGAAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGTTCCGTCCTTCA'
+    for _ in range(10):
+        counts.consume(seq)
+
+    rs = ReadSet()
+    rs.add(read)
+    assert read.ikmers[0].abund[0] == 28
+
+    rs.validate(counts, minabund=8)
+    assert rs.valid == (1, 1)
+    assert read.ikmers[0].abund[0] == 10
