@@ -20,11 +20,15 @@ class ReadGraph(networkx.Graph):
         """
         Constructor
 
-        The only addition to the base class is a dictionary to store sets of
+        In addition to the base class, we add a dictionary to store sets of
         reads containing each "interesting" k-mer. These k-mers are used to
         build out the graph edges.
+
+        Also, we store the names of the input reads so that reads with no
+        connections to other reads can be distinguished from assembled contigs.
         """
         self.ikmers = defaultdict(set)
+        self.readnames = set()
         super(ReadGraph, self).__init__(data, **attr)
 
     def load(self, readstream, minabund=None, maxabund=None, dedup=False):
@@ -54,6 +58,7 @@ class ReadGraph(networkx.Graph):
                 unique_reads.add(minread)
 
             self.add_node(record.name, record=record)
+            self.readnames.add(record.name)
             for kmer in record.ikmers:
                 kmerseq = kevlar.revcommin(kmer.sequence)
                 temp_ikmers[kmerseq].add(record.name)
@@ -113,6 +118,8 @@ class ReadGraph(networkx.Graph):
         for cc in sorted(networkx.connected_components(self), reverse=True,
                          # Sort first by number of reads, then by read names
                          key=lambda c: (len(c), sorted(c))):
+            if len(cc) == 1 and list(cc)[0] in self.readnames:
+                continue  # Skip unassembled input reads
             if dedup:
                 partition = ReadGraph()
                 readstream = [self.node[readid]['record'] for readid in cc]

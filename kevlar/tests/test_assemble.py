@@ -15,7 +15,7 @@ from kevlar import KmerOfInterest
 from kevlar.seqio import load_reads_and_kmers
 from kevlar.assemble import (merge_pair, merge_and_reannotate)
 from kevlar.overlap import (OverlappingReadPair, INCOMPATIBLE_PAIR,
-                            calc_offset, graph_init_strict)
+                            calc_offset)
 from kevlar.tests import data_file
 
 
@@ -388,12 +388,13 @@ def test_load_reads_and_kmers():
 
 def test_graph_init():
     """Test graph initialization."""
-    instream = open(data_file('var1.reads.augfastq'), 'r')
-    reads, kmers = load_reads_and_kmers(instream, logstream=None)
-    graph = graph_init_strict(reads, kmers, maxabund=None, logstream=None)
+    instream = kevlar.open(data_file('var1.reads.augfastq'), 'r')
+    graph = kevlar.ReadGraph()
+    graph.load(kevlar.parse_augmented_fastx(instream))
+    graph.populate_edges(strict=True)
 
     # 10 reads in the file, but read16f has no valid connections due to error
-    assert len(graph.nodes()) == 9
+    assert len(graph.nodes()) == 10
 
     # The given read shares its interesting k-mer and has compatible overlaps
     # with 6 other reads (read13f and read15f have errors).
@@ -406,15 +407,16 @@ def test_graph_init():
     assert graph[r23name][r35name]['overlap'] == 58
 
     # Should all be a single CC
-    assert len(list(connected_components(graph))) == 1
+    assert len(list(connected_components(graph))) == 2
+    assert len([p for p in graph.partitions()]) == 1
 
     r8name = 'read8f start=8,mutations=0'
     r37name = 'read37f start=9,mutations=0'
     assert graph[r37name][r8name]['offset'] == 1
     assert graph[r37name][r8name]['overlap'] == 99
     pair = OverlappingReadPair(
-        tail=reads[r8name], head=reads[r37name], offset=1, overlap=99,
-        sameorient=True, swapped=False
+        tail=graph.node[r8name]['record'], head=graph.node[r37name]['record'],
+        offset=1, overlap=99, sameorient=True, swapped=False
     )
     assert merge_pair(pair) == ('CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTAC'
                                 'ACCCCGGTTTTTAGAAGTCTCGACTTTAAGGAAGTGGGCCTACGG'
@@ -422,9 +424,11 @@ def test_graph_init():
 
 
 def test_assembly_round2():
-    instream = open(data_file('var1.round2.augfastq'), 'r')
-    reads, kmers = load_reads_and_kmers(instream, logstream=None)
-    contig, read = reads['contig1'], reads['read22f start=5,mutations=0']
+    instream = kevlar.open(data_file('var1.round2.augfastq'), 'r')
+    graph = kevlar.ReadGraph()
+    graph.load(kevlar.parse_augmented_fastx(instream))
+    contig = graph.node['contig1']['record']
+    read = graph.node['read22f start=5,mutations=0']['record']
     pair = calc_offset(contig, read, 'AAGTCTCGACTTTAAGGAAGTGGGCCTAC')
     assert pair.tail == read
     assert pair.head == contig
@@ -434,9 +438,11 @@ def test_assembly_round2():
 
 
 def test_assembly_contigs():
-    instream = open(data_file('AluContigs.augfastq'), 'r')
-    reads, kmers = load_reads_and_kmers(instream, logstream=None)
-    contig6, contig7 = reads['contig6'], reads['contig7']
+    instream = kevlar.open(data_file('AluContigs.augfastq'), 'r')
+    graph = kevlar.ReadGraph()
+    graph.load(kevlar.parse_augmented_fastx(instream))
+    contig6 = graph.node['contig6']['record']
+    contig7 = graph.node['contig7']['record']
     pair = calc_offset(contig6, contig7, 'AAAGTTTTCTTAAAAACATATATGGCCGGGC')
     assert pair.offset == 50
     assert pair.overlap == 85
