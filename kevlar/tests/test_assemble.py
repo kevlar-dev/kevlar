@@ -415,7 +415,7 @@ def test_graph_init():
     assert graph[r37name][r8name]['offset'] == 1
     assert graph[r37name][r8name]['overlap'] == 99
     pair = OverlappingReadPair(
-        tail=graph.node[r8name]['record'], head=graph.node[r37name]['record'],
+        tail=graph.get_record(r8name), head=graph.get_record(r37name),
         offset=1, overlap=99, sameorient=True, swapped=False
     )
     assert merge_pair(pair) == ('CACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTAC'
@@ -427,8 +427,8 @@ def test_assembly_round2():
     instream = kevlar.open(data_file('var1.round2.augfastq'), 'r')
     graph = kevlar.ReadGraph()
     graph.load(kevlar.parse_augmented_fastx(instream))
-    contig = graph.node['contig1']['record']
-    read = graph.node['read22f start=5,mutations=0']['record']
+    contig = graph.get_record('contig1')
+    read = graph.get_record('read22f start=5,mutations=0')
     pair = calc_offset(contig, read, 'AAGTCTCGACTTTAAGGAAGTGGGCCTAC')
     assert pair.tail == read
     assert pair.head == contig
@@ -441,8 +441,8 @@ def test_assembly_contigs():
     instream = kevlar.open(data_file('AluContigs.augfastq'), 'r')
     graph = kevlar.ReadGraph()
     graph.load(kevlar.parse_augmented_fastx(instream))
-    contig6 = graph.node['contig6']['record']
-    contig7 = graph.node['contig7']['record']
+    contig6 = graph.get_record('contig6')
+    contig7 = graph.get_record('contig7')
     pair = calc_offset(contig6, contig7, 'AAAGTTTTCTTAAAAACATATATGGCCGGGC')
     assert pair.offset == 50
     assert pair.overlap == 85

@@ -31,6 +31,9 @@ class ReadGraph(networkx.Graph):
         self.readnames = set()
         super(ReadGraph, self).__init__(data, **attr)
 
+    def get_record(self, recordname):
+        return self.node[recordname]['record']
+
     def load(self, readstream, minabund=None, maxabund=None, dedup=False):
         """
         Load reads and interesting k-mers into a graph structure.
@@ -104,8 +107,8 @@ class ReadGraph(networkx.Graph):
             readset = self.ikmers[kmer]
             for read1, read2 in itertools.combinations(readset, 2):
                 if strict:
-                    record1 = self.node[read1]['record']
-                    record2 = self.node[read2]['record']
+                    record1 = self.get_record(read1)
+                    record2 = self.get_record(read2)
                     pair = kevlar.overlap.calc_offset(record1, record2, kmer)
                     if pair is kevlar.overlap.INCOMPATIBLE_PAIR:
                         # Shared k-mer but bad overlap
@@ -122,7 +125,7 @@ class ReadGraph(networkx.Graph):
                 continue  # Skip unassembled input reads
             if dedup:
                 partition = ReadGraph()
-                readstream = [self.node[readid]['record'] for readid in cc]
+                readstream = [self.get_record(readid) for readid in cc]
                 partition.load(readstream, minabund, maxabund, dedup=True)
                 assert partition.number_of_nodes() > 0
                 yield partition

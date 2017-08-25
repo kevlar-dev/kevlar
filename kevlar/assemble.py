@@ -103,8 +103,8 @@ def fetch_largest_overlapping_pair(graph):
     if read2 == graph[read1][read2]['tail']:
         read1, read2 = read2, read1
     return kevlar.overlap.OverlappingReadPair(
-        tail=graph.node[read1]['record'],
-        head=graph.node[read2]['record'],
+        tail=graph.get_record(read1),
+        head=graph.get_record(read2),
         offset=graph[read1][read2]['offset'],
         overlap=graph[read1][read2]['overlap'],
         sameorient=graph[read1][read2]['orient'],
@@ -134,7 +134,7 @@ def assemble_with_greed(graph, ccindex, debugout=None):
                 ]
                 if already_merged or current_contig:
                     continue
-                otherrecord = graph.node[readname]['record']
+                otherrecord = graph.get_record(readname)
                 newpair = kevlar.overlap.calc_offset(
                     newrecord, otherrecord, kmerseq, debugout
                 )
@@ -231,7 +231,7 @@ def main(args):
                 unassembledcount += 1
                 continue
             contigcount += 1
-            contigrecord = cc.node[seqname]['record']
+            contigrecord = cc.get_record(seqname)
             kevlar.print_augmented_fastx(contigrecord, outstream)
 
     assembledcount = ccnodes - unassembledcount

@@ -29,7 +29,7 @@ def write_partitions(graph, ccprefix, dedup=True, minabund=None, maxabund=None,
         outfilename = '{:s}.cc{:d}.augfastq.gz'.format(ccprefix, n)
         with kevlar.open(outfilename, 'w') as outfile:
             for readid in cc:
-                record = graph.node[readid]['record']
+                record = graph.get_record(readid)
                 kevlar.print_augmented_fastx(record, outfile)
     message = '[kevlar::partition] grouped {:d} reads'.format(reads_in_ccs)
     message += ' into {:d} connected components'.format(n + 1)
