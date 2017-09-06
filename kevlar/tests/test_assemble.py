@@ -471,8 +471,6 @@ def test_assemble_main(capsys):
 def test_assemble_no_edges(capsys):
     cliargs = ['assemble', data_file('asmbl-no-edges.augfastq.gz')]
     args = kevlar.cli.parser().parse_args(cliargs)
-    kevlar.assemble.main(args)
-    out, err = capsys.readouterr()
-
-    assert 'nothing to be done, aborting' in err
-    assert out == ''
+    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError) as ege:
+        kevlar.assemble.main(args)
+    assert 'nothing to be done, aborting' in str(ege)
