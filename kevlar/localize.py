@@ -109,14 +109,14 @@ def select_region(matchlist, maxdiff=1000, delta=100):
     """
     seqids = set([s for s, p in matchlist])
     if len(seqids) > 1:
-        message = "variant matches {:d} sequence IDs".format(len(seqids))
+        message = 'variant matches {:d} sequence IDs'.format(len(seqids))
         raise KevlarVariantLocalizationError(message)
 
     minpos = min([p for s, p in matchlist])
     maxpos = max([p for s, p in matchlist])
     diff = maxpos - minpos
     if diff > maxdiff:
-        message = 'variant spans > {:d} bp (max {:d})''.format(diff, maxdiff)
+        message = 'variant spans {:d} bp (max {:d})'.format(diff, maxdiff)
         message += '; stubbornly refusing to continue'
         raise KevlarVariantLocalizationError(message)
 
