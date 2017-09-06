@@ -109,12 +109,16 @@ def select_region(matchlist, maxdiff=1000, delta=100):
     """
     seqids = set([s for s, p in matchlist])
     if len(seqids) > 1:
-        return None
+        message = 'variant matches {:d} sequence IDs'.format(len(seqids))
+        raise KevlarVariantLocalizationError(message)
 
     minpos = min([p for s, p in matchlist])
     maxpos = max([p for s, p in matchlist])
-    if maxpos - minpos > maxdiff:
-        return None
+    diff = maxpos - minpos
+    if diff > maxdiff:
+        message = 'variant spans {:d} bp (max {:d})'.format(diff, maxdiff)
+        message += '; stubbornly refusing to continue'
+        raise KevlarVariantLocalizationError(message)
 
     minpos = 0 if delta > minpos else minpos - delta
     maxpos += delta + 1
@@ -148,10 +152,7 @@ def main(args):
         raise KevlarNoReferenceMatchesError()
 
     region = select_region(kmer_matches, args.max_diff, args.delta)
-    if region is None:
-        raise KevlarVariantLocalizationError()
-    else:
-        seqid, start, end = region
-        instream = kevlar.open(args.refr, 'r')
-        subseqid, subseq = extract_region(instream, seqid, start, end)
-        print('>', subseqid, '\n', subseq, sep='', file=output)
+    seqid, start, end = region
+    instream = kevlar.open(args.refr, 'r')
+    subseqid, subseq = extract_region(instream, seqid, start, end)
+    print('>', subseqid, '\n', subseq, sep='', file=output)

@@ -14,6 +14,7 @@ except ImportError:
 import pytest
 import screed
 import kevlar
+from kevlar.localize import KevlarVariantLocalizationError
 from kevlar.tests import data_file
 
 
@@ -51,11 +52,15 @@ def test_unique_kmer_string():
 def test_select_region():
     # Different sequences
     matches = [('chr1', 100), ('chr2', 450)]
-    assert kevlar.localize.select_region(matches) is None
+    with pytest.raises(KevlarVariantLocalizationError) as vle:
+        _ = kevlar.localize.select_region(matches)
+    assert 'variant matches 2 sequence IDs' in str(vle)
 
     # Too distant
     matches = [('chr1', 100), ('chr1', 45000)]
-    assert kevlar.localize.select_region(matches, maxdiff=1000) is None
+    with pytest.raises(KevlarVariantLocalizationError) as vle:
+        _ = kevlar.localize.select_region(matches, maxdiff=1000)
+    assert 'variant spans 44900 bp (max 1000)' in str(vle)
 
     # On the same sequence, close together, passes!
     matches = [('chr1', 4000), ('chr1', 4032), ('chr1', 3990)]
