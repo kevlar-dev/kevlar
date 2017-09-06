@@ -466,3 +466,13 @@ def test_assemble_main(capsys):
     print('DEBUG', contig)
     print('DEBUG', out)
     assert contig in out
+
+
+def test_assemble_no_edges(capsys):
+    cliargs = ['assemble', data_file('asmbl-no-edges.augfastq.gz')]
+    args = kevlar.cli.parser().parse_args(cliargs)
+    kevlar.assemble.main(args)
+    out, err = capsys.readouterr()
+
+    assert 'nothing to be done, aborting' in err
+    assert out == ''

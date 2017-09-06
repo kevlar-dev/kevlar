@@ -198,6 +198,11 @@ def main(args):
     # some reads have no valid overlaps with other reads.
     print('[kevlar::assemble]', message, file=args.logfile)
 
+    if graph.number_of_edges() == 0:
+        message = 'nothing to be done, aborting'
+        print('[kevlar::assemble]', message, file=args.logfile)
+        return
+
     if args.gml:
         tempgraph = graph.copy()
         for n1, n2 in tempgraph.edges():
