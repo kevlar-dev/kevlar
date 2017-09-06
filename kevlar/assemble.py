@@ -19,6 +19,11 @@ import kevlar
 from kevlar.seqio import load_reads_and_kmers
 
 
+class KevlarEdgelessGraphError(ValueError):
+    """Raised if shared k-mer graph has no edges."""
+    pass
+
+
 def merge_pair(pair):
     """
     Assemble a pair of overlapping reads.
@@ -197,6 +202,10 @@ def main(args):
     # If number of nodes is less than number of reads, it's probably because
     # some reads have no valid overlaps with other reads.
     print('[kevlar::assemble]', message, file=args.logfile)
+
+    if graph.number_of_edges() == 0:
+        message = 'nothing to be done, aborting'
+        raise KevlarEdgelessGraphError(message)
 
     if args.gml:
         tempgraph = graph.copy()
