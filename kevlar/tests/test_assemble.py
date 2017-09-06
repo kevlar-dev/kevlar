@@ -466,3 +466,11 @@ def test_assemble_main(capsys):
     print('DEBUG', contig)
     print('DEBUG', out)
     assert contig in out
+
+
+def test_assemble_no_edges(capsys):
+    cliargs = ['assemble', data_file('asmbl-no-edges.augfastq.gz')]
+    args = kevlar.cli.parser().parse_args(cliargs)
+    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError) as ege:
+        kevlar.assemble.main(args)
+    assert 'nothing to be done, aborting' in str(ege)
