@@ -37,6 +37,35 @@ class KevlarRefrSeqNotFound(ValueError):
     pass
 
 
+class IntervalSet(object):
+
+    def __init__(self):
+        self._starts = dict()
+        self._ends = dict()
+
+    def __len__(self):
+        return len(self._starts)
+
+    def add(self, seqid, pos, ksize):
+        startpos = max(pos, 0)
+        endpos = pos + ksize
+        if seqid not in self._starts:
+            self._starts[seqid] = startpos
+            self._ends[seqid] = endpos
+        else:
+            self._starts[seqid] = min(startpos, self._starts[seqid])
+            self._ends[seqid] = max(endpos, self._ends[seqid])
+
+    def get(self, seqid):
+        if seqid not in self._starts:
+            return None, None
+        return self._starts[seqid], self._ends[seqid]
+
+    @property
+    def seqids(self):
+        return set(list(self._starts.keys()))
+
+
 def get_unique_kmers(infile, ksize=31):
     """
     Grab all unique k-mers from the specified sequence file.
@@ -81,7 +110,7 @@ def get_exact_matches(infile, bwaindexfile, ksize=31):
         bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
                         universal_newlines=True)
         stdout, stderr = bwaproc.communicate(input=kmers)
-        if bwaproc.returncode != 0:
+        if bwaproc.returncode != 0:  # pragma: no cover
             print(stderr, file=sys.stderr)
             raise KevlarBWAError('problem running BWA')
         samfile.seek(0)
@@ -93,66 +122,47 @@ def get_exact_matches(infile, bwaindexfile, ksize=31):
             yield seqid, record.pos
 
 
-def select_region(matchlist, maxdiff=1000, delta=100):
-    """
-    Given a list of match locations, select the corresponding genomic region.
-
-    List contents should be tuples of (seqid, startpos). Returns `None` if the
-    matches correspond to more than one location, as determined by sequence IDs
-    or by a large difference in min and max positions.
-
-    Returns a region in the form of a tuple (seqid, startpos, endpos), where
-    startpos and endpos define a 0-based half-open interval. Bounds checking is
-    performed on startpos (it is never less than 0), but no bounds checking is
-    performed on endpos (this is compensated for in the `extract_region`
-    function).
-    """
-    seqids = set([s for s, p in matchlist])
-    if len(seqids) > 1:
-        message = 'variant matches {:d} sequence IDs'.format(len(seqids))
-        raise KevlarVariantLocalizationError(message)
-
-    minpos = min([p for s, p in matchlist])
-    maxpos = max([p for s, p in matchlist])
-    diff = maxpos - minpos
-    if diff > maxdiff:
-        message = 'variant spans {:d} bp (max {:d})'.format(diff, maxdiff)
-        message += '; stubbornly refusing to continue'
-        raise KevlarVariantLocalizationError(message)
-
-    minpos = 0 if delta > minpos else minpos - delta
-    maxpos += delta + 1
-
-    return seqids.pop(), minpos, maxpos
-
-
-def extract_region(refr, seqid, start, end):
+def extract_regions(refr, seedmatches, maxspan=1000, delta=50):
     """
     Extract the specified genomic region from the provided file object.
 
     The start and end parameters define a 0-based half-open genomic interval.
     Bounds checking must be performed on the end parameter.
     """
+    observed_seqids = set()
     for defline, sequence in kevlar.seqio.parse_fasta(refr):
-        testseqid = defline[1:].split()[0]
-        if seqid == testseqid:
-            if end > len(sequence):
-                end = len(sequence)
-            subseqid = '{}_{}-{}'.format(seqid, start, end)
-            subseq = sequence[start:end]
-            return subseqid, subseq
-    raise KevlarRefrSeqNotFound()
+        seqid = defline[1:].split()[0]
+        observed_seqids.add(seqid)
+
+        start, end = seedmatches.get(seqid)
+        if start is None:
+            continue
+
+        newstart = max(start - delta, 0)
+        newend = min(end + delta, len(sequence))
+        span = newend - newstart
+        if span > maxspan:
+            message = 'variant spans {:d} bp (max {:d})'.format(span, maxspan)
+            raise KevlarVariantLocalizationError(message)
+
+        subseqid = '{}_{}-{}'.format(seqid, newstart, newend)
+        subseq = sequence[newstart:newend]
+        yield subseqid, subseq
+
+    missing = [s for s in seedmatches.seqids if s not in observed_seqids]
+    if len(missing) > 0:
+        raise KevlarRefrSeqNotFound(','.join(missing))
 
 
 def main(args):
+    instream = kevlar.open(args.refr, 'r')
     output = kevlar.open(args.out, 'w')
-    matchgen = get_exact_matches(args.contigs, args.refr, args.ksize)
-    kmer_matches = [m for m in matchgen]
-    if len(kmer_matches) == 0:
+
+    seedmatches = IntervalSet()
+    for seqid, pos in get_exact_matches(args.contigs, args.refr, args.ksize):
+        seedmatches.add(seqid, pos, args.ksize)
+    if len(seedmatches) == 0:
         raise KevlarNoReferenceMatchesError()
 
-    region = select_region(kmer_matches, args.max_diff, args.delta)
-    seqid, start, end = region
-    instream = kevlar.open(args.refr, 'r')
-    subseqid, subseq = extract_region(instream, seqid, start, end)
-    print('>', subseqid, '\n', subseq, sep='', file=output)
+    for subseqid, subseq in extract_regions(instream, seedmatches):
+        print('>', subseqid, '\n', subseq, sep='', file=output)
