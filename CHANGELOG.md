@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Abundance list reported by `kevlar filter` now correctly show re-computed proband k-mer abundances, not pre-filtering abundances as before (see #111).
-- The `kevlar localize` and `kevlar call` procedures now handle multiple assembled contigs and multiple reference matches (see #124).
+- The `kevlar localize` and `kevlar call` procedures now handle multiple assembled contigs and multiple reference matches (see #124 and #126).
 
 ### Added
 - New abundance screen now a part of `kevlar novel`. If any k-mer in a read is below some abundance threshold, the entire read is discarded (see #106).
