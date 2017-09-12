@@ -8,7 +8,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 from collections import defaultdict, namedtuple
 import itertools
 import sys
