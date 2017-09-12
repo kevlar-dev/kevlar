@@ -35,4 +35,6 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     kevlar.call.main(args)
 
     out, err = capsys.readouterr()
-    assert out.strip() == cigar
+    print(out.split('\n'))
+    cigars = [line.split()[-1] for line in out.strip().split('\n')]
+    assert cigar in cigars
