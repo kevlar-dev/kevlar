@@ -15,10 +15,11 @@ import pytest
 import screed
 import kevlar
 from kevlar.localize import IntervalSet
-from kevlar.localize import KevlarRefrSeqNotFound
-from kevlar.localize import KevlarVariantLocalizationError
-from kevlar.localize import KevlarNoReferenceMatchesError
-from kevlar.localize import extract_regions
+from kevlar.localize import (KevlarRefrSeqNotFoundError,
+                             KevlarVariantLocalizationError,
+                             KevlarNoReferenceMatchesError)
+from kevlar.localize import (extract_regions, get_unique_kmers,
+                             unique_kmer_string)
 from kevlar.tests import data_file
 
 
@@ -38,7 +39,8 @@ def test_interval_set_simple():
 ])
 def test_get_unique_kmers(infile):
     infile = data_file(infile)
-    kmers = set([k for k in kevlar.localize.get_unique_kmers(infile, ksize=9)])
+    instream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    kmers = set([k for k in get_unique_kmers(instream, ksize=9)])
     testkmers = set(
         ['TTAATTGGC', 'CTTAATTGG', 'TAATTGGCC', 'ATTACCGGT',
          'TTACCGGTA', 'CCTTAATTG', 'GCCTTAATT', 'GGCCTTAAT']
@@ -50,7 +52,8 @@ def test_get_unique_kmers(infile):
 
 def test_unique_kmer_string():
     infile = data_file('smallseq.augfasta')
-    fastastring = kevlar.localize.unique_kmer_string(infile, ksize=9)
+    instream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    fastastring = unique_kmer_string(instream, ksize=9)
     fastafile = StringIO(fastastring)
     kmers = set([s for d, s in kevlar.seqio.parse_fasta(fastafile)])
     testkmers = set(
@@ -106,7 +109,7 @@ def test_extract_region_missing_seq():
     intervals.add('TheCakeIsALie', 100, 21)
     intervals.add('TheCakeIsALie', 77, 21)
     instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    with pytest.raises(KevlarRefrSeqNotFound) as rnf:
+    with pytest.raises(KevlarRefrSeqNotFoundError) as rnf:
         _ = [r for r in extract_regions(instream, intervals)]
     assert 'TheCakeIsALie' in str(rnf)
 
