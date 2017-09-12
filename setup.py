@@ -45,8 +45,8 @@ setup(name='biokevlar',
           'Development Status :: 4 - Beta',
           'Environment :: Console',
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering :: Bio-Informatics'
       ],
       zip_safe=True)
