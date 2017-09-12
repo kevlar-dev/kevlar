@@ -8,11 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # Core libraries
-from __future__ import print_function
-try:
-    import __builtin__ as builtins
-except:
-    import builtins
+import builtins
 from collections import namedtuple
 from gzip import open as gzopen
 import re

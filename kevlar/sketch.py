@@ -11,18 +11,18 @@ import khmer
 
 
 sketch_loader_by_filename_extension = {
-    '.nt':  (khmer.load_nodetable, False),
-    '.ng':  (khmer.load_nodegraph, False),
-    '.ct':  (khmer.load_counttable, False),
-    '.cg':  (khmer.load_countgraph, False),
-    '.sct': (khmer.load_counttable, True),
-    '.scg': (khmer.load_countgraph, True),
-    '.nodetable':       (khmer.load_nodetable, False),
-    '.nodegraph':       (khmer.load_nodegraph, False),
-    '.counttable':      (khmer.load_counttable, False),
-    '.countgraph':      (khmer.load_countgraph, False),
-    '.smallcounttable': (khmer.load_counttable, True),
-    '.smallcountgraph': (khmer.load_countgraph, True),
+    '.nt':  khmer.Nodetable.load,
+    '.ng':  khmer.Nodegraph.load,
+    '.ct':  khmer.Counttable.load,
+    '.cg':  khmer.Countgraph.load,
+    '.sct': khmer.SmallCounttable.load,
+    '.scg': khmer.SmallCountgraph.load,
+    '.nodetable':       khmer.Nodetable.load,
+    '.nodegraph':       khmer.Nodegraph.load,
+    '.counttable':      khmer.Counttable.load,
+    '.countgraph':      khmer.Countgraph.load,
+    '.smallcounttable': khmer.SmallCounttable.load,
+    '.smallcountgraph': khmer.SmallCountgraph.load,
 }
 
 
@@ -58,14 +58,9 @@ def load(filename):
     if not filename.endswith(extensions):
         message = 'unable to determine sketch type from filename ' + filename
         raise KevlarSketchTypeError(message)
-
     ext = '.' + filename.split('.')[-1]
-    loader, issmall = sketch_loader_by_filename_extension[ext]
-    if issmall:
-        sketch = loader(filename, small=issmall)
-    else:
-        sketch = loader(filename)
-    return sketch
+    loadfunc = sketch_loader_by_filename_extension[ext]
+    return loadfunc(filename)
 
 
 def allocate(ksize, target_tablesize, num_tables=4, count=False, graph=False,
