@@ -35,7 +35,7 @@ def test_call():
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D')
+    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D', 155)
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
@@ -50,5 +50,5 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
 
     out, err = capsys.readouterr()
     print(out.split('\n'))
-    cigars = [line.split()[-1] for line in out.strip().split('\n')]
+    cigars = [line.split()[2] for line in out.strip().split('\n')]
     assert cigar in cigars

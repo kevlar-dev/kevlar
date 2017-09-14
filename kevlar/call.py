@@ -7,9 +7,24 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import re
 import sys
 import khmer
 import kevlar
+
+
+def make_call(target, query, cigar):
+    snvmatch = re.search('(\d+)D(\d+)M(\d+)D', cigar)
+    if snvmatch:
+        offset = int(snvmatch.group(1))
+        length = int(snvmatch.group(2))
+        t = target[offset:offset+length]
+        assert len(t) == length
+        q = query[:length]
+        assert len(q) == length
+        diffs = [i for i in range(length) if t[i] != q[i]]
+        if len(diffs) == 1:
+            return offset + diffs[0]
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
@@ -33,7 +48,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            yield target.name, query.name, cigar
+            varcall = make_call(target.sequence, query.sequence, cigar)
+            yield target.name, query.name, cigar, varcall
 
 
 def main(args):
@@ -45,5 +61,5 @@ def main(args):
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend
     )
-    for target, query, cigar in caller:
-        print(target, query, cigar, sep='\t', file=outstream)
+    for target, query, cigar, varcall in caller:
+        print(target, query, cigar, varcall, sep='\t', file=outstream)
