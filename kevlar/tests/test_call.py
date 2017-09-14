@@ -9,6 +9,7 @@
 
 import pytest
 import sys
+import khmer
 import kevlar
 from kevlar.tests import data_file
 
@@ -22,6 +23,19 @@ def test_align():
              'TTCAAGCGCAGGTTCGAGCCAGTCAGGACTGCTCCCCCACTTCCTCAAGTCTCATCGTGTTTTT'
              'TTTAGAGCTAGTTTCTTAGTCTCATTAGGCTTCAGTCACCATCATTTCTTATAGGAATACCA')
     assert kevlar.align(target, query) == '10D91M69D79M20I'
+
+
+def test_call():
+    qfile = data_file('ssc.contig.augfasta')
+    tfile = data_file('ssc.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    assert len(calls) == 1
+    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D')
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
