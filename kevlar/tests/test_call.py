@@ -35,7 +35,9 @@ def test_call():
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D', 155)
+    testcall = ('10_108283509-108283827', 'contig17;cc=1', '25D268M25D',
+                '10:108283664:A->G')
+    assert calls[0] == testcall
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [

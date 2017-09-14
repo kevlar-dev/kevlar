@@ -13,18 +13,30 @@ import khmer
 import kevlar
 
 
+def call_snv(target, query, offset, length):
+    t = target.sequence[offset:offset+length]
+    q = query.sequence[:length]
+    assert len(t) == length
+    assert len(q) == length
+    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
+    if len(diffs) == 1:
+        localcoord = offset + diffs[0][0]
+        refr = diffs[0][1].upper()
+        alt = diffs[0][2].upper()
+        globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+        assert globalregex, target.name
+        seqid = globalregex.group(1)
+        globaloffset = int(globalregex.group(2))
+        globalcoord = globaloffset + localcoord
+        return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
+
+
 def make_call(target, query, cigar):
     snvmatch = re.search('(\d+)D(\d+)M(\d+)D', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
         length = int(snvmatch.group(2))
-        t = target[offset:offset+length]
-        assert len(t) == length
-        q = query[:length]
-        assert len(q) == length
-        diffs = [i for i in range(length) if t[i] != q[i]]
-        if len(diffs) == 1:
-            return offset + diffs[0]
+        return call_snv(target, query, offset, length)
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
@@ -48,7 +60,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            varcall = make_call(target.sequence, query.sequence, cigar)
+            varcall = make_call(target, query, cigar)
             yield target.name, query.name, cigar, varcall
 
 
