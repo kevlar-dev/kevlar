@@ -32,10 +32,15 @@ def call_snv(target, query, offset, length):
 
 
 def make_call(target, query, cigar):
-    snvmatch = re.search('(\d+)D(\d+)M(\d+)D', cigar)
+    snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
+    snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
         length = int(snvmatch.group(2))
+        return call_snv(target, query, offset, length)
+    elif snvmatch2 and int(snvmatch2.group(4)) <= 5:
+        offset = int(snvmatch2.group(1))
+        length = int(snvmatch2.group(2))
         return call_snv(target, query, offset, length)
 
 

@@ -25,9 +25,14 @@ def test_align():
     assert kevlar.align(target, query) == '10D91M69D79M20I'
 
 
-def test_call_62():
-    qfile = data_file('ssc62.contig.augfasta')
-    tfile = data_file('ssc62.gdna.fa')
+@pytest.mark.parametrize('ccid,cigar,varcall', [
+    ('62', '25D268M25D', '10:108283664:A->G'),
+    ('106', '50D264M50D3M', '6:7464986:G->A'),
+    ('223', '50D268M50D1M', '5:42345359:C->G'),
+])
+def test_call_ssc_isolated_snv(ccid, cigar, varcall):
+    qfile = data_file('ssc' + ccid + '.contig.augfasta')
+    tfile = data_file('ssc' + ccid + '.gdna.fa')
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
@@ -35,14 +40,13 @@ def test_call_62():
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    testcall = ('10_108283509-108283827', 'contig17;cc=1', '25D268M25D',
-                '10:108283664:A->G')
-    assert calls[0] == testcall
+    assert calls[0][2] == cigar
+    assert calls[0][3] == varcall
 
 
-def test_call_106():
-    qfile = data_file('ssc106.contig.augfasta.gz')
-    tfile = data_file('ssc106.gdna.fa.gz')
+def test_call_ssc_not_isolated_snv():
+    qfile = data_file('ssc218.contig.augfasta')
+    tfile = data_file('ssc218.gdna.fa')
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
@@ -50,9 +54,8 @@ def test_call_106():
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    testcall = ('6_7464819-7465186', 'contig13;cc=1', '50D264M50D3M',
-                '6:7464986:G->A')
-    assert calls[0] == testcall
+    assert calls[0][2] == '50D132M1D125M50D'
+    assert calls[0][3] is None
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
