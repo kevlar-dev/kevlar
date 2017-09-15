@@ -25,9 +25,9 @@ def test_align():
     assert kevlar.align(target, query) == '10D91M69D79M20I'
 
 
-def test_call():
-    qfile = data_file('ssc.contig.augfasta')
-    tfile = data_file('ssc.gdna.fa')
+def test_call_62():
+    qfile = data_file('ssc62.contig.augfasta')
+    tfile = data_file('ssc62.gdna.fa')
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
@@ -37,6 +37,21 @@ def test_call():
     assert len(calls) == 1
     testcall = ('10_108283509-108283827', 'contig17;cc=1', '25D268M25D',
                 '10:108283664:A->G')
+    assert calls[0] == testcall
+
+
+def test_call_106():
+    qfile = data_file('ssc106.contig.augfasta.gz')
+    tfile = data_file('ssc106.gdna.fa.gz')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    assert len(calls) == 1
+    testcall = ('6_7464819-7465186', 'contig13;cc=1', '50D264M50D3M',
+                '6:7464986:G->A')
     assert calls[0] == testcall
 
 
