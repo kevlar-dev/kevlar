@@ -46,30 +46,48 @@ class IntervalSet(object):
     interval per sequence is supported.
     """
     def __init__(self):
-        self._starts = dict()
-        self._ends = dict()
+        self._intervals = dict()
 
     def __len__(self):
-        return len(self._starts)
+        return len(self._intervals)
 
-    def add(self, seqid, pos, ksize):
-        startpos = max(pos, 0)
-        endpos = pos + ksize
-        if seqid not in self._starts:
-            self._starts[seqid] = startpos
-            self._ends[seqid] = endpos
-        else:
-            self._starts[seqid] = min(startpos, self._starts[seqid])
-            self._ends[seqid] = max(endpos, self._ends[seqid])
+    def add(self, seqid, start, end):
+        if seqid not in self._intervals:
+            self._intervals[seqid] = list()
+        self._intervals[seqid].append((start, end))
 
-    def get(self, seqid):
-        if seqid not in self._starts:
-            return None, None
-        return self._starts[seqid], self._ends[seqid]
+    def get_spans(self, seqid, clusterdist=10000):
+        if seqid not in self._intervals:
+            return None
+
+        intervals = sorted(self._intervals[seqid], key=lambda i: (i[0], i[1]))
+        if len(intervals) == 1:
+            return intervals
+
+        clusters = list()
+        if clusterdist:
+            cluster = list()
+            for nextint in intervals:
+                if len(cluster) == 0:
+                    cluster.append(nextint)
+                    prevint = nextint
+                    continue
+                dist = nextint[0] - prevint[1]
+                if dist > clusterdist:
+                    if len(cluster) > 0:
+                        clusters.append((cluster[0][0], cluster[-1][1]))
+                        cluster = list()
+                cluster.append(nextint)
+                prevint = nextint
+            if len(cluster) > 0:
+                clusters.append((cluster[0][0], cluster[-1][1]))
+            return clusters
+
+        return [(intervals[0][0], intervals[-1][1])]
 
     @property
     def seqids(self):
-        return set(list(self._starts.keys()))
+        return set(list(self._intervals.keys()))
 
 
 def get_unique_kmers(recordstream, ksize=31):
@@ -131,7 +149,7 @@ def get_exact_matches(contigstream, bwaindexfile, ksize=31):
             yield seqid, record.pos
 
 
-def extract_regions(refr, seedmatches, maxspan=1000, delta=50):
+def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
     """
     Extract the specified genomic region from the provided file object.
 
@@ -143,27 +161,23 @@ def extract_regions(refr, seedmatches, maxspan=1000, delta=50):
         seqid = defline[1:].split()[0]
         observed_seqids.add(seqid)
 
-        start, end = seedmatches.get(seqid)
-        if start is None:
+        regions = seedmatches.get_spans(seqid, maxdiff)
+        if regions is None:
             continue
 
-        newstart = max(start - delta, 0)
-        newend = min(end + delta, len(sequence))
-        span = newend - newstart
-        if span > maxspan:
-            message = 'variant spans {:d} bp (max {:d})'.format(span, maxspan)
-            raise KevlarVariantLocalizationError(message)
-
-        subseqid = '{}_{}-{}'.format(seqid, newstart, newend)
-        subseq = sequence[newstart:newend]
-        yield subseqid, subseq
+        for start, end in regions:
+            newstart = max(start - delta, 0)
+            newend = min(end + delta, len(sequence))
+            subseqid = '{}_{}-{}'.format(seqid, newstart, newend)
+            subseq = sequence[newstart:newend]
+            yield subseqid, subseq
 
     missing = [s for s in seedmatches.seqids if s not in observed_seqids]
     if len(missing) > 0:
         raise KevlarRefrSeqNotFoundError(','.join(missing))
 
 
-def localize(contigstream, refrfile, ksize=31):
+def localize(contigstream, refrfile, ksize=31, delta=25):
     """
     Wrap the `kevlar localize` task as a generator.
 
@@ -173,16 +187,18 @@ def localize(contigstream, refrfile, ksize=31):
     """
     seedmatches = IntervalSet()
     for seqid, pos in get_exact_matches(contigstream, refrfile, ksize):
-        seedmatches.add(seqid, pos, ksize)
+        seedmatches.add(seqid, pos, pos + ksize)
     if len(seedmatches) == 0:
         raise KevlarNoReferenceMatchesError()
     refrstream = kevlar.open(refrfile, 'r')
-    for subseqid, subseq in extract_regions(refrstream, seedmatches):
+    for subseqid, subseq in extract_regions(refrstream, seedmatches,
+                                            delta=delta):
         yield khmer.Read(name=subseqid, sequence=subseq)
 
 
 def main(args):
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(args.contigs, 'r'))
     outstream = kevlar.open(args.out, 'w')
-    for record in localize(contigstream, args.refr, ksize=args.ksize):
+    for record in localize(contigstream, args.refr, ksize=args.ksize,
+                           delta=args.delta):
         khmer.utils.write_record(record, outstream)
