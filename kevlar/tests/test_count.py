@@ -16,6 +16,37 @@ import kevlar
 from kevlar.tests import data_file, data_glob
 
 
+@pytest.fixture
+def triomask():
+    mask = khmer.Counttable(19, 1e4, 4)
+    mask.consume('TGAGGGGACTAGGTGATCAGGTGAGGGTTTCCCAGTTCCCGAAGATGACT')
+    mask.consume('GATCTTTCGCTCCCTGTCATCAAGGAGTGATACGCGAAGTGCGTCCCCTT')
+    mask.consume('GAAGTTTTGACAATTTACGTGAGCCCTACCTAGCGAAACAACAGAGAACC')
+    return mask
+
+
+@pytest.mark.parametrize('mask,numbands,band', [
+    (None, None, None),
+    (None, 9, 2),
+    (triomask, None, None),
+    (triomask, 23, 19),
+])
+def test_load_threading(mask, numbands, band):
+    # Smoke test: make sure things don't explode when run in "threaded" mode.
+    infiles = data_glob('trio1/case1.fq')
+    sketch = kevlar.counting.load_sample_seqfile(
+        infiles, 19, 1e7, mask=mask, numbands=numbands, band=band, numthreads=2
+    )
+
+
+def test_load_sketches():
+    infiles = data_glob('test.counttable')
+    sketches = kevlar.counting.load_samples_sketchfiles(infiles, maxfpr=0.5)
+    for sketch in sketches:
+        assert sketch.get('CCTGATATCCGGAATCTTAGC') > 0
+        assert sketch.get('GATTACA' * 3) == 0
+
+
 @pytest.mark.parametrize('numbands,band,kmers_stored', [
     (0, 0, 947),
     (2, 1, 500),
