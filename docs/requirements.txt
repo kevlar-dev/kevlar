@@ -1,4 +1,5 @@
 sphinx-argparse
+cython
 pandas
 pysam
 networkx

@@ -7,7 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 from collections import defaultdict
 from itertools import combinations, product
 from networkx import Graph, connected_components
@@ -192,6 +191,7 @@ class AnnotatedReadSet(object):
                 elif counts.get(kmerseq) < minabund:
                     self._lowabund[kmerseq] += 1
                 else:
+                    kmer.abund[0] = counts.get(kmerseq)
                     validated_kmers.append(kmer)
                     self._valid[kmerseq] += 1
             record.ikmers = validated_kmers

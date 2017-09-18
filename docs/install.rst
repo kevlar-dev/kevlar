@@ -11,7 +11,7 @@ Otherwise, we suggest reading through the entire installation instructions befor
 
     virtualenv kevlar-env
     source kevlar-env/bin/activate  # Execute this with every new terminal session
-    pip install pysam networkx pandas git+https://github.com/dib-lab/khmer.git
+    pip install cython pysam networkx pandas git+https://github.com/dib-lab/khmer.git
     pip install biokevlar
 
 Virtual environment

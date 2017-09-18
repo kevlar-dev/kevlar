@@ -10,13 +10,11 @@ branches:
     - master
 cache: pip
 python:
-    - 2.7
     - 3.5
     - 3.6
 install:
     - make devenv
     - pip install wheel
-    - pip install pysam>=0.11.2
     - pip install -r requirements.txt
     - pip install .
 script:

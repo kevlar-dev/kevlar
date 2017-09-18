@@ -7,7 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 import pysam
 import khmer
 from khmer import khmer_args

@@ -33,6 +33,8 @@ def subparser(subparsers):
     subparser.add_argument('--max-abund', metavar='Y', type=int, default=200,
                            help='ignore k-mers with abundance higher than Y; '
                            'default is 200')
+    subparser.add_argument('--no-dedup', dest='dedup', action='store_false',
+                           default=True, help='skip step to remove duplicates')
     subparser.add_argument('--gml', metavar='FILE',
                            help='write read graph to .gml file')
     subparser.add_argument('outprefix', help='prefix for output files')

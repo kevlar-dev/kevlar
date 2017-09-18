@@ -9,6 +9,7 @@
 
 import pytest
 import sys
+import khmer
 import kevlar
 from kevlar.tests import data_file
 
@@ -24,6 +25,19 @@ def test_align():
     assert kevlar.align(target, query) == '10D91M69D79M20I'
 
 
+def test_call():
+    qfile = data_file('ssc.contig.augfasta')
+    tfile = data_file('ssc.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    assert len(calls) == 1
+    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D')
+
+
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
     ('pico-7-refr.fa', 'pico-7-asmbl.fa', '10D83M190D75M20I1M'),
     ('pico-2-refr.fa', 'pico-2-asmbl.fa', '10D89M153I75M20I'),
@@ -35,4 +49,6 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     kevlar.call.main(args)
 
     out, err = capsys.readouterr()
-    assert out.strip() == cigar
+    print(out.split('\n'))
+    cigars = [line.split()[-1] for line in out.strip().split('\n')]
+    assert cigar in cigars

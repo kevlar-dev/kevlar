@@ -1,4 +1,5 @@
+cython
 pandas
-pysam
+pysam>=0.11.2
 networkx
 git+https://github.com/dib-lab/khmer.git

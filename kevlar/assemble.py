@@ -7,7 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 from collections import defaultdict, namedtuple
 import itertools
 import sys
@@ -17,6 +16,11 @@ import screed
 import khmer
 import kevlar
 from kevlar.seqio import load_reads_and_kmers
+
+
+class KevlarEdgelessGraphError(ValueError):
+    """Raised if shared k-mer graph has no edges."""
+    pass
 
 
 def merge_pair(pair):
@@ -78,7 +82,7 @@ def merge_and_reannotate(pair, newname):
     return newrecord
 
 
-def fetch_largest_overlapping_pair(graph, reads):
+def fetch_largest_overlapping_pair(graph):
     """
     Grab the edge with the largest overlap in the graph.
 
@@ -103,8 +107,8 @@ def fetch_largest_overlapping_pair(graph, reads):
     if read2 == graph[read1][read2]['tail']:
         read1, read2 = read2, read1
     return kevlar.overlap.OverlappingReadPair(
-        tail=reads[read1],
-        head=reads[read2],
+        tail=graph.get_record(read1),
+        head=graph.get_record(read2),
         offset=graph[read1][read2]['offset'],
         overlap=graph[read1][read2]['overlap'],
         sameorient=graph[read1][read2]['orient'],
@@ -112,13 +116,13 @@ def fetch_largest_overlapping_pair(graph, reads):
     )
 
 
-def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
+def assemble_with_greed(graph, ccindex, debugout=None):
     """Find shortest common superstring using a greedy assembly algorithm."""
     count = 0
     while len(graph.edges()) > 0:
         count += 1
 
-        pair = fetch_largest_overlapping_pair(graph, reads)
+        pair = fetch_largest_overlapping_pair(graph)
         newname = 'contig{:d};cc={:d}'.format(count, ccindex)
         newrecord = merge_and_reannotate(pair, newname)
         if debugout:
@@ -127,14 +131,14 @@ def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
             kevlar.print_augmented_fastx(newrecord, debugout)
         for kmer in newrecord.ikmers:
             kmerseq = kevlar.revcommin(kmer.sequence)
-            for readname in kmers[kmerseq]:
+            for readname in graph.ikmers[kmerseq]:
                 already_merged = readname not in graph
                 current_contig = readname in [
                     pair.tail.name, pair.head.name, newname
                 ]
                 if already_merged or current_contig:
                     continue
-                otherrecord = reads[readname]
+                otherrecord = graph.get_record(readname)
                 newpair = kevlar.overlap.calc_offset(
                     newrecord, otherrecord, kmerseq, debugout
                 )
@@ -150,9 +154,8 @@ def assemble_with_greed(reads, kmers, graph, ccindex, debugout=None):
                                    overlap=newpair.overlap, ikmer=kmerseq,
                                    orient=newpair.sameorient, tail=tn,
                                    swapped=newpair.swapped)
-            kmers[kmerseq].add(newrecord.name)
-        reads[newrecord.name] = newrecord
-        graph.add_node(newrecord.name)
+            graph.ikmers[kmerseq].add(newrecord.name)
+        graph.add_node(newrecord.name, record=newrecord)
         graph.remove_node(pair.tail.name)
         graph.remove_node(pair.head.name)
 
@@ -184,21 +187,24 @@ def main(args):
     if args.debug:
         debugout = args.logfile
 
-    reads, kmers = load_reads_and_kmers(kevlar.open(args.augfastq, 'r'),
-                                        args.logfile)
-    inputreads = list(reads)
-    message = 'loaded {:d} reads'.format(len(inputreads))
-    message += ' and {:d} interesting k-mers'.format(len(kmers))
+    graph = kevlar.ReadGraph()
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    graph.load(readstream)
+    inputreads = set(graph.nodes())
+    message = 'loaded {:d} reads'.format(graph.number_of_nodes())
+    message += ' and {:d} interesting k-mers'.format(len(graph.ikmers))
     print('[kevlar::assemble]', message, file=args.logfile)
 
-    graph = kevlar.overlap.graph_init_strict(reads, kmers, args.min_abund,
-                                             args.max_abund, debugout)
-    message = 'initialized "shared interesting k-mers" graph'
-    message += ' with {:d} nodes'.format(graph.number_of_nodes())
-    message += ' and {:d} edges'.format(graph.number_of_edges())
+    graph.populate_edges(strict=True)
+    message = 'populated "shared interesting k-mers" graph'
+    message += ' with {:d} edges'.format(graph.number_of_edges())
     # If number of nodes is less than number of reads, it's probably because
     # some reads have no valid overlaps with other reads.
     print('[kevlar::assemble]', message, file=args.logfile)
+
+    if graph.number_of_edges() == 0:
+        message = 'nothing to be done, aborting'
+        raise KevlarEdgelessGraphError(message)
 
     if args.gml:
         tempgraph = graph.copy()
@@ -211,7 +217,7 @@ def main(args):
         print(message, file=args.logfile)
 
     edges_dropped = prune_graph(graph)
-    cc_stream = networkx.connected_component_subgraphs(graph)
+    cc_stream = networkx.connected_component_subgraphs(graph, copy=False)
     ccs = [cc for cc in cc_stream if cc.number_of_edges() > 0]
     ccnodes = sum([cc.number_of_nodes() for cc in ccs])
     message = 'dropped {:d} edges'.format(edges_dropped)
@@ -227,13 +233,13 @@ def main(args):
     unassembledcount = 0
     outstream = kevlar.open(args.out, 'w')
     for n, cc in enumerate(ccs, 1):
-        assemble_with_greed(reads, kmers, cc, n, debugout)
+        assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:
                 unassembledcount += 1
                 continue
             contigcount += 1
-            contigrecord = reads[seqname]
+            contigrecord = cc.get_record(seqname)
             kevlar.print_augmented_fastx(contigrecord, outstream)
 
     assembledcount = ccnodes - unassembledcount
