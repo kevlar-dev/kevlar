@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import print_function
+from collections import defaultdict
 from subprocess import Popen, PIPE
 from tempfile import TemporaryFile
 import sys
@@ -37,57 +38,49 @@ class KevlarRefrSeqNotFoundError(ValueError):
     pass
 
 
-class IntervalSet(object):
-    """
-    Store a set of intervals, one per sequence, indexed by sequence ID.
-
-    The intervals a 0-based half open intervals, such that start=0 and end=10
-    represents the first 10 nucleotides of a sequence. Currently only one
-    interval per sequence is supported.
-    """
-    def __init__(self):
-        self._intervals = dict()
+class KmerMatchSet(object):
+    """Store a set exact k-mer matches, indexed by sequence ID."""
+    def __init__(self, ksize):
+        self._positions = defaultdict(list)
+        self._ksize = ksize
 
     def __len__(self):
-        return len(self._intervals)
+        return len(self._positions)
 
-    def add(self, seqid, start, end):
-        if seqid not in self._intervals:
-            self._intervals[seqid] = list()
-        self._intervals[seqid].append((start, end))
+    def add(self, seqid, pos):
+        self._positions[seqid].append(pos)
 
     def get_spans(self, seqid, clusterdist=10000):
-        if seqid not in self._intervals:
+        positions = sorted(self._positions[seqid])
+        if len(positions) == 0:
             return None
 
-        intervals = sorted(self._intervals[seqid], key=lambda i: (i[0], i[1]))
-        if len(intervals) == 1:
-            return intervals
-
-        clusters = list()
+        clusterspans = list()
         if clusterdist:
             cluster = list()
-            for nextint in intervals:
+            for nextpos in positions:
                 if len(cluster) == 0:
-                    cluster.append(nextint)
-                    prevint = nextint
+                    cluster.append(nextpos)
+                    prevpos = nextpos
                     continue
-                dist = nextint[0] - prevint[1]
+                dist = nextpos - prevpos
                 if dist > clusterdist:
                     if len(cluster) > 0:
-                        clusters.append((cluster[0][0], cluster[-1][1]))
+                        span = (cluster[0], cluster[-1] + self._ksize)
+                        clusterspans.append(span)
                         cluster = list()
-                cluster.append(nextint)
-                prevint = nextint
+                cluster.append(nextpos)
+                prevpos = nextpos
             if len(cluster) > 0:
-                clusters.append((cluster[0][0], cluster[-1][1]))
-            return clusters
+                span = (cluster[0], cluster[-1] + self._ksize)
+                clusterspans.append(span)
+            return clusterspans
 
-        return [(intervals[0][0], intervals[-1][1])]
+        return [(positions[0], positions[-1] + self._ksize)]
 
     @property
     def seqids(self):
-        return set(list(self._intervals.keys()))
+        return set(list(self._positions.keys()))
 
 
 def get_unique_kmers(recordstream, ksize=31):
@@ -185,9 +178,9 @@ def localize(contigstream, refrfile, ksize=31, delta=25):
     stored as khmer or screed sequence records, the filename of the reference
     genome sequence, and the desired k-size.
     """
-    seedmatches = IntervalSet()
+    seedmatches = KmerMatchSet(ksize)
     for seqid, pos in get_exact_matches(contigstream, refrfile, ksize):
-        seedmatches.add(seqid, pos, pos + ksize)
+        seedmatches.add(seqid, pos)
     if len(seedmatches) == 0:
         raise KevlarNoReferenceMatchesError()
     refrstream = kevlar.open(refrfile, 'r')
