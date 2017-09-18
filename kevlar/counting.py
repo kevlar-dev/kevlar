@@ -46,24 +46,24 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
             if mask:
                 if numbands:
                     thread = threading.Thread(
-                        target=sketch.consume_seqfile_banding_with_mask_with_reads_parser,  # noqa
-                        args=(parser, numbands, band, mask),
+                        target=sketch.consume_seqfile_banding_with_mask,
+                        args=(parser, numbands, band, mask, ),
                     )
                 else:
                     thread = threading.Thread(
-                        target=sketch.consume_seqfile_with_mask_with_reads_parser,  # noqa
-                        args=(parser, mask),
+                        target=sketch.consume_seqfile_with_mask,
+                        args=(parser, mask, ),
                     )
             else:
                 if numbands:
                     thread = threading.Thread(
-                        target=sketch.consume_seqfile_banding_with_reads_parser,  # noqa
-                        args=(parser, numbands, band),
+                        target=sketch.consume_seqfile_banding,
+                        args=(parser, numbands, band, ),
                     )
                 else:
                     thread = threading.Thread(
-                        target=sketch.consume_seqfile_with_reads_parser,
-                        args=(parser, ),  # Comma and space directly after "parser is critical" # noqa
+                        target=sketch.consume_seqfile,
+                        args=(parser, ),
                     )
             threads.append(thread)
             thread.start()
