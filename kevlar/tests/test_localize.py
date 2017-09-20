@@ -7,10 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 import pytest
 import screed
 import kevlar
@@ -22,7 +19,7 @@ from kevlar.localize import (extract_regions, get_unique_kmers,
 from kevlar.tests import data_file
 
 
-def test_interval_set_simple():
+def test_kmer_match_set_simple():
     intervals = KmerMatchSet(ksize=25)
     assert intervals.get_spans('chr1') is None
 
