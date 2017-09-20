@@ -34,7 +34,8 @@ def main(args):
     controls = kevlar.counting.load_samples(
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
-        mask=None, numbands=args.num_bands, band=myband, logfile=args.logfile
+        mask=None, numbands=args.num_bands, band=myband,
+        numthreads=args.threads, logfile=args.logfile
     )
     elapsed = timer.stop('loadctrl')
     numcontrols = len(controls)
@@ -49,7 +50,7 @@ def main(args):
         infilelists, args.ksize, args.memory, outfiles=outfiles,
         memfraction=args.mem_frac, maxfpr=args.max_fpr, maxabund=args.ctrl_max,
         mask=casemask, numbands=args.num_bands, band=myband,
-        logfile=args.logfile
+        numthreads=args.threads, logfile=args.logfile
     )
     elapsed = timer.stop('loadcase')
     numcases = len(cases)

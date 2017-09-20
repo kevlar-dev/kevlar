@@ -109,3 +109,6 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+    misc_args.add_argument('-t', '--threads', type=int, default=1, metavar='T',
+                           help='number of threads to use for file processing;'
+                           ' default is 1')

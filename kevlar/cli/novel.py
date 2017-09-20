@@ -138,3 +138,6 @@ def subparser(subparsers):
     misc_args.add_argument('--abund-screen', type=int, default=None,
                            metavar='INT', help='discard reads with any k-mers '
                            'whose abundance is < INT')
+    misc_args.add_argument('-t', '--threads', type=int, default=1, metavar='T',
+                           help='number of threads to use for file processing;'
+                           ' default is 1')
