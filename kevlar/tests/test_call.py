@@ -84,6 +84,24 @@ def test_call_ssc_1bpdel():
     assert make_call(target, query, '50D132M1D125M50D') == '6:23230160:1D'
 
 
+def test_call_ssc_two_proximal_snvs():
+    """
+    Test two proximal SNVs
+
+    Currently this serves as a negative control for calling isolated SNVs, but
+    distinguishing which (if any) of a set of proximal SNVs is novel will be
+    supported soon, and this test will need to be updated.
+    """
+    qfile = data_file('ssc107.contig.augfasta.gz')
+    tfile = data_file('ssc107.gdna.fa.gz')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    assert make_call(target, query, '25D263M25D') is None
+
+
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
     ('pico-7-refr.fa', 'pico-7-asmbl.fa', '10D83M190D75M20I1M'),
     ('pico-2-refr.fa', 'pico-2-asmbl.fa', '10D89M153I75M20I'),
