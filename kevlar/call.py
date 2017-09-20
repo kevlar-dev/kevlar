@@ -31,6 +31,28 @@ def call_snv(target, query, offset, length):
         return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
 
 
+def call_deletion(target, query, offset, leftmatch, indellength):
+    localcoord = offset + leftmatch
+    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+    assert globalregex, target.name
+    seqid = globalregex.group(1)
+    globaloffset = int(globalregex.group(2))
+    globalcoord = globaloffset + localcoord
+    return '{:s}:{:d}:{:d}D'.format(seqid, globalcoord, indellength)
+
+
+def call_insertion(target, query, offset, leftmatch, indellength):
+    insertion = query.sequence[leftmatch:leftmatch+indellength]
+    assert len(insertion) == indellength
+    localcoord = offset + leftmatch
+    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+    assert globalregex, target.name
+    seqid = globalregex.group(1)
+    globaloffset = int(globalregex.group(2))
+    globalcoord = globaloffset + localcoord
+    return '{:s}:{:d}:I->{:s}'.format(seqid, globalcoord, insertion)
+
+
 def make_call(target, query, cigar):
     snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
     snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
@@ -42,6 +64,24 @@ def make_call(target, query, cigar):
         offset = int(snvmatch2.group(1))
         length = int(snvmatch2.group(2))
         return call_snv(target, query, offset, length)
+
+    indelmatch = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D$', cigar)
+    indelmatch2 = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D(\d+)M$',
+                            cigar)
+    if indelmatch:
+        offset = int(indelmatch.group(1))
+        leftmatch = int(indelmatch.group(2))
+        indellength = int(indelmatch.group(3))
+        indeltype = indelmatch.group(4)
+        callfunc = call_deletion if indeltype == 'D' else call_insertion
+        return callfunc(target, query, offset, leftmatch, indellength)
+    elif indelmatch2 and int(indelmatch2.group(7)) <= 5:
+        offset = int(indelmatch2.group(1))
+        leftmatch = int(indelmatch2.group(2))
+        indellength = int(indelmatch2.group(3))
+        indeltype = indelmatch2.group(4)
+        callfunc = call_deletion if indeltype == 'D' else call_insertion
+        return callfunc(target, query, offset, leftmatch, indellength)
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):

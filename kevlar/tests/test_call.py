@@ -11,6 +11,7 @@ import pytest
 import sys
 import khmer
 import kevlar
+from kevlar.call import make_call
 from kevlar.tests import data_file
 
 
@@ -24,6 +25,24 @@ def test_align():
              'TTCAAGCGCAGGTTCGAGCCAGTCAGGACTGCTCCCCCACTTCCTCAAGTCTCATCGTGTTTTT'
              'TTTAGAGCTAGTTTCTTAGTCTCATTAGGCTTCAGTCACCATCATTTCTTATAGGAATACCA')
     assert kevlar.align(target, query) == '10D91M69D79M20I'
+
+
+@pytest.mark.parametrize('ccid,varcall', [
+    ('5', 'seq1:185752:30D'),
+    ('7', 'seq1:226611:190D'),
+    ('9', 'seq1:1527139:I->TCCTGGTCTGCCACGGTTGACTTGCCTACATAT'),
+])
+def test_call_pico_indel(ccid, varcall):
+    qfile = data_file('pico' + ccid + '.contig.augfasta')
+    tfile = data_file('pico' + ccid + '.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    assert len(calls) == 1
+    assert calls[0][3] == varcall
 
 
 @pytest.mark.parametrize('ccid,cigar,varcall', [
@@ -53,8 +72,8 @@ def test_call_ssc_isolated_snv(ccid, cigar, varcall):
     assert calls[0][3] == varcall
 
 
-def test_call_ssc_not_isolated_snv():
-    """Negative control for calling isolated SNVs."""
+def test_call_ssc_1bpdel():
+    """Test 1bp deletion"""
     qfile = data_file('ssc218.contig.augfasta')
     tfile = data_file('ssc218.gdna.fa')
 
@@ -62,7 +81,7 @@ def test_call_ssc_not_isolated_snv():
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
 
-    assert kevlar.call.make_call(target, query, '50D132M1D125M50D') is None
+    assert make_call(target, query, '50D132M1D125M50D') == '6:23230160:1D'
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
