@@ -11,10 +11,12 @@ import pytest
 import sys
 import khmer
 import kevlar
+from kevlar.call import make_call
 from kevlar.tests import data_file
 
 
 def test_align():
+    """Smoke test for ksw2 aligner"""
     target = ('TAAATAAATATCTGGTGTTTGAGGCAAAAAGGCAGACTTAAATTCTAAATCACACCTGTGCTT'
               'CCAGCACTACCTTCAAGCGCAGGTTCGAGCCAGTCAGGCAGGGTACATAAGAGTCCATTGTGC'
               'CTGTATTATTTTGAGCAATGGCTAAAGTACCTTCACCCTTGCTCACTGCTCCCCCACTTCCTC'
@@ -25,9 +27,14 @@ def test_align():
     assert kevlar.align(target, query) == '10D91M69D79M20I'
 
 
-def test_call():
-    qfile = data_file('ssc.contig.augfasta')
-    tfile = data_file('ssc.gdna.fa')
+@pytest.mark.parametrize('ccid,varcall', [
+    ('5', 'seq1:185752:30D'),
+    ('7', 'seq1:226611:190D'),
+    ('9', 'seq1:1527139:I->TCCTGGTCTGCCACGGTTGACTTGCCTACATAT'),
+])
+def test_call_pico_indel(ccid, varcall):
+    qfile = data_file('pico' + ccid + '.contig.augfasta')
+    tfile = data_file('pico' + ccid + '.gdna.fa')
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
@@ -35,7 +42,64 @@ def test_call():
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    assert calls[0] == ('local', 'contig17;cc=1', '25D268M25D')
+    assert calls[0][3] == varcall
+
+
+@pytest.mark.parametrize('ccid,cigar,varcall', [
+    ('62', '25D268M25D', '10:108283664:A->G'),
+    ('106', '50D264M50D3M', '6:7464986:G->A'),
+    ('223', '50D268M50D1M', '5:42345359:C->G'),
+])
+def test_call_ssc_isolated_snv(ccid, cigar, varcall):
+    """
+    Ensure isolated SNVs are called correctly.
+
+    SNVs that are well separated from other variants have a distinct alignment
+    signature as reflected in the CIGAR string reported by ksw2. They are
+    either of the form "delete-match-delete" or "delete-match-delete-match",
+    where the second match is very short (and spurious).
+    """
+    qfile = data_file('ssc' + ccid + '.contig.augfasta')
+    tfile = data_file('ssc' + ccid + '.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    assert len(calls) == 1
+    assert calls[0][2] == cigar
+    assert calls[0][3] == varcall
+
+
+def test_call_ssc_1bpdel():
+    """Test 1bp deletion"""
+    qfile = data_file('ssc218.contig.augfasta')
+    tfile = data_file('ssc218.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    assert make_call(target, query, '50D132M1D125M50D') == '6:23230160:1D'
+
+
+def test_call_ssc_two_proximal_snvs():
+    """
+    Test two proximal SNVs
+
+    Currently this serves as a negative control for calling isolated SNVs, but
+    distinguishing which (if any) of a set of proximal SNVs is novel will be
+    supported soon, and this test will need to be updated.
+    """
+    qfile = data_file('ssc107.contig.augfasta.gz')
+    tfile = data_file('ssc107.gdna.fa.gz')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    assert make_call(target, query, '25D263M25D') is None
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
@@ -43,6 +107,7 @@ def test_call():
     ('pico-2-refr.fa', 'pico-2-asmbl.fa', '10D89M153I75M20I'),
 ])
 def test_call_cli(targetfile, queryfile, cigar, capsys):
+    """Smoke test for `kevlar call` cli"""
     target = data_file(targetfile)
     query = data_file(queryfile)
     args = kevlar.cli.parser().parse_args(['call', query, target])
@@ -50,5 +115,5 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
 
     out, err = capsys.readouterr()
     print(out.split('\n'))
-    cigars = [line.split()[-1] for line in out.strip().split('\n')]
+    cigars = [line.split()[2] for line in out.strip().split('\n')]
     assert cigar in cigars

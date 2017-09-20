@@ -7,9 +7,81 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import re
 import sys
 import khmer
 import kevlar
+
+
+def call_snv(target, query, offset, length):
+    t = target.sequence[offset:offset+length]
+    q = query.sequence[:length]
+    assert len(t) == length
+    assert len(q) == length
+    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
+    if len(diffs) == 1:
+        localcoord = offset + diffs[0][0]
+        refr = diffs[0][1].upper()
+        alt = diffs[0][2].upper()
+        globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+        assert globalregex, target.name
+        seqid = globalregex.group(1)
+        globaloffset = int(globalregex.group(2))
+        globalcoord = globaloffset + localcoord
+        return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
+
+
+def call_deletion(target, query, offset, leftmatch, indellength):
+    localcoord = offset + leftmatch
+    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+    assert globalregex, target.name
+    seqid = globalregex.group(1)
+    globaloffset = int(globalregex.group(2))
+    globalcoord = globaloffset + localcoord
+    return '{:s}:{:d}:{:d}D'.format(seqid, globalcoord, indellength)
+
+
+def call_insertion(target, query, offset, leftmatch, indellength):
+    insertion = query.sequence[leftmatch:leftmatch+indellength]
+    assert len(insertion) == indellength
+    localcoord = offset + leftmatch
+    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
+    assert globalregex, target.name
+    seqid = globalregex.group(1)
+    globaloffset = int(globalregex.group(2))
+    globalcoord = globaloffset + localcoord
+    return '{:s}:{:d}:I->{:s}'.format(seqid, globalcoord, insertion)
+
+
+def make_call(target, query, cigar):
+    snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
+    snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
+    if snvmatch:
+        offset = int(snvmatch.group(1))
+        length = int(snvmatch.group(2))
+        return call_snv(target, query, offset, length)
+    elif snvmatch2 and int(snvmatch2.group(4)) <= 5:
+        offset = int(snvmatch2.group(1))
+        length = int(snvmatch2.group(2))
+        return call_snv(target, query, offset, length)
+
+    indelmatch = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D$', cigar)
+    indelmatch2 = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D(\d+)M$',
+                            cigar)
+    if indelmatch:
+        offset = int(indelmatch.group(1))
+        leftmatch = int(indelmatch.group(2))
+        indellength = int(indelmatch.group(3))
+        indeltype = indelmatch.group(4)
+        callfunc = call_deletion if indeltype == 'D' else call_insertion
+        return callfunc(target, query, offset, leftmatch, indellength)
+    elif indelmatch2 and int(indelmatch2.group(7)) <= 5:
+        offset = int(indelmatch2.group(1))
+        leftmatch = int(indelmatch2.group(2))
+        indellength = int(indelmatch2.group(3))
+        indeltype = indelmatch2.group(4)
+        callfunc = call_deletion if indeltype == 'D' else call_insertion
+        return callfunc(target, query, offset, leftmatch, indellength)
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
@@ -33,7 +105,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            yield target.name, query.name, cigar
+            varcall = make_call(target, query, cigar)
+            yield target.name, query.name, cigar, varcall
 
 
 def main(args):
@@ -45,5 +118,5 @@ def main(args):
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend
     )
-    for target, query, cigar in caller:
-        print(target, query, cigar, sep='\t', file=outstream)
+    for target, query, cigar, varcall in caller:
+        print(target, query, cigar, varcall, sep='\t', file=outstream)

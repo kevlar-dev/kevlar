@@ -28,11 +28,6 @@ class KevlarNoReferenceMatchesError(ValueError):
     pass
 
 
-class KevlarVariantLocalizationError(ValueError):
-    """Raised if k-mers match to mutliple locations in the reference."""
-    pass
-
-
 class KevlarRefrSeqNotFoundError(ValueError):
     """Raised if the reference sequence cannot be found."""
     pass

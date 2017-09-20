@@ -16,7 +16,6 @@ import screed
 import kevlar
 from kevlar.localize import KmerMatchSet
 from kevlar.localize import (KevlarRefrSeqNotFoundError,
-                             KevlarVariantLocalizationError,
                              KevlarNoReferenceMatchesError)
 from kevlar.localize import (extract_regions, get_unique_kmers,
                              unique_kmer_string)
