@@ -13,22 +13,43 @@ import khmer
 import kevlar
 
 
-class VariantSNV(object):
+class Variant(object):
     def __init__(self, seqid, pos, refr, alt):
         self._seqid = seqid
         self._pos = pos
         self._refr = refr
         self._alt = alt
 
-    def __str__(self):
-        return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
-                                             self._refr, self._alt)
-
     @property
     def vcf(self):
         return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t.'.format(
             self._seqid, self._pos + 1, self._refr, self._alt
         )
+
+
+class VariantSNV(Variant):
+    def __str__(self):
+        return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
+                                             self._refr, self._alt)
+
+
+class VariantIndel(Variant):
+    def __str__(self):
+        """
+        Return a string representation of this variant.
+
+        The reason that 1 is added to the variant position is to offset the
+        nucleotide shared by the reference and alternate alleles. This position
+        is still 0-based (as opposed to VCF's 1-based coordinate system) but
+        does not include the shared nucleotide.
+        """
+        pos = self._pos + 1
+        if len(self._refr) > len(self._alt):
+            dellength = len(self._refr) - len(self._alt)
+            return '{:s}:{:d}:{:d}D'.format(self._seqid, pos, dellength)
+        else:
+            insertion = self._alt[1:]
+            return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
 
 
 def local_to_global(localcoord, subseqid):
