@@ -117,3 +117,10 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     print(out.split('\n'))
     cigars = [line.split()[2] for line in out.strip().split('\n')]
     assert cigar in cigars
+
+
+def test_snv_obj():
+    snv1 = kevlar.call.VariantSNV('scaffold42', 10773, 'A', 'G')
+    assert str(snv1) == 'scaffold42:10773:A->G'
+    vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
+    assert snv1.vcf == '\t'.join(vcfvalues)

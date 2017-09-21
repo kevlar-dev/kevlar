@@ -13,6 +13,24 @@ import khmer
 import kevlar
 
 
+class VariantSNV(object):
+    def __init__(self, seqid, pos, refr, alt):
+        self._seqid = seqid
+        self._pos = pos
+        self._refr = refr
+        self._alt = alt
+
+    def __str__(self):
+        return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
+                                             self._refr, self._alt)
+
+    @property
+    def vcf(self):
+        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t.'.format(
+            self._seqid, self._pos + 1, self._refr, self._alt
+        )
+
+
 def local_to_global(localcoord, subseqid):
     match = re.search('(\S+)_(\d+)-(\d+)', subseqid)
     assert match, 'unable to parse subseqid {:s}'.format(subseqid)
