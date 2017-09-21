@@ -42,7 +42,7 @@ def test_call_pico_indel(ccid, varcall):
 
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
-    assert calls[0][3] == varcall
+    assert str(calls[0][3]) == varcall
 
 
 @pytest.mark.parametrize('ccid,cigar,varcall', [
@@ -69,7 +69,7 @@ def test_call_ssc_isolated_snv(ccid, cigar, varcall):
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
     assert calls[0][2] == cigar
-    assert calls[0][3] == varcall
+    assert str(calls[0][3]) == varcall
 
 
 def test_call_ssc_1bpdel():
@@ -80,8 +80,9 @@ def test_call_ssc_1bpdel():
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
+    snv = make_call(target, query, '50D132M1D125M50D')
 
-    assert make_call(target, query, '50D132M1D125M50D') == '6:23230160:1D'
+    assert str(snv) == '6:23230160:1D'
 
 
 def test_call_ssc_two_proximal_snvs():
@@ -114,8 +115,11 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     kevlar.call.main(args)
 
     out, err = capsys.readouterr()
-    print(out.split('\n'))
-    cigars = [line.split()[2] for line in out.strip().split('\n')]
+    print(out)
+    cigars = list()
+    for line in out.strip().split('\n'):
+        if line.startswith('#'):
+            cigars.append(line.split()[3])
     assert cigar in cigars
 
 

@@ -19,11 +19,20 @@ class Variant(object):
         self._pos = pos
         self._refr = refr
         self._alt = alt
+        self.info = dict()
 
     @property
     def vcf(self):
-        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t.'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt
+        info = '.'
+        if len(self.info) > 0:
+            infokvp = [
+                '{:s}={:s}'.format(key, value.replace(';', ':'))
+                for key, value in self.info.items()
+            ]
+            info = ';'.join(infokvp)
+
+        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
+            self._seqid, self._pos + 1, self._refr, self._alt, info
         )
 
 
@@ -70,20 +79,25 @@ def call_snv(target, query, offset, length):
         alt = diffs[0][2].upper()
         localcoord = offset + diffs[0][0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
+        return VariantSNV(seqid, globalcoord, refr, alt)
 
 
 def call_deletion(target, query, offset, leftmatch, indellength):
+    refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
+    alt = refr[0]
+    assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return '{:s}:{:d}:{:d}D'.format(seqid, globalcoord, indellength)
+    return VariantIndel(seqid, globalcoord - 1, refr, alt)
 
 
 def call_insertion(target, query, offset, leftmatch, indellength):
-    insertion = query.sequence[leftmatch:leftmatch+indellength]
+    insertion = query.sequence[leftmatch-1:leftmatch+indellength]
+    refr = insertion[0]
+    assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return '{:s}:{:d}:I->{:s}'.format(seqid, globalcoord, insertion)
+    return VariantIndel(seqid, globalcoord - 1, refr, insertion)
 
 
 def make_call(target, query, cigar):
@@ -139,6 +153,9 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
             varcall = make_call(target, query, cigar)
+            if varcall is not None:
+                varcall.info['query'] = query.name
+                varcall.info['CIGAR'] = cigar
             yield target.name, query.name, cigar, varcall
 
 
@@ -152,4 +169,7 @@ def main(args):
         args.match, args.mismatch, args.open, args.extend
     )
     for target, query, cigar, varcall in caller:
-        print(target, query, cigar, varcall, sep='\t', file=outstream)
+        if varcall is None:
+            print('#', target, query, cigar, file=outstream)
+        else:
+            print(varcall.vcf, file=outstream)

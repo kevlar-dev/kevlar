@@ -123,7 +123,7 @@ def assemble_with_greed(graph, ccindex, debugout=None):
         count += 1
 
         pair = fetch_largest_overlapping_pair(graph)
-        newname = 'contig{:d};cc={:d}'.format(count, ccindex)
+        newname = 'contig{:d}:cc={:d}'.format(count, ccindex)
         newrecord = merge_and_reannotate(pair, newname)
         if debugout:
             print('### DEBUG', pair.tail.name, pair.head.name, pair.offset,
