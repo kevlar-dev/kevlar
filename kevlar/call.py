@@ -13,43 +13,37 @@ import khmer
 import kevlar
 
 
+def local_to_global(localcoord, subseqid):
+    match = re.search('(\S+)_(\d+)-(\d+)', subseqid)
+    assert match, 'unable to parse subseqid {:s}'.format(subseqid)
+    seqid = match.group(1)
+    globaloffset = int(match.group(2))
+    globalcoord = globaloffset + localcoord
+    return seqid, globalcoord
+
+
 def call_snv(target, query, offset, length):
     t = target.sequence[offset:offset+length]
     q = query.sequence[:length]
-    assert len(t) == length
-    assert len(q) == length
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 1:
-        localcoord = offset + diffs[0][0]
         refr = diffs[0][1].upper()
         alt = diffs[0][2].upper()
-        globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-        assert globalregex, target.name
-        seqid = globalregex.group(1)
-        globaloffset = int(globalregex.group(2))
-        globalcoord = globaloffset + localcoord
+        localcoord = offset + diffs[0][0]
+        seqid, globalcoord = local_to_global(localcoord, target.name)
         return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
 
 
 def call_deletion(target, query, offset, leftmatch, indellength):
     localcoord = offset + leftmatch
-    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-    assert globalregex, target.name
-    seqid = globalregex.group(1)
-    globaloffset = int(globalregex.group(2))
-    globalcoord = globaloffset + localcoord
+    seqid, globalcoord = local_to_global(localcoord, target.name)
     return '{:s}:{:d}:{:d}D'.format(seqid, globalcoord, indellength)
 
 
 def call_insertion(target, query, offset, leftmatch, indellength):
     insertion = query.sequence[leftmatch:leftmatch+indellength]
-    assert len(insertion) == indellength
     localcoord = offset + leftmatch
-    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-    assert globalregex, target.name
-    seqid = globalregex.group(1)
-    globaloffset = int(globalregex.group(2))
-    globalcoord = globaloffset + localcoord
+    seqid, globalcoord = local_to_global(localcoord, target.name)
     return '{:s}:{:d}:I->{:s}'.format(seqid, globalcoord, insertion)
 
 
