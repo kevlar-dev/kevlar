@@ -166,8 +166,8 @@ def test_skip_until(capsys):
     case = kevlar.tests.data_file('trio1/case1.fq')
     ctrls = kevlar.tests.data_glob('trio1/ctrl[1,2].fq')
     arglist = ['novel', '--ctrl-max', '0', '--case-min', '6',
-               '--skip-until', readname, '--case', case,
-               '--control', ctrls[0], '--control', ctrls[1]]
+               '--skip-until', readname, '--upint', '50',
+               '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
 

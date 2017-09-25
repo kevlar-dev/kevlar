@@ -141,7 +141,7 @@ def subparser(subparsers):
     misc_args.add_argument('-t', '--threads', type=int, default=1, metavar='T',
                            help='number of threads to use for file processing;'
                            ' default is 1')
-    misc_args.add_argument('--skip-until', type=str, metavar='READID',
+    misc_args.add_argument('--skip-until', type=str, metavar='ID',
                            help='when re-running `kevlar novel`, skip all '
-                           'reads in the case input until read READID is '
-                           'observed')
+                           'reads in the case input until read with name `ID` '
+                           'is observed')
