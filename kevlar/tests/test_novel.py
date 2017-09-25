@@ -159,3 +159,20 @@ def test_novel_abund_screen(capsys):
 
     out, err = capsys.readouterr()
     assert '>seq_error' not in out
+
+
+def test_skip_until(capsys):
+    readname = 'bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1'
+    case = kevlar.tests.data_file('trio1/case1.fq')
+    ctrls = kevlar.tests.data_glob('trio1/ctrl[1,2].fq')
+    arglist = ['novel', '--ctrl-max', '0', '--case-min', '6',
+               '--skip-until', readname, '--upint', '50',
+               '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.novel.main(args)
+
+    out, err = capsys.readouterr()
+    message = ('Found read bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1 '
+               '(skipped 1001 reads)')
+    assert message in err
+    assert '29 unique novel kmers in 14 reads' in err
