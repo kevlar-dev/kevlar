@@ -14,7 +14,7 @@ import kevlar
 
 
 class Variant(object):
-    def __init__(self, seqid, pos, refr, alt, kmers=None):
+    def __init__(self, seqid, pos, refr, alt, kmers=None, window=None):
         self._seqid = seqid
         self._pos = pos
         self._refr = refr
@@ -24,6 +24,8 @@ class Variant(object):
         if kmers:
             kmerstr = ','.join(kmers)
             self.info['KevlarKmers'] = kmerstr
+        if window:
+            self.info['KevlarWindow'] = window
 
     @property
     def vcf(self):
@@ -85,16 +87,17 @@ def call_snv(target, query, offset, length, ksize):
     for diff in diffs:
         minpos = max(diff[0] - ksize + 1, 0)
         maxpos = min(diff[0] + ksize + 1, length)
-        window = t[minpos:maxpos]
+        window = q[minpos:maxpos]
         numoverlappingkmers = len(window) - ksize
-        print(numoverlappingkmers)
+        # print('DEBUGLY', numoverlappingkmers, file=sys.stderr)
         kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
 
         refr = diff[1].upper()
         alt = diff[2].upper()
         localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        snv = VariantSNV(seqid, globalcoord, refr, alt, kmers=kmers)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, kmers=kmers,
+                         window=window)
         snvs.append(snv)
     return snvs
 
@@ -187,7 +190,8 @@ def main(args):
     targetseqs = [record for record in khmer.ReadParser(args.targetseq)]
     caller = call(
         targetseqs, queryseqs,
-        args.match, args.mismatch, args.open, args.extend
+        args.match, args.mismatch, args.open, args.extend,
+        args.ksize,
     )
     for target, query, cigar, varcall in caller:
         if varcall is None:

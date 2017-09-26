@@ -156,7 +156,7 @@ def test_indel_obj():
 
 def test_variant_kmers():
     #            variant here---------------|
-    window = 'TTATTTTTAACAAAGGAGCAAAGGAGCAAACGGCAAATACAATGAGGCAAAGATAGTCTCT'
+    window = 'TTATTTTTAACAAAGGAGCAAAGGAGCAAAGGGCAAATACAATGAGGCAAAGATAGTCTCT'
     ct = khmer.Counttable(31, 1, 1)
     testkmers = [k for k in ct.get_kmers(window)]
 
