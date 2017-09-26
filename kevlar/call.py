@@ -83,10 +83,12 @@ def call_snv(target, query, offset, length, ksize):
 
     snvs = list()
     for diff in diffs:
-        minpos = max(diff[0] - ksize, 0)
-        maxpos = min(diff[0] + ksize, length)
+        minpos = max(diff[0] - ksize + 1, 0)
+        maxpos = min(diff[0] + ksize + 1, length)
         window = t[minpos:maxpos]
-        kmers = [t[i:i+ksize] for i in range(ksize)]
+        numoverlappingkmers = len(window) - ksize
+        print(numoverlappingkmers)
+        kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
 
         refr = diff[1].upper()
         alt = diff[2].upper()
