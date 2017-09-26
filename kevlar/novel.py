@@ -122,6 +122,13 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     infiles = [f for filelist in args.case for f in filelist]
     for n, record in enumerate(kevlar.multi_file_iter_screed(infiles), 1):
+        if args.skip_until:
+            if record.name == args.skip_until:
+                message = 'Found read {:s}'.format(args.skip_until)
+                message += ' (skipped {:d} reads)'.format(n)
+                print('[kevlar::novel]', message, file=args.logfile)
+                args.skip_until = False
+            continue
         if n > 0 and n % args.upint == 0:
             elapsed = timer.probe('iter')
             msg = '    processed {} reads'.format(n)
