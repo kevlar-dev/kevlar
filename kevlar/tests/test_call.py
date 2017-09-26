@@ -80,9 +80,11 @@ def test_call_ssc_1bpdel():
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
-    snv = make_call(target, query, '50D132M1D125M50D')
+    variants = make_call(target, query, '50D132M1D125M50D', 31)
 
-    assert str(snv) == '6:23230160:1D'
+    assert isinstance(variants, list)
+    assert len(variants) == 1
+    assert str(variants[0]) == '6:23230160:1D'
 
 
 def test_call_ssc_two_proximal_snvs():
@@ -100,7 +102,8 @@ def test_call_ssc_two_proximal_snvs():
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
 
-    assert make_call(target, query, '25D263M25D') is None
+    variants = make_call(target, query, '25D263M25D', 31)
+    assert len(variants) == 2
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [

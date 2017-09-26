@@ -14,12 +14,16 @@ import kevlar
 
 
 class Variant(object):
-    def __init__(self, seqid, pos, refr, alt):
+    def __init__(self, seqid, pos, refr, alt, kmers=None):
         self._seqid = seqid
         self._pos = pos
         self._refr = refr
         self._alt = alt
+        self.kmers = kmers
         self.info = dict()
+        if kmers:
+            kmerstr = ','.join(kmers)
+            self.info['KevlarKmers'] = kmerstr
 
     @property
     def vcf(self):
@@ -70,16 +74,27 @@ def local_to_global(localcoord, subseqid):
     return seqid, globalcoord
 
 
-def call_snv(target, query, offset, length):
+def call_snv(target, query, offset, length, ksize):
     t = target.sequence[offset:offset+length]
     q = query.sequence[:length]
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
-    if len(diffs) == 1:
-        refr = diffs[0][1].upper()
-        alt = diffs[0][2].upper()
-        localcoord = offset + diffs[0][0]
+    if len(diffs) == 0:
+        raise StopIteration
+
+    snvs = list()
+    for diff in diffs:
+        minpos = max(diff[0] - ksize, 0)
+        maxpos = min(diff[0] + ksize, length)
+        window = t[minpos:maxpos]
+        kmers = [t[i:i+ksize] for i in range(ksize)]
+
+        refr = diff[1].upper()
+        alt = diff[2].upper()
+        localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        return VariantSNV(seqid, globalcoord, refr, alt)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, kmers=kmers)
+        snvs.append(snv)
+    return snvs
 
 
 def call_deletion(target, query, offset, leftmatch, indellength):
@@ -88,7 +103,7 @@ def call_deletion(target, query, offset, leftmatch, indellength):
     assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return VariantIndel(seqid, globalcoord - 1, refr, alt)
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt)]
 
 
 def call_insertion(target, query, offset, leftmatch, indellength):
@@ -97,20 +112,20 @@ def call_insertion(target, query, offset, leftmatch, indellength):
     assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return VariantIndel(seqid, globalcoord - 1, refr, insertion)
+    return [VariantIndel(seqid, globalcoord - 1, refr, insertion)]
 
 
-def make_call(target, query, cigar):
+def make_call(target, query, cigar, ksize):
     snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
     snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
         length = int(snvmatch.group(2))
-        return call_snv(target, query, offset, length)
+        return call_snv(target, query, offset, length, ksize)
     elif snvmatch2 and int(snvmatch2.group(4)) <= 5:
         offset = int(snvmatch2.group(1))
         length = int(snvmatch2.group(2))
-        return call_snv(target, query, offset, length)
+        return call_snv(target, query, offset, length, ksize)
 
     indelmatch = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D$', cigar)
     indelmatch2 = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D(\d+)M$',
@@ -131,7 +146,8 @@ def make_call(target, query, cigar):
         return callfunc(target, query, offset, leftmatch, indellength)
 
 
-def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
+def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
+         ksize=31):
     """
     Wrap the `kevlar call` procedure as a generator function.
 
@@ -152,11 +168,14 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            varcall = make_call(target, query, cigar)
-            if varcall is not None:
-                varcall.info['query'] = query.name
-                varcall.info['CIGAR'] = cigar
-            yield target.name, query.name, cigar, varcall
+            varcalls = make_call(target, query, cigar, ksize)
+            if varcalls is not None:
+                for varcall in varcalls:
+                    varcall.info['query'] = query.name
+                    varcall.info['CIGAR'] = cigar
+                    yield target.name, query.name, cigar, varcall
+            else:
+                yield target.name, query.name, cigar, None
 
 
 def main(args):
