@@ -8,10 +8,11 @@
 # -----------------------------------------------------------------------------
 
 import pytest
+import re
 import sys
 import khmer
 import kevlar
-from kevlar.call import make_call
+from kevlar.call import call, make_call
 from kevlar.tests import data_file
 
 
@@ -40,9 +41,9 @@ def test_call_pico_indel(ccid, varcall):
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(tfile)]
 
-    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
-    assert str(calls[0][3]) == varcall
+    assert str(calls[0]) == varcall
 
 
 @pytest.mark.parametrize('ccid,cigar,varcall', [
@@ -66,10 +67,9 @@ def test_call_ssc_isolated_snv(ccid, cigar, varcall):
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(tfile)]
 
-    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
-    assert calls[0][2] == cigar
-    assert str(calls[0][3]) == varcall
+    assert str(calls[0]) == varcall
 
 
 def test_call_ssc_1bpdel():
@@ -121,8 +121,10 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     print(out)
     cigars = list()
     for line in out.strip().split('\n'):
-        if line.startswith('#'):
-            cigars.append(line.split()[3])
+        cigarmatch = re.search('CG=([^;\n]+)', line)
+        if cigarmatch:
+            cigar = cigarmatch.group(1)
+            cigars.append(cigar)
     assert cigar in cigars
 
 
@@ -165,7 +167,6 @@ def test_variant_kmers():
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(tfile)]
 
-    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
-    variant = calls[0][3]
-    assert variant.info['KevlarWindow'] == window
+    assert calls[0].window == window

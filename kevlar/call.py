@@ -14,17 +14,27 @@ import kevlar
 
 
 class Variant(object):
-    def __init__(self, seqid, pos, refr, alt, window=None):
+    """Base class for handling variant calls and no-calls."""
+
+    def __init__(self, seqid, pos, refr, alt, **kwargs):
+        """
+        Constructor method.
+
+        The `pos` parameter expects the genomic position as a 0-based index.
+        Setting the `refr` or `alt` parameters to `.` will designate this
+        variant as a "no call".
+        """
         self._seqid = seqid
         self._pos = pos
         self._refr = refr
         self._alt = alt
         self.info = dict()
-        if window:
-            self.info['KevlarWindow'] = window
+        for key, value in kwargs.items():
+            self.info[key] = value
 
     @property
     def vcf(self):
+        """Print variant to VCF."""
         info = '.'
         if len(self.info) > 0:
             infokvp = [
@@ -36,6 +46,37 @@ class Variant(object):
         return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
             self._seqid, self._pos + 1, self._refr, self._alt, info
         )
+
+    @property
+    def cigar(self):
+        if 'CG' not in self.info:
+            return None
+        return self.info['CG']
+
+    @property
+    def window(self):
+        """
+        Getter method for the variant window.
+
+        The "variant window" (abbreviated `VW` in VCF output) is the sequence
+        interval in the proband contig that encompasses all k-mers overlapping
+        the variant.
+
+        NNNNNNNNNNNNNNNNNANNNNNNNNNNNNNNNNNNN
+                    NNNNNA
+                     NNNNAN
+                      NNNANN
+                       NNANNN
+                        NANNNN
+                         ANNNNN
+                         |        <-- position of variant
+                    [---------]   <-- variant window, interval (inclusive)
+                                      encompassing all 6-mers that overlap the
+                                      variant
+        """
+        if 'VW' not in self.info:
+            return None
+        return self.info['VW']
 
 
 class VariantSNV(Variant):
@@ -77,7 +118,10 @@ def call_snv(target, query, offset, length, ksize):
     q = query.sequence[:length]
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 0:
-        raise StopIteration
+        seqid, globalcoord = local_to_global(offset, target.name)
+        nocall = Variant(seqid, globalcoord, '.', '.', NC='perfectmatch',
+                         QN=query.name, QS=q)
+        return [nocall]
 
     snvs = list()
     for diff in diffs:
@@ -91,7 +135,7 @@ def call_snv(target, query, offset, length, ksize):
         alt = diff[2].upper()
         localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        snv = VariantSNV(seqid, globalcoord, refr, alt, window=window)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window)
         snvs.append(snv)
     return snvs
 
@@ -144,6 +188,11 @@ def make_call(target, query, cigar, ksize):
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, leftmatch, indellength)
 
+    seqid, globalcoord = local_to_global(0, target.name)
+    nocall = Variant(seqid, globalcoord, '.', '.', NC='inscrutablecigar',
+                     QN=query.name, QS=query.sequence, CG=cigar)
+    return [nocall]
+
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
          ksize=31):
@@ -167,14 +216,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            varcalls = make_call(target, query, cigar, ksize)
-            if varcalls is not None:
-                for varcall in varcalls:
-                    varcall.info['query'] = query.name
-                    varcall.info['CIGAR'] = cigar
-                    yield target.name, query.name, cigar, varcall
-            else:
-                yield target.name, query.name, cigar, None
+            for varcall in make_call(target, query, cigar, ksize):
+                yield varcall
 
 
 def main(args):
@@ -187,8 +230,5 @@ def main(args):
         args.match, args.mismatch, args.open, args.extend,
         args.ksize,
     )
-    for target, query, cigar, varcall in caller:
-        if varcall is None:
-            print('#', target, query, cigar, file=outstream)
-        else:
-            print(varcall.vcf, file=outstream)
+    for varcall in caller:
+        print(varcall.vcf, file=outstream)
