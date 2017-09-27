@@ -14,16 +14,12 @@ import kevlar
 
 
 class Variant(object):
-    def __init__(self, seqid, pos, refr, alt, kmers=None, window=None):
+    def __init__(self, seqid, pos, refr, alt, window=None):
         self._seqid = seqid
         self._pos = pos
         self._refr = refr
         self._alt = alt
-        self.kmers = kmers
         self.info = dict()
-        if kmers:
-            kmerstr = ','.join(kmers)
-            self.info['KevlarKmers'] = kmerstr
         if window:
             self.info['KevlarWindow'] = window
 
@@ -86,18 +82,16 @@ def call_snv(target, query, offset, length, ksize):
     snvs = list()
     for diff in diffs:
         minpos = max(diff[0] - ksize + 1, 0)
-        maxpos = min(diff[0] + ksize + 1, length)
+        maxpos = min(diff[0] + ksize, length)
         window = q[minpos:maxpos]
-        numoverlappingkmers = len(window) - ksize
-        # print('DEBUGLY', numoverlappingkmers, file=sys.stderr)
+        numoverlappingkmers = len(window) - ksize + 1
         kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
 
         refr = diff[1].upper()
         alt = diff[2].upper()
         localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        snv = VariantSNV(seqid, globalcoord, refr, alt, kmers=kmers,
-                         window=window)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, window=window)
         snvs.append(snv)
     return snvs
 

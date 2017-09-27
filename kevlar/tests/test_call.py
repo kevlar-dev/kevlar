@@ -157,8 +157,6 @@ def test_indel_obj():
 def test_variant_kmers():
     #            variant here---------------|
     window = 'TTATTTTTAACAAAGGAGCAAAGGAGCAAAGGGCAAATACAATGAGGCAAAGATAGTCTCT'
-    ct = khmer.Counttable(31, 1, 1)
-    testkmers = [k for k in ct.get_kmers(window)]
 
     qfile = data_file('ssc223.contig.augfasta')
     tfile = data_file('ssc223.gdna.fa')
@@ -170,4 +168,4 @@ def test_variant_kmers():
     calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
     assert len(calls) == 1
     variant = calls[0][3]
-    assert set(variant.kmers) == set(testkmers)
+    assert variant.info['KevlarWindow'] == window
