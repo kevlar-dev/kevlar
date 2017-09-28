@@ -17,7 +17,7 @@ import kevlar
 
 def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
               logfile=sys.stderr):
-    """Load reference genome or contaminant database from a file."""
+    """Load reference genome and/or contaminant database from a file."""
     if len(maskfiles) == 1 and maskfiles[0].endswith(('.nt', '.nodetable')):
         mask = kevlar.sketch.load(maskfiles[0])
         message = '    nodetable loaded'

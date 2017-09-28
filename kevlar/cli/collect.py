@@ -49,5 +49,5 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('--collapse', action='store_true', help='collapse '
                            'linear paths contained in other linear paths')
-    subparser.add_argument('novel_output', nargs='+', help='one or more output'
+    subparser.add_argument('augfastq', nargs='+', help='one or more output'
                            ' files from the "kevlar novel" command')

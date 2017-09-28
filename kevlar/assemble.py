@@ -23,6 +23,56 @@ class KevlarEdgelessGraphError(ValueError):
     pass
 
 
+def main_jca(args):
+    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    countgraph = None
+    variants = kevlar.VariantSet()
+    for record in reads:
+        for kmer in record.ikmers:
+            variants.add_kmer(kmer.sequence, record.name)
+            if countgraph is None:
+                ksize = len(kmer.sequence)
+                countgraph = khmer.Countgraph(ksize, args.memory / 4, 4)
+        countgraph.consume(record.sequence)
+    fpr = kevlar.sketch.estimate_fpr(countgraph)
+    if fpr > args.max_fpr:
+        print('[kevlar::assemble] FPR too high, bailing out', fpr,
+              file=args.logfile)
+        sys.exit(1)
+
+    kmers_to_ignore = set(args.ignore) if args.ignore else set()
+    asm = khmer.JunctionCountAssembler(countgraph)
+    for kmer in variants.kmers:
+        if kmer in kmers_to_ignore:
+            continue
+        contigs = asm.assemble(kmer)
+        for contig in contigs:
+            if hasattr(contig, 'decode'):
+                contig = contig.decode()
+            if contig == '':
+                print('    WARNING: no assembly found for k-mer', kmer,
+                      file=args.logfile)
+                continue
+            variants.add_contig(contig, kmer)
+
+    print('    {:d} linear paths'.format(variants.ncontigs), file=args.logfile)
+
+    if args.collapse:
+        print('[kevlar::assemble] Collapsing linear paths', file=args.logfile)
+        variants.collapse()
+        print('    {:d} collapsed linear paths'.format(variants.ncontigs),
+              file=args.logfile)
+
+    outstream = kevlar.open(args.out, 'w')
+    for n, contigdata in enumerate(variants, 1):
+        contig, contigrc, kmers, reads = contigdata
+        contigname = 'contig{:d}:length={:d}:nkmers={:d}:nreads={:d}'.format(
+            n, len(contig), len(kmers), len(reads)
+        )
+        contig = screed.Record(name=contigname, sequence=contig)
+        khmer.utils.write_record(contig, outstream)
+
+
 def merge_pair(pair):
     """
     Assemble a pair of overlapping reads.
@@ -183,6 +233,10 @@ def prune_graph(graph, quant=0.1):
 
 
 def main(args):
+    if args.jca:
+        main_jca(args)
+        sys.exit(0)
+
     debugout = None
     if args.debug:
         debugout = args.logfile
