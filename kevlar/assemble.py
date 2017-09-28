@@ -18,10 +18,9 @@ import kevlar
 from kevlar.seqio import load_reads_and_kmers
 
 
-class KevlarEdgelessGraphError(ValueError):
-    """Raised if shared k-mer graph has no edges."""
-    pass
-
+# =============================================================================
+# Junction count assembly mode
+# =============================================================================
 
 def main_jca(args):
     reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
@@ -71,6 +70,15 @@ def main_jca(args):
         )
         contig = screed.Record(name=contigname, sequence=contig)
         khmer.utils.write_record(contig, outstream)
+
+
+# =============================================================================
+# Greedy assembly mode
+# =============================================================================
+
+class KevlarEdgelessGraphError(ValueError):
+    """Raised if shared k-mer graph has no edges."""
+    pass
 
 
 def merge_pair(pair):
@@ -232,43 +240,89 @@ def prune_graph(graph, quant=0.1):
     return len(edges_to_drop)
 
 
-def main(args):
-    if args.jca:
-        main_jca(args)
-        sys.exit(0)
+def main_jca(args):
+    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    countgraph = None
+    variants = kevlar.VariantSet()
+    for record in reads:
+        for kmer in record.ikmers:
+            variants.add_kmer(kmer.sequence, record.name)
+            if countgraph is None:
+                ksize = len(kmer.sequence)
+                countgraph = khmer.Countgraph(ksize, args.memory / 4, 4)
+        countgraph.consume(record.sequence)
+    fpr = kevlar.sketch.estimate_fpr(countgraph)
+    if fpr > args.max_fpr:
+        print('[kevlar::assemble] FPR too high, bailing out', fpr,
+              file=args.logfile)
+        sys.exit(1)
 
+    kmers_to_ignore = set(args.ignore) if args.ignore else set()
+    asm = khmer.JunctionCountAssembler(countgraph)
+    for kmer in variants.kmers:
+        if kmer in kmers_to_ignore:
+            continue
+        contigs = asm.assemble(kmer)
+        for contig in contigs:
+            if hasattr(contig, 'decode'):
+                contig = contig.decode()
+            if contig == '':
+                print('    WARNING: no assembly found for k-mer', kmer,
+                      file=args.logfile)
+                continue
+            variants.add_contig(contig, kmer)
+
+    print('    {:d} linear paths'.format(variants.ncontigs), file=args.logfile)
+
+    if args.collapse:
+        print('[kevlar::assemble] Collapsing linear paths', file=args.logfile)
+        variants.collapse()
+        print('    {:d} collapsed linear paths'.format(variants.ncontigs),
+              file=args.logfile)
+
+    outstream = kevlar.open(args.out, 'w')
+    for n, contigdata in enumerate(variants, 1):
+        contig, contigrc, kmers, reads = contigdata
+        contigname = 'contig{:d}:length={:d}:nkmers={:d}:nreads={:d}'.format(
+            n, len(contig), len(kmers), len(reads)
+        )
+        contig = screed.Record(name=contigname, sequence=contig)
+        khmer.utils.write_record(contig, outstream)
+
+
+def assemble_default(readstream, gmlfilename=None, debug=False,
+                     logstream=sys.stderr):
     debugout = None
-    if args.debug:
-        debugout = args.logfile
+    if debug:
+        debugout = logstream
 
     graph = kevlar.ReadGraph()
-    readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
     graph.load(readstream)
     inputreads = set(graph.nodes())
     message = 'loaded {:d} reads'.format(graph.number_of_nodes())
     message += ' and {:d} interesting k-mers'.format(len(graph.ikmers))
-    print('[kevlar::assemble]', message, file=args.logfile)
+    print('[kevlar::assemble::default]', message, file=logstream)
 
     graph.populate_edges(strict=True)
     message = 'populated "shared interesting k-mers" graph'
     message += ' with {:d} edges'.format(graph.number_of_edges())
     # If number of nodes is less than number of reads, it's probably because
     # some reads have no valid overlaps with other reads.
-    print('[kevlar::assemble]', message, file=args.logfile)
+    print('[kevlar::assemble::default]', message, file=logstream)
 
     if graph.number_of_edges() == 0:
         message = 'nothing to be done, aborting'
         raise KevlarEdgelessGraphError(message)
 
-    if args.gml:
+    if gmlfilename:
         tempgraph = graph.copy()
         for n1, n2 in tempgraph.edges():
             ikmerset = tempgraph[n1][n2]['ikmers']
             ikmerstr = ','.join(ikmerset)
             tempgraph[n1][n2]['ikmers'] = ikmerstr
-        networkx.write_gml(tempgraph, args.gml)
-        message = '[kevlar::assemble] graph written to {}'.format(args.gml)
-        print(message, file=args.logfile)
+        networkx.write_gml(tempgraph, gmlfilename)
+        message = 'graph written to {:s}'.format(gmlfilename)
+        print('[kevlar::assemble::default]', message, file=logstream)
 
     edges_dropped = prune_graph(graph)
     cc_stream = networkx.connected_component_subgraphs(graph, copy=False)
@@ -278,14 +332,13 @@ def main(args):
     message += ', graph now has {:d} connected component(s)'.format(len(ccs))
     message += ', {:d} nodes'.format(ccnodes)
     message += ', and {:d} edges'.format(graph.number_of_edges())
-    print('[kevlar::assemble]', message, file=args.logfile)
+    print('[kevlar::assemble::default]', message, file=logstream)
     if len(ccs) > 1:
         message = 'multiple connected components designated by cc=N in output'
-        print('[kevlar::assemble] WARNING:', message, file=args.logfile)
+        print('[kevlar::assemble::default] WARNING:', message, file=logstream)
 
     contigcount = 0
     unassembledcount = 0
-    outstream = kevlar.open(args.out, 'w')
     for n, cc in enumerate(ccs, 1):
         assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
@@ -294,11 +347,29 @@ def main(args):
                 continue
             contigcount += 1
             contigrecord = cc.get_record(seqname)
-            kevlar.print_augmented_fastx(contigrecord, outstream)
+            yield contigrecord
 
     assembledcount = ccnodes - unassembledcount
     message = '[kevlar::assemble] assembled'
     message += ' {:d}/{:d} reads'.format(assembledcount, ccnodes)
     message += ' from {:d} connected component(s)'.format(len(ccs))
     message += ' into {:d} contig(s)'.format(contigcount)
-    print(message, file=args.logfile)
+    print(message, file=logstream)
+
+
+def main_default(args):
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    outstream = kevlar.open(args.out, 'w')
+    contigstream = assemble_default(readstream, args.gml, args.debug,
+                                    args.logfile)
+    for contig in contigstream:
+        kevlar.print_augmented_fastx(contig, outstream)
+
+
+# =============================================================================
+# Main method
+# =============================================================================
+
+def main(args):
+    mainfunc = main_jca if args.jca else main_default
+    mainfunc(args)
