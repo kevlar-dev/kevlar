@@ -455,7 +455,8 @@ def test_assembly_contigs():
                                   'TGGCTAACACG')
 
 
-def test_assemble_main(capsys):
+@pytest.mark.parametrize('jcamode', [(True), (False)])
+def test_assemble_main(jcamode, capsys):
     cliargs = ['assemble', data_file('var1.reads.augfastq')]
     args = kevlar.cli.parser().parse_args(cliargs)
     kevlar.assemble.main(args)
