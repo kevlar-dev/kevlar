@@ -35,6 +35,8 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
+    misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
+                           help='k-mer size; default is 31')
     subparser.add_argument('queryseq', help='contigs assembled by "kevlar '
                            'assemble"')
     subparser.add_argument('targetseq', help='region of reference genome '

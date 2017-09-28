@@ -13,57 +13,162 @@ import khmer
 import kevlar
 
 
-def call_snv(target, query, offset, length):
+class Variant(object):
+    """Base class for handling variant calls and no-calls."""
+
+    def __init__(self, seqid, pos, refr, alt, **kwargs):
+        """
+        Constructor method.
+
+        The `pos` parameter expects the genomic position as a 0-based index.
+        Setting the `refr` or `alt` parameters to `.` will designate this
+        variant as a "no call".
+        """
+        self._seqid = seqid
+        self._pos = pos
+        self._refr = refr
+        self._alt = alt
+        self.info = dict()
+        for key, value in kwargs.items():
+            self.info[key] = value
+
+    @property
+    def vcf(self):
+        """Print variant to VCF."""
+        info = '.'
+        if len(self.info) > 0:
+            infokvp = [
+                '{:s}={:s}'.format(key, value.replace(';', ':'))
+                for key, value in self.info.items()
+            ]
+            info = ';'.join(infokvp)
+
+        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
+            self._seqid, self._pos + 1, self._refr, self._alt, info
+        )
+
+    @property
+    def cigar(self):
+        if 'CG' not in self.info:
+            return None
+        return self.info['CG']
+
+    @property
+    def window(self):
+        """
+        Getter method for the variant window.
+
+        The "variant window" (abbreviated `VW` in VCF output) is the sequence
+        interval in the proband contig that encompasses all k-mers overlapping
+        the variant.
+
+        NNNNNNNNNNNNNNNNNANNNNNNNNNNNNNNNNNNN
+                    NNNNNA
+                     NNNNAN
+                      NNNANN
+                       NNANNN
+                        NANNNN
+                         ANNNNN
+                         |        <-- position of variant
+                    [---------]   <-- variant window, interval (inclusive)
+                                      encompassing all 6-mers that overlap the
+                                      variant
+        """
+        if 'VW' not in self.info:
+            return None
+        return self.info['VW']
+
+
+class VariantSNV(Variant):
+    def __str__(self):
+        return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
+                                             self._refr, self._alt)
+
+
+class VariantIndel(Variant):
+    def __str__(self):
+        """
+        Return a string representation of this variant.
+
+        The reason that 1 is added to the variant position is to offset the
+        nucleotide shared by the reference and alternate alleles. This position
+        is still 0-based (as opposed to VCF's 1-based coordinate system) but
+        does not include the shared nucleotide.
+        """
+        pos = self._pos + 1
+        if len(self._refr) > len(self._alt):
+            dellength = len(self._refr) - len(self._alt)
+            return '{:s}:{:d}:{:d}D'.format(self._seqid, pos, dellength)
+        else:
+            insertion = self._alt[1:]
+            return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
+
+
+def local_to_global(localcoord, subseqid):
+    match = re.search('(\S+)_(\d+)-(\d+)', subseqid)
+    assert match, 'unable to parse subseqid {:s}'.format(subseqid)
+    seqid = match.group(1)
+    globaloffset = int(match.group(2))
+    globalcoord = globaloffset + localcoord
+    return seqid, globalcoord
+
+
+def call_snv(target, query, offset, length, ksize):
     t = target.sequence[offset:offset+length]
     q = query.sequence[:length]
-    assert len(t) == length
-    assert len(q) == length
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
-    if len(diffs) == 1:
-        localcoord = offset + diffs[0][0]
-        refr = diffs[0][1].upper()
-        alt = diffs[0][2].upper()
-        globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-        assert globalregex, target.name
-        seqid = globalregex.group(1)
-        globaloffset = int(globalregex.group(2))
-        globalcoord = globaloffset + localcoord
-        return '{:s}:{:d}:{:s}->{:s}'.format(seqid, globalcoord, refr, alt)
+    if len(diffs) == 0:
+        seqid, globalcoord = local_to_global(offset, target.name)
+        nocall = Variant(seqid, globalcoord, '.', '.', NC='perfectmatch',
+                         QN=query.name, QS=q)
+        return [nocall]
+
+    snvs = list()
+    for diff in diffs:
+        minpos = max(diff[0] - ksize + 1, 0)
+        maxpos = min(diff[0] + ksize, length)
+        window = q[minpos:maxpos]
+        numoverlappingkmers = len(window) - ksize + 1
+        kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
+
+        refr = diff[1].upper()
+        alt = diff[2].upper()
+        localcoord = offset + diff[0]
+        seqid, globalcoord = local_to_global(localcoord, target.name)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window)
+        snvs.append(snv)
+    return snvs
 
 
 def call_deletion(target, query, offset, leftmatch, indellength):
+    refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
+    alt = refr[0]
+    assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
-    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-    assert globalregex, target.name
-    seqid = globalregex.group(1)
-    globaloffset = int(globalregex.group(2))
-    globalcoord = globaloffset + localcoord
-    return '{:s}:{:d}:{:d}D'.format(seqid, globalcoord, indellength)
+    seqid, globalcoord = local_to_global(localcoord, target.name)
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt)]
 
 
 def call_insertion(target, query, offset, leftmatch, indellength):
-    insertion = query.sequence[leftmatch:leftmatch+indellength]
-    assert len(insertion) == indellength
+    insertion = query.sequence[leftmatch-1:leftmatch+indellength]
+    refr = insertion[0]
+    assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
-    globalregex = re.search('(\S+)_(\d+)-(\d+)', target.name)
-    assert globalregex, target.name
-    seqid = globalregex.group(1)
-    globaloffset = int(globalregex.group(2))
-    globalcoord = globaloffset + localcoord
-    return '{:s}:{:d}:I->{:s}'.format(seqid, globalcoord, insertion)
+    seqid, globalcoord = local_to_global(localcoord, target.name)
+    return [VariantIndel(seqid, globalcoord - 1, refr, insertion)]
 
 
-def make_call(target, query, cigar):
+def make_call(target, query, cigar, ksize):
     snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
     snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
         length = int(snvmatch.group(2))
-        return call_snv(target, query, offset, length)
+        return call_snv(target, query, offset, length, ksize)
     elif snvmatch2 and int(snvmatch2.group(4)) <= 5:
         offset = int(snvmatch2.group(1))
         length = int(snvmatch2.group(2))
-        return call_snv(target, query, offset, length)
+        return call_snv(target, query, offset, length, ksize)
 
     indelmatch = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D$', cigar)
     indelmatch2 = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D(\d+)M$',
@@ -83,8 +188,14 @@ def make_call(target, query, cigar):
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, leftmatch, indellength)
 
+    seqid, globalcoord = local_to_global(0, target.name)
+    nocall = Variant(seqid, globalcoord, '.', '.', NC='inscrutablecigar',
+                     QN=query.name, QS=query.sequence, CG=cigar)
+    return [nocall]
 
-def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
+
+def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
+         ksize=31):
     """
     Wrap the `kevlar call` procedure as a generator function.
 
@@ -105,8 +216,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0):
         for query in sorted(querylist, reverse=True, key=len):
             cigar = kevlar.align(target.sequence, query.sequence, match,
                                  mismatch, gapopen, gapextend)
-            varcall = make_call(target, query, cigar)
-            yield target.name, query.name, cigar, varcall
+            for varcall in make_call(target, query, cigar, ksize):
+                yield varcall
 
 
 def main(args):
@@ -116,7 +227,8 @@ def main(args):
     targetseqs = [record for record in khmer.ReadParser(args.targetseq)]
     caller = call(
         targetseqs, queryseqs,
-        args.match, args.mismatch, args.open, args.extend
+        args.match, args.mismatch, args.open, args.extend,
+        args.ksize,
     )
-    for target, query, cigar, varcall in caller:
-        print(target, query, cigar, varcall, sep='\t', file=outstream)
+    for varcall in caller:
+        print(varcall.vcf, file=outstream)
