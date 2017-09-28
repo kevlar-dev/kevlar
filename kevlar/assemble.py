@@ -22,24 +22,27 @@ from kevlar.seqio import load_reads_and_kmers
 # Junction count assembly mode
 # =============================================================================
 
-def main_jca(args):
-    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+def assemble_jca(readstream, memory, maxfpr=0.01, collapse=True,
+                 kmers_to_ignore=set(), logstream=sys.stderr):
+    print('[kevlar::assemble::jca] loading reads', file=logstream)
     countgraph = None
     variants = kevlar.VariantSet()
-    for record in reads:
+    for record in readstream:
         for kmer in record.ikmers:
             variants.add_kmer(kmer.sequence, record.name)
             if countgraph is None:
                 ksize = len(kmer.sequence)
-                countgraph = khmer.Countgraph(ksize, args.memory / 4, 4)
+                countgraph = khmer.Countgraph(ksize, memory / 4, 4)
         countgraph.consume(record.sequence)
     fpr = kevlar.sketch.estimate_fpr(countgraph)
-    if fpr > args.max_fpr:
-        print('[kevlar::assemble] FPR too high, bailing out', fpr,
-              file=args.logfile)
-        sys.exit(1)
+    msg = '[kevlar::assemble::jca]    done loading reads'
+    msg += ', {:d} distinct k-mers stored'.format(countgraph.n_unique_kmers())
+    msg += '; estimated false positive rate is {:1.3f}'.format(fpr)
+    if fpr > maxfpr:
+        msg += ' (FPR too high, bailing out!!!)'
+        raise SystemExit(msg)
+    print(msg, file=logstream)
 
-    kmers_to_ignore = set(args.ignore) if args.ignore else set()
     asm = khmer.JunctionCountAssembler(countgraph)
     for kmer in variants.kmers:
         if kmer in kmers_to_ignore:
@@ -54,21 +57,31 @@ def main_jca(args):
                 continue
             variants.add_contig(contig, kmer)
 
-    print('    {:d} linear paths'.format(variants.ncontigs), file=args.logfile)
+    print('    {:d} linear paths'.format(variants.ncontigs), file=logstream)
 
-    if args.collapse:
-        print('[kevlar::assemble] Collapsing linear paths', file=args.logfile)
+    if collapse:
+        print('[kevlar::assemble::jca] Collapsing contigs', file=logstream)
         variants.collapse()
-        print('    {:d} collapsed linear paths'.format(variants.ncontigs),
-              file=args.logfile)
+        print('    {:d} collapsed contigs'.format(variants.ncontigs),
+              file=logstream)
 
-    outstream = kevlar.open(args.out, 'w')
     for n, contigdata in enumerate(variants, 1):
         contig, contigrc, kmers, reads = contigdata
         contigname = 'contig{:d}:length={:d}:nkmers={:d}:nreads={:d}'.format(
             n, len(contig), len(kmers), len(reads)
         )
         contig = screed.Record(name=contigname, sequence=contig)
+        yield contig
+
+
+def main_jca(args):
+    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    outstream = kevlar.open(args.out, 'w')
+    ignore = set(args.ignore) if args.ignore else set()
+    contigstream = assemble_jca(reads, args.memory, args.max_fpr,
+                                collapse=args.collapse, kmers_to_ignore=ignore,
+                                logstream=args.logfile)
+    for contig in contigstream:
         khmer.utils.write_record(contig, outstream)
 
 
@@ -238,56 +251,6 @@ def prune_graph(graph, quant=0.1):
         graph.remove_edge(edge[0], edge[1])
 
     return len(edges_to_drop)
-
-
-def main_jca(args):
-    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
-    countgraph = None
-    variants = kevlar.VariantSet()
-    for record in reads:
-        for kmer in record.ikmers:
-            variants.add_kmer(kmer.sequence, record.name)
-            if countgraph is None:
-                ksize = len(kmer.sequence)
-                countgraph = khmer.Countgraph(ksize, args.memory / 4, 4)
-        countgraph.consume(record.sequence)
-    fpr = kevlar.sketch.estimate_fpr(countgraph)
-    if fpr > args.max_fpr:
-        print('[kevlar::assemble] FPR too high, bailing out', fpr,
-              file=args.logfile)
-        sys.exit(1)
-
-    kmers_to_ignore = set(args.ignore) if args.ignore else set()
-    asm = khmer.JunctionCountAssembler(countgraph)
-    for kmer in variants.kmers:
-        if kmer in kmers_to_ignore:
-            continue
-        contigs = asm.assemble(kmer)
-        for contig in contigs:
-            if hasattr(contig, 'decode'):
-                contig = contig.decode()
-            if contig == '':
-                print('    WARNING: no assembly found for k-mer', kmer,
-                      file=args.logfile)
-                continue
-            variants.add_contig(contig, kmer)
-
-    print('    {:d} linear paths'.format(variants.ncontigs), file=args.logfile)
-
-    if args.collapse:
-        print('[kevlar::assemble] Collapsing linear paths', file=args.logfile)
-        variants.collapse()
-        print('    {:d} collapsed linear paths'.format(variants.ncontigs),
-              file=args.logfile)
-
-    outstream = kevlar.open(args.out, 'w')
-    for n, contigdata in enumerate(variants, 1):
-        contig, contigrc, kmers, reads = contigdata
-        contigname = 'contig{:d}:length={:d}:nkmers={:d}:nreads={:d}'.format(
-            n, len(contig), len(kmers), len(reads)
-        )
-        contig = screed.Record(name=contigname, sequence=contig)
-        khmer.utils.write_record(contig, outstream)
 
 
 def assemble_default(readstream, gmlfilename=None, debug=False,
