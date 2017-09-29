@@ -14,7 +14,6 @@ import kevlar
 from . import dump
 from . import count
 from . import novel
-from . import collect
 from . import filter
 from . import reaugment
 from . import assemble
@@ -27,7 +26,6 @@ mains = {
     'dump': kevlar.dump.main,
     'count': kevlar.count.main,
     'novel': kevlar.novel.main,
-    'collect': kevlar.collect.main,
     'filter': kevlar.filter.main,
     'reaugment': kevlar.reaugment.main,
     'assemble': kevlar.assemble.main,
@@ -41,7 +39,6 @@ subparser_funcs = {
     'dump': dump.subparser,
     'count': count.subparser,
     'novel': novel.subparser,
-    'collect': collect.subparser,
     'filter': filter.subparser,
     'reaugment': reaugment.subparser,
     'assemble': assemble.subparser,
