@@ -13,7 +13,6 @@ from kevlar import KmerOfInterest
 from kevlar.seqio import AnnotatedReadSet as ReadSet
 import khmer
 import screed
-import tempfile
 import shutil
 
 

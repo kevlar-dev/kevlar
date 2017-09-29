@@ -11,6 +11,7 @@
 import glob
 import pytest
 import re
+from tempfile import NamedTemporaryFile
 import screed
 import kevlar
 from kevlar.novel import novel
@@ -108,16 +109,28 @@ def test_novel_single_mutation(case, ctrl, mem, capsys):
 
 
 def test_novel_two_cases(capsys):
-    from sys import stdout, stderr
     cases = kevlar.tests.data_glob('trio1/case6*.fq')
-    ctrls = kevlar.tests.data_glob('trio1/ctrl[5,6].fq')
-    arglist = ['novel', '--ksize', '19', '--memory', '1e7', '--ctrl-max', '1',
-               '--case-min', '7', '--case', cases[0], '--case', cases[1],
-               '--control', ctrls[0], '--control', ctrls[1]]
-    args = kevlar.cli.parser().parse_args(arglist)
-    args.out = None
-    args.err = stderr
-    kevlar.novel.main(args)
+    controls = kevlar.tests.data_glob('trio1/ctrl[5,6].fq')
+    with NamedTemporaryFile(suffix='.ct') as case1ct, \
+            NamedTemporaryFile(suffix='.ct') as case2ct, \
+            NamedTemporaryFile(suffix='.ct') as ctrl1ct, \
+            NamedTemporaryFile(suffix='.ct') as ctrl2ct:
+        arglist = ['count', '--ksize', '19', '--memory', '1e7',
+                   '--case', case1ct.name, cases[0],
+                   '--case', case2ct.name, cases[1],
+                   '--control', ctrl1ct.name, controls[0],
+                   '--control', ctrl2ct.name, controls[1]]
+        print(arglist)
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.count.main(args)
+
+        arglist = ['novel', '--ksize', '19', '--memory', '1e7',
+                   '--ctrl-max', '1', '--case-min', '7',
+                   '--case', cases[0], '--case', cases[1],
+                   '--case-counts', case1ct.name, case2ct.name,
+                   '--control-counts', ctrl1ct.name, ctrl2ct.name]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.novel.main(args)
     out, err = capsys.readouterr()
 
     assert out.strip() != ''
