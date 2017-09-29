@@ -54,87 +54,51 @@ def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
     return True, False, caseabunds, ctrlabunds
 
 
-def main(args):
-    if (not args.num_bands) is not (not args.band):
-        raise ValueError('Must specify --num-bands and --band together')
-    myband = args.band - 1 if args.band else None
-
-    timer = kevlar.Timer()
-    timer.start()
-
-    timer.start('loadall')
-    print('[kevlar::novel] Loading control samples', file=args.logfile)
-    timer.start('loadctrl')
-    if args.control_counts:
-        numctrls = len(args.control_counts)
+def load_samples(counttables=None, filelists=None, ksize=31, memory=1e6,
+                 maxfpr=0.2, numbands=None, band=None, numthreads=1,
+                 logstream=sys.stderr):
+    assert counttables or filelists
+    if counttables:
+        numctrls = len(counttables)
         message = 'counttables for {:d} sample(s) provided'.format(numctrls)
         message += ', any corresponding FASTA/FASTQ input will be ignored '
         message += 'for computing k-mer abundances'
-        print('[kevlar::novel]    INFO:', message, file=args.logfile)
-        controls = kevlar.counting.load_samples_sketchfiles(
-            args.control_counts, args.max_fpr, args.logfile
+        print('[kevlar::novel]    INFO:', message, file=logstream)
+        samples = kevlar.counting.load_samples_sketchfiles(
+            counttables, maxfpr, logstream,
         )
     else:
-        controls = kevlar.counting.load_samples(
-            args.control, args.ksize, args.memory, maxfpr=args.max_fpr,
-            memfraction=None, numbands=args.num_bands, band=myband,
-            numthreads=args.threads, logfile=args.logfile
+        samples = kevlar.counting.load_samples(
+            filelists, ksize, memory, maxfpr=maxfpr, memfraction=None,
+            numbands=numbands, band=band, numthreads=numthreads,
+            logfile=logstream,
         )
-    elapsed = timer.stop('loadctrl')
-    message = 'Control samples loaded in {:.2f} sec'.format(elapsed)
-    print('[kevlar::novel]', message, file=args.logfile)
+    return samples
 
-    print('[kevlar::novel] Loading case samples', file=args.logfile)
-    timer.start('loadcases')
-    if args.case_counts:
-        numcases = len(args.case_counts)
-        if numcases != len(args.case):
-            message = '{:d} case samples declared '.format(len(args.case))
-            message += 'but {:d} counttables provided'.format(numcases)
-            raise KevlarCaseSampleMismatchError(message)
-        message = 'counttables for {:d} samples provided'.format(numcases)
-        message += ', any corresponding FASTA/FASTQ input will be ignored '
-        message += 'for computing k-mer abundances'
-        print('[kevlar::novel]    INFO:', message, file=args.logfile)
-        cases = kevlar.counting.load_samples_sketchfiles(
-            args.case_counts, args.max_fpr, args.logfile
-        )
-    else:
-        cases = kevlar.counting.load_samples(
-            args.case, args.ksize, args.memory, maxfpr=args.max_fpr,
-            memfraction=None, numbands=args.num_bands, band=myband,
-            numthreads=args.threads, logfile=args.logfile
-        )
-    elapsed = timer.stop('loadcases')
-    print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),
-          file=args.logfile)
-    elapsed = timer.stop('loadall')
-    print('[kevlar::novel] All samples loaded in {:.2f} sec'.format(elapsed),
-          file=args.logfile)
 
-    timer.start('iter')
-    ncases = len(args.case)
-    message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
-    print('[kevlar::novel]', message, file=args.logfile)
+def novel(casestream, casecounts, controlcounts, timer, ksize=31,
+          abundscreen=None, casemin=5, ctrlmax=0, numbands=None, band=None,
+          skipuntil=None, updateint=10000, logstream=sys.stderr):
+    if (not numbands) is not (not band):
+        raise ValueError('Must specify `numbands` and `band` together')
+
     nkmers = 0
     nreads = 0
     unique_kmers = set()
-    outstream = kevlar.open(args.out, 'w')
-    infiles = [f for filelist in args.case for f in filelist]
-    for n, record in enumerate(kevlar.multi_file_iter_screed(infiles), 1):
-        if args.skip_until:
-            if record.name == args.skip_until:
-                message = 'Found read {:s}'.format(args.skip_until)
+    for n, record in enumerate(casestream, 1):
+        if skipuntil:
+            if record.name == skipuntil:
+                message = 'Found read {:s}'.format(skipuntil)
                 message += ' (skipped {:d} reads)'.format(n)
-                print('[kevlar::novel]', message, file=args.logfile)
-                args.skip_until = False
+                print('[kevlar::novel]', message, file=logstream)
+                skipuntil = False
             continue
-        if n > 0 and n % args.upint == 0:
+        if n > 0 and n % updateint == 0:
             elapsed = timer.probe('iter')
             msg = '    processed {} reads'.format(n)
             msg += ' in {:.2f} seconds...'.format(elapsed)
-            print(msg, file=args.logfile)
-        if len(record.sequence) < args.ksize:
+            print(msg, file=logstream)
+        if len(record.sequence) < ksize:
             continue
         if re.search('[^ACGT]', record.sequence):
             # This check should be temporary; hopefully khmer will handle
@@ -143,14 +107,14 @@ def main(args):
 
         discard_read = False
         record.ikmers = list()
-        for i, kmer in enumerate(cases[0].get_kmers(record.sequence)):
-            if args.num_bands:
+        for i, kmer in enumerate(casecounts[0].get_kmers(record.sequence)):
+            if numbands:
                 khash = cases[0].hash(kmer)
-                if khash & (args.num_bands - 1) != args.band - 1:
+                if khash & (numbands - 1) != band - 1:
                     continue
             interesting, discard, caseabund, ctrlabund = kmer_is_interesting(
-                kmer, cases, controls, case_min=args.case_min,
-                ctrl_max=args.ctrl_max, screen_thresh=args.abund_screen,
+                kmer, casecounts, controlcounts, case_min=casemin,
+                ctrl_max=ctrlmax, screen_thresh=abundscreen,
             )
             if discard:
                 discard_read = True
@@ -169,16 +133,65 @@ def main(args):
 
         nreads += 1
         nkmers += read_kmers
-        kevlar.print_augmented_fastx(record, outstream)
-
-    elapsed = timer.stop('iter')
-    message = 'Iterated over {} reads in {:.2f} seconds'.format(n, elapsed)
-    print('[kevlar::novel]', message, file=args.logfile)
+        yield record
 
     message = 'Found {:d} instances'.format(nkmers)
     message += ' of {:d} unique novel kmers'.format(len(unique_kmers))
     message += ' in {:d} reads'.format(nreads)
+    print('[kevlar::novel]', message, file=logstream)
+
+
+def main(args):
+    timer = kevlar.Timer()
+    timer.start()
+    if (not args.num_bands) is not (not args.band):
+        raise ValueError('Must specify --num-bands and --band together')
+    myband = args.band - 1 if args.band else None
+
+    timer.start('loadall')
+    print('[kevlar::novel] Loading control samples', file=args.logfile)
+    timer.start('loadctrl')
+    controls = load_samples(
+        args.control_counts, args.control, args.ksize, args.memory,
+        args.max_fpr, args.num_bands, myband, args.threads, args.logfile
+    )
+    elapsed = timer.stop('loadctrl')
+    message = 'Control samples loaded in {:.2f} sec'.format(elapsed)
     print('[kevlar::novel]', message, file=args.logfile)
+
+    print('[kevlar::novel] Loading case samples', file=args.logfile)
+    timer.start('loadcases')
+    cases = load_samples(
+        args.case_counts, args.case, args.ksize, args.memory,
+        args.max_fpr, args.num_bands, myband, args.threads, args.logfile
+    )
+    elapsed = timer.stop('loadcases')
+    print('[kevlar::novel] Case samples loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
+    elapsed = timer.stop('loadall')
+    print('[kevlar::novel] All samples loaded in {:.2f} sec'.format(elapsed),
+          file=args.logfile)
+
+    timer.start('iter')
+    ncases = len(args.case)
+    message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
+    print('[kevlar::novel]', message, file=args.logfile)
+    outstream = kevlar.open(args.out, 'w')
+    infiles = [f for filelist in args.case for f in filelist]
+    caserecords = kevlar.multi_file_iter_screed(infiles)
+    readstream = novel(
+        caserecords, cases, controls, timer, ksize=args.ksize,
+        abundscreen=args.abund_screen, casemin=args.case_min,
+        ctrlmax=args.ctrl_max, numbands=args.num_bands, band=myband,
+        skipuntil=args.skip_until, updateint=args.upint,
+        logstream=args.logfile,
+    )
+    elapsed = timer.stop('iter')
+    message = 'Iterated over all case reads in {:.2f} seconds'.format(elapsed)
+    print('[kevlar::novel]', message, file=args.logfile)
+
+    for augmented_read in readstream:
+        kevlar.print_augmented_fastx(augmented_read, outstream)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
