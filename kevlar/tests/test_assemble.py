@@ -11,6 +11,7 @@ import pytest
 import screed
 from networkx import connected_components
 import kevlar
+import kevlar.__main__
 from kevlar import KmerOfInterest
 from kevlar.seqio import load_reads_and_kmers
 from kevlar.assemble import (merge_pair, merge_and_reannotate)
@@ -455,18 +456,34 @@ def test_assembly_contigs():
                                   'TGGCTAACACG')
 
 
-@pytest.mark.parametrize('jcamode', [(True), (False)])
+@pytest.mark.parametrize('jcamode', [
+    (True),
+    (False),
+])
 def test_assemble_main(jcamode, capsys):
     cliargs = ['assemble', data_file('var1.reads.augfastq')]
     args = kevlar.cli.parser().parse_args(cliargs)
+    args.jca = jcamode
     kevlar.assemble.main(args)
     out, err = capsys.readouterr()
-    contig = ('TATCACTGTCCTTACAGGTGGATAGTCGCTTTGTAATAAAAGAGTTACACCCCGGTTTTTAGA'
-              'AGTCTCGACTTTAAGGAAGTGGGCCTACGGCGGAAGCCGTCTCTAATGGACTCAAGGACCTGA'
-              'ATC')
+    contig = ('GTCCTTGAGTCCATTAGAGACGGCTTCCGCCGTAGGCCCACTTCCTTAAAGTCGAGACTTCTA'
+              'AAAACCGGGGTGTAACTCTTTTATTACAAAGCGACTATCCACCTGTAAGGACAGTGATA')
     print('DEBUG', contig)
     print('DEBUG', out)
-    assert contig in out
+    assert contig in out or kevlar.revcom(contig) in out
+
+
+def test_assemble_jca_collapse(capsys):
+    infile = data_file('var1.reads.augfastq')
+    cliargs = ['assemble', '--jca', '--collapse', infile]
+    args = kevlar.cli.parser().parse_args(cliargs)
+    kevlar.__main__.main(args)
+    out, err = capsys.readouterr()
+    contig = ('GTCCTTGAGTCCATTAGAGACGGCTTCCGCCGTAGGCCCACTTCCTTAAAGTCGAGACTTCTA'
+              'AAAACCGGGGTGTAACTCTTTTATTACAAAGCGACTATCCACCTGTAAGGACAGTGATA')
+    print('DEBUG', contig)
+    print('DEBUG', out)
+    assert contig in out or kevlar.revcom(contig) in out
 
 
 def test_assemble_no_edges(capsys):
