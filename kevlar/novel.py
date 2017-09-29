@@ -76,9 +76,9 @@ def load_samples(counttables=None, filelists=None, ksize=31, memory=1e6,
     return samples
 
 
-def novel(casestream, casecounts, controlcounts, timer, ksize=31,
-          abundscreen=None, casemin=5, ctrlmax=0, numbands=None, band=None,
-          skipuntil=None, updateint=10000, logstream=sys.stderr):
+def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
+          casemin=5, ctrlmax=0, numbands=None, band=None, skipuntil=None,
+          updateint=10000, logstream=sys.stderr):
     numbands_unset = not numbands
     band_unset = not band and band != 0
     if numbands_unset is not band_unset:
@@ -90,6 +90,8 @@ def novel(casestream, casecounts, controlcounts, timer, ksize=31,
         message += ' (`numbands` - 1), inclusive'
         raise ValueError(message)
 
+    timer = kevlar.Timer()
+    timer.start()
     nkmers = 0
     nreads = 0
     unique_kmers = set()
@@ -102,7 +104,7 @@ def novel(casestream, casecounts, controlcounts, timer, ksize=31,
                 skipuntil = False
             continue
         if n > 0 and n % updateint == 0:
-            elapsed = timer.probe('iter')
+            elapsed = timer.probe()
             msg = '    processed {} reads'.format(n)
             msg += ' in {:.2f} seconds...'.format(elapsed)
             print(msg, file=logstream)
@@ -143,9 +145,11 @@ def novel(casestream, casecounts, controlcounts, timer, ksize=31,
         nkmers += read_kmers
         yield record
 
+    elapsed = timer.stop()
     message = 'Found {:d} instances'.format(nkmers)
     message += ' of {:d} unique novel kmers'.format(len(unique_kmers))
     message += ' in {:d} reads'.format(nreads)
+    message += ' in {:.2f} seconds'.format(elapsed)
     print('[kevlar::novel]', message, file=logstream)
 
 
@@ -188,7 +192,7 @@ def main(args):
     infiles = [f for filelist in args.case for f in filelist]
     caserecords = kevlar.multi_file_iter_screed(infiles)
     readstream = novel(
-        caserecords, cases, controls, timer, ksize=args.ksize,
+        caserecords, cases, controls, ksize=args.ksize,
         abundscreen=args.abund_screen, casemin=args.case_min,
         ctrlmax=args.ctrl_max, numbands=args.num_bands, band=myband,
         skipuntil=args.skip_until, updateint=args.upint,
