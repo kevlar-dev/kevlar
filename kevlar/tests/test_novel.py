@@ -13,7 +13,22 @@ import pytest
 import re
 import screed
 import kevlar
+from kevlar.novel import novel
 from khmer import Counttable
+
+
+def test_novel_banding_args():
+    with pytest.raises(ValueError) as ve:
+        reads = list(novel(None, [], [], None, numbands=4))
+    assert 'Must specify `numbands` and `band` together' in str(ve)
+
+    with pytest.raises(ValueError) as ve:
+        reads = list(novel(None, [], [], None, band=0))
+    assert 'Must specify `numbands` and `band` together' in str(ve)
+
+    with pytest.raises(ValueError) as ve:
+        reads = list(novel(None, [], [], None, numbands=4, band=-1))
+    assert '`band` must be a value between 0 and 3' in str(ve)
 
 
 def test_cli():

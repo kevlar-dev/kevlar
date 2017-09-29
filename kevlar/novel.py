@@ -79,8 +79,16 @@ def load_samples(counttables=None, filelists=None, ksize=31, memory=1e6,
 def novel(casestream, casecounts, controlcounts, timer, ksize=31,
           abundscreen=None, casemin=5, ctrlmax=0, numbands=None, band=None,
           skipuntil=None, updateint=10000, logstream=sys.stderr):
-    if (not numbands) is not (not band):
+    numbands_unset = not numbands
+    band_unset = not band and band != 0
+    if numbands_unset is not band_unset:
         raise ValueError('Must specify `numbands` and `band` together')
+
+    if band is not None and band < 0:
+        maxband = numbands - 1
+        message = '`band` must be a value between 0 and {:d}'.format(maxband)
+        message += ' (`numbands` - 1), inclusive'
+        raise ValueError(message)
 
     nkmers = 0
     nreads = 0
