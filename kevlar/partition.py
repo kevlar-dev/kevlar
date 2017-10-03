@@ -20,7 +20,7 @@ def write_partitions(graph, ccprefix, dedup=True, minabund=None, maxabund=None,
     n = 0
     reads_in_ccs = 0
     cclog = open(ccprefix + '.cc.log', 'w')
-    part_iter = graph.partitions(dedup, minabund, maxabund)
+    part_iter = graph.partitions(dedup, minabund, maxabund, abundfilt=True)
     for n, cc in enumerate(part_iter):
         readnames = [r for r in cc]
         print('CC', n, len(cc), readnames, sep='\t', file=cclog)
