@@ -12,6 +12,7 @@ import shutil
 import sys
 import tempfile
 import kevlar
+from kevlar.partition import partition
 
 
 def test_partition_dedup(capsys):
@@ -91,14 +92,17 @@ def test_partition_nodedup(capsys):
     shutil.rmtree(tempdir)
 
 
-def test_partition_minabund(capsys):
+def test_partition_dedup_minabund(capsys):
     infile = kevlar.tests.data_file('dupl-part.augfastq.gz')
-    tempdir = tempfile.mkdtemp()
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitioner = partition(readstream, minabund=5)
+    partitions = list(partitioner)
+    assert len(partitions) == 0
 
-    arglist = ['partition', '--min-abund', '5', tempdir + '/nodedup', infile]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.partition.main(args)
-    out, err = capsys.readouterr()
-    assert 'grouped 0 reads into 0 connected components' in err
 
-    shutil.rmtree(tempdir)
+def test_partition_nodedup_minabund(capsys):
+    infile = kevlar.tests.data_file('dupl-part-2reads.augfastq.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitioner = partition(readstream, minabund=5, dedup=False)
+    partitions = list(partitioner)
+    assert len(partitions) == 0
