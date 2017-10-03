@@ -322,10 +322,12 @@ def assemble_default(readstream, gmlfilename=None, debug=False,
 
 def main_default(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
-    outstream = kevlar.open(args.out, 'w')
+    outstream = None  # Only create output file if there are contigs
     contigstream = assemble_default(readstream, args.gml, args.debug,
                                     args.logfile)
     for contig in contigstream:
+        if outstream is None:
+            outstream = kevlar.open(args.out, 'w')
         kevlar.print_augmented_fastx(contig, outstream)
 
 
