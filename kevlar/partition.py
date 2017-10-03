@@ -21,7 +21,7 @@ def write_partitions(graph, ccprefix, dedup=True, minabund=None, maxabund=None,
     reads_in_ccs = 0
     cclog = open(ccprefix + '.cc.log', 'w')
     part_iter = graph.partitions(dedup, minabund, maxabund, abundfilt=True)
-    for n, cc in enumerate(part_iter):
+    for n, cc in enumerate(part_iter, 1):
         readnames = [r for r in cc]
         print('CC', n, len(cc), readnames, sep='\t', file=cclog)
         reads_in_ccs += len(cc)
@@ -31,7 +31,7 @@ def write_partitions(graph, ccprefix, dedup=True, minabund=None, maxabund=None,
                 record = graph.get_record(readid)
                 kevlar.print_augmented_fastx(record, outfile)
     message = '[kevlar::partition] grouped {:d} reads'.format(reads_in_ccs)
-    message += ' into {:d} connected components'.format(n + 1)
+    message += ' into {:d} connected components'.format(n)
     print(message, file=logstream)
 
 

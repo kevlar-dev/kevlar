@@ -139,6 +139,9 @@ class ReadGraph(networkx.Graph):
                 readstream = [self.get_record(readid) for readid in cc]
                 partition.load(readstream, minabund, maxabund, dedup=True)
                 assert partition.number_of_nodes() > 0
+                if abundfilt:
+                    if minabund and partition.number_of_nodes() < minabund:
+                        continue  # Skip partitions that are too small
                 yield partition
             else:
                 yield cc
