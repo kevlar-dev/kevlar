@@ -12,6 +12,7 @@ import shutil
 import sys
 import tempfile
 import kevlar
+from kevlar.partition import partition
 
 
 def test_partition_dedup(capsys):
@@ -24,7 +25,7 @@ def test_partition_dedup(capsys):
     out, err = capsys.readouterr()
     assert 'grouped 16 reads into 1 connected components' in err
 
-    outfile = tempdir + '/dedup.cc0.augfastq.gz'
+    outfile = tempdir + '/dedup.cc1.augfastq.gz'
     stream = kevlar.open(outfile, 'r')
     parser = kevlar.parse_augmented_fastx(stream)
     readseqs = [r.sequence for r in parser]
@@ -63,7 +64,7 @@ def test_partition_nodedup(capsys):
     out, err = capsys.readouterr()
     assert 'grouped 18 reads into 1 connected components' in err
 
-    outfile = tempdir + '/nodedup.cc0.augfastq.gz'
+    outfile = tempdir + '/nodedup.cc1.augfastq.gz'
     stream = kevlar.open(outfile, 'r')
     parser = kevlar.parse_augmented_fastx(stream)
     readseqs = sorted([r.sequence for r in parser])
@@ -89,3 +90,19 @@ def test_partition_nodedup(capsys):
     ]
 
     shutil.rmtree(tempdir)
+
+
+def test_partition_dedup_minabund(capsys):
+    infile = kevlar.tests.data_file('dupl-part.augfastq.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitioner = partition(readstream, minabund=5)
+    partitions = list(partitioner)
+    assert len(partitions) == 0
+
+
+def test_partition_nodedup_minabund(capsys):
+    infile = kevlar.tests.data_file('dupl-part-2reads.augfastq.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitioner = partition(readstream, minabund=5, dedup=False)
+    partitions = list(partitioner)
+    assert len(partitions) == 0
