@@ -131,9 +131,6 @@ class ReadGraph(networkx.Graph):
                          key=lambda c: (len(c), sorted(c))):
             if len(cc) == 1 and list(cc)[0] in self.readnames:
                 continue  # Skip unassembled input reads
-            if abundfilt:
-                if minabund and len(cc) < minabund:
-                    continue  # Skip partitions that are too small
             if dedup:
                 partition = ReadGraph()
                 readstream = [self.get_record(readid) for readid in cc]
