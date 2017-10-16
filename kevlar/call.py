@@ -35,17 +35,27 @@ class Variant(object):
     @property
     def vcf(self):
         """Print variant to VCF."""
-        info = '.'
+        attrstr = '.'
         if len(self.info) > 0:
-            infokvp = [
-                '{:s}={:s}'.format(key, value.replace(';', ':'))
-                for key, value in self.info.items()
-            ]
-            info = ';'.join(infokvp)
+            kvpairs = list()
+            for key in sorted(self.info):
+                if key != 'QS':
+                    kvpairs.append(self.attribute(key))
+            queryseq = self.attribute('QS')
+            if queryseq:
+                kvpairs.append(queryseq)
+            attrstr = ';'.join(kvpairs)
 
         return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt, info
+            self._seqid, self._pos + 1, self._refr, self._alt, attrstr
         )
+
+    def attribute(self, key):
+        if key not in self.info:
+            return None
+        value = self.info[key].replace(';', ':')
+        kvpair = '{:s}={:s}'.format(key, value)
+        return kvpair
 
     @property
     def cigar(self):
