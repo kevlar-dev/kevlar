@@ -40,8 +40,8 @@ class Variant(object):
             kvpairs = list()
             for key in sorted(self.info):
                 if key != 'QS':
-                    kvpairs.append(self.attribute(key))
-            queryseq = self.attribute('QS')
+                    kvpairs.append(self.attribute(key, pair=True))
+            queryseq = self.attribute('QS', pair=True)
             if queryseq:
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)
@@ -52,18 +52,9 @@ class Variant(object):
             attrstr
         )
 
-    def attribute(self, key):
-        if key not in self.info:
-            return None
-        value = self.info[key].replace(';', ':')
-        kvpair = '{:s}={:s}'.format(key, value)
-        return kvpair
-
     @property
     def cigar(self):
-        if 'CG' not in self.info:
-            return None
-        return self.info['CG']
+        return self.attribute('CG')
 
     @property
     def window(self):
@@ -86,9 +77,17 @@ class Variant(object):
                                       encompassing all 6-mers that overlap the
                                       variant
         """
-        if 'VW' not in self.info:
+        return self.attribute('VW')
+
+    def attribute(self, key, pair=False):
+        if key not in self.info:
             return None
-        return self.info['VW']
+        value = self.info[key].replace(';', ':')
+        if pair:
+            keyvaluepair = '{:s}={:s}'.format(key, value)
+            return keyvaluepair
+        else:
+            return value
 
 
 class VariantSNV(Variant):

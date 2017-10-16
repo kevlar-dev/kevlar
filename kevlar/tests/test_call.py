@@ -133,6 +133,11 @@ def test_snv_obj():
     assert str(snv) == 'scaffold42:10773:A->G'
     vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
     assert snv.vcf == '\t'.join(vcfvalues)
+    assert snv.cigar is None
+
+    snv2 = kevlar.call.VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    assert snv2.cigar == '10D200M10D'
+    assert snv2.window is None
 
 
 def test_indel_obj():
