@@ -46,8 +46,10 @@ class Variant(object):
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)
 
-        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt, attrstr
+        filterstr = 'PASS' if self._refr != '.' else '.'
+        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\t{:s}\t{:s}'.format(
+            self._seqid, self._pos + 1, self._refr, self._alt, filterstr,
+            attrstr
         )
 
     def attribute(self, key):

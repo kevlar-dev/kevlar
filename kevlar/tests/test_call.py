@@ -197,3 +197,22 @@ def test_insertion_window():
     assert len(variants) == 1
     assert variants[0].window == ('CATCTGTTTTTCTCGAACTCGATTACAGTATATTATCTATAAA'
                                   'TTCC')
+
+
+def test_nocall():
+    # Intentionally mismatched
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D5M22I5M46D8M13D2M35I', 21)
+    assert len(variants) == 1
+    assert variants[0].vcf == (
+        'yourchr\t801\t.\t.\t.\t.\t.\t'
+        'CG=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;QN=contig4:cc=1;'
+        'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
+        'TGCAAGAAAAT'
+    )
