@@ -170,3 +170,30 @@ def test_variant_kmers():
     calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
     assert calls[0].window == window
+
+
+def test_deletion_window():
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-deletion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D28M8D49M25D', 21)
+    assert len(variants) == 1
+    assert variants[0].window == 'GGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCG'
+
+
+def test_insertion_window():
+    qfile = data_file('phony-insertion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '10D34M7I49M10D1M', 21)
+    assert len(variants) == 1
+    assert variants[0].window == ('CATCTGTTTTTCTCGAACTCGATTACAGTATATTATCTATAAA'
+                                  'TTCC')

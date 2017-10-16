@@ -150,22 +150,28 @@ def call_snv(target, query, offset, length, ksize):
     return snvs
 
 
-def call_deletion(target, query, offset, leftmatch, indellength):
+def call_deletion(target, query, offset, ksize, leftmatch, indellength):
+    minpos = leftmatch - ksize + 1
+    maxpos = leftmatch + ksize
+    window = query.sequence[minpos:maxpos]
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
     assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, alt)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window)]
 
 
-def call_insertion(target, query, offset, leftmatch, indellength):
+def call_insertion(target, query, offset, ksize, leftmatch, indellength):
+    minpos = leftmatch - ksize + 1
+    maxpos = leftmatch + ksize + indellength - 1
+    window = query.sequence[minpos:maxpos]
     insertion = query.sequence[leftmatch-1:leftmatch+indellength]
     refr = insertion[0]
     assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, insertion)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window)]
 
 
 def make_call(target, query, cigar, ksize):
@@ -189,14 +195,14 @@ def make_call(target, query, cigar, ksize):
         indellength = int(indelmatch.group(3))
         indeltype = indelmatch.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
-        return callfunc(target, query, offset, leftmatch, indellength)
+        return callfunc(target, query, offset, ksize, leftmatch, indellength)
     elif indelmatch2 and int(indelmatch2.group(7)) <= 5:
         offset = int(indelmatch2.group(1))
         leftmatch = int(indelmatch2.group(2))
         indellength = int(indelmatch2.group(3))
         indeltype = indelmatch2.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
-        return callfunc(target, query, offset, leftmatch, indellength)
+        return callfunc(target, query, offset, ksize, leftmatch, indellength)
 
     seqid, globalcoord = local_to_global(0, target.name)
     nocall = Variant(seqid, globalcoord, '.', '.', NC='inscrutablecigar',
