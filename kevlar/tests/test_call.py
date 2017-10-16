@@ -133,6 +133,11 @@ def test_snv_obj():
     assert str(snv) == 'scaffold42:10773:A->G'
     vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
     assert snv.vcf == '\t'.join(vcfvalues)
+    assert snv.cigar is None
+
+    snv2 = kevlar.call.VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    assert snv2.cigar == '10D200M10D'
+    assert snv2.window is None
 
 
 def test_indel_obj():
@@ -170,3 +175,49 @@ def test_variant_kmers():
     calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
     assert calls[0].window == window
+
+
+def test_deletion_window():
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-deletion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D28M8D49M25D', 21)
+    assert len(variants) == 1
+    assert variants[0].window == 'GGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCG'
+
+
+def test_insertion_window():
+    qfile = data_file('phony-insertion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '10D34M7I49M10D1M', 21)
+    assert len(variants) == 1
+    assert variants[0].window == ('CATCTGTTTTTCTCGAACTCGATTACAGTATATTATCTATAAA'
+                                  'TTCC')
+
+
+def test_nocall():
+    # Intentionally mismatched
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D5M22I5M46D8M13D2M35I', 21)
+    assert len(variants) == 1
+    assert variants[0].vcf == (
+        'yourchr\t801\t.\t.\t.\t.\t.\t'
+        'CG=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;QN=contig4:cc=1;'
+        'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
+        'TGCAAGAAAAT'
+    )

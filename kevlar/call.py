@@ -35,23 +35,26 @@ class Variant(object):
     @property
     def vcf(self):
         """Print variant to VCF."""
-        info = '.'
+        attrstr = '.'
         if len(self.info) > 0:
-            infokvp = [
-                '{:s}={:s}'.format(key, value.replace(';', ':'))
-                for key, value in self.info.items()
-            ]
-            info = ';'.join(infokvp)
+            kvpairs = list()
+            for key in sorted(self.info):
+                if key != 'QS':
+                    kvpairs.append(self.attribute(key, pair=True))
+            queryseq = self.attribute('QS', pair=True)
+            if queryseq:
+                kvpairs.append(queryseq)
+            attrstr = ';'.join(kvpairs)
 
-        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\tPASS\t{:s}'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt, info
+        filterstr = 'PASS' if self._refr != '.' else '.'
+        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\t{:s}\t{:s}'.format(
+            self._seqid, self._pos + 1, self._refr, self._alt, filterstr,
+            attrstr
         )
 
     @property
     def cigar(self):
-        if 'CG' not in self.info:
-            return None
-        return self.info['CG']
+        return self.attribute('CG')
 
     @property
     def window(self):
@@ -74,9 +77,17 @@ class Variant(object):
                                       encompassing all 6-mers that overlap the
                                       variant
         """
-        if 'VW' not in self.info:
+        return self.attribute('VW')
+
+    def attribute(self, key, pair=False):
+        if key not in self.info:
             return None
-        return self.info['VW']
+        value = self.info[key].replace(';', ':')
+        if pair:
+            keyvaluepair = '{:s}={:s}'.format(key, value)
+            return keyvaluepair
+        else:
+            return value
 
 
 class VariantSNV(Variant):
@@ -140,22 +151,28 @@ def call_snv(target, query, offset, length, ksize):
     return snvs
 
 
-def call_deletion(target, query, offset, leftmatch, indellength):
+def call_deletion(target, query, offset, ksize, leftmatch, indellength):
+    minpos = leftmatch - ksize + 1
+    maxpos = leftmatch + ksize
+    window = query.sequence[minpos:maxpos]
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
     assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, alt)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window)]
 
 
-def call_insertion(target, query, offset, leftmatch, indellength):
+def call_insertion(target, query, offset, ksize, leftmatch, indellength):
+    minpos = leftmatch - ksize + 1
+    maxpos = leftmatch + ksize + indellength - 1
+    window = query.sequence[minpos:maxpos]
     insertion = query.sequence[leftmatch-1:leftmatch+indellength]
     refr = insertion[0]
     assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, insertion)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window)]
 
 
 def make_call(target, query, cigar, ksize):
@@ -179,14 +196,14 @@ def make_call(target, query, cigar, ksize):
         indellength = int(indelmatch.group(3))
         indeltype = indelmatch.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
-        return callfunc(target, query, offset, leftmatch, indellength)
+        return callfunc(target, query, offset, ksize, leftmatch, indellength)
     elif indelmatch2 and int(indelmatch2.group(7)) <= 5:
         offset = int(indelmatch2.group(1))
         leftmatch = int(indelmatch2.group(2))
         indellength = int(indelmatch2.group(3))
         indeltype = indelmatch2.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
-        return callfunc(target, query, offset, leftmatch, indellength)
+        return callfunc(target, query, offset, ksize, leftmatch, indellength)
 
     seqid, globalcoord = local_to_global(0, target.name)
     nocall = Variant(seqid, globalcoord, '.', '.', NC='inscrutablecigar',
