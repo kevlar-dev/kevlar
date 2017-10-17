@@ -10,10 +10,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - New abundance screen now a part of `kevlar novel`. If any k-mer in a read is below some abundance threshold, the entire read is discarded (see #106).
 - Better error reporting and handling of various issues with assembly, localization, and alignment (see #113, #114).
+- Preliminary support for VCF output.
 
 ### Changed
 - The `kevlar filter` procedure now handles both contamination and reference matches under a single mask interface (see #103).
 - Explicitly dropped support for Python 2.7. Now supports only Python >=3.5 (see #125).
+
+### Removed
+- The `kevlar collect` command and associated tests. Its functionality has now been fully distributed to other subcommands.
+    - Read filtering to `kevlar filter`
+    - Junction count contig assembly to `kevlar filter` as an optional mode
 
 ## [0.2.0] - 2017-07-21
 ### Added

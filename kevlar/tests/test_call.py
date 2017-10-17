@@ -8,10 +8,11 @@
 # -----------------------------------------------------------------------------
 
 import pytest
+import re
 import sys
 import khmer
 import kevlar
-from kevlar.call import make_call
+from kevlar.call import call, make_call
 from kevlar.tests import data_file
 
 
@@ -40,9 +41,9 @@ def test_call_pico_indel(ccid, varcall):
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(tfile)]
 
-    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
-    assert calls[0][3] == varcall
+    assert str(calls[0]) == varcall
 
 
 @pytest.mark.parametrize('ccid,cigar,varcall', [
@@ -66,10 +67,9 @@ def test_call_ssc_isolated_snv(ccid, cigar, varcall):
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(tfile)]
 
-    calls = [tup for tup in kevlar.call.call(targetseqs, queryseqs)]
+    calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
-    assert calls[0][2] == cigar
-    assert calls[0][3] == varcall
+    assert str(calls[0]) == varcall
 
 
 def test_call_ssc_1bpdel():
@@ -80,8 +80,11 @@ def test_call_ssc_1bpdel():
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
+    variants = make_call(target, query, '50D132M1D125M50D', 31)
 
-    assert make_call(target, query, '50D132M1D125M50D') == '6:23230160:1D'
+    assert isinstance(variants, list)
+    assert len(variants) == 1
+    assert str(variants[0]) == '6:23230160:1D'
 
 
 def test_call_ssc_two_proximal_snvs():
@@ -99,7 +102,8 @@ def test_call_ssc_two_proximal_snvs():
     query = [record for record in qinstream][0]
     target = [record for record in khmer.ReadParser(tfile)][0]
 
-    assert make_call(target, query, '25D263M25D') is None
+    variants = make_call(target, query, '25D263M25D', 31)
+    assert len(variants) == 2
 
 
 @pytest.mark.parametrize('targetfile,queryfile,cigar', [
@@ -114,6 +118,106 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     kevlar.call.main(args)
 
     out, err = capsys.readouterr()
-    print(out.split('\n'))
-    cigars = [line.split()[2] for line in out.strip().split('\n')]
+    print(out)
+    cigars = list()
+    for line in out.strip().split('\n'):
+        cigarmatch = re.search('CG=([^;\n]+)', line)
+        if cigarmatch:
+            cigar = cigarmatch.group(1)
+            cigars.append(cigar)
     assert cigar in cigars
+
+
+def test_snv_obj():
+    snv = kevlar.call.VariantSNV('scaffold42', 10773, 'A', 'G')
+    assert str(snv) == 'scaffold42:10773:A->G'
+    vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
+    assert snv.vcf == '\t'.join(vcfvalues)
+    assert snv.cigar is None
+
+    snv2 = kevlar.call.VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    assert snv2.cigar == '10D200M10D'
+    assert snv2.window is None
+
+
+def test_indel_obj():
+    """
+    Test indel objects
+
+    The coordinate used to construct the object is 0-based, but includes the
+    nucleotide shared by the reference and alternate alleles. The str() output
+    coordinate is increased by 1 to account for this nucleotide, while the VCF
+    output is increased by 1 to transform to a 1-based system where the shared
+    nucleotide is the point of reference.
+    """
+    indel1 = kevlar.call.VariantIndel('chr3', 8998622, 'GATTACA', 'G')
+    assert str(indel1) == 'chr3:8998623:6D'
+    vcfvalues = ['chr3', '8998623', '.', 'GATTACA', 'G', '.', 'PASS', '.']
+    assert indel1.vcf == '\t'.join(vcfvalues)
+
+    indel2 = kevlar.call.VariantIndel('chr6', 75522411, 'G', 'GATTACA')
+    assert str(indel2) == 'chr6:75522412:I->ATTACA'
+    vcfvalues = ['chr6', '75522412', '.', 'G', 'GATTACA', '.', 'PASS', '.']
+    assert indel2.vcf == '\t'.join(vcfvalues)
+
+
+def test_variant_kmers():
+    #            variant here---------------|
+    window = 'TTATTTTTAACAAAGGAGCAAAGGAGCAAAGGGCAAATACAATGAGGCAAAGATAGTCTCT'
+
+    qfile = data_file('ssc223.contig.augfasta')
+    tfile = data_file('ssc223.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    queryseqs = [record for record in qinstream]
+    targetseqs = [record for record in khmer.ReadParser(tfile)]
+
+    calls = list(call(targetseqs, queryseqs))
+    assert len(calls) == 1
+    assert calls[0].window == window
+
+
+def test_deletion_window():
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-deletion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D28M8D49M25D', 21)
+    assert len(variants) == 1
+    assert variants[0].window == 'GGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCG'
+
+
+def test_insertion_window():
+    qfile = data_file('phony-insertion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '10D34M7I49M10D1M', 21)
+    assert len(variants) == 1
+    assert variants[0].window == ('CATCTGTTTTTCTCGAACTCGATTACAGTATATTATCTATAAA'
+                                  'TTCC')
+
+
+def test_nocall():
+    # Intentionally mismatched
+    qfile = data_file('phony-deletion-01.contig.fa')
+    tfile = data_file('phony-insertion-01.gdna.fa')
+
+    qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
+    query = [record for record in qinstream][0]
+    target = [record for record in khmer.ReadParser(tfile)][0]
+
+    variants = make_call(target, query, '25D5M22I5M46D8M13D2M35I', 21)
+    assert len(variants) == 1
+    assert variants[0].vcf == (
+        'yourchr\t801\t.\t.\t.\t.\t.\t'
+        'CG=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;QN=contig4:cc=1;'
+        'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
+        'TGCAAGAAAAT'
+    )

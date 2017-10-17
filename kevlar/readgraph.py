@@ -116,7 +116,16 @@ class ReadGraph(networkx.Graph):
                 else:
                     self.add_edge(read1, read2)
 
-    def partitions(self, dedup=True, minabund=None, maxabund=None):
+    def partitions(self, dedup=True, minabund=None, maxabund=None,
+                   abundfilt=False):
+        """
+        Retrieve all partitions (connected components) from this graph.
+
+        The `minabund` and `maxabund` parameters are used at graph construction
+        time to filter out k-mers whose abundance is too large or small. If
+        `abundfilt` is true, the minimum bundance is also applied to the number
+        of sequences (reads or contigs) in the partition.
+        """
         for cc in sorted(networkx.connected_components(self), reverse=True,
                          # Sort first by number of reads, then by read names
                          key=lambda c: (len(c), sorted(c))):
@@ -127,6 +136,9 @@ class ReadGraph(networkx.Graph):
                 readstream = [self.get_record(readid) for readid in cc]
                 partition.load(readstream, minabund, maxabund, dedup=True)
                 assert partition.number_of_nodes() > 0
+                if abundfilt:
+                    if minabund and partition.number_of_nodes() < minabund:
+                        continue  # Skip partitions that are too small
                 yield partition
             else:
                 yield cc

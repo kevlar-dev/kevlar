@@ -20,8 +20,6 @@ def subparser(subparsers):
     """
 
     subparser = subparsers.add_parser('partition', description=desc)
-    subparser.add_argument('-d', '--debug', action='store_true',
-                           help='print debugging output')
     subparser.add_argument('-s', '--strict', action='store_true',
                            help='require perfect identity between overlapping '
                            'reads for inclusion in the same partition; by '

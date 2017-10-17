@@ -31,7 +31,6 @@ from kevlar.timer import Timer
 # Subcommands and command-line interface
 from kevlar import dump
 from kevlar import novel
-from kevlar import collect
 from kevlar import filter
 from kevlar import reaugment
 from kevlar import mutate
