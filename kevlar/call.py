@@ -231,8 +231,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
     """
     for target in sorted(targetlist, key=lambda record: record.name):
         for query in sorted(querylist, reverse=True, key=len):
-            cigar = kevlar.align(target.sequence, query.sequence, match,
-                                 mismatch, gapopen, gapextend)
+            cigar, score = kevlar.align(target.sequence, query.sequence, match,
+                                        mismatch, gapopen, gapextend)
             for varcall in make_call(target, query, cigar, ksize):
                 yield varcall
 

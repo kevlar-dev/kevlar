@@ -725,6 +725,9 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object);
 static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
+/* CIntToPy.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
+
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
@@ -751,6 +754,7 @@ static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_cigar[] = "cigar";
 static const char __pyx_k_match[] = "match";
 static const char __pyx_k_query[] = "query";
+static const char __pyx_k_score[] = "score";
 static const char __pyx_k_target[] = "target";
 static const char __pyx_k_gapopen[] = "gapopen";
 static const char __pyx_k_mismatch[] = "mismatch";
@@ -768,6 +772,7 @@ static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_match;
 static PyObject *__pyx_n_s_mismatch;
 static PyObject *__pyx_n_s_query;
+static PyObject *__pyx_n_s_score;
 static PyObject *__pyx_n_s_target;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target, PyObject *__pyx_v_query, int __pyx_v_match, int __pyx_v_mismatch, int __pyx_v_gapopen, int __pyx_v_gapextend); /* proto */
@@ -775,11 +780,11 @@ static PyObject *__pyx_tuple_;
 static PyObject *__pyx_codeobj__2;
 
 /* "kevlar/alignment.pyx":16
- *                int gapopen, int gapextend, char *cigar)
+ *                int gapopen, int gapextend, char *cigar, int *score)
  * 
  * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
  *                  int gapextend=0):
- *     cdef char cigar[4096];
+ *     cdef char cigar[4096]
  */
 
 /* Python wrapper */
@@ -897,46 +902,61 @@ static PyObject *__pyx_pw_6kevlar_9alignment_1contig_align(PyObject *__pyx_self,
 
 static PyObject *__pyx_pf_6kevlar_9alignment_contig_align(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_target, PyObject *__pyx_v_query, int __pyx_v_match, int __pyx_v_mismatch, int __pyx_v_gapopen, int __pyx_v_gapextend) {
   char __pyx_v_cigar[0x1000];
+  int __pyx_v_score;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   char const *__pyx_t_1;
   char const *__pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
   __Pyx_RefNannySetupContext("contig_align", 0);
 
-  /* "kevlar/alignment.pyx":19
- *                  int gapextend=0):
- *     cdef char cigar[4096];
- *     align(target, query, match, mismatch, gapopen, gapextend, cigar)             # <<<<<<<<<<<<<<
- *     return cigar
- */
-  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_target); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyObject_AsString(__pyx_v_query); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L1_error)
-  align(__pyx_t_1, __pyx_t_2, __pyx_v_match, __pyx_v_mismatch, __pyx_v_gapopen, __pyx_v_gapextend, __pyx_v_cigar);
-
   /* "kevlar/alignment.pyx":20
- *     cdef char cigar[4096];
- *     align(target, query, match, mismatch, gapopen, gapextend, cigar)
- *     return cigar             # <<<<<<<<<<<<<<
+ *     cdef char cigar[4096]
+ *     cdef int score
+ *     align(target, query, match, mismatch, gapopen, gapextend, cigar, &score)             # <<<<<<<<<<<<<<
+ *     return cigar, score
+ */
+  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_target); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_AsString(__pyx_v_query); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L1_error)
+  align(__pyx_t_1, __pyx_t_2, __pyx_v_match, __pyx_v_mismatch, __pyx_v_gapopen, __pyx_v_gapextend, __pyx_v_cigar, (&__pyx_v_score));
+
+  /* "kevlar/alignment.pyx":21
+ *     cdef int score
+ *     align(target, query, match, mismatch, gapopen, gapextend, cigar, &score)
+ *     return cigar, score             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyObject_FromString(__pyx_v_cigar); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_FromString(__pyx_v_cigar); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_r = __pyx_t_3;
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_score); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
   __pyx_t_3 = 0;
+  __pyx_t_4 = 0;
+  __pyx_r = __pyx_t_5;
+  __pyx_t_5 = 0;
   goto __pyx_L0;
 
   /* "kevlar/alignment.pyx":16
- *                int gapopen, int gapextend, char *cigar)
+ *                int gapopen, int gapextend, char *cigar, int *score)
  * 
  * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
  *                  int gapextend=0):
- *     cdef char cigar[4096];
+ *     cdef char cigar[4096]
  */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_AddTraceback("kevlar.alignment.contig_align", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -978,6 +998,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_match, __pyx_k_match, sizeof(__pyx_k_match), 0, 0, 1, 1},
   {&__pyx_n_s_mismatch, __pyx_k_mismatch, sizeof(__pyx_k_mismatch), 0, 0, 1, 1},
   {&__pyx_n_s_query, __pyx_k_query, sizeof(__pyx_k_query), 0, 0, 1, 1},
+  {&__pyx_n_s_score, __pyx_k_score, sizeof(__pyx_k_score), 0, 0, 1, 1},
   {&__pyx_n_s_target, __pyx_k_target, sizeof(__pyx_k_target), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
@@ -991,16 +1012,16 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
   /* "kevlar/alignment.pyx":16
- *                int gapopen, int gapextend, char *cigar)
+ *                int gapopen, int gapextend, char *cigar, int *score)
  * 
  * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
  *                  int gapextend=0):
- *     cdef char cigar[4096];
+ *     cdef char cigar[4096]
  */
-  __pyx_tuple_ = PyTuple_Pack(7, __pyx_n_s_target, __pyx_n_s_query, __pyx_n_s_match, __pyx_n_s_mismatch, __pyx_n_s_gapopen, __pyx_n_s_gapextend, __pyx_n_s_cigar); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(8, __pyx_n_s_target, __pyx_n_s_query, __pyx_n_s_match, __pyx_n_s_mismatch, __pyx_n_s_gapopen, __pyx_n_s_gapextend, __pyx_n_s_cigar, __pyx_n_s_score); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(6, 0, 7, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_standage_Projects_kevlar, __pyx_n_s_contig_align, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(6, 0, 8, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_standage_Projects_kevlar, __pyx_n_s_contig_align, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -1108,11 +1129,11 @@ PyMODINIT_FUNC PyInit_alignment(void)
   #endif
 
   /* "kevlar/alignment.pyx":16
- *                int gapopen, int gapextend, char *cigar)
+ *                int gapopen, int gapextend, char *cigar, int *score)
  * 
  * def contig_align(target, query, int match=1, int mismatch=2, int gapopen=5,             # <<<<<<<<<<<<<<
  *                  int gapextend=0):
- *     cdef char cigar[4096];
+ *     cdef char cigar[4096]
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6kevlar_9alignment_1contig_align, NULL, __pyx_n_s_kevlar_alignment); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -1493,6 +1514,37 @@ bad:
         }\
         return (target_type) value;\
     }
+
+/* CIntToPy */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value) {
+    const int neg_one = (int) -1, const_zero = (int) 0;
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(int) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(int) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(int) <= sizeof(unsigned PY_LONG_LONG)) {
+            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
+#endif
+        }
+    } else {
+        if (sizeof(int) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(int) <= sizeof(PY_LONG_LONG)) {
+            return PyLong_FromLongLong((PY_LONG_LONG) value);
+#endif
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(int),
+                                     little, !is_unsigned);
+    }
+}
 
 /* CIntFromPy */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {

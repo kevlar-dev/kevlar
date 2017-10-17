@@ -22,9 +22,8 @@ def subparser(subparsers):
     score_args = subparser.add_argument_group('Alignment scoring')
     score_args.add_argument('-A', '--match', type=int, default=1, metavar='A',
                             help='match score; default is 1')
-    score_args.add_argument('-B', '--mismatch', type=int, default=-2,
-                            metavar='B',
-                            help='mismatch penalty; default is -2')
+    score_args.add_argument('-B', '--mismatch', type=int, default=2,
+                            metavar='B', help='mismatch penalty; default is 2')
     score_args.add_argument('-O', '--open', type=int, default=5, metavar='O',
                             help='gap open penalty; default is 5')
     score_args.add_argument('-E', '--extend', type=int, default=0, metavar='E',

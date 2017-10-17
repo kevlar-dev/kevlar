@@ -20,7 +20,7 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 
 ## test:     execute the automated test suite
 test: ext
-	py.test -v --cov=kevlar kevlar/tests/*.py -m 'not long'
+	py.test --cov=kevlar kevlar/tests/*.py -m 'not long'
 
 ## testall:  execute the automated test suite, including long-running tests
 testall: ext
@@ -40,3 +40,7 @@ loc:
 	cloc kevlar/cli/*.py
 	@- echo -e "\n\n===== kevlar tests ====="
 	cloc kevlar/tests/test_*.py
+
+## clean:    remove development artifacts
+clean:
+	rm -rf __pycache__/ biokevlar.egg-info/ build/ dist/ kevlar/__pycache__/ kevlar/alignment.cpython*.so
