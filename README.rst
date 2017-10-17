@@ -41,7 +41,7 @@ The kevlar software is a project of the `Lab for Data Intensive Biology <http://
 .. |Test coverage| image:: https://img.shields.io/codecov/c/github/dib-lab/kevlar.svg
    :target: https://codecov.io/github/dib-lab/kevlar
    :alt: Current code coverage from automated tests
-.. |kevlar documentation| image:: https://readthedocs.org/projects/kevlar/badge/?version=latest
+.. |kevlar documentation| image:: https://readthedocs.org/projects/kevlar/badge/?version=latest&maxAge=900
    :target: http://kevlar.readthedocs.io/en/latest/?badge=latest
    :alt: Project documentation
 .. |Docker build status| image:: https://quay.io/repository/dib-lab/kevlar/status
