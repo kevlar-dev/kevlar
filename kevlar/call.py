@@ -229,12 +229,20 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
     The function yields tuples of target sequence name, query sequence name,
     and alignment CIGAR string
     """
-    for target in sorted(targetlist, key=lambda record: record.name):
-        for query in sorted(querylist, reverse=True, key=len):
+    for query in sorted(querylist, reverse=True, key=len):
+        bestcigar = None
+        bestscore = None
+        besttarget = None
+        for target in sorted(targetlist, key=lambda record: record.name):
             cigar, score = kevlar.align(target.sequence, query.sequence, match,
                                         mismatch, gapopen, gapextend)
-            for varcall in make_call(target, query, cigar, ksize):
-                yield varcall
+            if bestscore is None or score > bestscore:
+                bestscore = score
+                bestcigar = cigar
+                besttarget = target
+
+        for varcall in make_call(besttarget, query, bestcigar, ksize):
+            yield varcall
 
 
 def main(args):
