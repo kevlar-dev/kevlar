@@ -36,8 +36,8 @@ setup(name='biokevlar',
       },
       include_package_data=True,
       ext_modules=[align],
-      setup_requires=['pysam', 'networkx', 'pandas'],
-      install_requires=['pysam', 'networkx', 'pandas'],
+      setup_requires=['pysam', 'networkx>=2.0', 'pandas'],
+      install_requires=['pysam', 'networkx>=2.0', 'pandas'],
       entry_points={
           'console_scripts': ['kevlar = kevlar.__main__:main']
       },
