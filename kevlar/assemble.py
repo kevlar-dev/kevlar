@@ -164,7 +164,6 @@ def fetch_largest_overlapping_pair(graph):
         - lexicographically smaller read name
         - lexicographically larger read name
     """
-    print('DEBUG', graph, file=sys.stderr)
     edges = sorted(
         graph.edges(),
         reverse=True,
