@@ -16,6 +16,7 @@
  * @param gapopen     gap open penalty
  * @param gapextend   gap extension penalty
  * @param cigar       string to which the CIGAR will be written
+ * @param score       int pointer to which the alignment score will be stored
  */
 void align(const char *target, const char *query, int match, int mismatch,
-           int gapopen, int gapextend, char *cigar);
+           int gapopen, int gapextend, char *cigar, int *score);

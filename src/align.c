@@ -38,7 +38,7 @@ static uint8_t* encode(const char *sequence)
 
 // See align.h for documentation.
 void align(const char *target, const char *query, int match, int mismatch,
-           int gapopen, int gapextend, char *cigar)
+           int gapopen, int gapextend, char *cigar, int *score)
 {
     int8_t a = match; // a > 0
     int8_t b = mismatch < 0 ? mismatch : -mismatch; // b < 0
@@ -66,6 +66,8 @@ void align(const char *target, const char *query, int match, int mismatch,
         0, //flag
         &ez
     );
+
+    *score = ez.score;
 
     // Stolen shamelessly from ksw2/cli.c
     size_t ci = 0;
