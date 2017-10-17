@@ -157,9 +157,9 @@ def fetch_largest_overlapping_pair(graph):
     """
     Grab the edge with the largest overlap in the graph.
 
-    Sort the edges using 3 criteria. The first is the primary criterion, the
-    other two ensure deterministic behavior.
-        - FIXME
+    Sort the edges using 4 criteria. The first is the primary criterion, the
+    other three ensure deterministic behavior.
+        - the aggregate degree of the adjacent nodes
         - overlap (largest first)
         - lexicographically smaller read name
         - lexicographically larger read name
@@ -168,7 +168,7 @@ def fetch_largest_overlapping_pair(graph):
         graph.edges(),
         reverse=True,
         key=lambda e: (
-            sum(graph.degree([e[0], e[1]]).values()),
+            sum([d[1] for d in graph.degree([e[0], e[1]])]),
             graph[e[0]][e[1]]['overlap'],
             max(e),
             min(e),
@@ -233,17 +233,17 @@ def assemble_with_greed(graph, ccindex, debugout=None):
 
 def prune_graph(graph, quant=0.1):
     edge_adj_deg = list()
-    for edge in graph.edges_iter():
-        degree_dict = graph.degree([edge[0], edge[1]])
-        agg_degree = sum(degree_dict.values())
+    for edge in graph.edges:
+        degree = graph.degree([edge[0], edge[1]])
+        agg_degree = sum([d[1] for d in degree])
         edge_adj_deg.append(agg_degree)
 
     edges = pandas.DataFrame(edge_adj_deg)
     threshold = edges[0].quantile(quant)
     edges_to_drop = list()  # Don't remove edges while iterating through them
-    for edge in graph.edges_iter():
-        degree_dict = graph.degree([edge[0], edge[1]])
-        agg_degree = sum(degree_dict.values())
+    for edge in graph.edges:
+        degree = graph.degree([edge[0], edge[1]])
+        agg_degree = sum(d[1] for d in degree)
         if agg_degree < threshold:
             edges_to_drop.append(edge)
 
@@ -303,6 +303,7 @@ def assemble_default(readstream, gmlfilename=None, debug=False,
     contigcount = 0
     unassembledcount = 0
     for n, cc in enumerate(ccs, 1):
+        cc = graph.full_cc(cc)
         assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:

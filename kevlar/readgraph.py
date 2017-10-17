@@ -30,6 +30,13 @@ class ReadGraph(networkx.Graph):
         self.readnames = set()
         super(ReadGraph, self).__init__(data, **attr)
 
+    def full_cc(self, cc):
+        sg = self.subgraph(cc).copy()
+        sg = ReadGraph(data=sg)
+        sg.ikmers = self.ikmers
+        sg.readnames = self.readnames
+        return sg
+
     def get_record(self, recordname):
         return self.node[recordname]['record']
 
