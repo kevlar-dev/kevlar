@@ -157,13 +157,14 @@ def fetch_largest_overlapping_pair(graph):
     """
     Grab the edge with the largest overlap in the graph.
 
-    Sort the edges using 3 criteria. The first is the primary criterion, the
-    other two ensure deterministic behavior.
-        - FIXME
+    Sort the edges using 4 criteria. The first is the primary criterion, the
+    other three ensure deterministic behavior.
+        - the aggregate degree of the adjacent nodes
         - overlap (largest first)
         - lexicographically smaller read name
         - lexicographically larger read name
     """
+    print('DEBUG', graph, file=sys.stderr)
     edges = sorted(
         graph.edges(),
         reverse=True,
@@ -303,6 +304,7 @@ def assemble_default(readstream, gmlfilename=None, debug=False,
     contigcount = 0
     unassembledcount = 0
     for n, cc in enumerate(ccs, 1):
+        cc = graph.full_cc(cc)
         assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:
