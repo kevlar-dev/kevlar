@@ -165,7 +165,7 @@ def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
         raise KevlarRefrSeqNotFoundError(','.join(missing))
 
 
-def localize(contigstream, refrfile, ksize=31, delta=25):
+def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
     """
     Wrap the `kevlar localize` task as a generator.
 
@@ -180,7 +180,7 @@ def localize(contigstream, refrfile, ksize=31, delta=25):
         raise KevlarNoReferenceMatchesError()
     refrstream = kevlar.open(refrfile, 'r')
     for subseqid, subseq in extract_regions(refrstream, seedmatches,
-                                            delta=delta):
+                                            delta=delta, maxdiff=maxdiff):
         yield khmer.Read(name=subseqid, sequence=subseq)
 
 
@@ -188,5 +188,5 @@ def main(args):
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(args.contigs, 'r'))
     outstream = kevlar.open(args.out, 'w')
     for record in localize(contigstream, args.refr, ksize=args.ksize,
-                           delta=args.delta):
+                           delta=args.delta, maxdiff=args.max_diff):
         khmer.utils.write_record(record, outstream)

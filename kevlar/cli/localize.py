@@ -20,8 +20,9 @@ def subparser(subparsers):
 
     subparser = subparsers.add_parser('localize', description=desc)
     subparser.add_argument('-x', '--max-diff', type=int, metavar='X',
-                           default=1000, help='span of all k-mer starting '
-                           'positions should not exceed X bp')
+                           default=10000, help='span of all k-mer starting '
+                           'positions should not exceed X bp; default is '
+                           '10000 (10 kb)')
     subparser.add_argument('-d', '--delta', type=int, metavar='D',
                            default=25, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '

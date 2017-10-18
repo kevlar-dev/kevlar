@@ -21,6 +21,7 @@ from . import mutate
 from . import partition
 from . import localize
 from . import call
+from . import alac
 
 mains = {
     'dump': kevlar.dump.main,
@@ -33,6 +34,7 @@ mains = {
     'partition': kevlar.partition.main,
     'localize': kevlar.localize.main,
     'call': kevlar.call.main,
+    'alac': kevlar.alac.main,
 }
 
 subparser_funcs = {
@@ -46,6 +48,7 @@ subparser_funcs = {
     'partition': partition.subparser,
     'localize': localize.subparser,
     'call': call.subparser,
+    'alac': alac.subparser,
 }
 
 
