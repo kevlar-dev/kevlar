@@ -10,6 +10,7 @@
 import glob
 import pytest
 import sys
+from tempfile import NamedTemporaryFile
 import khmer
 import kevlar
 from kevlar.seqio import AnnotatedReadSet as ReadSet
@@ -19,13 +20,13 @@ from kevlar.seqio import AnnotatedReadSet as ReadSet
 def bogusrefr():
     mask = khmer.Nodetable(13, 1e7 / 4, 4)
     maskfile = kevlar.tests.data_file('bogus-genome/refr.fa')
-    mask.consume_seqfile(maskfile)
-    return mask
+    return kevlar.filter.load_mask([maskfile], 13, 1e7)
 
 
 @pytest.fixture
 def bogusrefrcontam():
-    return khmer.Nodetable.load(kevlar.tests.data_file('bogus-genome/mask.nt'))
+    maskfile = kevlar.tests.data_file('bogus-genome/mask.nt')
+    return kevlar.filter.load_mask([maskfile], 1, 1)
 
 
 @pytest.fixture
@@ -58,6 +59,22 @@ def test_load_mask_multi_file():
     assert mask.get('AATGTAGGTAGTTTTGTGCACAGTT') > 0  # contam
     assert mask.get('TCGCGCGCGTCCAAGTCGAGACCGC') > 0  # contam
     assert mask.get('G' * 25) == 0
+
+
+def test_load_mask_save():
+    infiles = [
+        kevlar.tests.data_file('bogus-genome/refr.fa'),
+        kevlar.tests.data_file('bogus-genome/contam1.fa')
+    ]
+
+    with NamedTemporaryFile(suffix='.nt') as table:
+        mask = kevlar.filter.load_mask(infiles, 25, 1e7, savefile=table.name)
+        newmask = khmer.Nodetable.load(table.name)
+    assert newmask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0  # reference
+    assert newmask.get('GCTGGCTAAATTTTCATACTAACTA') > 0  # reference
+    assert newmask.get('AATGTAGGTAGTTTTGTGCACAGTT') > 0  # contam
+    assert newmask.get('TCGCGCGCGTCCAAGTCGAGACCGC') > 0  # contam
+    assert newmask.get('G' * 25) == 0
 
 
 def test_load_mask_too_small():
