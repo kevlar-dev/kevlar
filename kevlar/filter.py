@@ -86,13 +86,11 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
 
 
 def validate_and_print(readset, countgraph, mask=None, minabund=5,
-                       outfile=sys.stdout, augout=None, logfile=sys.stderr):
+                       outfile=sys.stdout, logfile=sys.stderr):
     readset.validate(countgraph, mask=mask, minabund=minabund)
     n = 0  # Get an unbound var error later (printing report) without this?!?!
     for n, record in enumerate(readset):
-        khmer.utils.write_record(record, outfile)
-        if augout:
-            kevlar.print_augmented_fastx(record, augout)
+        kevlar.print_augmented_fastx(record, outfile)
 
     int_distinct = readset.masked[0] + readset.lowabund[0] + readset.valid[0]
     int_instances = readset.masked[1] + readset.lowabund[1] + readset.valid[1]
@@ -151,9 +149,8 @@ def main(args):
     print('[kevlar::filter] Validate k-mers and print reads',
           file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
-    augstream = kevlar.open(args.aug_out, 'w') if args.aug_out else None
     validate_and_print(readset, countgraph, mask, args.min_abund, outstream,
-                       augstream, args.logfile)
+                       args.logfile)
     elapsed = timer.stop('validate')
     print('[kevlar::filter] k-mers validated and reads printed',
           'in {:.2f} sec'.format(elapsed), file=args.logfile)
