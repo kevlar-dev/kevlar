@@ -25,10 +25,7 @@ def bogusrefr():
 
 @pytest.fixture
 def bogusrefrcontam():
-    mask = khmer.Nodetable(13, 1e7 / 4, 4)
-    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/refr.fa'))
-    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/contam1.fa'))
-    return mask
+    return khmer.Nodetable.load(kevlar.tests.data_file('bogus-genome/mask.nt'))
 
 
 @pytest.fixture
@@ -47,6 +44,8 @@ def test_load_mask():
     assert mask.get('GCTGGCTAAATTTTCATACTAACTA') > 0
     assert mask.get('G' * 25) == 0
 
+    assert kevlar.filter.load_mask(None, 25, 1e7) is None
+
 
 def test_load_mask_multi_file():
     infiles = [
@@ -59,6 +58,13 @@ def test_load_mask_multi_file():
     assert mask.get('AATGTAGGTAGTTTTGTGCACAGTT') > 0  # contam
     assert mask.get('TCGCGCGCGTCCAAGTCGAGACCGC') > 0  # contam
     assert mask.get('G' * 25) == 0
+
+
+def test_load_mask_too_small():
+    infile = kevlar.tests.data_file('bogus-genome/refr.fa')
+    with pytest.raises(SystemExit) as se:
+        mask = kevlar.filter.load_mask([infile], 25, 1e3)
+    assert 'FPR too high, bailing out' in str(se)
 
 
 def test_load_readset():

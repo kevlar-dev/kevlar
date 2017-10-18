@@ -41,8 +41,7 @@ def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logstream)
     if fpr > maxfpr:
-        print('[kevlar::filter] FPR too high, bailing out', file=logstream)
-        sys.exit(1)
+        raise SystemExit('FPR too high, bailing out')
     if savefile:
         mask.save(savefile)
         message = '    nodetable saved to "{:s}"'.format(savefile)
