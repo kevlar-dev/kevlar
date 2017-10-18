@@ -125,16 +125,15 @@ def test_ikmer_abund_after_recalc():
         sequence='AAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGT',
         ikmers=[KmerOfInterest('CATTGTCCTCGGGACTC', 13, [28, 0, 0])],
     )
-
-    counts = khmer.Counttable(17, 1e5, 4)
-    seq = 'TTCGTTCCCGAAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGTTCCGTCCTTCA'
-    for _ in range(10):
-        counts.consume(seq)
-
-    rs = ReadSet()
+    rs = ReadSet(17, 4e5)
     rs.add(read)
+
+    seq = 'TTCGTTCCCGAAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGTTCCGTCCTTCA'
+    for _ in range(9):
+        rs._counts.consume(seq)
+
     assert read.ikmers[0].abund[0] == 28
 
-    rs.validate(counts, minabund=8)
+    rs.validate(minabund=8)
     assert rs.valid == (1, 1)
     assert read.ikmers[0].abund[0] == 10

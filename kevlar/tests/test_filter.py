@@ -12,7 +12,7 @@ import pytest
 import sys
 import khmer
 import kevlar
-from kevlar.seqio import AnnotatedReadSet
+from kevlar.seqio import AnnotatedReadSet as ReadSet
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def bogusrefrcontam():
 @pytest.fixture
 def ctrl3():
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
-    readset = AnnotatedReadSet(13, 1e7)
+    readset = ReadSet(13, 1e7)
     for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
         readset.add(record)
     return readset
@@ -63,7 +63,7 @@ def test_load_mask_multi_file():
 
 def test_load_readset():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset = AnnotatedReadSet(19, 1e3)
+    readset = ReadSet(19, 1e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
 
@@ -79,7 +79,7 @@ def test_load_readset():
 
 def test_validate():
     filelist = kevlar.tests.data_glob('collect.alpha.txt')
-    readset = AnnotatedReadSet(19, 5e3)
+    readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
     readset.validate()
@@ -103,13 +103,13 @@ def test_validate():
 
 def test_validate_minabund():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset = AnnotatedReadSet(19, 5e3)
+    readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
     readset.validate()
     assert readset.valid == (4, 32)
 
-    readset = AnnotatedReadSet(19, 5e3)
+    readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
     readset.validate(minabund=9)
@@ -122,7 +122,7 @@ def test_validate_with_mask():
     mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset = AnnotatedReadSet(19, 5e3)
+    readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
     readset.validate(mask=mask)
