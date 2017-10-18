@@ -12,6 +12,7 @@ import pytest
 import sys
 import khmer
 import kevlar
+from kevlar.seqio import AnnotatedReadSet
 
 
 @pytest.fixture
@@ -33,9 +34,10 @@ def bogusrefrcontam():
 @pytest.fixture
 def ctrl3():
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
-    readstream = kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r'))
-    readset, countgraph = kevlar.filter.load_input(readstream, 13, 1e7)
-    return readset, countgraph
+    readset = AnnotatedReadSet(13, 1e7)
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    return readset
 
 
 def test_load_mask():
@@ -59,10 +61,11 @@ def test_load_mask_multi_file():
     assert mask.get('G' * 25) == 0
 
 
-def test_load_input():
+def test_load_readset():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readstream = kevlar.seqio.afxstream(filelist)
-    readset, countgraph = kevlar.filter.load_input(readstream, 19, 1e3)
+    readset = AnnotatedReadSet(19, 1e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
 
     assert len(readset) == 8
     assert readset
@@ -71,14 +74,15 @@ def test_load_input():
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
     ]
     for kmer in kmers:
-        assert countgraph.get(kmer) == 8
+        assert readset._counts.get(kmer) == 8
 
 
 def test_validate():
     filelist = kevlar.tests.data_glob('collect.alpha.txt')
-    readstream = kevlar.seqio.afxstream(filelist)
-    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph)
+    readset = AnnotatedReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate()
 
     assert readset.valid == (4, 32)
     assert len(readset) == 9
@@ -99,14 +103,16 @@ def test_validate():
 
 def test_validate_minabund():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readstream = kevlar.seqio.afxstream(filelist)
-    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph)
+    readset = AnnotatedReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate()
     assert readset.valid == (4, 32)
 
-    readstream = kevlar.seqio.afxstream(filelist)
-    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, minabund=9)
+    readset = AnnotatedReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate(minabund=9)
     assert readset.valid == (0, 0)
 
 
@@ -116,9 +122,10 @@ def test_validate_with_mask():
     mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readstream = kevlar.seqio.afxstream(filelist)
-    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, mask)
+    readset = AnnotatedReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate(mask=mask)
     assert readset.valid == (3, 24)
     for record in readset:
         for ikmer in record.ikmers:
@@ -127,22 +134,20 @@ def test_validate_with_mask():
 
 
 def test_ctrl3(ctrl3):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, minabund=6)
+    readset = ctrl3
+    readset.validate(minabund=6)
     assert readset.valid == (424, 5782)
 
 
 def test_ctrl3_refr(ctrl3, bogusrefr):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefr,
-                                     minabund=6)
+    readset = ctrl3
+    readset.validate(mask=bogusrefr, minabund=6)
     assert readset.valid == (424, 5782)
 
 
-def test_ctrl3_refr_contam(ctrl3, bogusrefr, bogusrefrcontam):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefrcontam,
-                                     minabund=6)
+def test_ctrl3_refr_contam(ctrl3, bogusrefrcontam):
+    readset = ctrl3
+    readset.validate(mask=bogusrefrcontam, minabund=6)
     assert readset.valid == (13, 171)
 
 
