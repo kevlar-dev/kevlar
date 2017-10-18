@@ -33,7 +33,8 @@ def bogusrefrcontam():
 @pytest.fixture
 def ctrl3():
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
-    readset, countgraph = kevlar.filter.load_input([augfastq], 13, 1e7)
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r'))
+    readset, countgraph = kevlar.filter.load_input(readstream, 13, 1e7)
     return readset, countgraph
 
 
@@ -60,7 +61,8 @@ def test_load_mask_multi_file():
 
 def test_load_input():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 1e3)
+    readstream = kevlar.seqio.afxstream(filelist)
+    readset, countgraph = kevlar.filter.load_input(readstream, 19, 1e3)
 
     assert len(readset) == 8
     assert readset
@@ -74,7 +76,8 @@ def test_load_input():
 
 def test_validate():
     filelist = kevlar.tests.data_glob('collect.alpha.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    readstream = kevlar.seqio.afxstream(filelist)
+    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph)
 
     assert readset.valid == (4, 32)
@@ -96,11 +99,13 @@ def test_validate():
 
 def test_validate_minabund():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    readstream = kevlar.seqio.afxstream(filelist)
+    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph)
     assert readset.valid == (4, 32)
 
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    readstream = kevlar.seqio.afxstream(filelist)
+    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph, minabund=9)
     assert readset.valid == (0, 0)
 
@@ -111,7 +116,8 @@ def test_validate_with_mask():
     mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
+    readstream = kevlar.seqio.afxstream(filelist)
+    readset, countgraph = kevlar.filter.load_input(readstream, 19, 5e3)
     kevlar.filter.validate_and_print(readset, countgraph, mask)
     assert readset.valid == (3, 24)
     for record in readset:

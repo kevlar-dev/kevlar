@@ -43,7 +43,7 @@ def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
     return mask
 
 
-def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
+def load_input(readstream, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     """
     Load input data.
 
@@ -58,18 +58,15 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
     int_kmer_instances = 0
     int_kmers_parsed = set()
     readset = kevlar.seqio.AnnotatedReadSet()
-    for filename in filelist:
-        print('    -', filename, file=logfile)
-        with kevlar.open(filename, 'r') as infile:
-            for record in kevlar.parse_augmented_fastx(infile):
-                if record.name not in readset._reads:
-                    countgraph.consume(record.sequence)
-                readset.add(record)
-                read_inst_consumed += 1
-                for kmer in record.ikmers:
-                    int_kmer_instances += 1
-                    minkmer = kevlar.revcommin(kmer.sequence)
-                    int_kmers_parsed.add(minkmer)
+    for record in readstream:
+        if record.name not in readset._reads:
+            countgraph.consume(record.sequence)
+        readset.add(record)
+        read_inst_consumed += 1
+        for kmer in record.ikmers:
+            int_kmer_instances += 1
+            minkmer = kevlar.revcommin(kmer.sequence)
+            int_kmers_parsed.add(minkmer)
     n_kmers_distinct = len(int_kmers_parsed)
 
     fpr = kevlar.sketch.estimate_fpr(countgraph)
@@ -88,7 +85,7 @@ def load_input(filelist, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
 def validate_and_print(readset, countgraph, mask=None, minabund=5,
                        outfile=sys.stdout, logfile=sys.stderr):
     readset.validate(countgraph, mask=mask, minabund=minabund)
-    n = 0  # Get an unbound var error later (printing report) without this?!?!
+    n = 0
     for n, record in enumerate(readset):
         kevlar.print_augmented_fastx(record, outfile)
 
@@ -138,9 +135,9 @@ def main(args):
     print('[kevlar::filter] Loading input; recalculate k-mer abundances,',
           'de-duplicate reads and merge k-mers',
           file=args.logfile)
-    readset, countgraph = load_input(args.augfastq, args.ksize,
-                                     args.abund_memory, args.abund_max_fpr,
-                                     args.logfile)
+    readstream = kevlar.seqio.afxstream(args.augfastq)
+    readset, countgraph = load_input(readstream, args.ksize, args.abund_memory,
+                                     args.abund_max_fpr, args.logfile)
     elapsed = timer.stop('recalc')
     print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)

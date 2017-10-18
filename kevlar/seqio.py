@@ -94,6 +94,13 @@ def print_augmented_fastx(record, outstream=stdout):
               sep='', file=outstream)
 
 
+def afxstream(filelist):
+    for infile in filelist:
+        fh = kevlar.open(infile, 'r')
+        for record in parse_augmented_fastx(fh):
+            yield record
+
+
 def load_reads_and_kmers(instream, logstream=None):
     """
     Load reads into lookup tables for convenient access.
