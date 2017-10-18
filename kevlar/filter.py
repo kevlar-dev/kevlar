@@ -16,8 +16,15 @@ import kevlar
 
 
 def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
-              logfile=sys.stderr):
+              logstream=sys.stderr):
     """Load reference genome and/or contaminant database from a file."""
+    if maskfiles is None:
+        return None
+
+    timer = kevlar.Timer()
+    timer.start('loadmask')
+    print('[kevlar::filter] Loading mask from', maskfiles, file=logstream)
+
     if len(maskfiles) == 1 and maskfiles[0].endswith(('.nt', '.nodetable')):
         mask = kevlar.sketch.load(maskfiles[0])
         message = '    nodetable loaded'
@@ -32,63 +39,36 @@ def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
         message = '    {:d} sequences and {:d} k-mers consumed'.format(nr, nk)
     fpr = kevlar.sketch.estimate_fpr(mask)
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-    print(message, file=logfile)
+    print(message, file=logstream)
     if fpr > maxfpr:
-        print('[kevlar::filter] FPR too high, bailing out', file=logfile)
+        print('[kevlar::filter] FPR too high, bailing out', file=logstream)
         sys.exit(1)
     if savefile:
         mask.save(savefile)
         message = '    nodetable saved to "{:s}"'.format(savefile)
-        print(message, file=logfile)
+        print(message, file=logstream)
+
+    elapsed = timer.stop('loadmask')
+    print('[kevlar::filter]', 'Mask loaded in {:.2f} sec'.format(elapsed),
+          file=logstream)
     return mask
 
 
-def load_input(readstream, ksize, memory, maxfpr=0.001, logfile=sys.stderr):
-    """
-    Load input data.
-
-    The input data is loaded into two data structures. First, the read
-    sequences are loaded into a countgraph to recompute k-mer abundances with
-    (effectively) exact precision. Second, the reads and their corresponding
-    "interesting" k-mers are loaded into an AnnotatedReadSet to de-duplicate
-    reads and group k-mers by read.
-    """
-    countgraph = khmer.Countgraph(ksize, memory / 4, 4)
-    read_inst_consumed = 0
-    int_kmer_instances = 0
-    int_kmers_parsed = set()
-    readset = kevlar.seqio.AnnotatedReadSet()
-    for record in readstream:
-        if record.name not in readset._reads:
-            countgraph.consume(record.sequence)
-        readset.add(record)
-        read_inst_consumed += 1
-        for kmer in record.ikmers:
-            int_kmer_instances += 1
-            minkmer = kevlar.revcommin(kmer.sequence)
-            int_kmers_parsed.add(minkmer)
-    n_kmers_distinct = len(int_kmers_parsed)
-
-    fpr = kevlar.sketch.estimate_fpr(countgraph)
-    message = '    {:d} instances'.format(read_inst_consumed)
-    message += ' of {:d} reads consumed'.format(len(readset))
-    message += ', annotated with {:d} instances '.format(int_kmer_instances)
-    message += 'of {:d} distinct "interesting" k-mers'.format(n_kmers_distinct)
-    message += '; estimated false positive rate is {:1.3f}'.format(fpr)
-    print(message, file=logfile)
-    if fpr > maxfpr:
-        print('[kevlar::filter] FPR too high, bailing out', file=logfile)
-        sys.exit(1)
-    return readset, countgraph
+def summarize_readset(readset, logfile):
+    fpr = kevlar.sketch.estimate_fpr(readset._counts)
+    message = '    {:d} instances'.format(readset.read_instances)
+    message += ' of {:d} reads consumed,\n'.format(readset.distinct_reads)
+    message += '    annotated with'
+    message += ' {:d} instances '.format(readset.ikmer_instances)
+    message += 'of {:d} distinct'.format(readset.distinct_ikmers)
+    message += ' "interesting" k-mers;\n'
+    message += '    estimated false positive rate is {:1.3f}'.format(fpr)
+    if logfile is not None:
+        print(message, file=logfile)
+    return fpr
 
 
-def validate_and_print(readset, countgraph, mask=None, minabund=5,
-                       outfile=sys.stdout, logfile=sys.stderr):
-    readset.validate(countgraph, mask=mask, minabund=minabund)
-    n = 0
-    for n, record in enumerate(readset):
-        kevlar.print_augmented_fastx(record, outfile)
-
+def summarize_validate(readset, n, logfile=sys.stderr):
     int_distinct = readset.masked[0] + readset.lowabund[0] + readset.valid[0]
     int_instances = readset.masked[1] + readset.lowabund[1] + readset.valid[1]
 
@@ -112,45 +92,57 @@ def validate_and_print(readset, countgraph, mask=None, minabund=5,
     message += ' with no surviving valid k-mers ignored'
     message += '\n        '
     message += '{:d} reads written to output'.format(n + 1)
-    print(message, file=logfile)
+    if logfile is not None:
+        print(message, file=logfile)
+
+
+def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
+           maxfpr=0.001, logstream=sys.stderr):
+    timer = kevlar.Timer()
+    timer.start('recalc')
+    print('[kevlar::filter] Loading input; recalculate k-mer abundances,',
+          'de-duplicate reads and merge k-mers',
+          file=logstream)
+    readset = kevlar.seqio.AnnotatedReadSet(ksize, memory)
+    for record in readstream:
+        readset.add(record)
+    fpr = summarize_readset(readset, logstream)
+    if fpr > maxfpr:
+        print('[kevlar::filter] FPR too high, bailing out', file=logfile)
+        sys.exit(1)
+    elapsed = timer.stop('recalc')
+    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
+          file=logstream)
+
+    timer.start('validate')
+    print('[kevlar::filter] Validate k-mers and print reads',
+          file=logstream)
+    readset.validate(mask=mask, minabund=minabund)
+    for n, record in enumerate(readset, 1):
+        yield record
+    summarize_validate(readset, n, logstream)
+    elapsed = timer.stop('validate')
+    print('[kevlar::filter] k-mers validated and reads printed',
+          'in {:.2f} sec'.format(elapsed), file=logstream)
 
 
 def main(args):
     timer = kevlar.Timer()
     timer.start()
 
-    mask = None
-    if args.mask:
-        timer.start('loadmask')
-        print('[kevlar::filter] Loading mask from', args.mask,
-              file=args.logfile)
-        mask = load_mask(args.mask, args.ksize, args.mask_memory,
-                         maxfpr=args.mask_max_fpr, savefile=args.save_mask,
-                         logfile=args.logfile)
-        elapsed = timer.stop('loadmask')
-        print('[kevlar::filter]', 'Mask loaded in {:.2f} sec'.format(elapsed),
-              file=args.logfile)
-
-    timer.start('recalc')
-    print('[kevlar::filter] Loading input; recalculate k-mer abundances,',
-          'de-duplicate reads and merge k-mers',
-          file=args.logfile)
+    mask = load_mask(
+        args.mask, args.ksize, args.mask_memory, maxfpr=args.mask_max_fpr,
+        savefile=args.save_mask, logstream=args.logfile
+    )
     readstream = kevlar.seqio.afxstream(args.augfastq)
-    readset, countgraph = load_input(readstream, args.ksize, args.abund_memory,
-                                     args.abund_max_fpr, args.logfile)
-    elapsed = timer.stop('recalc')
-    print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
-          file=args.logfile)
-
-    timer.start('validate')
-    print('[kevlar::filter] Validate k-mers and print reads',
-          file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
-    validate_and_print(readset, countgraph, mask, args.min_abund, outstream,
-                       args.logfile)
-    elapsed = timer.stop('validate')
-    print('[kevlar::filter] k-mers validated and reads printed',
-          'in {:.2f} sec'.format(elapsed), file=args.logfile)
+    filterstream = filter(
+        readstream, mask, minabund=args.min_abund, ksize=args.ksize,
+        memory=args.abund_memory, maxfpr=args.abund_max_fpr,
+        logstream=args.logfile
+    )
+    for record in filterstream:
+        kevlar.print_augmented_fastx(record, outstream)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
