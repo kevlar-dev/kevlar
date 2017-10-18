@@ -94,6 +94,13 @@ def print_augmented_fastx(record, outstream=stdout):
               sep='', file=outstream)
 
 
+def afxstream(filelist):
+    for infile in filelist:
+        fh = kevlar.open(infile, 'r')
+        for record in parse_augmented_fastx(fh):
+            yield record
+
+
 def load_reads_and_kmers(instream, logstream=None):
     """
     Load reads into lookup tables for convenient access.
@@ -136,8 +143,11 @@ class AnnotatedReadSet(object):
     multiple augmented Fastq files and combining their annotated k-mers.
     """
 
-    def __init__(self):
+    def __init__(self, ksize, abundmem):
         self._reads = dict()
+        self._counts = khmer.Counttable(ksize, abundmem / 4, 4)
+        self._readcounts = defaultdict(int)
+        self._ikmercounts = defaultdict(int)
 
         self._masked = defaultdict(int)
         self._lowabund = defaultdict(int)
@@ -171,6 +181,22 @@ class AnnotatedReadSet(object):
     def discarded(self):
         return self._novalidkmers_count
 
+    @property
+    def distinct_reads(self):
+        return len(self._readcounts)
+
+    @property
+    def read_instances(self):
+        return sum(self._readcounts.values())
+
+    @property
+    def distinct_ikmers(self):
+        return len(self._ikmercounts)
+
+    @property
+    def ikmer_instances(self):
+        return sum(self._ikmercounts.values())
+
     def add(self, newrecord):
         if newrecord.name in self._reads:
             record = self._reads[newrecord.name]
@@ -178,8 +204,14 @@ class AnnotatedReadSet(object):
             record.ikmers.extend(newrecord.ikmers)
         else:
             self._reads[newrecord.name] = newrecord
+            self._counts.consume(newrecord.sequence)
 
-    def validate(self, counts, mask=None, minabund=5):
+        self._readcounts[newrecord.name] += 1
+        for kmer in newrecord.ikmers:
+            minkmer = kevlar.revcommin(kmer.sequence)
+            self._ikmercounts[minkmer] += 1
+
+    def validate(self, mask=None, minabund=5):
         for readid in self._reads:
             record = self._reads[readid]
 
@@ -188,10 +220,10 @@ class AnnotatedReadSet(object):
                 kmerseq = kevlar.revcommin(kmer.sequence)
                 if mask and mask.get(kmerseq) > 0:
                     self._masked[kmerseq] += 1
-                elif counts.get(kmerseq) < minabund:
+                elif self._counts.get(kmerseq) < minabund:
                     self._lowabund[kmerseq] += 1
                 else:
-                    kmer.abund[0] = counts.get(kmerseq)
+                    kmer.abund[0] = self._counts.get(kmerseq)
                     validated_kmers.append(kmer)
                     self._valid[kmerseq] += 1
             record.ikmers = validated_kmers

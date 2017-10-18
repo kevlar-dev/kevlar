@@ -10,31 +10,32 @@
 import glob
 import pytest
 import sys
+from tempfile import NamedTemporaryFile
 import khmer
 import kevlar
+from kevlar.seqio import AnnotatedReadSet as ReadSet
 
 
 @pytest.fixture
 def bogusrefr():
     mask = khmer.Nodetable(13, 1e7 / 4, 4)
     maskfile = kevlar.tests.data_file('bogus-genome/refr.fa')
-    mask.consume_seqfile(maskfile)
-    return mask
+    return kevlar.filter.load_mask([maskfile], 13, 1e7)
 
 
 @pytest.fixture
 def bogusrefrcontam():
-    mask = khmer.Nodetable(13, 1e7 / 4, 4)
-    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/refr.fa'))
-    mask.consume_seqfile(kevlar.tests.data_file('bogus-genome/contam1.fa'))
-    return mask
+    maskfile = kevlar.tests.data_file('bogus-genome/mask.nt')
+    return kevlar.filter.load_mask([maskfile], 1, 1)
 
 
 @pytest.fixture
 def ctrl3():
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
-    readset, countgraph = kevlar.filter.load_input([augfastq], 13, 1e7)
-    return readset, countgraph
+    readset = ReadSet(13, 1e7)
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    return readset
 
 
 def test_load_mask():
@@ -43,6 +44,8 @@ def test_load_mask():
     assert mask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0
     assert mask.get('GCTGGCTAAATTTTCATACTAACTA') > 0
     assert mask.get('G' * 25) == 0
+
+    assert kevlar.filter.load_mask(None, 25, 1e7) is None
 
 
 def test_load_mask_multi_file():
@@ -58,9 +61,34 @@ def test_load_mask_multi_file():
     assert mask.get('G' * 25) == 0
 
 
-def test_load_input():
+def test_load_mask_save():
+    infiles = [
+        kevlar.tests.data_file('bogus-genome/refr.fa'),
+        kevlar.tests.data_file('bogus-genome/contam1.fa')
+    ]
+
+    with NamedTemporaryFile(suffix='.nt') as table:
+        mask = kevlar.filter.load_mask(infiles, 25, 1e7, savefile=table.name)
+        newmask = khmer.Nodetable.load(table.name)
+    assert newmask.get('GGCCCCGAACTAGGGGGCCTACGTT') > 0  # reference
+    assert newmask.get('GCTGGCTAAATTTTCATACTAACTA') > 0  # reference
+    assert newmask.get('AATGTAGGTAGTTTTGTGCACAGTT') > 0  # contam
+    assert newmask.get('TCGCGCGCGTCCAAGTCGAGACCGC') > 0  # contam
+    assert newmask.get('G' * 25) == 0
+
+
+def test_load_mask_too_small():
+    infile = kevlar.tests.data_file('bogus-genome/refr.fa')
+    with pytest.raises(SystemExit) as se:
+        mask = kevlar.filter.load_mask([infile], 25, 1e3)
+    assert 'FPR too high, bailing out' in str(se)
+
+
+def test_load_readset():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 1e3)
+    readset = ReadSet(19, 1e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
 
     assert len(readset) == 8
     assert readset
@@ -69,13 +97,15 @@ def test_load_input():
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
     ]
     for kmer in kmers:
-        assert countgraph.get(kmer) == 8
+        assert readset._counts.get(kmer) == 8
 
 
 def test_validate():
     filelist = kevlar.tests.data_glob('collect.alpha.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph)
+    readset = ReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate()
 
     assert readset.valid == (4, 32)
     assert len(readset) == 9
@@ -96,12 +126,16 @@ def test_validate():
 
 def test_validate_minabund():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph)
+    readset = ReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate()
     assert readset.valid == (4, 32)
 
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, minabund=9)
+    readset = ReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate(minabund=9)
     assert readset.valid == (0, 0)
 
 
@@ -111,8 +145,10 @@ def test_validate_with_mask():
     mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset, countgraph = kevlar.filter.load_input(filelist, 19, 5e3)
-    kevlar.filter.validate_and_print(readset, countgraph, mask)
+    readset = ReadSet(19, 5e3)
+    for record in kevlar.seqio.afxstream(filelist):
+        readset.add(record)
+    readset.validate(mask=mask)
     assert readset.valid == (3, 24)
     for record in readset:
         for ikmer in record.ikmers:
@@ -121,22 +157,20 @@ def test_validate_with_mask():
 
 
 def test_ctrl3(ctrl3):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, minabund=6)
+    readset = ctrl3
+    readset.validate(minabund=6)
     assert readset.valid == (424, 5782)
 
 
 def test_ctrl3_refr(ctrl3, bogusrefr):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefr,
-                                     minabund=6)
+    readset = ctrl3
+    readset.validate(mask=bogusrefr, minabund=6)
     assert readset.valid == (424, 5782)
 
 
-def test_ctrl3_refr_contam(ctrl3, bogusrefr, bogusrefrcontam):
-    readset, countgraph = ctrl3
-    kevlar.filter.validate_and_print(readset, countgraph, mask=bogusrefrcontam,
-                                     minabund=6)
+def test_ctrl3_refr_contam(ctrl3, bogusrefrcontam):
+    readset = ctrl3
+    readset.validate(mask=bogusrefrcontam, minabund=6)
     assert readset.valid == (13, 171)
 
 

@@ -81,9 +81,8 @@ def subparser(subparsers):
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     misc_args.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
-    misc_args.add_argument('--aug-out', metavar='FILE',
-                           help='optional augmented Fastq output')
+                           help='output file (in augmented Fastq format); '
+                           'default is terminal (stdout)')
 
     subparser.add_argument('augfastq', nargs='+', help='one or more files in '
                            '"augmented" Fastq format (a la `kevlar novel` '
