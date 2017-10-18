@@ -91,7 +91,7 @@ def summarize_validate(readset, n, logfile=sys.stderr):
     message += '{:d} reads'.format(readset.discarded)
     message += ' with no surviving valid k-mers ignored'
     message += '\n        '
-    message += '{:d} reads written to output'.format(n + 1)
+    message += '{:d} reads written to output'.format(n)
     if logfile is not None:
         print(message, file=logfile)
 
