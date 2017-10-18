@@ -39,6 +39,7 @@ from kevlar import count
 from kevlar import partition
 from kevlar import localize
 from kevlar import call
+from kevlar import alac
 from kevlar import cli
 
 # C extension(s)
