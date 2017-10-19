@@ -9,30 +9,38 @@
 
 from collections import defaultdict
 import sys
-import khmer
+import screed
 import kevlar
 
 
-def main(args):
-    reads = dict()
-    instream = kevlar.open(args.augfastq, 'r')
-    for record in kevlar.parse_augmented_fastx(instream):
-        reads[record.name] = record
+def reaugment(augreadstream, nakedreadstream):
+    augreads = dict()
+    for record in augreadstream:
+        augreads[record.name] = record
 
-    reader = khmer.ReadParser(args.fastq)
-    outstream = kevlar.open(args.out, 'w')
-    for read in reader:
-        augrecord = reads[read.name]
-        if len(read.sequence) < len(augrecord.sequence):
+    for record in nakedreadstream:
+        augrecord = augreads[record.name]
+        record.ikmers = augrecord.ikmers
+        if len(record.sequence) != len(augrecord.sequence):
+            assert len(record.sequence) < len(augrecord.sequence)
             ikmers = list()
             for kmer in augrecord.ikmers:
                 stillthere = (
-                    kmer.sequence in read.sequence or
-                    kevlar.revcom(kmer.sequence) in read.sequence
+                    kmer.sequence in record.sequence or
+                    kevlar.revcom(kmer.sequence) in record.sequence
                 )
                 if stillthere:
                     ikmers.append(kmer)
             if len(ikmers) == 0:
                 continue
-            augrecord.ikmers = ikmers
-        kevlar.print_augmented_fastx(augrecord, outstream)
+            record.ikmers = ikmers
+        yield record
+
+
+def main(args):
+    augfh = kevlar.open(args.augfastq, 'r')
+    augreads = kevlar.parse_augmented_fastx(augfh)
+    nakedreads = screed.open(args.fastq)
+    outstream = kevlar.open(args.out, 'w')
+    for record in reaugment(augreads, nakedreads):
+        kevlar.print_augmented_fastx(record, outstream)
