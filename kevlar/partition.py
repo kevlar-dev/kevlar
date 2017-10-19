@@ -8,13 +8,44 @@
 # -----------------------------------------------------------------------------
 
 import sys
+from shutil import rmtree
+from subprocess import Popen, PIPE
+from tempfile import mkdtemp
 import networkx
 import khmer
 import kevlar
+from kevlar.reaugment import reaugment
+
+
+def trim_low_abund(readlist, ksize):
+    mem = 25000 * len(readlist)
+    tempdir = mkdtemp()
+    untrimfile = tempdir + '/untrimfile'
+    trimfile = tempdir + '/trimfile'
+    with open(untrimfile, 'w') as fh:
+        for read in readlist:
+            khmer.utils.write_record(read, fh)
+
+    cmd = 'trim-low-abund.py -o {trim} -M {mem} -k {k} {untrim}'.format(
+        trim=trimfile, mem=mem, k=ksize, untrim=untrimfile,
+    )
+    cmdargs = cmd.split()
+    trimproc = Popen(cmdargs, stderr=PIPE, universal_newlines=True)
+    stdout, stderr = trimproc.communicate()
+    if trimproc.returncode != 0:
+        print(stderr, file=sys.stderr)
+        raise RuntimeError('problem running trim-low-abund.py')
+
+    with open(trimfile, 'r') as fh:
+        trimreadlist = [r for r in kevlar.parse_augmented_fastx(fh)]
+    augtrimlist = [r for r in reaugment(readlist, trimreadlist)]
+
+    rmtree(tempdir)
+    return augtrimlist
 
 
 def partition(readstream, strict=False, minabund=None, maxabund=None,
-              dedup=True, gmlfile=None, logstream=sys.stderr):
+              dedup=True, gmlfile=None, trimthresh=18, logstream=sys.stderr):
     timer = kevlar.Timer()
     timer.start()
 
@@ -44,6 +75,9 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
     part_iter = graph.partitions(dedup, minabund, maxabund, abundfilt=True)
     for part in part_iter:
         reads = [graph.get_record(readname) for readname in list(part)]
+        if trimthresh > 0 and len(reads) >= trimthresh:
+            ksize = len(reads[0].ikmers[0].sequence)
+            reads = trim_low_abund(reads, ksize)
         yield reads
     elapsed = timer.stop('partition')
     print('[kevlar::partition]',
@@ -59,7 +93,7 @@ def main(args):
     partitioner = partition(readstream, strict=args.strict,
                             minabund=args.min_abund, maxabund=args.max_abund,
                             dedup=args.dedup, gmlfile=args.gml,
-                            logstream=args.logfile)
+                            trimthresh=args.trim, logstream=args.logfile)
     numpart = 0
     numreads = 0
     cclog = kevlar.open(args.outprefix + '.cc.log', 'w')

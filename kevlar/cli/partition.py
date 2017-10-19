@@ -35,5 +35,9 @@ def subparser(subparsers):
                            default=True, help='skip step to remove duplicates')
     subparser.add_argument('--gml', metavar='FILE',
                            help='write read graph to .gml file')
+    subparser.add_argument('--trim', type=int, default=18, metavar='N',
+                           help='perform abundance trimming on partitions '
+                           'containing N or more reads; default is 18; set to '
+                           '-1 to disable')
     subparser.add_argument('outprefix', help='prefix for output files')
     subparser.add_argument('augfastq', help='original augmented Fastq file')
