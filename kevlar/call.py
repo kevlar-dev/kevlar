@@ -160,10 +160,10 @@ def call_snv(target, query, offset, length, ksize):
 
 def call_deletion(target, query, offset, ksize, leftmatch, indellength):
     minpos = leftmatch - ksize + 1
-    maxpos = leftmatch + ksize
+    maxpos = leftmatch + ksize - 1
     window = query.sequence[minpos:maxpos]
     minpos += offset
-    maxpos += offset + indellength - 1
+    maxpos += offset + indellength
     refrwindow = target.sequence[minpos:maxpos]
 
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
@@ -176,8 +176,8 @@ def call_deletion(target, query, offset, ksize, leftmatch, indellength):
 
 
 def call_insertion(target, query, offset, ksize, leftmatch, indellength):
-    minpos = leftmatch - ksize + 2
-    maxpos = leftmatch + ksize + indellength
+    minpos = leftmatch - ksize + 1
+    maxpos = leftmatch + ksize + indellength - 1
     window = query.sequence[minpos:maxpos]
     minpos += offset
     maxpos += offset - indellength
