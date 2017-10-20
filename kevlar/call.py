@@ -169,8 +169,8 @@ def call_deletion(target, query, offset, ksize, leftmatch, indellength):
 
 
 def call_insertion(target, query, offset, ksize, leftmatch, indellength):
-    minpos = leftmatch - ksize + 1
-    maxpos = leftmatch + ksize + indellength - 1
+    minpos = leftmatch - ksize + 2
+    maxpos = leftmatch + ksize + indellength
     window = query.sequence[minpos:maxpos]
     insertion = query.sequence[leftmatch-1:leftmatch+indellength]
     refr = insertion[0]
