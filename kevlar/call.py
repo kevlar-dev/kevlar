@@ -79,6 +79,11 @@ class Variant(object):
         """
         return self.attribute('VW')
 
+    @property
+    def refrwindow(self):
+        """Similar to `window`, but encapsulating the reference allele."""
+        return self.attribute('RW')
+
     def attribute(self, key, pair=False):
         if key not in self.info:
             return None
@@ -139,40 +144,52 @@ def call_snv(target, query, offset, length, ksize):
         minpos = max(diff[0] - ksize + 1, 0)
         maxpos = min(diff[0] + ksize, length)
         window = q[minpos:maxpos]
+        refrwindow = t[minpos:maxpos]
+
         numoverlappingkmers = len(window) - ksize + 1
         kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
-
         refr = diff[1].upper()
         alt = diff[2].upper()
         localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
-        snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window)
+        snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window,
+                         RW=refrwindow)
         snvs.append(snv)
     return snvs
 
 
 def call_deletion(target, query, offset, ksize, leftmatch, indellength):
     minpos = leftmatch - ksize + 1
-    maxpos = leftmatch + ksize
+    maxpos = leftmatch + ksize - 1
     window = query.sequence[minpos:maxpos]
+    minpos += offset
+    maxpos += offset + indellength
+    refrwindow = target.sequence[minpos:maxpos]
+
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
     assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window,
+                         RW=refrwindow)]
 
 
 def call_insertion(target, query, offset, ksize, leftmatch, indellength):
     minpos = leftmatch - ksize + 1
     maxpos = leftmatch + ksize + indellength - 1
     window = query.sequence[minpos:maxpos]
+    minpos += offset
+    maxpos += offset - indellength
+    refrwindow = target.sequence[minpos:maxpos]
+
     insertion = query.sequence[leftmatch-1:leftmatch+indellength]
     refr = insertion[0]
     assert len(insertion) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window)]
+    return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window,
+                         RW=refrwindow)]
 
 
 def make_call(target, query, cigar, ksize):
