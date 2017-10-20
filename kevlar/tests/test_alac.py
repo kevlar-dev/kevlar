@@ -24,6 +24,7 @@ def test_pico_4(capsys):
     msg = 'assembled 22/28 reads from 1 connected component(s) into 1 contig'
     assert msg in err
 
-    vcf = ('seq1\t1175768\t.\tT\tC\t.\tPASS\tVW=CCCTGCCATTATAGATGCTAGATTCACATC'
-           'TTCATTTATTTTTACTTTT')
+    vcf = ('seq1\t1175768\t.\tT\tC\t.\tPASS\tRW=CCCTGCCATTATAGATGCTAGATTTACATC'
+           'TTCATTTATTTTTACTTTT;VW=CCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTT'
+           'ACTTTT')
     assert vcf.strip() == out.strip()
