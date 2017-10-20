@@ -79,6 +79,11 @@ class Variant(object):
         """
         return self.attribute('VW')
 
+    @property
+    def refrwindow(self):
+        """Similar to `window`, but encapsulating the reference allele."""
+        return self.attribute('RW')
+
     def attribute(self, key, pair=False):
         if key not in self.info:
             return None
