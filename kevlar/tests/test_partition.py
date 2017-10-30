@@ -7,12 +7,30 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import os
 import pytest
 import shutil
 import sys
 import tempfile
 import kevlar
 from kevlar.partition import partition
+
+
+def test_mkdirp():
+    tempdir = tempfile.mkdtemp()
+
+    path1 = os.path.join(tempdir, 'partitions')
+    assert kevlar.mkdirp(path1) == path1
+
+    path2 = os.path.join(tempdir, 'partitions2', 'part')
+    path2test = os.path.join(tempdir, 'partitions2')
+    assert kevlar.mkdirp(path2, trim=True) == path2test
+
+    path3 = os.path.join(tempdir, 'partitions3', 'a', 'long', 'path', 'PART')
+    path3test = os.path.join(tempdir, 'partitions3', 'a', 'long', 'path')
+    assert kevlar.mkdirp(path3, trim=True) == path3test
+
+    shutil.rmtree(tempdir)
 
 
 def test_partition_dedup(capsys):

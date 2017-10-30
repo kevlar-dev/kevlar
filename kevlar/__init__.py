@@ -11,6 +11,8 @@
 import builtins
 from collections import namedtuple
 from gzip import open as gzopen
+from os import makedirs
+from os.path import dirname
 import re
 import sys
 
@@ -61,6 +63,12 @@ def open(filename, mode):
         openfunc = gzopen
         mode += 't'
     return openfunc(filename, mode)
+
+
+def mkdirp(path, trim=False):
+    outdir = dirname(path) if trim else path
+    makedirs(outdir, exist_ok=True)
+    return outdir
 
 
 def revcom(seq):

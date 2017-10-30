@@ -55,6 +55,7 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
 
 
 def main(args):
+    kevlar.mkdirp(args.outprefix, trim=True)
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
     partitioner = partition(readstream, strict=args.strict,
                             minabund=args.min_abund, maxabund=args.max_abund,
