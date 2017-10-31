@@ -43,4 +43,4 @@ loc:
 
 ## clean:    remove development artifacts
 clean:
-	rm -rf __pycache__/ biokevlar.egg-info/ build/ dist/ kevlar/__pycache__/ kevlar/alignment.cpython*.so
+	rm -rf __pycache__/ biokevlar.egg-info/ build/ dist/ kevlar/__pycache__/ kevlar/*.cpython*.so

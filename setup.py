@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from setuptools import setup, Extension
+import glob
 import versioneer
 
 
@@ -17,6 +18,13 @@ align = Extension(
         'kevlar/alignment.c', 'third-party/ksw2/ksw2_extz.c', 'src/align.c'
     ],
     include_dirs=['inc/', 'third-party/ksw2/'],
+    language='c',
+)
+
+fermilite = Extension(
+    'kevlar.assembly',
+    sources=['kevlar/assembly.pyx'] + glob.glob('third-party/fermi-lite/*.c'),
+    include_dirs=['third-party/fermi-lite/'],
     language='c',
 )
 
@@ -35,7 +43,7 @@ setup(name='biokevlar',
           'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
       },
       include_package_data=True,
-      ext_modules=[align],
+      ext_modules=[align, fermilite],
       setup_requires=['pysam', 'networkx>=2.0', 'pandas'],
       install_requires=['pysam', 'networkx>=2.0', 'pandas'],
       entry_points={
