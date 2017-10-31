@@ -23,8 +23,9 @@ ksw2 = Extension(
 
 fermilite = Extension(
     'kevlar.assembly',
-    sources=['kevlar/assembly.pyx'] + glob.glob('third-party/fermi-lite/*.c'),
+    sources=['kevlar/assembly.c'] + glob.glob('third-party/fermi-lite/*.c'),
     include_dirs=['third-party/fermi-lite/'],
+    extra_link_args=['-lz'],
     language='c',
 )
 
