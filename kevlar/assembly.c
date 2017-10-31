@@ -731,16 +731,16 @@ static const char *__pyx_f[] = {
 };
 
 /*--- Type declarations ---*/
-struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble;
+struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm;
 
 /* "kevlar/assembly.pyx":31
  *     cdef void fml_utg_destroy(int, fml_utg_t *)
  * 
- * def assemble(records):             # <<<<<<<<<<<<<<
+ * def fml_asm(records):             # <<<<<<<<<<<<<<
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)
  */
-struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble {
+struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm {
   PyObject_HEAD
   PyObject *__pyx_v_i;
   int __pyx_v_num_unitigs;
@@ -1073,7 +1073,7 @@ static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 /* Module declarations from 'libc.stdlib' */
 
 /* Module declarations from 'kevlar.assembly' */
-static PyTypeObject *__pyx_ptype_6kevlar_8assembly___pyx_scope_struct__assemble = 0;
+static PyTypeObject *__pyx_ptype_6kevlar_8assembly___pyx_scope_struct__fml_asm = 0;
 #define __Pyx_MODULE_NAME "kevlar.assembly"
 int __pyx_module_is_main_kevlar__assembly = 0;
 
@@ -1091,9 +1091,9 @@ static const char __pyx_k_close[] = "close";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_reads[] = "reads";
 static const char __pyx_k_throw[] = "throw";
+static const char __pyx_k_fml_asm[] = "fml_asm";
 static const char __pyx_k_records[] = "records";
 static const char __pyx_k_unitigs[] = "unitigs";
-static const char __pyx_k_assemble[] = "assemble";
 static const char __pyx_k_numreads[] = "numreads";
 static const char __pyx_k_sequence[] = "sequence";
 static const char __pyx_k_enumerate[] = "enumerate";
@@ -1102,10 +1102,10 @@ static const char __pyx_k_kevlar_assembly[] = "kevlar.assembly";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_kevlar_assembly_pyx[] = "kevlar/assembly.pyx";
 static PyObject *__pyx_n_s_args;
-static PyObject *__pyx_n_s_assemble;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_close;
 static PyObject *__pyx_n_s_enumerate;
+static PyObject *__pyx_n_s_fml_asm;
 static PyObject *__pyx_n_s_i;
 static PyObject *__pyx_n_s_kevlar_assembly;
 static PyObject *__pyx_kp_s_kevlar_assembly_pyx;
@@ -1122,8 +1122,8 @@ static PyObject *__pyx_n_s_sequence;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_throw;
 static PyObject *__pyx_n_s_unitigs;
-static PyObject *__pyx_pf_6kevlar_8assembly_assemble(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_records); /* proto */
-static PyObject *__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__assemble(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_pf_6kevlar_8assembly_fml_asm(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_records); /* proto */
+static PyObject *__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__fml_asm(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
 static PyObject *__pyx_tuple_;
@@ -1133,33 +1133,33 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
 /* "kevlar/assembly.pyx":31
  *     cdef void fml_utg_destroy(int, fml_utg_t *)
  * 
- * def assemble(records):             # <<<<<<<<<<<<<<
+ * def fml_asm(records):             # <<<<<<<<<<<<<<
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_6kevlar_8assembly_1assemble(PyObject *__pyx_self, PyObject *__pyx_v_records); /*proto*/
-static PyMethodDef __pyx_mdef_6kevlar_8assembly_1assemble = {"assemble", (PyCFunction)__pyx_pw_6kevlar_8assembly_1assemble, METH_O, 0};
-static PyObject *__pyx_pw_6kevlar_8assembly_1assemble(PyObject *__pyx_self, PyObject *__pyx_v_records) {
+static PyObject *__pyx_pw_6kevlar_8assembly_1fml_asm(PyObject *__pyx_self, PyObject *__pyx_v_records); /*proto*/
+static PyMethodDef __pyx_mdef_6kevlar_8assembly_1fml_asm = {"fml_asm", (PyCFunction)__pyx_pw_6kevlar_8assembly_1fml_asm, METH_O, 0};
+static PyObject *__pyx_pw_6kevlar_8assembly_1fml_asm(PyObject *__pyx_self, PyObject *__pyx_v_records) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("assemble (wrapper)", 0);
-  __pyx_r = __pyx_pf_6kevlar_8assembly_assemble(__pyx_self, ((PyObject *)__pyx_v_records));
+  __Pyx_RefNannySetupContext("fml_asm (wrapper)", 0);
+  __pyx_r = __pyx_pf_6kevlar_8assembly_fml_asm(__pyx_self, ((PyObject *)__pyx_v_records));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_6kevlar_8assembly_assemble(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_records) {
-  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *__pyx_cur_scope;
+static PyObject *__pyx_pf_6kevlar_8assembly_fml_asm(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_records) {
+  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("assemble", 0);
-  __pyx_cur_scope = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__assemble(__pyx_ptype_6kevlar_8assembly___pyx_scope_struct__assemble, __pyx_empty_tuple, NULL);
+  __Pyx_RefNannySetupContext("fml_asm", 0);
+  __pyx_cur_scope = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__fml_asm(__pyx_ptype_6kevlar_8assembly___pyx_scope_struct__fml_asm, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
-    __pyx_cur_scope = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)Py_None);
+    __pyx_cur_scope = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)Py_None);
     __Pyx_INCREF(Py_None);
     __PYX_ERR(0, 31, __pyx_L1_error)
   } else {
@@ -1169,7 +1169,7 @@ static PyObject *__pyx_pf_6kevlar_8assembly_assemble(CYTHON_UNUSED PyObject *__p
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_records);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_records);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_6kevlar_8assembly_2generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_assemble, __pyx_n_s_assemble, __pyx_n_s_kevlar_assembly); if (unlikely(!gen)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_6kevlar_8assembly_2generator, (PyObject *) __pyx_cur_scope, __pyx_n_s_fml_asm, __pyx_n_s_fml_asm, __pyx_n_s_kevlar_assembly); if (unlikely(!gen)) __PYX_ERR(0, 31, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -1177,7 +1177,7 @@ static PyObject *__pyx_pf_6kevlar_8assembly_assemble(CYTHON_UNUSED PyObject *__p
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_AddTraceback("kevlar.assembly.assemble", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("kevlar.assembly.fml_asm", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __Pyx_DECREF(((PyObject *)__pyx_cur_scope));
   __Pyx_XGIVEREF(__pyx_r);
@@ -1187,7 +1187,7 @@ static PyObject *__pyx_pf_6kevlar_8assembly_assemble(CYTHON_UNUSED PyObject *__p
 
 static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value) /* generator body */
 {
-  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *__pyx_cur_scope = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)__pyx_generator->closure);
+  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *__pyx_cur_scope = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)__pyx_generator->closure);
   PyObject *__pyx_r = NULL;
   Py_ssize_t __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
@@ -1198,7 +1198,7 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
   Py_ssize_t __pyx_t_7;
   Py_ssize_t __pyx_t_8;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("assemble", 0);
+  __Pyx_RefNannySetupContext("fml_asm", 0);
   switch (__pyx_generator->resume_label) {
     case 0: goto __pyx_L3_first_run;
     case 1: goto __pyx_L8_resume_from_yield;
@@ -1210,7 +1210,7 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
   if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 31, __pyx_L1_error)
 
   /* "kevlar/assembly.pyx":33
- * def assemble(records):
+ * def fml_asm(records):
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)             # <<<<<<<<<<<<<<
  *     cdef bseq1_t *reads = <bseq1_t *>malloc(sizeof(bseq1_t) * numreads)
@@ -1469,7 +1469,7 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
   /* "kevlar/assembly.pyx":31
  *     cdef void fml_utg_destroy(int, fml_utg_t *)
  * 
- * def assemble(records):             # <<<<<<<<<<<<<<
+ * def fml_asm(records):             # <<<<<<<<<<<<<<
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)
  */
@@ -1481,7 +1481,7 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_AddTraceback("assemble", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("fml_asm", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_r); __pyx_r = 0;
   __Pyx_Coroutine_ResetAndClearException(__pyx_generator);
@@ -1491,14 +1491,14 @@ static PyObject *__pyx_gb_6kevlar_8assembly_2generator(__pyx_CoroutineObject *__
   return __pyx_r;
 }
 
-static struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *__pyx_freelist_6kevlar_8assembly___pyx_scope_struct__assemble[8];
-static int __pyx_freecount_6kevlar_8assembly___pyx_scope_struct__assemble = 0;
+static struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *__pyx_freelist_6kevlar_8assembly___pyx_scope_struct__fml_asm[8];
+static int __pyx_freecount_6kevlar_8assembly___pyx_scope_struct__fml_asm = 0;
 
-static PyObject *__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__assemble(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
+static PyObject *__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__fml_asm(PyTypeObject *t, CYTHON_UNUSED PyObject *a, CYTHON_UNUSED PyObject *k) {
   PyObject *o;
-  if (CYTHON_COMPILING_IN_CPYTHON && likely((__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__assemble > 0) & (t->tp_basicsize == sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble)))) {
-    o = (PyObject*)__pyx_freelist_6kevlar_8assembly___pyx_scope_struct__assemble[--__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__assemble];
-    memset(o, 0, sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble));
+  if (CYTHON_COMPILING_IN_CPYTHON && likely((__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__fml_asm > 0) & (t->tp_basicsize == sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm)))) {
+    o = (PyObject*)__pyx_freelist_6kevlar_8assembly___pyx_scope_struct__fml_asm[--__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__fml_asm];
+    memset(o, 0, sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm));
     (void) PyObject_INIT(o, t);
     PyObject_GC_Track(o);
   } else {
@@ -1508,23 +1508,23 @@ static PyObject *__pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__assemble(PyT
   return o;
 }
 
-static void __pyx_tp_dealloc_6kevlar_8assembly___pyx_scope_struct__assemble(PyObject *o) {
-  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *p = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)o;
+static void __pyx_tp_dealloc_6kevlar_8assembly___pyx_scope_struct__fml_asm(PyObject *o) {
+  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *p = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)o;
   PyObject_GC_UnTrack(o);
   Py_CLEAR(p->__pyx_v_i);
   Py_CLEAR(p->__pyx_v_read);
   Py_CLEAR(p->__pyx_v_records);
   Py_CLEAR(p->__pyx_t_1);
-  if (CYTHON_COMPILING_IN_CPYTHON && ((__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__assemble < 8) & (Py_TYPE(o)->tp_basicsize == sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble)))) {
-    __pyx_freelist_6kevlar_8assembly___pyx_scope_struct__assemble[__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__assemble++] = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)o);
+  if (CYTHON_COMPILING_IN_CPYTHON && ((__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__fml_asm < 8) & (Py_TYPE(o)->tp_basicsize == sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm)))) {
+    __pyx_freelist_6kevlar_8assembly___pyx_scope_struct__fml_asm[__pyx_freecount_6kevlar_8assembly___pyx_scope_struct__fml_asm++] = ((struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)o);
   } else {
     (*Py_TYPE(o)->tp_free)(o);
   }
 }
 
-static int __pyx_tp_traverse_6kevlar_8assembly___pyx_scope_struct__assemble(PyObject *o, visitproc v, void *a) {
+static int __pyx_tp_traverse_6kevlar_8assembly___pyx_scope_struct__fml_asm(PyObject *o, visitproc v, void *a) {
   int e;
-  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *p = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble *)o;
+  struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *p = (struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm *)o;
   if (p->__pyx_v_i) {
     e = (*v)(p->__pyx_v_i, a); if (e) return e;
   }
@@ -1540,12 +1540,12 @@ static int __pyx_tp_traverse_6kevlar_8assembly___pyx_scope_struct__assemble(PyOb
   return 0;
 }
 
-static PyTypeObject __pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble = {
+static PyTypeObject __pyx_type_6kevlar_8assembly___pyx_scope_struct__fml_asm = {
   PyVarObject_HEAD_INIT(0, 0)
-  "kevlar.assembly.__pyx_scope_struct__assemble", /*tp_name*/
-  sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__assemble), /*tp_basicsize*/
+  "kevlar.assembly.__pyx_scope_struct__fml_asm", /*tp_name*/
+  sizeof(struct __pyx_obj_6kevlar_8assembly___pyx_scope_struct__fml_asm), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_6kevlar_8assembly___pyx_scope_struct__assemble, /*tp_dealloc*/
+  __pyx_tp_dealloc_6kevlar_8assembly___pyx_scope_struct__fml_asm, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -1567,7 +1567,7 @@ static PyTypeObject __pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble = 
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  __pyx_tp_traverse_6kevlar_8assembly___pyx_scope_struct__assemble, /*tp_traverse*/
+  __pyx_tp_traverse_6kevlar_8assembly___pyx_scope_struct__fml_asm, /*tp_traverse*/
   0, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
@@ -1583,7 +1583,7 @@ static PyTypeObject __pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble = 
   0, /*tp_dictoffset*/
   0, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__assemble, /*tp_new*/
+  __pyx_tp_new_6kevlar_8assembly___pyx_scope_struct__fml_asm, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -1636,10 +1636,10 @@ static struct PyModuleDef __pyx_moduledef = {
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
-  {&__pyx_n_s_assemble, __pyx_k_assemble, sizeof(__pyx_k_assemble), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_close, __pyx_k_close, sizeof(__pyx_k_close), 0, 0, 1, 1},
   {&__pyx_n_s_enumerate, __pyx_k_enumerate, sizeof(__pyx_k_enumerate), 0, 0, 1, 1},
+  {&__pyx_n_s_fml_asm, __pyx_k_fml_asm, sizeof(__pyx_k_fml_asm), 0, 0, 1, 1},
   {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
   {&__pyx_n_s_kevlar_assembly, __pyx_k_kevlar_assembly, sizeof(__pyx_k_kevlar_assembly), 0, 0, 1, 1},
   {&__pyx_kp_s_kevlar_assembly_pyx, __pyx_k_kevlar_assembly_pyx, sizeof(__pyx_k_kevlar_assembly_pyx), 0, 0, 1, 0},
@@ -1673,14 +1673,14 @@ static int __Pyx_InitCachedConstants(void) {
   /* "kevlar/assembly.pyx":31
  *     cdef void fml_utg_destroy(int, fml_utg_t *)
  * 
- * def assemble(records):             # <<<<<<<<<<<<<<
+ * def fml_asm(records):             # <<<<<<<<<<<<<<
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)
  */
   __pyx_tuple_ = PyTuple_Pack(8, __pyx_n_s_records, __pyx_n_s_num_unitigs, __pyx_n_s_numreads, __pyx_n_s_reads, __pyx_n_s_i, __pyx_n_s_read, __pyx_n_s_opt, __pyx_n_s_unitigs); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(1, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_kevlar_assembly_pyx, __pyx_n_s_assemble, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(1, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_kevlar_assembly_pyx, __pyx_n_s_fml_asm, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -1834,9 +1834,9 @@ static int __pyx_pymod_exec_assembly(PyObject *__pyx_pyinit_module)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
-  __pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble.tp_print = 0;
-  __pyx_ptype_6kevlar_8assembly___pyx_scope_struct__assemble = &__pyx_type_6kevlar_8assembly___pyx_scope_struct__assemble;
+  if (PyType_Ready(&__pyx_type_6kevlar_8assembly___pyx_scope_struct__fml_asm) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_type_6kevlar_8assembly___pyx_scope_struct__fml_asm.tp_print = 0;
+  __pyx_ptype_6kevlar_8assembly___pyx_scope_struct__fml_asm = &__pyx_type_6kevlar_8assembly___pyx_scope_struct__fml_asm;
   /*--- Type import code ---*/
   /*--- Variable import code ---*/
   /*--- Function import code ---*/
@@ -1848,13 +1848,13 @@ static int __pyx_pymod_exec_assembly(PyObject *__pyx_pyinit_module)
   /* "kevlar/assembly.pyx":31
  *     cdef void fml_utg_destroy(int, fml_utg_t *)
  * 
- * def assemble(records):             # <<<<<<<<<<<<<<
+ * def fml_asm(records):             # <<<<<<<<<<<<<<
  *     cdef int num_unitigs
  *     cdef int numreads = len(records)
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6kevlar_8assembly_1assemble, NULL, __pyx_n_s_kevlar_assembly); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6kevlar_8assembly_1fml_asm, NULL, __pyx_n_s_kevlar_assembly); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_assemble, __pyx_t_1) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_fml_asm, __pyx_t_1) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "kevlar/assembly.pyx":1

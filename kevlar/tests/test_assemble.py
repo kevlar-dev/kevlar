@@ -169,11 +169,11 @@ def record12():
     )
 
 
-def test_chain():
+def test_fml_asm():
     fh = kevlar.open(data_file('reads2chain.fq.gz'), 'r')
     reads = [s for s in kevlar.parse_augmented_fastx(fh)]
     assert len(reads) == 16
-    contigs = [c for c in kevlar.chain(reads)]
+    contigs = [c for c in kevlar.assembly.fml_asm(reads)]
     assert len(contigs) == 1
     assert contigs[0] == ('AAAACAAAAACAAACAAACAAAAAAAACTTCCTCCATTGGCACACAATGCA'
                           'ACTGCTTCCCTGTCTTGTACATGTGGAGATGTGATAAAGTAACTTCAGTGA'

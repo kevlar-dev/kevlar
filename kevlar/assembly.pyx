@@ -28,7 +28,7 @@ cdef extern from 'fml.h':
     cdef fml_utg_t *fml_assemble(const fml_opt_t *, int, bseq1_t *, int *)
     cdef void fml_utg_destroy(int, fml_utg_t *)
 
-def assemble(records):
+def fml_asm(records):
     cdef int num_unitigs
     cdef int numreads = len(records)
     cdef bseq1_t *reads = <bseq1_t *>malloc(sizeof(bseq1_t) * numreads)
