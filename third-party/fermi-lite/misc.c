@@ -274,31 +274,22 @@ void fml_utg_destroy(int n, fml_utg_t *utg)
 
 fml_utg_t *fml_assemble(const fml_opt_t *opt0, int n_seqs, bseq1_t *seqs, int *n_utg)
 {
-    printf('DEBUG z\n');
 	rld_t *e;
 	mag_t *g;
 	fml_utg_t *utg;
 	fml_opt_t opt = *opt0;
 	float kcov;
-    printf('DEBUG y\n');
 
 	fml_opt_adjust(&opt, n_seqs, seqs);
-    printf('DEBUG x\n');
 	if (opt.ec_k >= 0) fml_correct(&opt, n_seqs, seqs);
-    printf('DEBUG w\n');
 	kcov = fml_fltuniq(&opt, n_seqs, seqs);
-    printf('DEBUG v\n');
 	e = fml_seq2fmi(&opt, n_seqs, seqs);
 	g = fml_fmi2mag(&opt, e);
-    printf('DEBUG u\n');
 	opt.mag_opt.min_ensr = opt.mag_opt.min_ensr > kcov * MAG_MIN_NSR_COEF? opt.mag_opt.min_ensr : (int)(kcov * MAG_MIN_NSR_COEF + .499);
 	opt.mag_opt.min_ensr = opt.mag_opt.min_ensr < opt0->max_cnt? opt.mag_opt.min_ensr : opt0->max_cnt;
 	opt.mag_opt.min_ensr = opt.mag_opt.min_ensr > opt0->min_cnt? opt.mag_opt.min_ensr : opt0->min_cnt;
 	opt.mag_opt.min_insr = opt.mag_opt.min_ensr - 1;
-    printf('DEBUG t\n');
 	fml_mag_clean(&opt, g);
-    printf('DEBUG s\n');
 	utg = fml_mag2utg(g, n_utg);
-    printf('DEBUG r\n');
 	return utg;
 }

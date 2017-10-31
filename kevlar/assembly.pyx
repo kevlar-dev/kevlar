@@ -36,16 +36,10 @@ def assemble(records):
         reads[i].seq = strdup(read.sequence)
         reads[i].l_seq = len(read.sequence)
         reads[i].qual = NULL
-    print('DEBUG a')
 
     cdef fml_opt_t opt
-    print('DEBUG b')
     fml_opt_init(&opt)
-    print('DEBUG c')
     cdef fml_utg_t *unitigs = fml_assemble(&opt, numreads, reads, &num_unitigs)
-    print('DEBUG d')
     for i in range(num_unitigs):
         yield unitigs[i].seq
-    print('DEBUG e')
-    #fml_utg_destroy(num_unitigs, unitigs)
-    print('DEBUG f')
+    fml_utg_destroy(num_unitigs, unitigs)

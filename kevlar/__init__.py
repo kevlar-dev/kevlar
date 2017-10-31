@@ -46,7 +46,7 @@ from kevlar import cli
 
 # C extensions
 from kevlar.alignment import contig_align as align
-from kevlar.assembly import assemble as cassemble
+from kevlar.assembly import assemble as chain
 
 from kevlar._version import get_versions
 __version__ = get_versions()['version']
