@@ -22,6 +22,26 @@ from kevlar.seqio import load_reads_and_kmers
 # Junction count assembly mode
 # =============================================================================
 
+def assemble_fml_asm(readstream, logstream=sys.stderr):
+    reads = [r for r in readstream]
+    assembler = kevlar.assembly.fml_asm(reads)
+    for n, contig in enumerate(assembler, 1):
+        name = 'contig{:d}'.format(n)
+        record = screed.Record(name=name, sequence=contig)
+        yield record
+
+
+def main_fml_asm(args):
+    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    outstream = kevlar.open(args.out, 'w')
+    for contig in assemble_fml_asm(reads):
+        khmer.utils.write_record(contig, outstream)
+
+
+# =============================================================================
+# Junction count assembly mode
+# =============================================================================
+
 def assemble_jca(readstream, memory, maxfpr=0.01, collapse=True,
                  kmers_to_ignore=set(), logstream=sys.stderr):
     print('[kevlar::assemble::jca] loading reads', file=logstream)
@@ -253,8 +273,8 @@ def prune_graph(graph, quant=0.1):
     return len(edges_to_drop)
 
 
-def assemble_default(readstream, gmlfilename=None, debug=False,
-                     logstream=sys.stderr):
+def assemble_greedy(readstream, gmlfilename=None, debug=False,
+                    logstream=sys.stderr):
     debugout = None
     if debug:
         debugout = logstream
@@ -321,11 +341,11 @@ def assemble_default(readstream, gmlfilename=None, debug=False,
     print(message, file=logstream)
 
 
-def main_default(args):
+def main_greedy(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
     outstream = None  # Only create output file if there are contigs
-    contigstream = assemble_default(readstream, args.gml, args.debug,
-                                    args.logfile)
+    contigstream = assemble_greedy(readstream, args.gml, args.debug,
+                                   args.logfile)
     for contig in contigstream:
         if outstream is None:
             outstream = kevlar.open(args.out, 'w')
@@ -337,5 +357,9 @@ def main_default(args):
 # =============================================================================
 
 def main(args):
-    mainfunc = main_jca if args.jca else main_default
+    mainfunc = main_fml_asm
+    if args.jca:
+        mainfunc = main_jca
+    elif args.greedy:
+        mainfunc = main_greedy
     mainfunc(args)
