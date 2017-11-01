@@ -37,7 +37,7 @@ def test_partition_dedup(capsys):
     infile = kevlar.tests.data_file('dup.augfastq')
     tempdir = tempfile.mkdtemp()
 
-    arglist = ['partition', tempdir + '/dedup', infile]
+    arglist = ['partition', '--split', tempdir + '/dedup', infile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.partition.main(args)
     out, err = capsys.readouterr()
@@ -76,7 +76,8 @@ def test_partition_nodedup(capsys):
     infile = kevlar.tests.data_file('dup.augfastq')
     tempdir = tempfile.mkdtemp()
 
-    arglist = ['partition', '--no-dedup', tempdir + '/nodedup', infile]
+    arglist = ['partition', '--no-dedup', '--split', tempdir + '/nodedup',
+               infile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.partition.main(args)
     out, err = capsys.readouterr()
