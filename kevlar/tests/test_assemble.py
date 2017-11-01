@@ -182,6 +182,17 @@ def test_fml_asm():
                           'TTCACAGAATTCATTCTAGAGGGAAAATATTAACATGTTAGT')
 
 
+@pytest.mark.parametrize('cc', [139, 27, 278, 327, 379])
+def test_assembly_edgeless(cc):
+    filename = 'edgeless/cc{:d}.afq.gz'.format(cc)
+    fh = kevlar.open(data_file(filename), 'r')
+    reads = [r for r in kevlar.parse_augmented_fastx(fh)]
+    contigs = [c for c in kevlar.assembly.fml_asm(reads)]
+    assert len(contigs) == 0
+    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError):
+        contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+
+
 def test_merge_pair(record1, record2, record4):
     """
     Assemble a compatible overlapping read pair.
