@@ -228,6 +228,24 @@ def make_call(target, query, cigar, ksize):
     return [nocall]
 
 
+def align_both_strands(targetseq, queryseq, match=1, mismatch=2, gapopen=5,
+                       gapextend=0):
+    cigar1, score1 = kevlar.align(targetseq, queryseq, match, mismatch,
+                                  gapopen, gapextend)
+    cigar2, score2 = kevlar.align(targetseq, kevlar.revcom(queryseq), match,
+                                  mismatch, gapopen, gapextend)
+
+    if score2 > score1:
+        cigar = cigar2
+        score = score2
+        strand = -1
+    else:
+        cigar = cigar1
+        score = score1
+        strand = 1
+    return cigar, score, strand
+
+
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
          ksize=31):
     """
@@ -250,14 +268,20 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
         bestcigar = None
         bestscore = None
         besttarget = None
+        bestorientation = None
         for target in sorted(targetlist, key=lambda record: record.name):
-            cigar, score = kevlar.align(target.sequence, query.sequence, match,
-                                        mismatch, gapopen, gapextend)
+            cigar, score, strand = align_both_strands(
+                target.sequence, query.sequence, match, mismatch, gapopen,
+                gapextend
+            )
             if bestscore is None or score > bestscore:
                 bestscore = score
                 bestcigar = cigar
                 besttarget = target
+                bestorientation = strand
 
+        if strand == -1:
+            query.sequence = kevlar.revcom(query.sequence)
         for varcall in make_call(besttarget, query, bestcigar, ksize):
             yield varcall
 
