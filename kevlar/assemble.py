@@ -19,7 +19,7 @@ from kevlar.seqio import load_reads_and_kmers
 
 
 # =============================================================================
-# Junction count assembly mode
+# Fermi-lite assembly mode
 # =============================================================================
 
 def assemble_fml_asm(readstream, logstream=sys.stderr):
