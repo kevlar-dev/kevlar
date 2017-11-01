@@ -39,7 +39,7 @@ The **kevlar** installation procedure *should* handle the first three dependenci
 
    .. code::
 
-      pip install pysam networkx pandas git+https://github.com/dib-lab/khmer.git
+      pip install pysam>=0.11.2 networkx>=2.0 pandas git+https://github.com/dib-lab/khmer.git
 
 Installation
 ------------
