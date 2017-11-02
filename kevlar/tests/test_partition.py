@@ -80,7 +80,7 @@ def test_partition_nodedup(capsys):
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.partition.main(args)
     out, err = capsys.readouterr()
-    assert 'grouped 18 reads into 1 connected components' in err
+    assert 'grouped 17 reads into 1 connected components' in err
 
     outfile = tempdir + '/nodedup.cc1.augfastq.gz'
     stream = kevlar.open(outfile, 'r')
@@ -90,7 +90,6 @@ def test_partition_nodedup(capsys):
         'AACGAACCACCTCAATGATGACCTTTATGCTTCCACGGCAAATGGTGCGG',
         'ACGAACCACCTCAATGATGACCTTTATGCTTCCACGGCAAATGGTGCGGT',
         'AGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATT',
-        'ATCGGAACGAACCACCTCAATGATGACCTTTATGCTTCCACGGCAAATGG',
         'CACACCTAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGG',
         'CCACCTCAATGATGACCTTTATGCTTCCACGGCAAATGGTGCGGTTAGGT',
         'CCTCAATGATGACCTTTATGCTTCCACGGCAAATGGTGCGGTTAGGTGTG',
