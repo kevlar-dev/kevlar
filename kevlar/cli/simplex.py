@@ -148,11 +148,6 @@ def subparser(subparsers):
         '-E', '--extend', type=int, default=0, metavar='E', help='alignment '
         'gap extension penalty; default is 0'
     )
-    alac_args.add_argument(
-        '--greedy', action='store_true', help='Use the legacy homegrown (and '
-        'slightly buggy) greedy assembly algorithm instead of the default '
-        'fermi-lite algorithm'
-    )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument(

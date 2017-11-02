@@ -16,16 +16,46 @@ from kevlar.partition import partition
 from kevlar.alac import alac
 
 
-def simplex(case, casecounts, controlcounts, refrfile, ksize=31, ctrlmax=0,
-            casemin=5, mask=None, filtermem=1e6,
-            filterfpr=0.001, partminabund=2, partmaxabund=200, dedup=True,
+def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
+            mask=None, filtermem=1e6, filterfpr=0.001,
+            partminabund=2, partmaxabund=200, dedup=True,
             delta=50, match=1, mismatch=2, gapopen=5, gapextend=0,
-            greedy=False, logstream=sys.stderr):
+            ksize=31, logstream=sys.stderr):
     """
     Execute the simplex germline variant discovery workflow.
 
-    FIXME
+    Parameters for identifying novel k-mers:
+    - case: stream of input reads from case sample
+    - casecounts: a Counttable object containing k-mer counts from the case
+                  sample
+    - controlcounts: a list of Counttable objects containing k-mer counts from
+                     the control samples
+    - refrfile: BWA-indexed reference genome sequences
+    - ctrlmax: maximum abundance in each control sample for a k-mer to be
+               designated "interesting"
+    - casemin: minimum abundance in the case sample for a k-mer to be
+               designated "interesting"
+
+    Parameters for filtering "interesting" reads:
+    - mask: Nodetable containing k-mers from reference sequence, contaminants
+    - filtermem: memory to allocate for recalculating k-mer abundances
+    - filterfpr: abort if FDR of recomputed k-mer abundances is too high
+
+    Parameters for partitioning reads into distinct sets
+    - partminabund: discard an "interesting" k-mer if it is annotated in < this
+                    many reads
+    - partmaxabund: discard an "interesting" k-mer if it is annotated in > this
+                    many reads
+    - dedup: boolean indicating whether PCR duplicate removal should be run
+
+    Parameters for assembling, aligning, and calling variants:
+    - delta: number of bp to extend genomic cutout
+    - match: alignment match score
+    - mismatch: alignment mismatch penalty
+    - gapopen: alignment gap open penalty
+    - gapextend: alignment gap extension penalty
     """
+    assert len(casecounts) == 1  # uh, this is a simplex bro
     discoverer = novel(
         case, [casecounts], controlcounts, ksize=ksize, casemin=casemin,
         ctrlmax=ctrlmax, logstream=logstream
@@ -42,7 +72,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ksize=31, ctrlmax=0,
         caller = alac(
             cc, refrfile, ksize=ksize, delta=delta, match=match,
             mismatch=mismatch, gapopen=gapopen, gapextend=gapextend,
-            greedy=greedy, logstream=logstream
+            logstream=logstream
         )
         for variant in caller:
             yield variant
@@ -73,7 +103,7 @@ def main(args):
         partminabund=args.part_min_abund, partmaxabund=args.part_max_abund,
         dedup=args.dedup, delta=args.delta, match=args.match,
         mismatch=args.mismatch, gapopen=args.open, gapextend=args.extend,
-        greedy=args.greedy, logstream=args.logfile
+        logstream=args.logfile
     )
     for variant in workflow:
         print(variant.vcf, file=outstream)
