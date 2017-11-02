@@ -73,8 +73,9 @@ def main(args):
                 for read in part:
                     kevlar.print_augmented_fastx(read, outfile)
         else:
-            read.name += '{:s} kvcc={:d}'.format(read.name, partnum)
-            kevlar.print_augmented_fastx(read, outstream)
+            for read in part:
+                read.name += '{:s} kvcc={:d}'.format(read.name, partnum)
+                kevlar.print_augmented_fastx(read, outstream)
     message = '[kevlar::partition] grouped {:d} reads'.format(numreads)
     message += ' into {:d} connected components'.format(partnum)
     print(message, file=args.logfile)
