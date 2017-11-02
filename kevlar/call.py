@@ -280,7 +280,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
                 besttarget = target
                 bestorientation = strand
 
-        if strand == -1:
+        if bestorientation == -1:
             query.sequence = kevlar.revcom(query.sequence)
         for varcall in make_call(besttarget, query, bestcigar, ksize):
             yield varcall
