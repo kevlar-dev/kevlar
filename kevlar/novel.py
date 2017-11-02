@@ -198,12 +198,12 @@ def main(args):
         skipuntil=args.skip_until, updateint=args.upint,
         logstream=args.logfile,
     )
+    for augmented_read in readstream:
+        kevlar.print_augmented_fastx(augmented_read, outstream)
+
     elapsed = timer.stop('iter')
     message = 'Iterated over all case reads in {:.2f} seconds'.format(elapsed)
     print('[kevlar::novel]', message, file=args.logfile)
-
-    for augmented_read in readstream:
-        kevlar.print_augmented_fastx(augmented_read, outstream)
 
     total = timer.stop()
     message = 'Total time: {:.2f} seconds'.format(total)
