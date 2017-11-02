@@ -9,6 +9,7 @@
 
 import os
 import pytest
+import re
 import shutil
 import sys
 import tempfile
@@ -37,7 +38,7 @@ def test_partition_dedup(capsys):
     infile = kevlar.tests.data_file('dup.augfastq')
     tempdir = tempfile.mkdtemp()
 
-    arglist = ['partition', tempdir + '/dedup', infile]
+    arglist = ['partition', '--split', tempdir + '/dedup', infile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.partition.main(args)
     out, err = capsys.readouterr()
@@ -76,7 +77,8 @@ def test_partition_nodedup(capsys):
     infile = kevlar.tests.data_file('dup.augfastq')
     tempdir = tempfile.mkdtemp()
 
-    arglist = ['partition', '--no-dedup', tempdir + '/nodedup', infile]
+    arglist = ['partition', '--no-dedup', '--split', tempdir + '/nodedup',
+               infile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.partition.main(args)
     out, err = capsys.readouterr()
@@ -124,3 +126,25 @@ def test_partition_nodedup_minabund(capsys):
     partitioner = partition(readstream, minabund=5, dedup=False)
     partitions = list(partitioner)
     assert len(partitions) == 0
+
+
+def test_pico_ccs():
+    infile = kevlar.tests.data_file('pico-filtered.fq.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = [p for p in partition(readstream, minabund=6)]
+    assert len(partitions) == 10
+
+
+def test_pico_stream(capsys):
+    infile = kevlar.tests.data_file('pico-filtered.fq.gz')
+    arglist = ['partition', '--min-abund', '5', infile]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.partition.main(args)
+    out, err = capsys.readouterr()
+
+    kvcc_labels = set()
+    for line in out.strip().split('\n'):
+        kvcc_match = re.search('(kvcc=\d+)', line)
+        if kvcc_match:
+            kvcc_labels.add(kvcc_match.group(1))
+    assert len(kvcc_labels) == 10

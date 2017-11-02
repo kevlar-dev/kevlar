@@ -35,5 +35,11 @@ def subparser(subparsers):
                            default=True, help='skip step to remove duplicates')
     subparser.add_argument('--gml', metavar='FILE',
                            help='write read graph to .gml file')
-    subparser.add_argument('outprefix', help='prefix for output files')
-    subparser.add_argument('augfastq', help='original augmented Fastq file')
+    subparser.add_argument('--split', type=str, metavar='OUTPREFIX',
+                           help='write each partition to a separate output '
+                           'file, each with a filename like '
+                           '"OUTPREFIX.cc#.augfastq.gz"')
+    subparser.add_argument('-o', '--out', metavar='FILE',
+                           help='output file; default is terminal (stdout)')
+    subparser.add_argument('infile', help='input reads in augmented Fast[q|a] '
+                           'format')
