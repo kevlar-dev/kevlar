@@ -44,17 +44,20 @@ def pico_trio(request):
 
 
 @pytest.mark.long
-def test_simplex_pico(pico_trio):
+def test_simplex_pico(pico_trio, capsys):
     mother, father, proband, refr = pico_trio
 
-    cases = kevlar.novel.load_samples(
-        None, [[proband]], ksize=25, memory=5e6, maxfpr=0.6, numthreads=2,
-    )
-    controls = kevlar.novel.load_samples(
-        None, [[mother], [father]], ksize=25, memory=5e6, maxfpr=0.6,
-        numthreads=2,
-    )
-    mask = kevlar.filter.load_mask([refr], 25, 5e7, maxfpr=0.005)
+    with capsys.disabled():
+        cases = kevlar.novel.load_samples(
+            None, [[proband]], ksize=25, memory=5e6, maxfpr=0.6, numthreads=2,
+            logstream=sys.stderr
+        )
+        controls = kevlar.novel.load_samples(
+            None, [[mother], [father]], ksize=25, memory=5e6, maxfpr=0.6,
+            numthreads=2, logstream=sys.stderr
+        )
+        mask = kevlar.filter.load_mask([refr], 25, 5e7, maxfpr=0.005,
+                                       logstream=sys.stderr)
 
     caserecords = kevlar.multi_file_iter_screed([proband])
     workflow = kevlar.simplex.simplex(
