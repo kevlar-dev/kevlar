@@ -62,7 +62,8 @@ def test_simplex_pico(pico_trio, capsys):
         caserecords = kevlar.multi_file_iter_screed([proband])
         workflow = kevlar.simplex.simplex(
             caserecords, cases[0], controls, refr, ksize=25, ctrlmax=0,
-            casemin=6, mask=mask, filtermem=1e7, filterfpr=0.005
+            casemin=6, mask=mask, filtermem=1e7, filterfpr=0.005,
+            logstream=sys.stderr
         )
         variants = [v for v in workflow]
     variants = sorted(variants, key=lambda v: v._pos)
