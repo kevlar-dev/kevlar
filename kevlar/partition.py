@@ -55,23 +55,27 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
 
 
 def main(args):
-    kevlar.mkdirp(args.outprefix, trim=True)
-    readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
+    if args.split:
+        kevlar.mkdirp(args.split, trim=True)
+    outstream = None if args.split else kevlar.open(args.out, 'w')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(args.infile, 'r'))
     partitioner = partition(readstream, strict=args.strict,
                             minabund=args.min_abund, maxabund=args.max_abund,
                             dedup=args.dedup, gmlfile=args.gml,
                             logstream=args.logfile)
-    numpart = 0
+    partnum = 0
     numreads = 0
-    cclog = kevlar.open(args.outprefix + '.cc.log', 'w')
-    for numpart, part in enumerate(partitioner, 1):
+    for partnum, part in enumerate(partitioner, 1):
         numreads += len(part)
-        readnames = [read.name for read in part]
-        print('CC', numpart, len(part), readnames, sep='\t', file=cclog)
-        outfilename = '{:s}.cc{:d}.augfastq.gz'.format(args.outprefix, numpart)
-        with kevlar.open(outfilename, 'w') as outfile:
+        if args.split:
+            ofname = '{:s}.cc{:d}.augfastq.gz'.format(args.split, partnum)
+            with kevlar.open(ofname, 'w') as outfile:
+                for read in part:
+                    kevlar.print_augmented_fastx(read, outfile)
+        else:
             for read in part:
-                kevlar.print_augmented_fastx(read, outfile)
+                read.name += '{:s} kvcc={:d}'.format(read.name, partnum)
+                kevlar.print_augmented_fastx(read, outstream)
     message = '[kevlar::partition] grouped {:d} reads'.format(numreads)
-    message += ' into {:d} connected components'.format(numpart)
+    message += ' into {:d} connected components'.format(partnum)
     print(message, file=args.logfile)

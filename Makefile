@@ -27,7 +27,7 @@ testall: ext
 	py.test -v --cov=kevlar kevlar/tests/*.py
 
 ## doc:      build the documentation locally
-doc:
+doc: ext
 	PYTHONPATH=$$(pwd) make -C docs/ html
 
 ## loc:      compute the lines of code
@@ -43,4 +43,4 @@ loc:
 
 ## clean:    remove development artifacts
 clean:
-	rm -rf __pycache__/ biokevlar.egg-info/ build/ dist/ kevlar/__pycache__/ kevlar/alignment.cpython*.so
+	rm -rf __pycache__/ biokevlar.egg-info/ build/ dist/ kevlar/__pycache__/ kevlar/*.cpython*.so

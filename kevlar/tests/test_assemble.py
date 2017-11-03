@@ -20,6 +20,67 @@ from kevlar.overlap import (OverlappingReadPair, INCOMPATIBLE_PAIR,
 from kevlar.tests import data_file
 
 
+def test_fml_asm():
+    fh = kevlar.open(data_file('reads2chain.fq.gz'), 'r')
+    reads = [s for s in kevlar.parse_augmented_fastx(fh)]
+    assert len(reads) == 16
+    contigs = [c for c in kevlar.assembly.fml_asm(reads)]
+    assert len(contigs) == 1
+    assert contigs[0] == ('AAAACAAAAACAAACAAACAAAAAAAACTTCCTCCATTGGCACACAATGCA'
+                          'ACTGCTTCCCTGTCTTGTACATGTGGAGATGTGATAAAGTAACTTCAGTGA'
+                          'CAGTCAAATGTACTGTTACCTCAAAAAGTGCGATGCTTTCTTGCATAATTC'
+                          'CTATCAATGTTCTATTTCACATATGTGATACATTATAAAATACATTTATCT'
+                          'TTCACAGAATTCATTCTAGAGGGAAAATATTAACATGTTAGT')
+
+
+@pytest.mark.parametrize('cc', [139, 27, 278, 327, 379])
+def test_assembly_edgeless(cc):
+    filename = 'edgeless/cc{:d}.afq.gz'.format(cc)
+    fh = kevlar.open(data_file(filename), 'r')
+    reads = [r for r in kevlar.parse_augmented_fastx(fh)]
+    contigs = [c for c in kevlar.assembly.fml_asm(reads)]
+    assert len(contigs) == 0
+    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError):
+        contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+
+
+@pytest.mark.parametrize('cc,contig', [
+    (110, 'CTTTAAGAGCTGTAACACTCACTGCGAAGGTCTGAGGCTTCATTCCTGAAGTCAGTGTAGACCATGA'
+          'ACCCACGAGGAGGAACGAACAACTCTGGGTGCGCCACCTTTAAGAGCTGTAACACGGCTGGGCGCGG'
+          'TGGCTCACGCCTGTAATCCTGGCACTTTGGGAGGCCGAGATGGGTGGATCACCAGGTCAGGAGATCA'
+          'TAACCATCCTGGCTAACACGGTGAAACCCCATCTCTACT'),
+    (206, 'AAATTATTTATGTGTCTAACTTTGTTACTAACATATGATAACTTTGAGGACAGAAGCAAGTCCCAGT'
+          'CAACATTCTATATCCAACTGTTACCACAGAGCAAATAATAGGTGCGTAAACTGTTTGTTGATTGAGT'
+          'ATAGTACTCAGGTGAGAATAAATGGAGAATGAAATAAAAGTGATATTGATCTGGGAGTATACTACAG'
+          'TTCCCCTATCCAGGCAGAAAGTATATAATGCTTCTACAATAAGGATTGCAAAGCTACCAAAAAGGAA'
+          'AAATGAAAACGTTGTAA'),
+    (231, 'ACTACCCAAAGTATGTATTACATACTGTACATAAAATATCAAAGTACCCAAAATGTGTATTATATAC'
+          'TCATCATAAAATATCAAACTACCCAAAGTATGTTTTACATACTGTACATAAAATATCAAAGTACCCA'
+          'AAATGTGTATTACATACTGTACATAAAATATCAAACTACCCACAGTATGTATTACATACTTTACATA'
+          'AAATATCACAGTACG'),
+    (322, 'TCAGTATTTTGAACTGTAAAATGGGAAAAACAAAGCCAATACCACTTTTATCACTTATAAGTGATAT'
+          'ATTTGTCTCTATTCATCTGTCTTCCTGCCTGTCTATAATAACATGGAGTATTTATATTTCTATGTTA'
+          'GTAGTTAGCAATTAATAATTGCCCCATTAGATCTAATTAAATGAAGGAGCTTCTGCACAGCAAAAGA'
+          'AACTATCATCGGAGTGAACAGGCAACCTACAGAATGGGAGAAAATTTTTGCAATCTACT'),
+    (58, 'TAAAACAATAATTGCTAATATTCTTTAGGTAGCTGCTGTACAACAGCACTATGTTAAGAACTTCACAG'
+         'GAATTGTCACATTCCCCATAAAACTTACATAATCCTACTATTATTTCCTGTTTCAGATAAGGAAAATG'
+         'AAACCTCGCGAAGTTAGAAAACTTGTTCATTTTCATAGAGTTAATTAATCATTGGAACCAGGATATAA'
+         'AGTCAAGGTGTGGGAATCTATACCTAGAGTGTAACCATGACATGCATCTCAAAAACCAACAATGGAAT'
+         'CATAGAAGA'),
+])
+def test_assembly(cc, contig):
+    filename = 'fml/cc{:d}.afq.gz'.format(cc)
+    fh = kevlar.open(data_file(filename), 'r')
+    reads = [r for r in kevlar.parse_augmented_fastx(fh)]
+    contigs = [c for c in kevlar.assembly.fml_asm(reads)]
+    assert len(contigs) == 1
+    assert contigs[0] == contig
+
+
+# -----------------------------------------------------------------------------
+# Tests for legacy greedy assembler
+# -----------------------------------------------------------------------------
+
 @pytest.fixture
 def record1():
     return screed.Record(
@@ -488,6 +549,14 @@ def test_assemble_jca_collapse(capsys):
 
 def test_assemble_no_edges(capsys):
     cliargs = ['assemble', data_file('asmbl-no-edges.augfastq.gz')]
+    args = kevlar.cli.parser().parse_args(cliargs)
+    kevlar.assemble.main(args)
+    out, err = capsys.readouterr()
+    assert out == ''
+
+
+def test_assemble_greedy_no_edges(capsys):
+    cliargs = ['assemble', '--greedy', data_file('asmbl-no-edges.augfastq.gz')]
     args = kevlar.cli.parser().parse_args(cliargs)
     with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError) as ege:
         kevlar.assemble.main(args)

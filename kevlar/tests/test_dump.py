@@ -32,69 +32,9 @@ def test_basic(capsys):
     assert 'read8' in outputlines[16]
 
 
-def test_seqid_filter(capsys):
-    arglist = [
-        'dump',
-        '--seqid', 'bogus-genome-chr1',
-        data_file('bogus-genome/refr.fa'),
-        data_file('bogus-genome/reads.bam'),
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.dump.main(args)
-    out, err = capsys.readouterr()
-
-    outputlines = out.strip().split('\n')
-    assert len(outputlines) == 1 * 4  # 1 record, 4 lines per record
-    assert 'read2' in outputlines[0]
-
-
-def test_genomemask_filter(capsys):
-    arglist = [
-        'dump',
-        '--mask-k', '13',
-        '--maskmemory', '50M',
-        '--genomemask', data_file('bogus-genome/mask-chr1.fa'),
-        data_file('bogus-genome/refr.fa'),
-        data_file('bogus-genome/reads.bam'),
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.dump.main(args)
-    out, err = capsys.readouterr()
-
-    outputlines = out.strip().split('\n')
-    assert len(outputlines) == 3 * 4  # 3 records, 4 lines per record
-    assert 'read2' in outputlines[0]
-    assert 'read7' in outputlines[4]
-    assert 'read8' in outputlines[8]
-
-
-def test_seqid_genomemask_filters(capsys):
-    arglist = [
-        'dump',
-        '--mask-k', '13',
-        '--maskmemory', '50M',
-        '--genomemask', data_file('bogus-genome/mask-chr1.fa'),
-        '--seqid', 'bogus-genome-chr1',
-        data_file('bogus-genome/refr.fa'),
-        data_file('bogus-genome/reads.bam'),
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.dump.main(args)
-    out, err = capsys.readouterr()
-
-    outputlines = out.strip().split('\n')
-    assert len(outputlines) == 3 * 4  # 3 records, 4 lines per record
-    assert 'read2' in outputlines[0]
-    assert 'read7' in outputlines[4]
-    assert 'read8' in outputlines[8]
-
-
 def test_indels(capsys):
     arglist = [
         'dump',
-        '--mask-k', '13',
-        '--maskmemory', '50M',
-        '--genomemask', data_file('bogus-genome/mask-chr2.fa'),
         data_file('bogus-genome/refr.fa'),
         data_file('bogus-genome/reads-indels.bam'),
     ]
@@ -103,9 +43,7 @@ def test_indels(capsys):
     out, err = capsys.readouterr()
 
     outputlines = out.strip().split('\n')
-    assert len(outputlines) == 2 * 4  # 2 records, 4 lines per record
-    assert 'read2' in outputlines[0]
-    assert 'read3' in outputlines[4]
+    assert len(outputlines) == 4 * 4  # 4 records, 4 lines per record
 
 
 def test_suffix(capsys):

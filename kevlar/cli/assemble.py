@@ -13,28 +13,33 @@ import khmer
 def subparser(subparsers):
     """Define the `kevlar assemble` command-line interface."""
 
-    desc = "Use a simple greedy algorithm to assemble a single variant's reads"
+    desc = ('Assemble reads into contigs representing putative variants. By '
+            'default `fermi-lite` is used to compute the assembly, but two '
+            'alternative assembly algorithms are available.')
 
     subparser = subparsers.add_parser('assemble', description=desc,
                                       add_help=False)
 
-    default_args = subparser.add_argument_group(
-        'Default mode',
-        'By default, `kevlar assemble` uses a home-grown implementation of a '
-        'greedy assembly algorithm. Reads that share interesting k-mers are '
-        'merged one by one, starting with the pair of reads with the largest '
-        'overlap.'
+    greedy_args = subparser.add_argument_group(
+        'Greedy mode',
+        'In `greedy` mode, `kevlar assemble` uses a home-grown implementation '
+        'of a greedy assembly algorithm. Reads that share interesting k-mers '
+        'are merged one by one, starting with the pair of reads with the '
+        'largest overlap.'
     )
-    default_args.add_argument('-d', '--debug', action='store_true',
-                              help='print debugging output')
-    default_args.add_argument('--gml', metavar='FILE',
-                              help='write graph to .gml file')
-    default_args.add_argument('-n', '--min-abund', type=int, metavar='N',
-                              default=2, help='discard interesting k-mers '
-                              'that occur fewer than N times')
-    default_args.add_argument('-x', '--max-abund', type=int, metavar='X',
-                              default=500, help='discard interesting k-mers '
-                              'that occur more than X times')
+    greedy_args.add_argument('--greedy', action='store_true',
+                             help="use kevlar's legacy greedy (and somewhat "
+                             "buggy) assembly/chaining algorithm")
+    greedy_args.add_argument('-d', '--debug', action='store_true',
+                             help='print debugging output')
+    greedy_args.add_argument('--gml', metavar='FILE',
+                             help='write graph to .gml file')
+    greedy_args.add_argument('-n', '--min-abund', type=int, metavar='N',
+                             default=2, help='discard interesting k-mers '
+                             'that occur fewer than N times')
+    greedy_args.add_argument('-x', '--max-abund', type=int, metavar='X',
+                             default=500, help='discard interesting k-mers '
+                             'that occur more than X times')
 
     jca_args = subparser.add_argument_group(
         'Junction count assembly mode',
