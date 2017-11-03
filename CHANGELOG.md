@@ -2,19 +2,30 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2017-11-03
+
+This release includes many new features, some refactoring of the core codebase, and the first end-to-end analysis workflow implemented in a single command.
+Details are included below.
+
 ### Fixed
-- Abundance list reported by `kevlar filter` now correctly show re-computed proband k-mer abundances, not pre-filtering abundances as before (see #111).
-- The `kevlar localize` and `kevlar call` procedures now handle multiple assembled contigs and multiple reference matches (see #124 and #126).
+- Abundances reported by `kevlar filter` now correctly show re-computed proband k-mer abundances, not pre-filtering abundances (see #111).
+- The `kevlar localize` and `kevlar call` procedures now handle multiple assembled contigs, calling variants from the best reference match for each contig (see #124, #126, and #147).
 
 ### Added
 - New abundance screen now a part of `kevlar novel`. If any k-mer in a read is below some abundance threshold, the entire read is discarded (see #106).
 - Better error reporting and handling of various issues with assembly, localization, and alignment (see #113, #114).
-- Preliminary support for VCF output.
+- Support for VCF output (see #130 and #144), including "windows" with all k-mers containing the reference allele (RW) and alternate allele (VW) to facilitate distinguishing inherited mutations from novel mutations (see #144 and #152).
+- New subcommands
+    - `alac`: assembles, localizes, aligns, and calls variants on a single partition basis
+    - `simplex`: invokes the entire simplex analysis workflow
 
 ### Changed
-- The `kevlar filter` procedure now handles both contamination and reference matches under a single mask interface (see #103).
+- The `kevlar filter` procedure now handles both contamination and reference matches under a single "mask" interface (see #103).
 - Explicitly dropped support for Python 2.7. Now supports only Python >=3.5 (see #125).
+- Main methods for each core subcommand are now implemented as minimal wrappers around generator functions, to facilitate composing different steps of the workflow or invoking them from third-party Python code (see #95, #126, #133, #148, #149, #150, #159, #161).
+- The home-grown greedy assembly implementation has been replaced by calls to the `fermi-lite` library, which is now bundled with kevlar (see #156).
+- The default behavior of `kevlar partition` is now to output a single stream of reads.
+  Writing each partition to a distinct file is still supported with the ``--split`` option.
 
 ### Removed
 - The `kevlar collect` command and associated tests. Its functionality has now been fully distributed to other subcommands.
