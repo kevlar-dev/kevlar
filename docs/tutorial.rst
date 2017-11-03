@@ -1,78 +1,132 @@
 Tutorial
 ========
 
-Sadly, this "tutorial" offers little more than Unix commands by way of exposition.
-Once the software is a bit more stable we will invest in a more comprehensive tutorial.
+This tutorial will cover the same material introduced in the :doc:`kevlar quick start <quick-start>`, but with a bit more detail and commentary.
+
+
+Test data
+---------
+
+The data for this tutorial comes from `a simulated 2.5 Mb genome <https://osf.io/r9h73/>`__ (more details `here <https://osf.io/p5ngm/>`__).
+It can be downloaded anonymously from the `Open Science Framework <https://osf.io/>`__.
 
 .. code:: bash
 
-    # 1. Dump reads that match reference genome perfecly
-    kevlar dump GRCh38_full_analysis_set_plus_decoy_hla.fa NA91238.bam | gzip -c > NA19238.dump.fq.gz
-    kevlar dump GRCh38_full_analysis_set_plus_decoy_hla.fa NA91239.bam | gzip -c > NA19239.dump.fq.gz
-    kevlar dump GRCh38_full_analysis_set_plus_decoy_hla.fa NA91240.bam | gzip -c > NA19240.dump.fq.gz
+    curl -L https://osf.io/e8jb3/download?version=1 -o mother.fq.gz
+    curl -L https://osf.io/fuaty/download?version=1 -o father.fq.gz
+    curl -L https://osf.io/f5trh/download?version=1 -o proband.fq.gz
+    curl -L https://osf.io/58rwa/download?version=1 -o refr.fa.gz
+
+The reference genome must be indexed for BWA searches before proceeding.
+
+.. code:: bash
+
+    bwa index refr.fa.gz
 
 
-    # 2. Count k-mers, find interesting k-mers, print out corresponding reads
+The ``kevlar simplex`` command
+------------------------------
 
-    ## Option a: the old way
-    kevlar novel \
-        --case NA19240.dump.fq.gz \
-        --control NA19238.dump.fq.gz \
-        --control NA19239.dump.fq.gz \
-        --case-min 11 --ctrl-max 0 \
-        --memory 24G --max-fpr 0.5 \
-        --ksize 31 \
-        --out NA1940.novel.augfastq.gz
+The ``kevlar simplex`` command executes the entire simplex processing workflow for discovering novel germline mutations.
+The required inputs are:
 
-    ## Option b: the new way (not well tested)
-    kevlar count \
-        --case NA19240.counttable NA19240.dump.fq.gz \
-        --control NA19238.counttable NA19238.dump.fq.gz
-        --control NA19239.counttable NA19239.dump.fq.gz \
-        --ctrl-max 0 \
-        --memory 24G --max-fpr 0.5 \
-        --ksize 31
+- a single proband or case sample
+- one or more control samples (such as parents and siblings)
+- a reference genome sequence (indexed for BWA searches)
+- a set of mask sequences, including the reference genome as well as any contaminants that might be present in the proband sample
 
-    kevlar novel \
-        --case-counts NA19240.counttable \
-        --control-counts NA19238.counttable NA19239.counttable \
-        --case-min 11 --ctrl-max 0 \
-        --ksize 31
-        --out NA1940.novel.augfastq.gz
+This test data set doesn't include any simulated contamination, so we are simply using the reference genome sequence as the mask.
 
+The output of this command is a VCF file, in this case containing 8 variant calls and 2 no-calls for inversion variants that kevlar cannot yet classify.
 
-    # 3. Filter out false positives, contamination
-    kevlar filter \
-        --refr GRCh38_full_analysis_set_plus_decoy_hla.fa --refr-memory 3G --refr-max-fpr 0.01 \
-        --contam viral-contam.fa.gz --contam-memory 100M --contam-max-fpr 0.01 \
-        --abund-memory 1G --abund-max-fpr 0.01 --min-abund 11 \
-        --ksize 31 \
-        --out NA19240.filtered.fq.gz --augout NA19240.filtered.augfastq.gz \
-        NA1940.novel.augfastq.gz
+.. code:: bash
 
+    kevlar simplex \
+        --case proband.fq.gz --case-min 6 \
+        --control mother.fq.gz --control father.fq.gz --ctrl-max 0 \
+        --novel-memory 5M --novel-fpr 0.6 --threads 4 \
+        --filter-memory 1M --filter-fpr 0.005 \
+        --mask-files refr.fa.gz --mask-memory 5M \
+        --ksize 25 --out variant-calls.vcf
+        refr.fa.gz
 
-    # 4. Get rid of super high abundance stuff
-    load-into-counting.py --ksize 31 --max-memory-usage 1G NA19240.filtered.counttable NA19240.filtered.fq.gz
+Here is a discussion of various parameter choices.
 
-    slice-reads-by-coverage.py \
-        --min-coverage 2 --max-coverage 250 \
-        NA19240.filtered.counttable NA19240.filtered.fq.gz NA19240.sliced.fq
-
-    kevlar reaugment --out NA19240.sliced.augfastq.gz NA19240.filtered.augfastq.gz NA19240.sliced.fq
+- The ``--case-min`` and ``--ctrl-max`` parameters define the threshold model for selecting "interesting" (putatively novel) *k*-mers.
+  Here, any *k*-mer that appears at least 6 times in the proband and 0 times in both parents is marked as a putative signature of a *de novo* variant.
+- The ``--novel-memory`` parameter determines how much memory is allocated for computing initial *k*-mer counts in each sample.
+  The accuracy of the counts depends on the number of distinct *k*-mers in the sample and the amount of memory used for counting *k*-mers.
+  For human data sets sampled to about 30x coverage, allocating 10-20 Gb of memory per sample will still result in high false discovery rates for the initial *k*-mer counts.
+  However, tests have shown that FDRs of up to 0.8 for the initial *k*-mer counts can be compensated for by subsequent filtering steps.
+- The ``--filter-memory`` parameter indicates the amount of memory allocated for recomputing *k*-mer abundances of "interesting" reads.
+  For human data sets sampled to about 30x coverage, 4 Gb of memory for this second filtering pass is usually more than enough for near-perfect accuracy.
+  The ``--filter-fpr`` parameter indicates the level of desired accuracy (the program will terminate if the FPR is higher).
 
 
-    # 5. Group reads by shared interesting k-mers
-    mkdir -p NA19240-ccs/
-    kevlar partition NA19240-ccs/NA19240 NA19240.sliced.augfastq.gz
+The banding workflow
+--------------------
 
+If memory is a limiting factor, it's possible to reduce the most memory intensive steps of the kevlar workflow (the initial *k*-mer counting) using "*k*-mer banding".
+To summarize, the *k*-mer counts are computed in N independent passes over the data, each pass only requiring 1/N of the memory required for a single pass.
+Banding is not yet supported in the ``kevlar simplex`` command, so the banding workflow is a bit more involved.
 
-    # 6. Abundance trimming, assembly, and variant calling
-    for i in {0..1234}  # replace 1234 with num(partitions)-1
+.. code:: bash
+
+    # Let's count k-mers and find novel k-mers in 6 passes for a 6x reduction in memory
+    for $band in {1..6}
     do
-        gunzip -c NA19240-ccs/NA19240${i}.augfastq.gz | grep -v '#$' > NA19240-ccs/NA19240${i}.fq
-        trim-low-abund.py -M 1M -k 31 -o NA19240-ccs/NA19240${i}-trim.fq NA19240-ccs/NA19240${i}.fq
-        kevlar reaugment --out NA19240-ccs/NA19240${i}-trim.augfastq.gz NA19240-ccs/NA19240${i}.augfastq.gz NA19240-ccs/NA19240${i}.fq
-        kevlar assemble --out NA19240-ccs/NA19240${i}-assembled.augfasta NA19240-ccs/NA19240${i}-trim.augfastq.gz
-        kevlar localize --out NA19240-ccs/NA19240${i}-refr.fa NA19240-ccs/NA19240${i}-assembled.augfasta GRCh38_full_analysis_set_plus_decoy_hla.fa
-        kevlar call --out NA19240-ccs/NA19240${i}-call.txt NA19240-ccs/NA19240${i}-assembled.augfasta NA19240-ccs/NA19240${i}-refr.fa
+        kevlar novel \
+            --case proband.fq.gz --case-min 6 \
+            --control mother.fq.gz --control father.fq.gz --ctrl-max 0 \
+            --memory 1M --max-fpr 0.6 --threads 4 --ksize 25 \
+            --num-bands 6 --band $band \
+            --out proband-novel-${band}.augfastq.gz
     done
+
+    # The "kevlar filter" command will combine the results from all 6 passes and recompute k-mer counts
+    kevlar filter \
+        --mask refr.fa.gz --mask-memory 5M --mask-max-fpr 0.005 \
+        --abund-memory 1M --abund-max-fpr 0.005 \
+        --ksize 25 --out proband-filtered.augfastq.gz \
+        proband-novel-{1..6}.augfastq.gz
+
+    # The "kevlar partition" command separates the reads into sets corresponding to distinct variants.
+    kevlar partition --split partition proband-filtered.augfastq.gz
+
+    # The "kevlar alac" command does assembly, alignment, and variant calling for each partition
+    numpart=$(wc -l partition.cc.log | cut -f 1 -d ' ')
+    for i in $(seq 1 $numpart)
+    do
+        kevlar alac --ksize 25 partition.cc${i}.augfastq.gz refr.fa.gz >> calls.vcf
+    done
+
+
+Pre-processing
+--------------
+
+Several types of pre-processing can lead to large improvements in kevlar's performance.
+
+- **Error correction**:
+  The amount of memory kevlar needs for accurate variant discovery depends on the number of distinct *k*-mers in each sample, the majority of which are associated with sequencing errors.
+  Using an error correction tool such as `Lighter <https://github.com/mourisl/Lighter>`__ or `BFC <https://github.com/lh3/bfc>`__ will remove many erroneous *k*-mers, reduce kevlar's memory demands without adding too much processing time to the overall workflow.
+  See `this blog post <https://standage.github.io/information-content-versus-data-volume-and-k-mer-counting-accuracy.html>`__ for more details.
+- **Discarding reads that match the reference genome perfectly**:
+  Reducing the total volume of the data set doesn't reduce the number of distinct *k*-mers to the extent that error correction does, but it can reduce the number of reads that need to be processed by up to 80%, substantially speeding up subsequent processing steps.
+
+  .. code:: bash
+
+      kevlar dump --out proband-dump.fq.gz refr.fa.gz proband.bam
+
+  The time savings may not offset the time required from running ``kevlar dump`` on each sample.
+  However, when testing and benchmarking kevlar on a new data set where multiple runs for parameter refinement are likely, the time savings will probably be worth the initial time investment.
+- **Pre-computing count tables**:
+  In the examples above, ``kevlar simplex`` and ``kevlar novel`` compute *k*-mer counts directly from Fastq data.
+  However, both commands can also accept pre-computed count tables, which can be helpful when testing or benchmarking kevlar requires multiple runs over the same data.
+  The ``kevlar count`` command accepts Fastq files and saves *k*-mer count tables to disk for subsequent use.
+
+  .. code:: bash
+
+      kevlar count --ksize 31 --memory 8G \
+          --case proband.counttable proband-r1.fq.gz proband-r2.fq.gz proband-ru.fq.gz \
+          --control father.counttable father-r1.fq.gz father-r2.fq.gz \
+          --control mother.counttable mother-reads-interleaved.fq.gz

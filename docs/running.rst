@@ -1,16 +1,14 @@
 Running **kevlar**
 ==================
 
-The **kevlar** software implements a Python library for genetic sequence and variant analysis.
-**kevlar**'s primary interface is invoked via the command line, but is also designed so that it can be seamlessly integrated into third-party Python programs.
-
+The kevlar library can be invoked via a command-line interface or a Python API.
 
 Command line interface
 ----------------------
 
-Once installed, the **kevlar** software can be invoked from the shell using the ``kevlar`` command.
-The **kevlar** command line interface (CLI) uses the *subcommand* pattern, in which a single master command supports several different operations by defining multiple subcommands (such as ``kevlar novel`` and ``kevlar partition``).
-Comprehensive documentation of the **kevlar** CLI is available :doc:`here <cli>`.
+Once installed, the kevlar software can be invoked from the shell using the ``kevlar`` command.
+The kevlar command line interface (CLI) uses the *subcommand* pattern, in which a single master command supports several different operations by defining multiple subcommands (such as ``kevlar novel`` and ``kevlar partition``).
+Comprehensive documentation of the kevlar CLI is available :doc:`here <cli>`.
 
 Starting with version 1.0, the CLI will be under `semantic versioning <http://semver.org/>`_.
 
@@ -18,19 +16,29 @@ Starting with version 1.0, the CLI will be under `semantic versioning <http://se
 Python interface
 ----------------
 
-As a result of **kevlar**'s design to facilitate internal testing, the "main method" of each **kevlar** subcommand can easily be executed programmatically.
-The following example shows how to execute ``kevlar reaugment`` from a standalone Python program.
+The main procedure of each kevlar subcommand is implemented as a generator function and can be executed programmatically.
+The following example shows how a standalone script or notebook would invoke the ``kevlar partition`` procedure.
 
 .. code:: python
 
-   import kevlar
+    fh = kevlar.open('novel-reads.augfastq.gz', 'r')
+    readstream = kevlar.parse_augmented_fastx(fh)
+    numreads_per_partition = list()
+    for part in kevlar.partition.partition(readstream, maxabund=200):
+        numreads = len(part)
+        numreads_per_partition.append(numreads)
+        # do some other uber cool calculations
+    plt.hist(numreads_per_partition, bins=25)
 
-   # Declare arguments just like you would on the command line
-   arglist = ['reaugment', '-o', 'new.augfastq', 'old.augfastq', 'new.fastq']
+It is also possible to mimic the behavior of the CLI with Python code.
+The following example shows how to execute ``kevlar reaugment`` from a standalone script or notebook.
 
+.. code:: python
+
+   arglist = ['reaugment', '--out', 'new.augfastq', 'old.augfastq', 'new.fastq']
    args = kevlar.cli.parser().parse_args(arglist)
    kevlar.reaugment.main(args)
 
-Other units of code in the **kevlar** package may also be amenable to importing and executing programmatically.
-However, the code internals are not under semantic versioning and by necessity will be less stable and have poorer documentation.
+Other units of code in the kevlar package may also be useful for standalone Python programs.
+However, the Python API is not yet slated for semantic versioning and is not as stable or well documented as the CLI.
 Have fun and knock yourself out, but be prepared for changes in internal behavior in subsequent releases!

@@ -27,7 +27,7 @@ testall: ext
 	py.test -v --cov=kevlar kevlar/tests/*.py
 
 ## doc:      build the documentation locally
-doc:
+doc: ext
 	PYTHONPATH=$$(pwd) make -C docs/ html
 
 ## loc:      compute the lines of code

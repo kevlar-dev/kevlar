@@ -1,8 +1,8 @@
 Simulating variants with **kevlar**
 ===================================
 
-To facilitate testing, **kevlar** implements a simple command to apply simulated "mutations" to a reference sequence.
-We have used this internally to simulate data sets for testing, to verify that **kevlar** can recover the simulated "mutation" or variant.
+To facilitate testing, kevlar implements a simple command to apply simulated "mutations" to a reference sequence.
+We have used this internally to simulate data sets for testing, to verify that kevlar can recover the simulated "mutation" or variant.
 
 The command-line interface for ``kevlar mutate`` is very simple (for full details see `the CLI documentation <cli.html#kevlar-mutate>`_).
 
