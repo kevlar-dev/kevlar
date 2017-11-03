@@ -107,7 +107,7 @@ def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
         readset.add(record)
     fpr = summarize_readset(readset, logstream)
     if fpr > maxfpr:
-        print('[kevlar::filter] FPR too high, bailing out', file=logfile)
+        print('[kevlar::filter] FPR too high, bailing out', file=logstream)
         sys.exit(1)
     elapsed = timer.stop('recalc')
     print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),

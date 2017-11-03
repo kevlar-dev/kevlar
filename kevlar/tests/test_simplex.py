@@ -13,7 +13,7 @@ import subprocess
 import sys
 from tempfile import NamedTemporaryFile
 import kevlar
-from kevlar.tests import data_file
+from kevlar.tests import data_file, data_glob
 
 
 @pytest.fixture
@@ -72,3 +72,26 @@ def test_simplex_pico(pico_trio, capsys):
                     1527139, 1631013, 2265795]
     assert len(variants) == 10
     assert startpos == teststartpos
+
+
+def test_simplex_trio1(capsys):
+    case = data_file('trio1/case1.fq')
+    controls = data_glob('trio1/ctrl[1,2].fq')
+    refr = data_file('bogus-genome/refr.fa')
+    arglist = [
+        'simplex', '--case', case, '--control', controls[0], '--control',
+        controls[1], '--case-min', '6', '--ctrl-max', '0', '--novel-memory',
+        '1M', '--novel-fpr', '0.2', '--filter-memory', '50K', '--mask-files',
+        refr, '--mask-memory', '1M', '--filter-fpr', '0.005', '--ksize', '21',
+        refr
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.simplex.main(args)
+
+    out, err = capsys.readouterr()
+    testvcf = '\t'.join([
+        'bogus-genome-chr1', '3567', '.', 'A', 'C', '.', 'PASS', 'RW=GAAGGGCAC'
+        'ACCTAACCGCAACATTTGCCGTGGAAGCATAA;VW=GAAGGGCACACCTAACCGCACCATTTGCCGTGG'
+        'AAGCATAA'
+    ])
+    assert out.strip() == testvcf
