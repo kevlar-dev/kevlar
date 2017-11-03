@@ -1,15 +1,15 @@
 File formats in **kevlar**
 ==========================
 
-Although **kevlar** performs many operations on *k*-mers, read sequences are the primary currency of exchange between different stages of the analysis workflow.
-**kevlar** supports reading from and writing to Fasta and Fastq files, and treats these identically since it does not use any base call quality information.
-In most cases, **kevlar** should also be able to automatically detect whether an input file is gzip-compressed or not and handle it accordingly (no bzip2 support).
+Although kevlar performs many operations on *k*-mers, read sequences are the primary currency of exchange between different stages of the analysis workflow.
+kevlar supports reading from and writing to Fasta and Fastq files, and treats these identically since it does not use any base call quality information.
+In most cases, kevlar should also be able to automatically detect whether an input file is gzip-compressed or not and handle it accordingly (no bzip2 support).
 
 Augmented sequences
 -------------------
 
 "Interesing *k*-mers" are putatively novel *k*-mers that are high abundance in the proband/case sample(s) and effectively absent from control samples.
-To facilitate reading and writing these "interesting *k*-mers" along with the reads to which they belong, **kevlar** uses an *augmented* version of the Fasta and Fastq formats.
+To facilitate reading and writing these "interesting *k*-mers" along with the reads to which they belong, kevlar uses an *augmented* version of the Fasta and Fastq formats.
 Here is an example of an augmented Fastq file.
 
 .. code::
