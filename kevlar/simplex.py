@@ -55,10 +55,9 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     - gapopen: alignment gap open penalty
     - gapextend: alignment gap extension penalty
     """
-    assert len(casecounts) == 1  # uh, this is a simplex bro
     discoverer = novel(
         case, [casecounts], controlcounts, ksize=ksize, casemin=casemin,
-        ctrlmax=ctrlmax, logstream=logstream
+        ctrlmax=ctrlmax, updateint=100000, logstream=logstream
     )
     filterer = kfilter(
         discoverer, mask=mask, minabund=casemin, ksize=ksize,
