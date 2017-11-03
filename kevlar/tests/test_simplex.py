@@ -59,12 +59,12 @@ def test_simplex_pico(pico_trio, capsys):
         mask = kevlar.filter.load_mask([refr], 25, 5e7, maxfpr=0.005,
                                        logstream=sys.stderr)
 
-    caserecords = kevlar.multi_file_iter_screed([proband])
-    workflow = kevlar.simplex.simplex(
-        caserecords, cases[0], controls, refr, ksize=25, ctrlmax=0, casemin=6,
-        mask=mask, filtermem=1e7, filterfpr=0.005
-    )
-    variants = [v for v in workflow]
+        caserecords = kevlar.multi_file_iter_screed([proband])
+        workflow = kevlar.simplex.simplex(
+            caserecords, cases[0], controls, refr, ksize=25, ctrlmax=0,
+            casemin=6, mask=mask, filtermem=1e7, filterfpr=0.005
+        )
+        variants = [v for v in workflow]
     variants = sorted(variants, key=lambda v: v._pos)
     startpos = [v._pos + 1 for v in variants]
     teststartpos = [4073, 185752, 226611, 636699, 834646, 901124, 1175768,
