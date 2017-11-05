@@ -1,0 +1,12 @@
+>read1/1 kvcc=1
+AAGGTT
+>read1/2 kvcc=1
+ACGTACGT
+>read2/1 kvcc=1
+GATTACA
+>read2/1 kvcc=1
+TGATGATGATGA
+>read3/1 kvcc=2
+AAAAAAAAAAAAAAAAA
+>read3/1 kvcc=2
+ACCGGTACGAACTCNNN

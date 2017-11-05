@@ -17,6 +17,10 @@ import screed
 import kevlar
 
 
+class KevlarPartitionLabelError(ValueError):
+    pass
+
+
 def parse_fasta(data):
     """
     Load sequences in Fasta format.
@@ -99,6 +103,32 @@ def afxstream(filelist):
         fh = kevlar.open(infile, 'r')
         for record in parse_augmented_fastx(fh):
             yield record
+
+
+def parse_partitioned_reads(readstream):
+    current_part = None
+    reads = list()
+    for read in readstream:
+        partmatch = re.search('kvcc=(\d+)', read.name)
+        if not partmatch:
+            reads.append(read)
+            current_part = False
+            continue
+
+        if current_part is False:
+            message = 'reads with and without partition labels (kvcc=#)'
+            raise KevlarPartitionLabelError(message)
+
+        part = partmatch.group(1)
+        if part != current_part:
+            if current_part:
+                yield reads
+                reads = list()
+            current_part = part
+        reads.append(read)
+
+    if len(reads) > 0:
+        yield reads
 
 
 def load_reads_and_kmers(instream, logstream=None):

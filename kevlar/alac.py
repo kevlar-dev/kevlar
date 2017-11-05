@@ -14,22 +14,27 @@ from kevlar.localize import localize
 from kevlar.call import call
 
 
-def alac(readstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
+def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
          mismatch=2, gapopen=5, gapextend=0, greedy=False,
          logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
-    cntgs = [c for c in assembler(readstream, logstream=logstream)]
-    targets = [t for t in localize(cntgs, refrfile, ksize=ksize, delta=delta)]
-    caller = call(targets, cntgs, match, mismatch, gapopen, gapextend, ksize)
-    for varcall in caller:
-        yield varcall
+
+    for partition in pstream:
+        contigs = [c for c in assembler(partition, logstream=logstream)]
+        targets = [t for t in localize(contigs, refrfile, ksize, delta=delta)]
+        caller = call(
+            targets, contigs, match, mismatch, gapopen, gapextend, ksize
+        )
+        for varcall in caller:
+            yield varcall
 
 
 def main(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.infile, 'r'))
+    pstream = kevlar.parse_partitioned_reads(readstream)
     outstream = kevlar.open(args.out, 'w')
     workflow = alac(
-        readstream, args.refr, ksize=args.ksize, delta=args.delta,
+        pstream, args.refr, ksize=args.ksize, delta=args.delta,
         maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, greedy=args.greedy,
         logstream=args.logfile

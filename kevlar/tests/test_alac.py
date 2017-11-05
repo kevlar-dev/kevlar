@@ -11,6 +11,24 @@ import pytest
 import sys
 import kevlar
 from kevlar.tests import data_file
+from kevlar.seqio import KevlarPartitionLabelError
+
+
+def test_partition_reader_simple():
+    infile = data_file('part-reads-simple.fa')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+    assert len(partitions) == 2
+    assert len(partitions[0]) == 4
+    assert len(partitions[1]) == 2
+
+
+def test_partition_reader_mixed():
+    infile = data_file('part-reads-mixed.fa')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    with pytest.raises(KevlarPartitionLabelError) as ple:
+        partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+    assert 'with and without partition labels' in str(ple)
 
 
 @pytest.mark.parametrize('greedy', [True, False])
@@ -52,8 +70,9 @@ def test_pico_4(greedy, capsys):
 def test_pico_calls(cc, pos, ref, alt):
     reads = data_file('pico-var/cc{:d}.afq.gz'.format(cc))
     readstream = kevlar.parse_augmented_fastx(kevlar.open(reads, 'r'))
+    pstream = kevlar.parse_partitioned_reads(readstream)
     refrfile = data_file('human-random-pico.fa.gz')
-    caller = kevlar.alac.alac(readstream, refrfile, ksize=25, delta=50)
+    caller = kevlar.alac.alac(pstream, refrfile, ksize=25, delta=50)
     calls = [v for v in caller]
 
     assert len(calls) == 1
