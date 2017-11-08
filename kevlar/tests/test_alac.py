@@ -64,9 +64,9 @@ def test_pico_calls(cc, pos, ref, alt):
 
 
 def test_pico_partitioned(capsys):
-    reads = data_file('pico-paritioned.augfastq.gz')
+    reads = data_file('pico-partitioned.augfastq.gz')
     refr = data_file('pico-trio-refr.fa.gz')
-    arglist = ['alac', '--delta', '50', reads]
+    arglist = ['alac', '--delta', '50', reads, refr]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
 
