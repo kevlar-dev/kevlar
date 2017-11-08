@@ -11,24 +11,6 @@ import pytest
 import sys
 import kevlar
 from kevlar.tests import data_file
-from kevlar.seqio import KevlarPartitionLabelError
-
-
-def test_partition_reader_simple():
-    infile = data_file('part-reads-simple.fa')
-    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
-    assert len(partitions) == 2
-    assert len(partitions[0]) == 4
-    assert len(partitions[1]) == 2
-
-
-def test_partition_reader_mixed():
-    infile = data_file('part-reads-mixed.fa')
-    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    with pytest.raises(KevlarPartitionLabelError) as ple:
-        partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
-    assert 'with and without partition labels' in str(ple)
 
 
 @pytest.mark.parametrize('greedy', [True, False])

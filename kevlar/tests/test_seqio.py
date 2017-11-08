@@ -11,6 +11,7 @@ import pytest
 import kevlar
 from kevlar import KmerOfInterest
 from kevlar.seqio import AnnotatedReadSet as ReadSet
+from kevlar.seqio import KevlarPartitionLabelError
 import khmer
 import screed
 import shutil
@@ -93,6 +94,23 @@ def test_aug_fastq_reader_e2():
     assert record.ikmers[1].sequence == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
     assert record.ikmers[1].offset == 83
     assert record.ikmers[1].abund == [23, 0, 0]
+
+
+def test_partition_reader_simple():
+    infile = kevlar.tests.data_file('part-reads-simple.fa')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+    assert len(partitions) == 2
+    assert len(partitions[0]) == 4
+    assert len(partitions[1]) == 2
+
+
+def test_partition_reader_mixed():
+    infile = kevlar.tests.data_file('part-reads-mixed.fa')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    with pytest.raises(KevlarPartitionLabelError) as ple:
+        partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+    assert 'with and without partition labels' in str(ple)
 
 
 @pytest.mark.parametrize('basename', [
