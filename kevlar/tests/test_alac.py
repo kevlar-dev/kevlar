@@ -61,3 +61,17 @@ def test_pico_calls(cc, pos, ref, alt):
     assert calls[0]._pos == pos
     assert calls[0]._refr == ref
     assert calls[0]._alt == alt
+
+
+def test_pico_partitioned(capsys):
+    reads = data_file('pico-paritioned.augfastq.gz')
+    refr = data_file('pico-trio-refr.fa.gz')
+    arglist = ['alac', '--delta', '50', reads]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.alac.main(args)
+
+    out, err = capsys.readouterr()
+    lines = out.strip().split('\n')
+    assert len(lines) == 10
+    numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
+    assert numnocalls == 2
