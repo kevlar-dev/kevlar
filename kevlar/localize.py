@@ -9,7 +9,7 @@
 
 from __future__ import print_function
 from collections import defaultdict
-from subprocess import Popen, PIPE, check_call, CalledProcessError
+from subprocess import Popen, PIPE, check_call
 from tempfile import TemporaryFile
 import os.path
 import sys
@@ -19,7 +19,7 @@ import khmer
 import pysam
 
 
-class KevlarBWAError(CalledProcessError):
+class KevlarBWAError(RuntimeError):
     """Raised if the delegated BWA call fails for any reason."""
     pass
 
@@ -172,14 +172,14 @@ def autoindex(refrfile):
         return
 
     message = '[kevlar::localize]'
-    message += 'WARNING: BWA index not found for "{:s}"'.format(refrfile)
+    message += ' WARNING: BWA index not found for "{:s}"'.format(refrfile)
     message += ', indexing now'
     print(message, file=sys.stderr)
 
     try:
         check_call(['bwa', 'index', refrfile])
-    except CalledProcessError as err:
-        raise KevlarBWAError('Could not run "bwa index"; ' + str(err))
+    except Exception as err:  # pragma: no cover
+        raise KevlarBWAError('Could not run "bwa index"') from err
 
 
 def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
