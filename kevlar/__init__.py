@@ -27,6 +27,7 @@ from kevlar import counting
 from kevlar import sketch
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
+from kevlar.seqio import parse_partitioned_reads
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 

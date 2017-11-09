@@ -67,14 +67,15 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
         filterer, dedup=dedup, minabund=partminabund, maxabund=partmaxabund,
         logstream=logstream
     )
-    for cc in partitioner:
-        caller = alac(
-            cc, refrfile, ksize=ksize, delta=delta, match=match,
-            mismatch=mismatch, gapopen=gapopen, gapextend=gapextend,
-            logstream=logstream
-        )
-        for variant in caller:
-            yield variant
+
+    caller = alac(
+        partitioner, refrfile, ksize=ksize, delta=delta, match=match,
+        mismatch=mismatch, gapopen=gapopen, gapextend=gapextend,
+        logstream=logstream
+    )
+
+    for variant in caller:
+        yield variant
 
 
 def main(args):

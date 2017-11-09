@@ -9,8 +9,9 @@
 
 from __future__ import print_function
 from collections import defaultdict
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_call
 from tempfile import TemporaryFile
+import os.path
 import sys
 
 import kevlar
@@ -165,6 +166,22 @@ def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
         raise KevlarRefrSeqNotFoundError(','.join(missing))
 
 
+def autoindex(refrfile):
+    bwtfile = refrfile + '.bwt'
+    if os.path.isfile(bwtfile):
+        return
+
+    message = '[kevlar::localize]'
+    message += ' WARNING: BWA index not found for "{:s}"'.format(refrfile)
+    message += ', indexing now'
+    print(message, file=sys.stderr)
+
+    try:
+        check_call(['bwa', 'index', refrfile])
+    except Exception as err:  # pragma: no cover
+        raise KevlarBWAError('Could not run "bwa index"') from err
+
+
 def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
     """
     Wrap the `kevlar localize` task as a generator.
@@ -173,6 +190,7 @@ def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
     stored as khmer or screed sequence records, the filename of the reference
     genome sequence, and the desired k-size.
     """
+    autoindex(refrfile)
     seedmatches = KmerMatchSet(ksize)
     for seqid, pos in get_exact_matches(contigstream, refrfile, ksize):
         seedmatches.add(seqid, pos)
