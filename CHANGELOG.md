@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Incorrect file names in the quick start documentation page.
+- The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition labeled sequence file at the CLI leve.
+
 ## [0.3.0] - 2017-11-03
 
 This release includes many new features, some refactoring of the core codebase, and the first end-to-end analysis workflow implemented in a single command.
