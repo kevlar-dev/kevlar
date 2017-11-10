@@ -13,7 +13,7 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
         curl -L https://osf.io/e8jb3/download?version=1 -o mother.fq.gz
         curl -L https://osf.io/fuaty/download?version=1 -o father.fq.gz
         curl -L https://osf.io/f5trh/download?version=1 -o proband.fq.gz
-        curl -L https://osf.io/58rwa/download?version=1 -o refr.fq.gz
+        curl -L https://osf.io/58rwa/download?version=1 -o refr.fa.gz
         bwa index refr.fq.gz
 
         kevlar simplex \
@@ -21,6 +21,6 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
             --control mother.fq.gz --control father.fq.gz --ctrl-max 0 \
             --novel-memory 5M --novel-fpr 0.6 --threads 4 \
             --filter-memory 1M --filter-fpr 0.005 \
-            --mask-files refr.gz --mask-memory 5M \
+            --mask-files refr.fa.gz --mask-memory 5M \
             --ksize 25 --out variant-calls.vcf
-            refr.gz
+            refr.fa.gz
