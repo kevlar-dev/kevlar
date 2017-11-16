@@ -8,11 +8,11 @@ help: Makefile
 
 ## devenv:   install software development pre-requisites
 devenv:
-	pip install --upgrade pip setuptools pytest pytest-cov pep8 cython sphinx sphinx-argparse
+	pip install --upgrade pip setuptools pytest pytest-cov pycodestyle cython sphinx sphinx-argparse
 
 ## style:    check Python code style against PEP8
 style:
-	pep8 kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
+	pycodestyle kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
 
 ## ext:      build C extensions
 ext: kevlar/alignment.c src/align.c inc/align.h
