@@ -15,6 +15,13 @@ from khmer.utils import write_record
 
 
 def perfectmatch(record, bam, refrseqs):
+    """
+    Determine if the alignment record is a perfect match against the reference.
+
+    The `record` is a pysam alignment object, `bam` is a pysam BAM parser
+    object, and `refrseqs` is a dictionary of sequences indexed by their
+    sequence IDs.
+    """
     matchcigar = '{:d}M'.format(record.rlen)
     if record.cigarstring == matchcigar:
         seq = refrseqs[bam.get_reference_name(record.tid)]
@@ -25,6 +32,7 @@ def perfectmatch(record, bam, refrseqs):
 
 
 def readname(record):
+    """Create a Fastq read name, using suffixes for paired reads as needed."""
     name = record.qname
     if record.flag & 1:
         # Logical XOR: if the read is paired, it should be first in pair
@@ -37,9 +45,17 @@ def readname(record):
 
 
 def dump(bamstream, refrseqs=None, upint=50000, logstream=sys.stderr):
+    """
+    Parse read alignments in BAM/SAM format.
+
+    - bamstream: open file handle to the BAM/SAM file input
+    - refrseqs: dictionary of reference sequences, indexed by sequence ID
+    - upint: update interval for progress indicator
+    - logstream: file handle do which progress indicator will write output
+    """
     bam = pysam.AlignmentFile(bamstream, 'rb')
     for i, record in enumerate(bam, 1):
-        if i % upint == 0:
+        if i % upint == 0:  # pragma: no cover
             print('...processed', i, 'records', file=logstream)
         if record.is_secondary or record.is_supplementary:
             continue

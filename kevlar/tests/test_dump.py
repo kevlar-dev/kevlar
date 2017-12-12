@@ -32,6 +32,12 @@ def test_basic(capsys):
     assert 'read8' in outputlines[16]
 
 
+def test_no_refr():
+    bamstream = kevlar.open(data_file('bogus-genome/reads.bam'), 'r')
+    records = [r for r in kevlar.dump.dump(bamstream)]
+    assert len(records) == 8
+
+
 def test_indels(capsys):
     arglist = [
         'dump',
