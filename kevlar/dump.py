@@ -49,7 +49,8 @@ def dump(bamstream, refrseqs=None, upint=50000, logstream=sys.stderr):
     Parse read alignments in BAM/SAM format.
 
     - bamstream: open file handle to the BAM/SAM file input
-    - refrseqs: dictionary of reference sequences, indexed by sequence ID
+    - refrseqs: dictionary of reference sequences, indexed by sequence ID; if
+      provided, perfect matches to the reference sequence will be discarded
     - upint: update interval for progress indicator
     - logstream: file handle do which progress indicator will write output
     """
