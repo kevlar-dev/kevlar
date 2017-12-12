@@ -16,7 +16,7 @@ from kevlar.tests import data_file
 def test_basic(capsys):
     arglist = [
         'dump',
-        data_file('bogus-genome/refr.fa'),
+        '--refr', data_file('bogus-genome/refr.fa'),
         data_file('bogus-genome/reads.bam'),
     ]
     args = kevlar.cli.parser().parse_args(arglist)
@@ -32,10 +32,16 @@ def test_basic(capsys):
     assert 'read8' in outputlines[16]
 
 
+def test_no_refr():
+    bamstream = kevlar.open(data_file('bogus-genome/reads.bam'), 'r')
+    records = [r for r in kevlar.dump.dump(bamstream)]
+    assert len(records) == 8
+
+
 def test_indels(capsys):
     arglist = [
         'dump',
-        data_file('bogus-genome/refr.fa'),
+        '-r', data_file('bogus-genome/refr.fa'),
         data_file('bogus-genome/reads-indels.bam'),
     ]
     args = kevlar.cli.parser().parse_args(arglist)
@@ -46,16 +52,11 @@ def test_indels(capsys):
     assert len(outputlines) == 4 * 4  # 4 records, 4 lines per record
 
 
-def test_suffix(capsys):
-    arglist = [
-        'dump',
-        data_file('bogus-genome/refr.fa'),
-        data_file('nopair.sam'),
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.dump.main(args)
-    out, err = capsys.readouterr()
+def test_suffix():
+    bamstream = kevlar.open(data_file('nopair.sam'), 'r')
+    refrstream = kevlar.open(data_file('bogus-genome/refr.fa'), 'r')
+    refr = kevlar.seqio.parse_seq_dict(refrstream)
 
-    outputlines = out.strip().split('\n')
-    assert len(outputlines) == 4
-    assert outputlines[0].endswith('/1') or outputlines[0].endswith('/2')
+    records = [r for r in kevlar.dump.dump(bamstream, refr)]
+    assert len(records) == 1
+    assert records[0].name.endswith('/1') or records[0].name.endswith('/2')
