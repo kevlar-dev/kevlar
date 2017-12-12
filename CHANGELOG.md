@@ -4,9 +4,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter.
+
 ### Fixed
 - Incorrect file names in the quick start documentation page.
-- The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition labeled sequence file at the CLI leve.
+- The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition labeled sequence file at the CLI level.
 
 ## [0.3.0] - 2017-11-03
 

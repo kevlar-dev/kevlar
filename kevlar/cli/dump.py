@@ -17,7 +17,8 @@ def subparser(subparsers):
     desc = 'Discard reads that align perfectly to the reference genome.'
 
     subparser = subparsers.add_parser('dump', description=desc)
-    subparser.add_argument('--out', metavar='FILE', help='output file; default'
-                           ' is terminal (stdout)')
-    subparser.add_argument('refr', help='reference sequence in Fasta format')
+    subparser.add_argument('-o', '--out', metavar='FILE', help='output file; '
+                           'default is terminal (stdout)')
+    subparser.add_argument('-r', '--refr', metavar='REFR', help='reference '
+                           'sequence in Fasta format')
     subparser.add_argument('reads', help='read alignments in BAM format')
