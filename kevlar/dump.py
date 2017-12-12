@@ -36,7 +36,7 @@ def readname(record):
     return name
 
 
-def dump(bamstream, refrseqs, upint=50000, logstream=sys.stderr):
+def dump(bamstream, refrseqs=None, upint=50000, logstream=sys.stderr):
     bam = pysam.AlignmentFile(bamstream, 'rb')
     for i, record in enumerate(bam, 1):
         if i % upint == 0:
