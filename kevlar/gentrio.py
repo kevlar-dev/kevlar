@@ -21,20 +21,21 @@ def mutate_snv(sequence, position, offset, ksize=31):
     orignucl = sequence[position]
     nuclindex = nucl_to_index[orignucl]
     newindex = (nuclindex + offset) % 4
-    newnucl  = index_to_nucl[newindex]
+    newnucl = index_to_nucl[newindex]
 
     windowstart = max(position - ksize + 1, 0)
     windowend = min(position + ksize, len(sequence))
     refrwindow = sequence[windowstart:windowend]
     altwindow = '{:s}{:s}{:s}'.format(
-        sequence[windowstart:position], newnucl, sequence[position+1:windowend]
+        sequence[windowstart:position], newnucl,
+        sequence[position + 1:windowend]
     )
 
     return orignucl, newnucl, refrwindow, altwindow
 
 
 def mutate_insertion(sequence, position, length, duplpos, ksize=31):
-    duplseq = sequence[duplpos:duplpos+length]
+    duplseq = sequence[duplpos:duplpos + length]
     refrseq = sequence[position - 1]
     altseq = refrseq + duplseq
 
@@ -44,12 +45,12 @@ def mutate_insertion(sequence, position, length, duplpos, ksize=31):
     altwindow = '{:s}{:s}{:s}'.format(
         sequence[windowstart:position], duplseq, sequence[position:windowend]
     )
-    
+
     return refrseq, altseq, refrwindow, altwindow
 
 
 def mutate_deletion(sequence, position, length, ksize=31):
-    delseq = sequence[position:position+length]
+    delseq = sequence[position:position + length]
     altseq = sequence[position - 1]
     refrseq = altseq + delseq
 
@@ -57,9 +58,9 @@ def mutate_deletion(sequence, position, length, ksize=31):
     windowend = min(position + length + ksize - 1, len(sequence))
     refrwindow = sequence[windowstart:windowend]
     altwindow = '{:s}{:s}'.format(
-        sequence[windowstart:position], sequence[position+length:windowend]
+        sequence[windowstart:position], sequence[position + length:windowend]
     )
-    
+
     return refrseq, altseq, refrwindow, altwindow
 
 

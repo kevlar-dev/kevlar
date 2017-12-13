@@ -27,7 +27,7 @@ def test_snv(seq, pos, offset, refr, alt, refrwindow, altwindow):
     testrefr, testalt, testrw, testaw = kevlar.gentrio.mutate_snv(
         seq, pos, offset, ksize=9
     )
-    
+
     print('REFR', refr, testrefr, refrwindow, testrw, file=sys.stderr)
     print('ALT', alt, testalt, altwindow, testaw, file=sys.stderr)
 
@@ -45,13 +45,13 @@ def test_snv(seq, pos, offset, refr, alt, refrwindow, altwindow):
     ('CCTTGGTGCCACGATCCGGCTATGGCGGAAGGGCACACCTAACCGCAACATTTGCC',
      52, 3, 39, 'T', 'TTAA', 'CATTTGCC', 'CATTTAATGCC'),
     ('GGGTCCCAAGAGTCTGATTTCTAGCTTTTTATTTACACCCCGGTAGCAGGATCAGA',
-    9, 9, 29, 'A', 'ATATTTACAC', 'CCAAGAGT', 'CCAATATTTACACGAGT'),
+     9, 9, 29, 'A', 'ATATTTACAC', 'CCAAGAGT', 'CCAATATTTACACGAGT'),
 ])
 def test_insertion(seq, pos, length, duplpos, refr, alt, rwindow, awindow):
     testrefr, testalt, testrw, testaw = kevlar.gentrio.mutate_insertion(
         seq, pos, length, duplpos, ksize=5
     )
-    
+
     print('REFR', refr, testrefr, rwindow, testrw, file=sys.stderr)
     print('ALT', alt, testalt, awindow, testaw, file=sys.stderr)
 
@@ -75,7 +75,7 @@ def test_deletion(seq, pos, length, refr, alt, rwindow, awindow):
     testrefr, testalt, testrw, testaw = kevlar.gentrio.mutate_deletion(
         seq, pos, length, ksize=5
     )
-    
+
     print('REFR', refr, testrefr, rwindow, testrw, file=sys.stderr)
     print('ALT', alt, testalt, awindow, testaw, file=sys.stderr)
 
@@ -93,7 +93,7 @@ def test_gen_muts():
 
     refrs = [m[2] for m in mutations]
     alts = [m[3] for m in mutations]
-    
+
     testrefrs = [
         'T', 'A', 'GGAGAGTATTGAGCAAGTAGAGTGGAAGTGCCCAGCGGACGGAAACCGATGCTTCAGGC'
         'TCAGCAAAAATCTGACGTTCTTATGTACCCTTGTTTTTAGGATCTAGGACGTAGAATGCAGAAGCCTCA'
