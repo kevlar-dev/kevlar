@@ -65,13 +65,13 @@ class Variant(object):
         interval in the proband contig that encompasses all k-mers overlapping
         the variant.
 
-        NNNNNNNNNNNNNNNNNANNNNNNNNNNNNNNNNNNN
-                    NNNNNA
-                     NNNNAN
-                      NNNANN
-                       NNANNN
-                        NANNNN
-                         ANNNNN
+        GCCTAGTTAGCTAACGTCCCGATCACTGTGTCACTGC
+                    .....A
+                     ....A.
+                      ...A..
+                       ..A...
+                        .A....
+                         A.....
                          |        <-- position of variant
                     [---------]   <-- variant window, interval (inclusive)
                                       encompassing all 6-mers that overlap the
