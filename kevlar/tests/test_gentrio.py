@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import pytest
+from random import randint
 import sys
 import kevlar
 from kevlar.tests import data_file
@@ -88,7 +89,7 @@ def test_deletion(seq, pos, length, refr, alt, rwindow, awindow):
 def test_gen_muts():
     seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
     sequences = kevlar.seqio.parse_seq_dict(seqstream)
-    mutator = kevlar.gentrio.generate_mutations(sequences, seed=42)
+    mutator = kevlar.gentrio.generate_mutations(sequences, rng=42)
     mutations = list(mutator)
 
     refrs = [m[2] for m in mutations]
@@ -118,3 +119,36 @@ def test_gen_muts():
 def test_gen_with_inversions():
     with pytest.raises(NotImplementedError):
         list(kevlar.gentrio.generate_mutations({'1': 'ACGT'}, inversions=True))
+
+
+def test_sim_var_geno_smoketest():
+    seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
+    sequences = kevlar.seqio.parse_seq_dict(seqstream)
+    ninh = randint(1, 10)
+    ndenovo = randint(1, 10)
+    simulator = kevlar.gentrio.simulate_variant_genotypes(
+        sequences, ninh=ninh, ndenovo=ndenovo
+    )
+    variants = list(simulator)
+    assert len(variants) == ninh + ndenovo
+
+
+def test_sim_var_geno():
+    seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
+    sequences = kevlar.seqio.parse_seq_dict(seqstream)
+    simulator = kevlar.gentrio.simulate_variant_genotypes(
+        sequences, ninh=2, ndenovo=2, seed=112358 ^ 853211
+    )
+
+    variants = list(simulator)
+    print('DEBUG', variants, file=sys.stderr)
+
+    assert len(variants) == 4
+    assert [v[0][0] for v in variants] == ['scaf2', 'scaf2', 'scaf3', 'scaf3']
+    assert [v[0][1] for v in variants] == [23670, 99928, 4936, 57391]
+    assert [v[1] for v in variants] == [
+        ('0/1', '0/0', '0/0'),
+        ('1/0', '0/0', '0/0'),
+        ('0/1', '0/1', '1/0'),
+        ('1/0', '1/1', '0/0'),
+    ]
