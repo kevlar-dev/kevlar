@@ -32,6 +32,7 @@ def mutate_snv(sequence, position, offset, ksize=31):
 
     return orignucl, newnucl, refrwindow, altwindow
 
+
 def mutate_insertion(sequence, position, length, duplpos, ksize=31):
     duplseq = sequence[duplpos:duplpos+length]
     refrseq = sequence[position - 1]
@@ -40,7 +41,24 @@ def mutate_insertion(sequence, position, length, duplpos, ksize=31):
     windowstart = max(position - ksize + 1, 0)
     windowend = min(position + ksize - 1, len(sequence))
     refrwindow = sequence[windowstart:windowend]
-    altwindow = sequence[windowstart:position] + duplseq + sequence[position:windowend]
+    altwindow = '{:s}{:s}{:s}'.format(
+        sequence[windowstart:position], duplseq, sequence[position:windowend]
+    )
+    
+    return refrseq, altseq, refrwindow, altwindow
+
+
+def mutate_deletion(sequence, position, length, ksize=31):
+    delseq = sequence[position:position+length]
+    altseq = sequence[position - 1]
+    refrseq = altseq + delseq
+
+    windowstart = max(position - ksize + 1, 0)
+    windowend = min(position + length + ksize - 1, len(sequence))
+    refrwindow = sequence[windowstart:windowend]
+    altwindow = '{:s}{:s}'.format(
+        sequence[windowstart:position], sequence[position+length:windowend]
+    )
     
     return refrseq, altseq, refrwindow, altwindow
 
@@ -56,7 +74,7 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, seed=None):
         # types.append('inv')
         raise NotImplementedError('feature pending')
     for _ in range(n):
-        seqid = rng.choice(sequences.keys())
+        seqid = rng.choice(list(sequences.keys()))
         seq = sequences[seqid]
         seqlength = len(sequences[seqid])
         position = rng.randint(0, seqlength)
@@ -64,36 +82,18 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, seed=None):
 
         if muttype == 'snv':
             offset = rng.randint(1, 3)
-            orignucl = seq[position]
-            nuclindex = nucl_to_index[orignucl]
-            newindex = (nuclindex + offset) % 4
-            newnucl  = index_to_nucl[newindex]
-            windowstart = max(position - ksize, 0)
-            windowend = min(position + ksize, seqlength)
-            refrwindow = seq[windowstart:windowend]
-            altwindow = seq[windowstart:position] + newnucl + seq[position:windowend]
-            yield seqid, position, orignucl, newnucl, refrwindow, altwindow
+            refrseq, altseq, refrwindow, altwindow = mutate_snv(
+                seq, position, offset, ksize
+            )
         elif muttype == 'ins':
             length = rng.randint(5, 350)
             duplpos = rng.randint(0, seqlength)
-            duplseq = seq[duplpos:duplpos+length]
-            refrseq = seq[position - 1]
-            altseq = refrseq + duplseq
-            windowstart = max(position - ksize, 0)
-            windowend = min(position + ksize, seqlength)
-            refrwindow = seq[windowstart:windowend]
-            altwindow = seq[windowstart:position] + duplseq + seq[position:windowend]
-            yield seqid, position, refrseq, altseq, refrwindow, altwindow
+            refrseq, altseq, refrwindow, altwindow = mutate_insertion(
+                seq, position, length, duplpos, ksize
+            )
         elif muttype == 'del':
             length = rng.randint(5, 350)
-            delseq = seq[position:position+length]
-            altseq = seq[position - 1]
-            refrseq = altseq + delseq
-            windowstart = max(position - ksize, 0)
-            windowend = min(position + length + ksize, seqlength)
-            refrwindow = seq[windowstart:windowend]
-            altwindow = seq[windowstart:position] + seq[position+length:windowend]
-            yield seqid, position, refrseq, altseq, refrwindow, altwindow
-
-
-
+            refrseq, altseq, refrwindow, altwindow = mutate_deletion(
+                seq, position, length, ksize
+            )
+        yield seqid, position, refrseq, altseq, refrwindow, altwindow
