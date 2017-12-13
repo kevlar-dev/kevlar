@@ -33,6 +33,14 @@ class Variant(object):
             self.info[key] = value
 
     @property
+    def seqid(self):
+        return self._seqid
+
+    @property
+    def position(self):
+        return self._pos
+
+    @property
     def vcf(self):
         """Print variant to VCF."""
         attrstr = '.'
@@ -93,6 +101,13 @@ class Variant(object):
             return keyvaluepair
         else:
             return value
+
+    @property
+    def genotypes(self):
+        gt = self.attribute('GT')
+        if not gt:
+            return None
+        return tuple(gt.split(','))
 
 
 class VariantSNV(Variant):

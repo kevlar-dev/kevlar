@@ -11,6 +11,7 @@ from collections import defaultdict, namedtuple
 import random
 import sys
 import kevlar
+from kevlar.call import Variant
 
 
 nucl_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
@@ -134,7 +135,7 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
             )
-        yield seqid, position, refrseq, altseq, refrwindow, altwindow
+        yield Variant(seqid, position, refrseq, altseq, VW=altwindow, RW=refrwindow)
 
 
 def pick_inheritance_genotypes(rng):
@@ -151,23 +152,68 @@ def pick_inheritance_genotypes(rng):
     return tuple(genotypes)
 
 
-def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, seed=None):
-    if not seed:
+def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
+    if not rng:
         seed = random.randrange(sys.maxsize)
-    print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
-    rng = random.Random(seed)
+        print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
+        rng = random.Random(seed)
+    elif isinstance(rng, int):
+        rng = random.Random(rng)
 
-    variants = list()
     mutator = generate_mutations(sequences, n=ninh, rng=rng)
     for variant in mutator:
         genotypes = pick_inheritance_genotypes(rng)
-        variants.append((variant, genotypes))
+        gtstring = ','.join(genotypes)
+        variant.info['GT'] = gtstring
+        yield variant
 
     mutator = generate_mutations(sequences, n=ndenovo, rng=rng)
     for variant in mutator:
         genotypes = (rng.choice(['0/1', '1/0']), '0/0', '0/0')
-        variants.append((variant, genotypes))
+        gtstring = ','.join(genotypes)
+        variant.info['GT'] = gtstring
+        yield variant
 
-    variants.sort(key=lambda v: (v[0][0], v[0][1]))
-    for variant, genotypes in variants:
-        yield variant, genotypes
+
+def apply_mutation(sequence, position, refr, alt):
+    prefix = sequence[:position]
+    if len(refr) == len(alt):  # SNV
+        suffix = sequence[position+1:]
+        return prefix + alt + suffix
+    elif len(refr) < len(alt):  # Insertion
+        suffix = sequence[position+1:]
+        return prefix + alt[1:] + suffix
+    else:  # Deletion
+        dellength = len(refr) - len(alt)
+        suffix = sequence[position+dellength:]
+        return prefix + suffix
+
+
+def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
+    assert len(outstreams) == 3
+    mutator = simulate_variant_genotypes(
+        sequences, ninh=ninh, ndenovo=ndenovo, rng=seed
+    )
+    variants = list(mutator)
+    variants.sort(key=lambda v: v.position, reverse=True)
+
+    for seqid, sequence in sequences.items():
+        for ind in range(3):  # proband mother father
+            haploseqs = (str(sequence), str(sequence))
+            for variant in variants:
+                if variant.seqid != seqid:
+                    continue
+                genotype = variant.genotypes[ind]
+                haplotypes = (genotype[0], genotype[2])
+                for haplotype, haploseq in zip(haplotypes, haploseqs):
+                    if haplotype == '0':
+                        continue
+                    haploseq = apply_mutation(
+                        haploseq, variant.position, variant._refr, variant._alt
+                    )
+            print('>', seqid, '_haplo1\n', haploseqs[0], file=outstreams[ind])
+            print('>', seqid, '_haplo2\n', haploseqs[1], file=outstreams[ind])
+
+    variants.sort(key=lambda v: (v.seqid, v.position))
+    for variant in variants:
+        yield variant

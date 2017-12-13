@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from io import StringIO
 import pytest
 from random import randint
 import sys
@@ -92,8 +93,8 @@ def test_gen_muts():
     mutator = kevlar.gentrio.generate_mutations(sequences, rng=42)
     mutations = list(mutator)
 
-    refrs = [m[2] for m in mutations]
-    alts = [m[3] for m in mutations]
+    refrs = [m._refr for m in mutations]
+    alts = [m._alt for m in mutations]
 
     print('DEBUG refrs', refrs, file=sys.stderr)
     print('DEBUG alts', alts, file=sys.stderr)
@@ -137,18 +138,46 @@ def test_sim_var_geno():
     seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
     sequences = kevlar.seqio.parse_seq_dict(seqstream)
     simulator = kevlar.gentrio.simulate_variant_genotypes(
-        sequences, ninh=2, ndenovo=2, seed=112358 ^ 853211
+        sequences, ninh=2, ndenovo=2, rng=112358 ^ 853211
     )
 
     variants = list(simulator)
     print('DEBUG', variants, file=sys.stderr)
 
     assert len(variants) == 4
-    assert [v[0][0] for v in variants] == ['scaf2', 'scaf2', 'scaf3', 'scaf3']
-    assert [v[0][1] for v in variants] == [23670, 99928, 4936, 57391]
-    assert [v[1] for v in variants] == [
-        ('0/1', '0/0', '0/0'),
-        ('1/0', '0/0', '0/0'),
+    assert [v.seqid for v in variants] == ['scaf3', 'scaf3', 'scaf2', 'scaf2']
+    assert [v.position for v in variants] == [4936, 57391, 23670, 99928]
+    assert [v.genotypes for v in variants] == [
         ('0/1', '0/1', '1/0'),
         ('1/0', '1/1', '0/0'),
+        ('0/1', '0/0', '0/0'),
+        ('1/0', '0/0', '0/0'),
     ]
+
+
+def test_apply_mut_snv():
+    contig = 'ACGTACGTACGT'
+    assert kevlar.gentrio.apply_mutation(contig, 5, 'C', 'G') == 'ACGTAGGTACGT'
+    assert kevlar.gentrio.apply_mutation(contig, 5, 'C', 'A') == 'ACGTAAGTACGT'
+    assert kevlar.gentrio.apply_mutation(contig, 0, 'A', 'T') == 'TCGTACGTACGT'
+
+
+def test_apply_mut_ins():
+    contig = 'ACGTACGTACGT'
+    mutcontig = kevlar.gentrio.apply_mutation(contig, 5, 'C', 'CAAAA')
+    assert mutcontig == 'ACGTAAAAAGTACGT'
+
+
+def test_apply_mut_del():
+    contig = 'ACGTACGTACGT'
+    assert kevlar.gentrio.apply_mutation(contig, 5, 'ACGTAC', 'A') == 'ACGTAGT'
+
+
+def test_gentrio_smoketest():
+    seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
+    sequences = kevlar.seqio.parse_seq_dict(seqstream)
+    outstreams = [StringIO(), StringIO(), StringIO()]
+    mutator = kevlar.gentrio.gentrio(sequences, outstreams, ninh=2, ndenovo=1, seed=1985)
+    variants = list(mutator)
+    for variant in variants:
+        print(variant.vcf, file=sys.stderr)
