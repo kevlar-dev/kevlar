@@ -32,6 +32,18 @@ def mutate_snv(sequence, position, offset, ksize=31):
 
     return orignucl, newnucl, refrwindow, altwindow
 
+def mutate_insertion(sequence, position, length, duplpos, ksize=31):
+    duplseq = sequence[duplpos:duplpos+length]
+    refrseq = sequence[position - 1]
+    altseq = refrseq + duplseq
+
+    windowstart = max(position - ksize + 1, 0)
+    windowend = min(position + ksize - 1, len(sequence))
+    refrwindow = sequence[windowstart:windowend]
+    altwindow = sequence[windowstart:position] + duplseq + sequence[position:windowend]
+    
+    return refrseq, altseq, refrwindow, altwindow
+
 
 def generate_mutations(sequences, n=10, inversions=False, ksize=31, seed=None):
     if not seed:
