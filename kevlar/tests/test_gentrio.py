@@ -177,7 +177,36 @@ def test_gentrio_smoketest():
     seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
     sequences = kevlar.seqio.parse_seq_dict(seqstream)
     outstreams = [StringIO(), StringIO(), StringIO()]
-    mutator = kevlar.gentrio.gentrio(sequences, outstreams, ninh=2, ndenovo=1, seed=1985)
+    mutator = kevlar.gentrio.gentrio(sequences, outstreams, ninh=2, ndenovo=1,
+                                     seed=1985)
     variants = list(mutator)
+
     for variant in variants:
         print(variant.vcf, file=sys.stderr)
+
+    for i in range(3):
+        outstreams[i].seek(0)
+    probandseqs = kevlar.seqio.parse_seq_dict(outstreams[0])
+    motherseqs = kevlar.seqio.parse_seq_dict(outstreams[1])
+    fatherseqs = kevlar.seqio.parse_seq_dict(outstreams[2])
+
+    print(probandseqs['scaf1_haplo1'][variants[0].position])
+    print(probandseqs['scaf1_haplo2'][variants[0].position])
+    assert variants[0].genotypes[0] == '0/1'
+    assert variants[0].refrwindow in probandseqs['scaf1_haplo1']
+    assert variants[0].refrwindow not in probandseqs['scaf1_haplo2']
+    assert variants[0].window not in probandseqs['scaf1_haplo1']
+    assert variants[0].window in probandseqs['scaf1_haplo2']
+
+    print(probandseqs['scaf3_haplo1'][variants[2].position])
+    print(probandseqs['scaf3_haplo2'][variants[2].position])
+    print(motherseqs['scaf3_haplo1'][variants[2].position])
+    print(motherseqs['scaf3_haplo2'][variants[2].position])
+    print(fatherseqs['scaf3_haplo1'][variants[2].position])
+    print(fatherseqs['scaf3_haplo2'][variants[2].position])
+    assert variants[2].window in probandseqs['scaf3_haplo1']
+    assert variants[2].refrwindow in probandseqs['scaf3_haplo2']
+    assert variants[2].refrwindow in motherseqs['scaf3_haplo1']
+    assert variants[2].refrwindow in motherseqs['scaf3_haplo2']
+    assert variants[2].refrwindow in fatherseqs['scaf3_haplo1']
+    assert variants[2].window in fatherseqs['scaf3_haplo2']

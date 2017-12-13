@@ -61,7 +61,7 @@ def mutate_snv(sequence, position, offset, ksize=31):
     refrwindow = sequence[windowstart:windowend]
     altwindow = '{:s}{:s}{:s}'.format(
         sequence[windowstart:position], newnucl,
-        sequence[position + 1:windowend]
+        sequence[position+1:windowend]
     )
 
     return orignucl, newnucl, refrwindow, altwindow
@@ -84,7 +84,7 @@ def mutate_insertion(sequence, position, length, duplpos, ksize=31):
 
 def mutate_deletion(sequence, position, length, ksize=31):
     delseq = sequence[position:position + length]
-    altseq = sequence[position - 1]
+    altseq = sequence[position-1]
     refrseq = altseq + delseq
 
     windowstart = max(position - ksize + 1, 0)
@@ -153,11 +153,11 @@ def pick_inheritance_genotypes(rng):
 
 
 def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
-    if not rng:
+    if rng is None:
         seed = random.randrange(sys.maxsize)
         print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
         rng = random.Random(seed)
-    elif isinstance(rng, int):
+    if isinstance(rng, int):
         rng = random.Random(rng)
 
     mutator = generate_mutations(sequences, n=ninh, rng=rng)
@@ -199,20 +199,21 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
 
     for seqid, sequence in sequences.items():
         for ind in range(3):  # proband mother father
-            haploseqs = (str(sequence), str(sequence))
+            haploseqs = [str(sequence), str(sequence)]
             for variant in variants:
                 if variant.seqid != seqid:
                     continue
                 genotype = variant.genotypes[ind]
                 haplotypes = (genotype[0], genotype[2])
-                for haplotype, haploseq in zip(haplotypes, haploseqs):
-                    if haplotype == '0':
+                for hapindex in range(2):
+                    if haplotypes[hapindex] == '0':
                         continue
-                    haploseq = apply_mutation(
-                        haploseq, variant.position, variant._refr, variant._alt
+                    haploseqs[hapindex] = apply_mutation(
+                        haploseqs[hapindex], variant.position, variant._refr,
+                        variant._alt
                     )
-            print('>', seqid, '_haplo1\n', haploseqs[0], file=outstreams[ind])
-            print('>', seqid, '_haplo2\n', haploseqs[1], file=outstreams[ind])
+            print('>', seqid, '_haplo1\n', haploseqs[0], sep='', file=outstreams[ind])
+            print('>', seqid, '_haplo2\n', haploseqs[1], sep='', file=outstreams[ind])
 
     variants.sort(key=lambda v: (v.seqid, v.position))
     for variant in variants:
