@@ -17,6 +17,19 @@ nucl_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_nucl = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 
 
+def weighted_choice(values, weights, rng=random.Random()):
+    """Stolen shamelessly from https://stackoverflow.com/a/3679747/459780."""
+    assert len(values) == len(weights)
+    total = sum(weights)
+    r = rng.uniform(0, total)
+    cumsum = 0
+    for v, w in zip(values, weights):
+       if cumsum + w >= r:
+          return v
+       cumsum += w
+    assert False  # pragma: no cover
+
+
 def mutate_snv(sequence, position, offset, ksize=31):
     orignucl = sequence[position]
     nuclindex = nucl_to_index[orignucl]
@@ -71,15 +84,17 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, seed=None):
     rng = random.Random(seed)
 
     types = ['snv', 'ins', 'del']
+    weights = [0.7, 0.15, 0.15]
     if inversions:
         # types.append('inv')
         raise NotImplementedError('feature pending')
+
     for _ in range(n):
         seqid = rng.choice(list(sequences.keys()))
         seq = sequences[seqid]
         seqlength = len(sequences[seqid])
         position = rng.randint(0, seqlength)
-        muttype = rng.choice(types)
+        muttype = weighted_choice(types, weights, rng)
 
         if muttype == 'snv':
             offset = rng.randint(1, 3)
@@ -92,7 +107,8 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, seed=None):
             refrseq, altseq, refrwindow, altwindow = mutate_insertion(
                 seq, position, length, duplpos, ksize
             )
-        elif muttype == 'del':
+        else:
+            assert muttype == 'del'
             length = rng.randint(5, 350)
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
