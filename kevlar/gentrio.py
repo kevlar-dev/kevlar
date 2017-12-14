@@ -235,8 +235,6 @@ def main(args):
     vcfout = None
     if args.vcf:
         vcfout = kevlar.open(args.vcf, 'w')
-
-    if vcfout:
         kevlar.vcf_header(vcfout, source='kevlar::gentrio', infoheader=True)
     mutator = gentrio(genomeseqs, outstreams, ninh=args.inherited,
                       ndenovo=args.de_novo, seed=args.seed)

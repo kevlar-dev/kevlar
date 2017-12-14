@@ -8,8 +8,11 @@
 # -----------------------------------------------------------------------------
 
 from io import StringIO
+import os
 import pytest
 import random
+from tempfile import mkdtemp
+from shutil import rmtree
 import sys
 import kevlar
 from kevlar.tests import data_file
@@ -121,6 +124,7 @@ def test_gen_muts():
 
     assert refrs == testrefrs
     assert alts == testalts
+    assert mutations[0].genotypes is None
 
 
 def test_gen_with_inversions():
@@ -216,3 +220,30 @@ def test_gentrio_smoketest():
     assert variants[2].refrwindow in motherseqs['scaf3_haplo2']
     assert variants[2].refrwindow in fatherseqs['scaf3_haplo1']
     assert variants[2].window in fatherseqs['scaf3_haplo2']
+
+
+def test_gentrio_cli_smoketest():
+    tempdir = mkdtemp()
+    prefix = os.path.join(tempdir, 'outfile')
+    arglist = [
+        'gentrio', '--prefix', prefix, data_file('100kbx3.fa.gz')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.gentrio.main(args)
+    rmtree(tempdir)
+
+
+def test_gentrio_cli(capsys):
+    tempdir = mkdtemp()
+    prefix = os.path.join(tempdir, 'outfile')
+    arglist = [
+        'gentrio', '--prefix', prefix, '--vcf', '-', data_file('100kbx3.fa.gz')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.gentrio.main(args)
+    rmtree(tempdir)
+    out, err = capsys.readouterr()
+
+    outlines = out.strip().split('\n')
+    numvariants = sum([1 for line in outlines if not line.startswith('#')])
+    assert numvariants == 30
