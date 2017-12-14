@@ -14,6 +14,7 @@ import kevlar
 from kevlar.call import Variant
 
 
+# Mappings for SNVs
 nucl_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_nucl = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 
@@ -135,7 +136,8 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
             )
-        yield Variant(seqid, position, refrseq, altseq, VW=altwindow, RW=refrwindow)
+        yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
+                      RW=refrwindow)
 
 
 def pick_inheritance_genotypes(rng):
@@ -212,9 +214,30 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
                         haploseqs[hapindex], variant.position, variant._refr,
                         variant._alt
                     )
-            print('>', seqid, '_haplo1\n', haploseqs[0], sep='', file=outstreams[ind])
-            print('>', seqid, '_haplo2\n', haploseqs[1], sep='', file=outstreams[ind])
+            print('>', seqid, '_haplo1\n', haploseqs[0], sep='',
+                  file=outstreams[ind])
+            print('>', seqid, '_haplo2\n', haploseqs[1], sep='',
+                  file=outstreams[ind])
 
     variants.sort(key=lambda v: (v.seqid, v.position))
     for variant in variants:
         yield variant
+
+
+def main(args):
+    seqfile = kevlar.open(args.genome, 'r')
+    genomeseqs = kevlar.seqio.parse_seq_dict(seqfile)
+
+    samples = ('proband', 'mother', 'father')
+    outfiles = ['{:s}-{:s}.fasta'.format(args.prefix, s) for s in samples]
+    outstreams = [kevlar.open(outfile, 'w') for outfile in outfiles]
+
+    vcfout = None
+    if args.vcf:
+        vcfout = kevlar.open(args.vcf, 'w')
+
+    mutator = gentrio(genomeseqs, outstreams, ninh=args.inherited,
+                      ndenovo=args.de_novo, seed=args.seed)
+    for variant in mutator:
+        if vcfout:
+            print(variant.vcf, file=vcfout)

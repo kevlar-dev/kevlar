@@ -18,6 +18,7 @@ from . import filter
 from . import reaugment
 from . import assemble
 from . import mutate
+from . import gentrio
 from . import partition
 from . import localize
 from . import call
@@ -32,6 +33,7 @@ mains = {
     'reaugment': kevlar.reaugment.main,
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
+    'gentrio': kevlar.gentrio.main,
     'partition': kevlar.partition.main,
     'localize': kevlar.localize.main,
     'call': kevlar.call.main,
@@ -47,6 +49,7 @@ subparser_funcs = {
     'reaugment': reaugment.subparser,
     'assemble': assemble.subparser,
     'mutate': mutate.subparser,
+    'gentrio': gentrio.subparser,
     'partition': partition.subparser,
     'localize': localize.subparser,
     'call': call.subparser,
