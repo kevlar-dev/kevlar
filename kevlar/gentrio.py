@@ -202,7 +202,9 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
     for seqid, sequence in sequences.items():
         for ind in range(3):  # proband mother father
             haploseqs = [str(sequence), str(sequence)]
-            for variant in variants:
+            for n, variant in enumerate(variants, 1):
+                if n % 10 == 0:
+                    print(seqid, ind, n, file=sys.stderr, flush=True)
                 if variant.seqid != seqid:
                     continue
                 genotype = variant.genotypes[ind]
@@ -225,8 +227,16 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
 
 
 def main(args):
+    timer = kevlar.Timer()
+    timer.start()
+
+    timer.start('loadgenome')
+    print('[kevlar::gentrio] Loading genome...', end='', file=sys.stderr)
     seqfile = kevlar.open(args.genome, 'r')
     genomeseqs = kevlar.seqio.parse_seq_dict(seqfile)
+    elapsed = timer.stop('loadgenome')
+    print('done! ({:.3f} seconds elapsed)'.format(elapsed), file=sys.stderr)
+
 
     samples = ('proband', 'mother', 'father')
     outfiles = ['{:s}-{:s}.fasta'.format(args.prefix, s) for s in samples]
@@ -238,9 +248,19 @@ def main(args):
         kevlar.vcf_header(vcfout, source='kevlar::gentrio', infoheader=True)
     mutator = gentrio(genomeseqs, outstreams, ninh=args.inherited,
                       ndenovo=args.de_novo, seed=args.seed)
+
+    timer.start('mutate')
+    print('[kevlar::gentrio] Generating and applying mutations...', end='',
+          file=sys.stderr)
     for variant in mutator:
         if vcfout:
             print(variant.vcf, file=vcfout)
+    elapsed = timer.stop('mutate')
+    print('done! ({:.3f} seconds elapsed)'.format(elapsed), file=sys.stderr)
 
     for outstream in outstreams:
         outstream.close()
+
+    elapsed = timer.stop()
+    print('[kevlar::gentrio] Trio simulation complete; ', file=sys.stderr)
+    print(' total runtime: {:.3f} seconds'.format(elapsed), file=sys.stderr)
