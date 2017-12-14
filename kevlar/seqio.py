@@ -47,7 +47,7 @@ def parse_seq_dict(data):
     seqs = dict()
     for defline, sequence in parse_fasta(data):
         seqid = defline[1:].replace('\t', ' ').split(' ')[0]
-        assert seqid not in seqs
+        assert seqid not in seqs, seqid
         seqs[seqid] = sequence
     return seqs
 

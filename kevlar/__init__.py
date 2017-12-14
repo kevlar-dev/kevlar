@@ -44,6 +44,7 @@ from kevlar import localize
 from kevlar import call
 from kevlar import alac
 from kevlar import simplex
+from kevlar import gentrio
 from kevlar import cli
 
 # C extensions
@@ -116,6 +117,23 @@ def clean_subseqs(sequence, ksize):
     for subseq in re.split('[^ACGT]', sequence):
         if len(subseq) >= ksize:
             yield subseq
+
+
+def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
+    print('##fileFormat=VCFv', version, sep='', file=outstream)
+    print('##source=', source, sep='', file=outstream)
+    if infoheader:
+        print('##INFO=<GT,Number=3,Type=String,Description="Genotypes of each '
+              'individual in the trio (proband, mother, father)">',
+              file=outstream)
+    print('##INFO=<VW,Number=1,Type=String,Description="Genomic interval '
+          'bounding all k-mers that contain the alternate allele">',
+          file=outstream)
+    print('##INFO=<RW,Number=1,Type=String,Description="Genomic interval '
+          'bounding all k-mers that contain the reference allele">',
+          file=outstream)
+    print('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO',
+          sep='\t', file=outstream)
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

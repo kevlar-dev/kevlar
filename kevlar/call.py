@@ -33,6 +33,14 @@ class Variant(object):
             self.info[key] = value
 
     @property
+    def seqid(self):
+        return self._seqid
+
+    @property
+    def position(self):
+        return self._pos
+
+    @property
     def vcf(self):
         """Print variant to VCF."""
         attrstr = '.'
@@ -65,13 +73,13 @@ class Variant(object):
         interval in the proband contig that encompasses all k-mers overlapping
         the variant.
 
-        NNNNNNNNNNNNNNNNNANNNNNNNNNNNNNNNNNNN
-                    NNNNNA
-                     NNNNAN
-                      NNNANN
-                       NNANNN
-                        NANNNN
-                         ANNNNN
+        GCCTAGTTAGCTAACGTCCCGATCACTGTGTCACTGC
+                    .....A
+                     ....A.
+                      ...A..
+                       ..A...
+                        .A....
+                         A.....
                          |        <-- position of variant
                     [---------]   <-- variant window, interval (inclusive)
                                       encompassing all 6-mers that overlap the
@@ -93,6 +101,13 @@ class Variant(object):
             return keyvaluepair
         else:
             return value
+
+    @property
+    def genotypes(self):
+        gt = self.attribute('GT')
+        if not gt:
+            return None
+        return tuple(gt.split(','))
 
 
 class VariantSNV(Variant):
