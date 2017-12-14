@@ -99,11 +99,11 @@ def mutate_deletion(sequence, position, length, ksize=31):
 
 
 def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
-    if not rng:
+    if rng is None:
         seed = random.randrange(sys.maxsize)
         print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
         rng = random.Random(seed)
-    elif isinstance(rng, int):
+    if isinstance(rng, int):
         rng = random.Random(rng)
 
     types = ['snv', 'ins', 'del']
@@ -113,7 +113,7 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
         raise NotImplementedError('feature pending')
 
     for _ in range(n):
-        seqid = rng.choice(list(sequences.keys()))
+        seqid = rng.choice(list(sorted(sequences.keys())))
         seq = sequences[seqid]
         seqlength = len(sequences[seqid])
         position = rng.randint(0, seqlength)
