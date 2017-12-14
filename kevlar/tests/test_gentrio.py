@@ -9,10 +9,16 @@
 
 from io import StringIO
 import pytest
-from random import randint
+import random
 import sys
 import kevlar
 from kevlar.tests import data_file
+
+
+def test_rng():
+    rng = random.Random(1776)
+    draws = [rng.randint(1, 100) for _ in range(5)]
+    assert draws == [80, 75, 14, 46, 21]
 
 
 @pytest.mark.parametrize('seq,pos,offset,refr,alt,refrwindow,altwindow', [
@@ -125,8 +131,8 @@ def test_gen_with_inversions():
 def test_sim_var_geno_smoketest():
     seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
     sequences = kevlar.seqio.parse_seq_dict(seqstream)
-    ninh = randint(1, 10)
-    ndenovo = randint(1, 10)
+    ninh = random.randint(1, 10)
+    ndenovo = random.randint(1, 10)
     simulator = kevlar.gentrio.simulate_variant_genotypes(
         sequences, ninh=ninh, ndenovo=ndenovo
     )
