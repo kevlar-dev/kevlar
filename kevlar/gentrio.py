@@ -11,6 +11,7 @@ from collections import defaultdict, namedtuple
 import random
 import sys
 import kevlar
+from kevlar import MutableString
 from kevlar.call import Variant
 
 
@@ -178,17 +179,14 @@ def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
 
 
 def apply_mutation(sequence, position, refr, alt):
-    prefix = sequence[:position]
     if len(refr) == len(alt):  # SNV
-        suffix = sequence[position+1:]
-        return prefix + alt + suffix
+        assert sequence[position] == refr
+        sequence[position] = alt
     elif len(refr) < len(alt):  # Insertion
-        suffix = sequence[position+1:]
-        return prefix + alt[1:] + suffix
+        sequence[position:position] = alt[1:]
     else:  # Deletion
         dellength = len(refr) - len(alt)
-        suffix = sequence[position+dellength:]
-        return prefix + suffix
+        del sequence[position:position+dellength]
 
 
 def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
@@ -201,7 +199,7 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
 
     for seqid, sequence in sequences.items():
         for ind in range(3):  # proband mother father
-            haploseqs = [str(sequence), str(sequence)]
+            haploseqs = [MutableString(sequence), MutableString(sequence)]
             for variant in variants:
                 if variant.seqid != seqid:
                     continue
@@ -210,7 +208,7 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
                 for hapindex in range(2):
                     if haplotypes[hapindex] == '0':
                         continue
-                    haploseqs[hapindex] = apply_mutation(
+                    apply_mutation(
                         haploseqs[hapindex], variant.position, variant._refr,
                         variant._alt
                     )
