@@ -11,6 +11,7 @@ from collections import defaultdict, namedtuple
 import random
 import sys
 import kevlar
+from kevlar import MutableString
 from kevlar.call import Variant
 
 
@@ -178,20 +179,18 @@ def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
 
 
 def apply_mutation(sequence, position, refr, alt):
-    prefix = sequence[:position]
     if len(refr) == len(alt):  # SNV
-        suffix = sequence[position+1:]
-        return prefix + alt + suffix
+        assert sequence[position] == refr
+        sequence[position] = alt
     elif len(refr) < len(alt):  # Insertion
-        suffix = sequence[position+1:]
-        return prefix + alt[1:] + suffix
+        sequence[position:position] = alt[1:]
     else:  # Deletion
         dellength = len(refr) - len(alt)
-        suffix = sequence[position+dellength:]
-        return prefix + suffix
+        del sequence[position:position+dellength]
 
 
-def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
+def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None, upint=100,
+            logstream=sys.stderr):
     assert len(outstreams) == 3
     mutator = simulate_variant_genotypes(
         sequences, ninh=ninh, ndenovo=ndenovo, rng=seed
@@ -201,8 +200,16 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
 
     for seqid, sequence in sequences.items():
         for ind in range(3):  # proband mother father
-            haploseqs = [str(sequence), str(sequence)]
-            for variant in variants:
+            haploseqs = [MutableString(sequence), MutableString(sequence)]
+            for n, variant in enumerate(variants, 1):
+                if n % upint == 0:  # pragma: no cover
+                    message = (
+                        '    sequence={seq} individual={ind} '
+                        'variantsprocessed={vp}'.format(
+                            seq=seqid, ind=ind, vp=n
+                        )
+                    )
+                    print(message, file=logstream, flush=True)
                 if variant.seqid != seqid:
                     continue
                 genotype = variant.genotypes[ind]
@@ -210,7 +217,7 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
                 for hapindex in range(2):
                     if haplotypes[hapindex] == '0':
                         continue
-                    haploseqs[hapindex] = apply_mutation(
+                    apply_mutation(
                         haploseqs[hapindex], variant.position, variant._refr,
                         variant._alt
                     )
@@ -225,8 +232,15 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None):
 
 
 def main(args):
+    timer = kevlar.Timer()
+    timer.start()
+
+    timer.start('loadgenome')
+    print('[kevlar::gentrio] Loading genome...', end='', file=sys.stderr)
     seqfile = kevlar.open(args.genome, 'r')
     genomeseqs = kevlar.seqio.parse_seq_dict(seqfile)
+    elapsed = timer.stop('loadgenome')
+    print('done! ({:.3f} seconds elapsed)'.format(elapsed), file=sys.stderr)
 
     samples = ('proband', 'mother', 'father')
     outfiles = ['{:s}-{:s}.fasta'.format(args.prefix, s) for s in samples]
@@ -236,11 +250,25 @@ def main(args):
     if args.vcf:
         vcfout = kevlar.open(args.vcf, 'w')
         kevlar.vcf_header(vcfout, source='kevlar::gentrio', infoheader=True)
-    mutator = gentrio(genomeseqs, outstreams, ninh=args.inherited,
-                      ndenovo=args.de_novo, seed=args.seed)
+    mutator = gentrio(
+        genomeseqs, outstreams, ninh=args.inherited, ndenovo=args.de_novo,
+        seed=args.seed, logstream=args.logfile
+    )
+
+    timer.start('mutate')
+    print('[kevlar::gentrio] Begin generating and applying mutations:',
+          file=sys.stderr)
     for variant in mutator:
         if vcfout:
             print(variant.vcf, file=vcfout)
+    elapsed = timer.stop('mutate')
+    print('[kevlar::gentrio] Done applying mutations! ', end='',
+          file=sys.stderr)
+    print('({:.3f} seconds elapsed)'.format(elapsed), file=sys.stderr)
 
     for outstream in outstreams:
         outstream.close()
+
+    elapsed = timer.stop()
+    print('[kevlar::gentrio] Trio simulation complete; ', file=sys.stderr)
+    print(' total runtime: {:.3f} seconds'.format(elapsed), file=sys.stderr)

@@ -15,6 +15,7 @@ from tempfile import mkdtemp
 from shutil import rmtree
 import sys
 import kevlar
+from kevlar import MutableString
 from kevlar.tests import data_file
 
 
@@ -166,21 +167,32 @@ def test_sim_var_geno():
 
 
 def test_apply_mut_snv():
-    contig = 'ACGTACGTACGT'
-    assert kevlar.gentrio.apply_mutation(contig, 5, 'C', 'G') == 'ACGTAGGTACGT'
-    assert kevlar.gentrio.apply_mutation(contig, 5, 'C', 'A') == 'ACGTAAGTACGT'
-    assert kevlar.gentrio.apply_mutation(contig, 0, 'A', 'T') == 'TCGTACGTACGT'
+    contig = MutableString('ACGTACGTACGT')
+
+    kevlar.gentrio.apply_mutation(contig, 5, 'C', 'G')
+    assert contig == 'ACGTAGGTACGT'
+
+    kevlar.gentrio.apply_mutation(contig, 5, 'G', 'A')
+    assert contig == 'ACGTAAGTACGT'
+
+    kevlar.gentrio.apply_mutation(contig, 0, 'A', 'T')
+    assert contig == 'TCGTAAGTACGT'
 
 
 def test_apply_mut_ins():
-    contig = 'ACGTACGTACGT'
-    mutcontig = kevlar.gentrio.apply_mutation(contig, 5, 'C', 'CAAAA')
-    assert mutcontig == 'ACGTAAAAAGTACGT'
+    contig = MutableString('ACGTACGTACGT')
+    kevlar.gentrio.apply_mutation(contig, 5, 'A', 'AAAAA')
+    assert contig == 'ACGTAAAAACGTACGT'
+
+    contig = MutableString('CTTGAGACTTAGTAAAACCGTC')
+    kevlar.gentrio.apply_mutation(contig, 7, 'A', 'ATTCTTGTT')
+    assert contig == 'CTTGAGATTCTTGTTCTTAGTAAAACCGTC'
 
 
 def test_apply_mut_del():
-    contig = 'ACGTACGTACGT'
-    assert kevlar.gentrio.apply_mutation(contig, 5, 'ACGTAC', 'A') == 'ACGTAGT'
+    contig = MutableString('ACGTACGTACGT')
+    kevlar.gentrio.apply_mutation(contig, 5, 'ACGTAC', 'A')
+    assert contig == 'ACGTAGT'
 
 
 def test_gentrio_smoketest():
