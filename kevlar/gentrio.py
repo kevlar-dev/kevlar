@@ -202,7 +202,7 @@ def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None, upint=100,
         for ind in range(3):  # proband mother father
             haploseqs = [MutableString(sequence), MutableString(sequence)]
             for n, variant in enumerate(variants, 1):
-                if n % upint == 0:
+                if n % upint == 0:  # pragma: no cover
                     message = (
                         '    sequence={seq} individual={ind} '
                         'variantsprocessed={vp}'.format(
