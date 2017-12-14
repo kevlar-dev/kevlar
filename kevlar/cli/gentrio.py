@@ -25,6 +25,6 @@ def subparser(subparsers):
     subparser.add_argument('--prefix', metavar='PFX', default='trio',
                            help='prefix for output fasta files; default is '
                            '"trio"')
-    subparser.add_argument('-s', '--seed', metavar='S', default=None,
+    subparser.add_argument('-s', '--seed', metavar='S', default=None, type=int,
                            help='seed for random number generator')
     subparser.add_argument('genome', help='genome to mutate')
