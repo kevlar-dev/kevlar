@@ -21,8 +21,8 @@ index_to_nucl = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 """
 Viable inheritance scenarios
 
-Each scenario is a 3-tuple with showing the genotype of the trio for a
-particular variant (child, mother, father).
+Each scenario is a 3-tuple showing the genotype of the trio for a particular
+variant (child, mother, father).
 - 0 refers to homozygous reference (0/0)
 - 1 refers to heterzygous (0/1 or 1/0)
 - 2 refers to homozygous alternate (1/1)
@@ -236,8 +236,13 @@ def main(args):
     if args.vcf:
         vcfout = kevlar.open(args.vcf, 'w')
 
+    if vcfout:
+        kevlar.vcf_header(vcfout, source='kevlar::gentrio', infoheader=True)
     mutator = gentrio(genomeseqs, outstreams, ninh=args.inherited,
                       ndenovo=args.de_novo, seed=args.seed)
     for variant in mutator:
         if vcfout:
             print(variant.vcf, file=vcfout)
+
+    for outstream in outstreams:
+        outstream.close()
