@@ -37,6 +37,14 @@ class VCFWriter(object):
             file=fh
         )
         print(
+            '##INFO=<ID=CS,Number=1,Type=String,Description="Contig sequence '
+            'used to make variant call">', file=fh
+        )
+        print(
+            '##INFO=<ID=NC,Number=1,Type=String,Description="Explanation of '
+            'why a contig alignment results in a no-call">', file=fh
+        )
+        print(
             '##INFO=<ID=VW,Number=1,Type=String,Description="Variant window, '
             'bounding all k-mers that contain the alternate allele">', file=fh
         )
@@ -133,6 +141,21 @@ class Variant(object):
         else:
             self.sampledata[sample][key] = value_to_store
 
+    def __str__(self):
+        pos = self._pos + 1
+        if len(self._refr) > len(self._alt):
+            # Deletion
+            dellength = len(self._refr) - len(self._alt)
+            return '{:s}:{:d}:{:d}D'.format(self._seqid, pos, dellength)
+        elif len(self._refr) < len(self._alt):
+            # Insertion
+            insertion = self._alt[1:]
+            return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
+        else:
+            # SNV
+            return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
+                                                 self._refr, self._alt)
+
     @property
     def seqid(self):
         return self._seqid
@@ -148,9 +171,9 @@ class Variant(object):
         if len(self.info) > 0:
             kvpairs = list()
             for key in sorted(self.info):
-                if key != 'QS':
+                if key != 'CS':
                     kvpairs.append(self.attribute(key, pair=True))
-            queryseq = self.attribute('QS', pair=True)
+            queryseq = self.attribute('CS', pair=True)
             if queryseq:
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)

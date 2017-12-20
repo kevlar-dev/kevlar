@@ -121,7 +121,7 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
     print(out)
     cigars = list()
     for line in out.strip().split('\n'):
-        cigarmatch = re.search('CG=([^;\n]+)', line)
+        cigarmatch = re.search('CIGAR=([^;\n]+)', line)
         if cigarmatch:
             cigar = cigarmatch.group(1)
             cigars.append(cigar)
@@ -129,13 +129,13 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
 
 
 def test_snv_obj():
-    snv = kevlar.call.VariantSNV('scaffold42', 10773, 'A', 'G')
+    snv = kevlar.call.Variant('scaffold42', 10773, 'A', 'G')
     assert str(snv) == 'scaffold42:10773:A->G'
     vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
     assert snv.vcf == '\t'.join(vcfvalues)
     assert snv.cigar is None
 
-    snv2 = kevlar.call.VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    snv2 = kevlar.call.Variant('chr5', 500, 'T', 'G', CIGAR='10D200M10D')
     assert snv2.cigar == '10D200M10D'
     assert snv2.window is None
 
@@ -150,12 +150,12 @@ def test_indel_obj():
     output is increased by 1 to transform to a 1-based system where the shared
     nucleotide is the point of reference.
     """
-    indel1 = kevlar.call.VariantIndel('chr3', 8998622, 'GATTACA', 'G')
+    indel1 = kevlar.call.Variant('chr3', 8998622, 'GATTACA', 'G')
     assert str(indel1) == 'chr3:8998623:6D'
     vcfvalues = ['chr3', '8998623', '.', 'GATTACA', 'G', '.', 'PASS', '.']
     assert indel1.vcf == '\t'.join(vcfvalues)
 
-    indel2 = kevlar.call.VariantIndel('chr6', 75522411, 'G', 'GATTACA')
+    indel2 = kevlar.call.Variant('chr6', 75522411, 'G', 'GATTACA')
     assert str(indel2) == 'chr6:75522412:I->ATTACA'
     vcfvalues = ['chr6', '75522412', '.', 'G', 'GATTACA', '.', 'PASS', '.']
     assert indel2.vcf == '\t'.join(vcfvalues)
@@ -224,7 +224,7 @@ def test_nocall():
     assert len(variants) == 1
     assert variants[0].vcf == (
         'yourchr\t801\t.\t.\t.\t.\t.\t'
-        'CG=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;QN=contig4:cc=1;'
-        'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
+        'CIGAR=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;'
+        'CS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
         'TGCAAGAAAAT'
     )
