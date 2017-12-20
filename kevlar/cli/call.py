@@ -29,6 +29,29 @@ def subparser(subparsers):
     score_args.add_argument('-E', '--extend', type=int, default=0, metavar='E',
                             help='gap extension penalty; default is 0')
 
+    like_args = subparser.add_argument_group('Likelihood filtering')
+    like_args.add_argument('--like-filter', action='store_true',
+                           help='compute likelihoods for all variant calls')
+    like_args.add_argument('--mu', type=float, default=[30.0], nargs='+',
+                           metavar='μ', help='mean k-mer abundance (default: '
+                           '30.0); can provide a single value for all samples '
+                           'or 1 value per sample')
+    like_args.add_argument('--sigma', type=float, default=[8.0], nargs='+',
+                           metavar='σ', help='k-mer abundance standard '
+                           'deviation (default: 8.0); can provide a single '
+                           'value for all samples or 1 value per sample')
+    like_args.add_argument('--epsilon', type=float, default=[0.01], nargs='+',
+                           metavar='ε', help='error rate (default: 0.01); can '
+                           'provide a single value for all samples or 1 value '
+                           'per sample')
+    like_args.add_argument('-r', '--refr', metavar='NT',
+                           help='nodetable of reference genome')
+    like_args.add_argument('--case', metavar='CT',
+                           help='counttable of proband k-mer counts')
+    like_args.add_argument('--ctrl', metavar='CT', nargs='+',
+                           help='counttables of parent k-mer counts, 1 per '
+                           'sample')
+
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')

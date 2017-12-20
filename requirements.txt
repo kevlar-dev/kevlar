@@ -1,4 +1,5 @@
 pandas
 pysam>=0.11.2
 networkx>=2.0
+scipy
 git+https://github.com/dib-lab/khmer.git

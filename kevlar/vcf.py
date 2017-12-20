@@ -25,9 +25,9 @@ class VCFWriter(object):
         self._source = source
         self._refr = refr
 
-    def write_header(fh=sys.stdout):
+    def write_header(self, fh=sys.stdout):
         print('##fileformat=VCFv4.2', file=fh)
-        print('##fileDate', date().isoformat(), sep='=', file=fh)
+        print('##fileDate', date.today().isoformat(), sep='=', file=fh)
         print('##source', self._source, sep='=', file=fh)
         if self._refr:
             print('##reference', self._refr, sep='=', file=fh)
@@ -37,16 +37,21 @@ class VCFWriter(object):
             file=fh
         )
         print(
+            '##INFO=<ID=VW,Number=1,Type=String,Description="Variant window, '
+            'bounding all k-mers that contain the alternate allele">', file=fh
+        )
+        print(
             '##INFO=<ID=CS,Number=1,Type=String,Description="Contig sequence '
             'used to make variant call">', file=fh
         )
         print(
-            '##INFO=<ID=NC,Number=1,Type=String,Description="Explanation of '
-            'why a contig alignment results in a no-call">', file=fh
+            '##INFO=<ID=CIGAR,Number=1,Type=String,Description="CIGAR string '
+            'describing how to align an alternate allele contig to the '
+            'reference allele">', file=fh
         )
         print(
-            '##INFO=<ID=VW,Number=1,Type=String,Description="Variant window, '
-            'bounding all k-mers that contain the alternate allele">', file=fh
+            '##INFO=<ID=NC,Number=1,Type=String,Description="Explanation of '
+            'why a contig alignment results in a no-call">', file=fh
         )
         print(
             '##INFO=<ID=DN,Number=1,Type=Float,Description="Log likelihood '
@@ -108,7 +113,10 @@ class VCFWriter(object):
                     msg += ' ({:s} vs {:s})'.format(outfmt, fmtstr)
                     raise VariantAnnotationError(msg)
             format_fields.append(':'.join(values))
-        print(mandatory_fields, outfmt, *format_fields, sep='\t', file=fh)
+        print(mandatory_fields, end='', file=fh)
+        if len(format_fields) > 0:
+            print(outfmt, *format_fields, sep='\t', end='', file=fh)
+        print('\n', end='', file=fh)
 
 
 class Variant(object):
