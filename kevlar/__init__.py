@@ -25,6 +25,7 @@ from kevlar import seqio
 from kevlar import overlap
 from kevlar import counting
 from kevlar import sketch
+from kevlar import vcf
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
