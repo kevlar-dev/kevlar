@@ -161,7 +161,8 @@ def likelihood_false(altabunds, error=0.01):
 
 
 def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
-                        mean=30.0, sd=8.0, error=0.01):
+                        mean=30.0, sd=8.0, error=0.01, caselabel=None,
+                        ctrllabels=None):
     window = variant.info['VW']
     refrwindow = variant.info['VW']
     if window is None or refrwindow is None:
@@ -175,6 +176,10 @@ def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
 
     altabunds = get_abundances(altkmers, casecounts, controlcounts)
     refrabunds = get_abundances(refrkmers, casecounts, controlcounts)
+    samplelabels = [caselabel] + ctrllabels
+    for label, abundlist in zip(samplelabels, altabunds):
+        abundstr = ','.join([str(a) for a in abundlist])
+        variant.format(label, 'AA', abundstr)
 
     variant.info['FP'] = likelihood_false(altabunds, error=error)
     variant.info['DN'] = likelihood_denovo(altabunds, refrabunds, mean=mean,
@@ -309,7 +314,7 @@ def align_both_strands(targetseq, queryseq, match=1, mismatch=2, gapopen=5,
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
          ksize=31, casecounts=None, controlcounts=None, refr=None, mu=30.0,
-         sigma=8.0, epsilon=0.01):
+         sigma=8.0, epsilon=0.01, caselabel=None, ctrllabels=None):
     """
     Wrap the `kevlar call` procedure as a generator function.
 
@@ -357,7 +362,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
             if dolike:
                 compute_likelihoods(
                     variant, casecounts, controlcounts, refr=refr, mean=mu,
-                    sd=sigma, error=epsilon
+                    sd=sigma, error=epsilon, caselabel=caselabel,
+                    ctrllables=ctrllabels
                 )
         varcalls.append(variant)
 
@@ -375,15 +381,26 @@ def main(args):
     queryseqs = [record for record in qinstream]
     targetseqs = [record for record in khmer.ReadParser(args.targetseq)]
 
+    caselabel = None
+    ctrllabels = None
     if args.like_filter:
         refr = khmer.Nodetable.load(args.refr)
         casecounts = khmer.Counttable.load(args.case)
         ctrlcounts = [khmer.Counttable.load(c) for c in args.control]
+        caselabel = args.case_label if args.case_label else 'Case'
+        writer.register_sample(caselabel)
+        if args.ctrl_labels:
+            ctrllabels = args.ctrl_labels.split(',')
+        else:
+            numcontrols = len(args.control)
+            ctrllabels = ['Control' + str(i+1) for i in range(numcontrols)]
+        for label in ctrllabels:
+            writer.register_sample(label)
 
     caller = call(
         targetseqs, queryseqs, args.match, args.mismatch, args.open,
         args.extend, args.ksize, args.case, args.ctrl, args.refr, args.mu,
-        args.sigma, args.epsilon,
+        args.sigma, args.epsilon, caselabel, ctrllabels
     )
 
     for varcall in caller:
