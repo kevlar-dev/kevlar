@@ -19,6 +19,34 @@ from kevlar import MutableString
 from kevlar.tests import data_file
 
 
+def test_weights_str_to_dict():
+    from kevlar.gentrio import weights_str_to_dict as ws2d
+
+    def same_dict(d1, d2):
+        if d1.keys() != d2.keys():
+            return False
+        for key, d1val in d1.items():
+            d2val = d2[key]
+            if abs(d1val - d2val) > 0.0001:
+                return False
+        return True
+
+    assert same_dict(ws2d('snv=1.0'), {'snv': 1.0})
+    assert same_dict(ws2d('snv=3.14'), {'snv': 1.0})
+    assert same_dict(
+        ws2d('snv=0.8,ins=0.1,del=0.1'),
+        {'snv': 0.8, 'ins': 0.1, 'del': 0.1}
+    )
+    assert same_dict(
+        ws2d('snv=0.8,ins=0.2,del=0.2'),
+        {'snv': 0.8 / 1.2, 'ins': 0.2 / 1.2, 'del': 0.2 / 1.2}
+    )
+
+    with pytest.raises(ValueError) as ve:
+        ws2d('snv=0.8;ins=0.2;del=0.2')
+    assert 'too many values to unpack' in str(ve)
+
+
 def test_rng():
     rng = random.Random(1776)
     draws = [rng.randint(1, 100) for _ in range(5)]
@@ -100,7 +128,8 @@ def test_deletion(seq, pos, length, refr, alt, rwindow, awindow):
 def test_gen_muts():
     seqstream = kevlar.open(data_file('100kbx3.fa.gz'), 'r')
     sequences = kevlar.seqio.parse_seq_dict(seqstream)
-    mutator = kevlar.gentrio.generate_mutations(sequences, rng=42)
+    w = {'snv': 0.7, 'ins': 0.15, 'del': 0.15}
+    mutator = kevlar.gentrio.generate_mutations(sequences, weights=w, rng=42)
     mutations = list(mutator)
 
     refrs = [m._refr for m in mutations]
@@ -128,9 +157,14 @@ def test_gen_muts():
     assert mutations[0].genotypes is None
 
 
-def test_gen_with_inversions():
-    with pytest.raises(NotImplementedError):
-        list(kevlar.gentrio.generate_mutations({'1': 'ACGT'}, inversions=True))
+@pytest.mark.parametrize('seed', [None, 1101097205845186752])
+def test_gen_with_inversions(seed):
+    seqs = {'1': 'ACGT'}
+    w = {'inv': 1.0}
+    with pytest.raises(ValueError) as ve:
+        # Invoke the mutator!!!
+        list(kevlar.gentrio.generate_mutations(seqs, weights=w, rng=seed))
+    assert 'unknown mutation type inv' in str(ve)
 
 
 def test_sim_var_geno_smoketest():
@@ -143,6 +177,32 @@ def test_sim_var_geno_smoketest():
     )
     variants = list(simulator)
     assert len(variants) == ninh + ndenovo
+
+
+def test_gentrio_cli_smoketest_weights():
+    tempdir = mkdtemp()
+    prefix = os.path.join(tempdir, 'outfile')
+    vcffile = prefix + '.vcf'
+    ninh = random.randint(1, 10)
+    ndenovo = random.randint(1, 10)
+    weights = 'ins=0.5,del=0.5'
+    arglist = [
+        'gentrio', '--prefix', prefix, '--weights', weights, '--vcf', vcffile,
+        '--inherited', str(ninh), '--de-novo', str(ndenovo),
+        data_file('100kbx3.fa.gz')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.gentrio.main(args)
+
+    with open(vcffile, 'r') as vcf:
+        for line in vcf:
+            if line.strip() == '' or line.startswith('#'):
+                continue
+            values = line.split('\t')
+            refr, alt = values[3:5]
+            print('DEBUG', refr, alt)
+            assert len(refr) != len(alt)
+    rmtree(tempdir)
 
 
 def test_sim_var_geno():
