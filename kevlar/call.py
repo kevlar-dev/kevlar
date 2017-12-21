@@ -60,7 +60,6 @@ def get_abundances(kmers, casecounts, controlcounts):
     return abunds
 
 
-
 def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
     """
     Compute the likelihood that a variant is de novo.
@@ -141,6 +140,59 @@ def likelihood_false(altabunds, error=0.01):
         for abund in abundlist:
             logsum += abund * log10(e)
     return logsum
+
+
+def abund_prob(genotype, abundance, mean, sd, error):
+    """
+    Calculate conditional k-mer abundance probability
+
+    Compute the probability of the given k-mer abundance conditioned the given
+    genotype (copy number). The `genotype` variable is one of (0, 1, 2) and
+    represents the number of assumed allele copies. The `mean` and `sd`
+    variables describe a normal distribution of observed abundances of k-mers
+    with copy number 2. The `error` parameter is the error rate.
+    """
+    if genotype == 0:
+        return error ** abundance  # Fails for large abundances
+    if genotype == 1:
+        return scipy.stats.norm.cdf(abund, mean / 2, sd / 2)
+    if genotype == 2:
+        return scipy.stats.norm.cdf(abund, mean, sd)
+
+
+def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
+    """
+    Compute the likelihood that a variant is inherited.
+
+    There are 15 valid inheritance scenarios, 11 of which (shown below) result
+    in the proband carrying at least one copy of the alternate allele. Sum
+    probabilities across all these different scenarios to derive an aggregate
+    likelihood that the variant is inherited.
+    """
+    scenarios = [
+        (1, 0, 1),
+        (1, 0, 2),
+        (1, 1, 0),
+        (1, 1, 1),
+        (1, 1, 2),
+        (1, 2, 0),
+        (1, 2, 1),
+        (2, 1, 1),
+        (2, 1, 2),
+        (2, 2, 1),
+        (2, 2, 2),
+    ]
+
+    summation = 0.0
+    for g_c, g_m, g_f in scenarios:
+        product = 1.0 / 15.0  # Naively, each scenario has a 1/15 probability
+        abundances = zip(altabunds[0], altabunds[1], altabunds[2])
+        for a_c, a_m, a_f in abundances:
+            product *= abund_prob(g_c, a_c, mean, sd, error)
+            product *= abund_prob(g_m, a_m, mean, sd, error)
+            product *= abund_prob(g_f, a_f, mean, sd, error)
+        summation += product
+    return 15.0 / 11.0 * summation  # 1 / (11/15)
 
 
 # def likelihood_inherited():
