@@ -60,6 +60,21 @@ def get_abundances(kmers, casecounts, controlcounts):
     return abunds
 
 
+def set_error_rates(error, nsamples):
+    if isinstance(error, float):
+        errors = [error] * nsamples
+    elif isinstance(error, list):
+        assert len(error) == nsamples
+        for e in error:
+            assert isinstance(e, float)
+        errors = error
+    else:
+        message = 'variable {} doesn\'t quack like a float'.format(error)
+        message += ' or a list of floats'
+        raise ValueError(message)
+    return errors
+
+
 def abund_log_prob(genotype, abundance, mean, sd, error):
     """
     Calculate conditional k-mer abundance probability
@@ -98,28 +113,15 @@ def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
     single float, the same error rate will be applied to all control samples.
     If it is a list of floats, it must contain 1 value per control sample.
     """
-    if isinstance(error, float):
-        errors = [error] * len(altabunds)
-    elif isinstance(error, list):
-        assert len(altabunds) == len(error)
-        for e in error:
-            assert isinstance(e, float)
-        errors = error
-    else:
-        message = 'variable {} doesn\'t quack like a float'.format(error)
-        message += ' or a list of floats'
-        raise ValueError(message)
-
+    errors = set_error_rates(error, nsamples=len(refrabunds) + 1)
     logsum = 0.0
     for alt, refr in zip(altabunds[0], refrabunds[0]):
         logsum += abund_log_prob(1, alt, mean=mean, sd=sd)
         logsum += abund_log_prob(1, refr, mean=mean, sd=sd)
-
     for i in range(len(controlcounts)):
         for a, r, e in zip(altabunds[i+1], refrabunds[i+1], errors):
             logsum += abund_log_prob(0, a, error=e)
             logsum += abund_log_prob(2, r, mean=mean, sd=sd)
-
     return logsum
 
 
@@ -141,18 +143,7 @@ def likelihood_false(altabunds, error=0.01):
     control/parental samples. If it is a list of floats, it must contain 1
     value per sample.
     """
-    if isinstance(error, float):
-        errors = [error] * len(altabunds)
-    elif isinstance(error, list):
-        assert len(altabunds) == len(error)
-        for e in error:
-            assert isinstance(e, float)
-        errors = error
-    else:
-        message = 'variable {} doesn\'t quack like a float'.format(error)
-        message += ' or a list of floats'
-        raise ValueError(message)
-
+    errors = set_error_rates(error, nsamples=len(altabunds))
     logsum = 0.0
     for abundlist, e in zip(altabunds, errors):
         for abund in abundlist:
@@ -168,6 +159,9 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
     in the proband carrying at least one copy of the alternate allele. Sum
     probabilities across all these different scenarios to derive an aggregate
     likelihood that the variant is inherited.
+
+    The other likelihood calculations are implemented to handle an arbitrary
+    number of controls, but this can only handle trios.
     """
     scenarios = [
         (1, 0, 1), (1, 0, 2),
@@ -176,20 +170,19 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
         (2, 1, 1), (2, 1, 2),
         (2, 2, 1), (2, 2, 2),
     ]
-
+    errors = set_error_rates(error, nsamples=3)
     logsum = 0.0
     abundances = zip(altabunds[0], altabunds[1], altabunds[2])
     for a_c, a_m, a_f in abundances:
         maxval = None
         for g_c, g_m, g_f in scenarios:
-            testsum = calc_log_prob(g_c, a_c, mean, sd, error) + \
-                      calc_log_prob(g_m, a_m, mean, sd, error) + \
-                      calc_log_prob(g_f, a_f, mean, sd, error) + \
+            testsum = calc_log_prob(g_c, a_c, mean, sd, errors[0]) + \
+                      calc_log_prob(g_m, a_m, mean, sd, errors[1]) + \
+                      calc_log_prob(g_f, a_f, mean, sd, errors[2]) + \
                       log10(1.0 / 15.0)
             if maxval is None or testsum > maxval:
                 maxval = testsum
         logsum += maxval
-
     return log10(15.0 / 11.0) * logsum  # 1 / (11/15)
 
 
