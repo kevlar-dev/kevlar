@@ -60,6 +60,27 @@ def get_abundances(kmers, casecounts, controlcounts):
     return abunds
 
 
+def abund_log_prob(genotype, abundance, mean, sd, error):
+    """
+    Calculate conditional k-mer abundance probability
+
+    Compute the log (base 10) probability of the given k-mer abundance
+    conditioned on the given genotype (copy number). The `genotype` variable
+    represents the number of assumed allele copies and is one of {0, 1, 2}
+    (corresponding to genotypes {0/0, 0/1, and 1/1}). The `mean` and `sd`
+    variables describe a normal distribution of observed abundances of k-mers
+    with copy number 2. The `error` parameter is the error rate.
+    """
+    if genotype == 0:
+        return abundance * log10(error)
+    if genotype == 1:
+        p = scipy.stats.norm.cdf(abund, mean / 2, sd / 2)
+        return log10(p)
+    if genotype == 2:
+        p = scipy.stats.norm.cdf(abund, mean, sd)
+        return log10(p)
+
+
 def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
     """
     Compute the likelihood that a variant is de novo.
@@ -91,16 +112,13 @@ def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
 
     logsum = 0.0
     for alt, refr in zip(altabunds[0], refrabunds[0]):
-        aprob = scipy.stats.norm.cdf(alt, mean / 2, sd / 2)
-        logsum += log10(aprob)
-        rprob = scipy.stats.norm.cdf(refr, mean / 2, sd / 2)
-        logsum += log10(rprob)
+        logsum += abund_log_prob(1, alt, mean=mean, sd=sd)
+        logsum += abund_log_prob(1, refr, mean=mean, sd=sd)
 
     for i in range(len(controlcounts)):
         for a, r, e in zip(altabunds[i+1], refrabunds[i+1], errors):
-            logsum += a * log10(e)
-            prob = scipy.stats.norm.cdf(r, mean, sd)
-            logsum += log10(prob)
+            logsum += abund_log_prob(0, a, error=e)
+            logsum += abund_log_prob(2, r, mean=mean, sd=sd)
 
     return logsum
 
@@ -138,26 +156,8 @@ def likelihood_false(altabunds, error=0.01):
     logsum = 0.0
     for abundlist, e in zip(altabunds, errors):
         for abund in abundlist:
-            logsum += abund * log10(e)
+            logsum += abund_log_prob(0, abund, error=e)
     return logsum
-
-
-def abund_prob(genotype, abundance, mean, sd, error):
-    """
-    Calculate conditional k-mer abundance probability
-
-    Compute the probability of the given k-mer abundance conditioned the given
-    genotype (copy number). The `genotype` variable is one of (0, 1, 2) and
-    represents the number of assumed allele copies. The `mean` and `sd`
-    variables describe a normal distribution of observed abundances of k-mers
-    with copy number 2. The `error` parameter is the error rate.
-    """
-    if genotype == 0:
-        return error ** abundance  # Fails for large abundances
-    if genotype == 1:
-        return scipy.stats.norm.cdf(abund, mean / 2, sd / 2)
-    if genotype == 2:
-        return scipy.stats.norm.cdf(abund, mean, sd)
 
 
 def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
@@ -170,46 +170,27 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
     likelihood that the variant is inherited.
     """
     scenarios = [
-        (1, 0, 1),
-        (1, 0, 2),
-        (1, 1, 0),
-        (1, 1, 1),
-        (1, 1, 2),
-        (1, 2, 0),
-        (1, 2, 1),
-        (2, 1, 1),
-        (2, 1, 2),
-        (2, 2, 1),
-        (2, 2, 2),
+        (1, 0, 1), (1, 0, 2),
+        (1, 1, 0), (1, 1, 1), (1, 1, 2),
+        (1, 2, 0), (1, 2, 1),
+        (2, 1, 1), (2, 1, 2),
+        (2, 2, 1), (2, 2, 2),
     ]
 
-    summation = 0.0
-    for g_c, g_m, g_f in scenarios:
-        product = 1.0 / 15.0  # Naively, each scenario has a 1/15 probability
-        abundances = zip(altabunds[0], altabunds[1], altabunds[2])
-        for a_c, a_m, a_f in abundances:
-            product *= abund_prob(g_c, a_c, mean, sd, error)
-            product *= abund_prob(g_m, a_m, mean, sd, error)
-            product *= abund_prob(g_f, a_f, mean, sd, error)
-        summation += product
-    return 15.0 / 11.0 * summation  # 1 / (11/15)
+    logsum = 0.0
+    abundances = zip(altabunds[0], altabunds[1], altabunds[2])
+    for a_c, a_m, a_f in abundances:
+        maxval = None
+        for g_c, g_m, g_f in scenarios:
+            testsum = calc_log_prob(g_c, a_c, mean, sd, error) + \
+                      calc_log_prob(g_m, a_m, mean, sd, error) + \
+                      calc_log_prob(g_f, a_f, mean, sd, error) + \
+                      log10(1.0 / 15.0)
+            if maxval is None or testsum > maxval:
+                maxval = testsum
+        logsum += maxval
 
-
-# def likelihood_inherited():
-#     # Valid inheritance scenarios
-#     vis = [
-#         (1, 0, 1),
-#         (1, 0, 2),
-#         (1, 1, 0),
-#         (1, 1, 1),
-#         (1, 1, 2),
-#         (1, 2, 0),
-#         (1, 2, 1),
-#         (2, 1, 1),
-#         (2, 1, 2),
-#         (2, 2, 1),
-#         (2, 2, 2),
-#     ]
+    return log10(15.0 / 11.0) * logsum  # 1 / (11/15)
 
 
 def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
