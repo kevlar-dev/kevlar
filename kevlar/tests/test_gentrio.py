@@ -164,7 +164,7 @@ def test_sim_var_geno():
 
     assert len(variants) == 4
     assert seqids == ['scaf3', 'scaf3', 'scaf3', 'scaf1']
-    assert positions == [4936, 57391, 86540, 68352]
+    assert positions == [4936, 57390, 86540, 68352]
     assert genotypes == [
         ('0/1', '0/1', '1/0'),
         ('1/0', '0/1', '0/0'),

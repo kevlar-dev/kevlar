@@ -142,12 +142,14 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
             refrseq, altseq, refrwindow, altwindow = mutate_insertion(
                 seq, position, length, duplpos, rng, ksize
             )
+            position -= 1
         else:
             assert muttype == 'del'
             length = rng.randint(5, 350)
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
             )
+            position -= 1
         yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
                       RW=refrwindow)
 
