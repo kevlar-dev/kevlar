@@ -111,16 +111,19 @@ def test_gen_muts():
 
     testrefrs = [
         'T', 'A', 'GAGAGGGTTACATACGCAGAAAAAGACACACGCTACTGCCCCGCATAGCC', 'A',
-        'C', 'A', 'A', 'C', 'CCAATTAACGTGGAAGCTCGGGGTACCAGCGGACTTAGTGTTCCCGTCT'
-        'TCGGGTTTAATACTATACAGGCCGCAGATACGGCGAACGACGACCCCTTAATTAGACGTGAATTCACTT'
-        'TAGCATCCTTGCTCCTTCCGAAAGACCCCTATGGAAGCAACTCCCGAAACCCCGAAAGGT', 'C'
+        'C', 'A', 'AGTTTGTCGACCTCGAACTTGCCGCC', 'A', 'T', 'C'
     ]
     testalts = [
-        'C', 'C', 'G', 'C', 'G', 'ACGCGGCATTACTTTCCCTTTTAATCGCATCCAGTAGTTACGGT'
-        'GTAAGAGCTCGAGCGATTTTAGGTGTCAAAGGGAATTATTGAGGAAGTCTGGTATGCTGGGATAACCTG'
-        'TACATCGACGGAATCTACCACCCTACACGGCCTAATACTCCCCGTTCCGTATACTGTATAGGACCTATA'
+        'C', 'C', 'G', 'C', 'G', 'ACGCTGCATTACTTTCCCTTTTAATGGCATCCAGTAGTTACGGT'
+        'GTAAGAGCTCGAGCGATTTTAGGTGTCAAAGGGAATTATTGAGGAAGTATGGTATGCTGGGATGACCTG'
+        'TACATCGACGGAATCTACCACCCTACTCGGCCTAATACTCCCCGTTCCGTATACTGTATAGGACCTATA'
         'ATGGTTACTGACTGAACGAGTCCTACACTTCATGTCGCTGTAACATGGCGGATGTCCCAGTTGTTGTGC'
-        'CGATATTCCCAATCTGTAAGTGTTCTATTCCGGC', 'C', 'T', 'C', 'T'
+        'AGATATTCCCAATCTGTAAGAGTTCTCTTCTGGC', 'A', 'T', 'TTTTCCTTGAGCTGTCTAGTG'
+        'CCGTAGGTGAACCTCGTGGATATTAAGGCGTACGGACCATAGAGAGCTACCTCTAAGAGGTCCGGGGAT'
+        'AGGTTCCGGTCGTTGGTACACCCTGTATACCCCGCGACAGTTTTGAGGTCACAGCGTAGAGGGTGTAAC'
+        'GCAGTATGCAGGATTGGGATGGATGTGGACTTTGTATAGGTAGTATGTGTTTTTG', 'CAAATCGCCT'
+        'TTACCTAATCGACAAATAGGTTCCGTTGTACTTGCTCTAACCGTCGGTGATTTGAACACTTTCCATGTT'
+        'ACCACACTAG'
     ]
 
     assert refrs == testrefrs
@@ -153,16 +156,20 @@ def test_sim_var_geno():
     )
 
     variants = list(simulator)
-    print('DEBUG', variants, file=sys.stderr)
+    seqids = [v.seqid for v in variants]
+    positions = [v.position for v in variants]
+    genotypes = [v.genotypes for v in variants]
+
+    print('DEBUG', seqids, positions, genotypes)
 
     assert len(variants) == 4
-    assert [v.seqid for v in variants] == ['scaf3', 'scaf3', 'scaf2', 'scaf2']
-    assert [v.position for v in variants] == [4936, 57391, 23670, 99928]
-    assert [v.genotypes for v in variants] == [
+    assert seqids == ['scaf3', 'scaf3', 'scaf3', 'scaf1']
+    assert positions == [4936, 57391, 86540, 68352]
+    assert genotypes == [
         ('0/1', '0/1', '1/0'),
-        ('1/0', '1/1', '0/0'),
+        ('1/0', '0/1', '0/0'),
         ('0/1', '0/0', '0/0'),
-        ('1/0', '0/0', '0/0'),
+        ('0/1', '0/0', '0/0')
     ]
 
 
@@ -259,3 +266,9 @@ def test_gentrio_cli(capsys):
     outlines = out.strip().split('\n')
     numvariants = sum([1 for line in outlines if not line.startswith('#')])
     assert numvariants == 30
+
+
+def test_mutagenize():
+    rng = random.Random(1123581321)
+    mutseq = kevlar.gentrio.mutagenize('GATTACA' * 3, rng, rate=0.1)
+    assert mutseq == 'GATAACAGATTACAGATTACG'
