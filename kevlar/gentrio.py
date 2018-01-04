@@ -82,6 +82,7 @@ def mutate_snv(sequence, position, offset, ksize=31):
 
 def mutate_insertion(sequence, position, length, duplpos, rng=None, ksize=31):
     duplseq = mutagenize(sequence[duplpos:duplpos + length], rng, rate=0.05)
+    print('DEBUG', duplseq, file=sys.stderr)
     refrseq = sequence[position - 1]
     altseq = refrseq + duplseq
 
@@ -142,14 +143,12 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
             refrseq, altseq, refrwindow, altwindow = mutate_insertion(
                 seq, position, length, duplpos, rng, ksize
             )
-            position -= 1
         else:
             assert muttype == 'del'
             length = rng.randint(5, 350)
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
             )
-            position -= 1
         yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
                       RW=refrwindow)
 

@@ -73,6 +73,18 @@ def test_insertion(seq, pos, length, duplpos, refr, alt, rwindow, awindow):
     assert awindow == testaw
 
 
+def test_insertion_rng():
+    seq = 'ATGCCTATAGATTCAGTAGTTACCAGAGGCAGTGGTGTTTGCCACGCCATTTCTACGCGA'
+    rng = random.Random(2018)
+    refr, alt, refrwindow, altwindow = kevlar.gentrio.mutate_insertion(
+        seq, position=19, length=5, duplpos=44, rng=rng, ksize=11
+    )
+    assert refr == 'G'
+    assert alt == 'GCCCCA'
+    assert refrwindow == 'GATTCAGTAGTTACCAGAGG'
+    assert altwindow == 'GATTCAGTAGCCCCATTACCAGAGG'
+
+
 @pytest.mark.parametrize('seq,pos,length,refr,alt,rwindow,awindow', [
     ('AACTAGCCTGCGGTCTGTGTTTCCCGACTTCTGAGTCATGGGGTTTCAATGCCTAT',
      5, 9, 'AGCCTGCGGT', 'A', 'ACTAGCCTGCGGTCTGT', 'ACTACTGT'),
@@ -164,7 +176,7 @@ def test_sim_var_geno():
 
     assert len(variants) == 4
     assert seqids == ['scaf3', 'scaf3', 'scaf3', 'scaf1']
-    assert positions == [4936, 57390, 86540, 68352]
+    assert positions == [4936, 57391, 86540, 68352]
     assert genotypes == [
         ('0/1', '0/1', '1/0'),
         ('1/0', '0/1', '0/0'),
