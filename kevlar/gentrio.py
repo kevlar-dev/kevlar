@@ -82,7 +82,6 @@ def mutate_snv(sequence, position, offset, ksize=31):
 
 def mutate_insertion(sequence, position, length, duplpos, rng=None, ksize=31):
     duplseq = mutagenize(sequence[duplpos:duplpos + length], rng, rate=0.05)
-    print('DEBUG', duplseq, file=sys.stderr)
     refrseq = sequence[position - 1]
     altseq = refrseq + duplseq
 
