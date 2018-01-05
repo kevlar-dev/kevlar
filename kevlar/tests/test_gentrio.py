@@ -73,6 +73,18 @@ def test_insertion(seq, pos, length, duplpos, refr, alt, rwindow, awindow):
     assert awindow == testaw
 
 
+def test_insertion_rng():
+    seq = 'ATGCCTATAGATTCAGTAGTTACCAGAGGCAGTGGTGTTTGCCACGCCATTTCTACGCGA'
+    rng = random.Random(2018)
+    refr, alt, refrwindow, altwindow = kevlar.gentrio.mutate_insertion(
+        seq, position=19, length=5, duplpos=44, rng=rng, ksize=11
+    )
+    assert refr == 'G'
+    assert alt == 'GCCCCA'
+    assert refrwindow == 'GATTCAGTAGTTACCAGAGG'
+    assert altwindow == 'GATTCAGTAGCCCCATTACCAGAGG'
+
+
 @pytest.mark.parametrize('seq,pos,length,refr,alt,rwindow,awindow', [
     ('AACTAGCCTGCGGTCTGTGTTTCCCGACTTCTGAGTCATGGGGTTTCAATGCCTAT',
      5, 9, 'AGCCTGCGGT', 'A', 'ACTAGCCTGCGGTCTGT', 'ACTACTGT'),
@@ -111,16 +123,19 @@ def test_gen_muts():
 
     testrefrs = [
         'T', 'A', 'GAGAGGGTTACATACGCAGAAAAAGACACACGCTACTGCCCCGCATAGCC', 'A',
-        'C', 'A', 'A', 'C', 'CCAATTAACGTGGAAGCTCGGGGTACCAGCGGACTTAGTGTTCCCGTCT'
-        'TCGGGTTTAATACTATACAGGCCGCAGATACGGCGAACGACGACCCCTTAATTAGACGTGAATTCACTT'
-        'TAGCATCCTTGCTCCTTCCGAAAGACCCCTATGGAAGCAACTCCCGAAACCCCGAAAGGT', 'C'
+        'C', 'A', 'AGTTTGTCGACCTCGAACTTGCCGCC', 'A', 'T', 'C'
     ]
     testalts = [
-        'C', 'C', 'G', 'C', 'G', 'ACGCGGCATTACTTTCCCTTTTAATCGCATCCAGTAGTTACGGT'
-        'GTAAGAGCTCGAGCGATTTTAGGTGTCAAAGGGAATTATTGAGGAAGTCTGGTATGCTGGGATAACCTG'
-        'TACATCGACGGAATCTACCACCCTACACGGCCTAATACTCCCCGTTCCGTATACTGTATAGGACCTATA'
+        'C', 'C', 'G', 'C', 'G', 'ACGCTGCATTACTTTCCCTTTTAATGGCATCCAGTAGTTACGGT'
+        'GTAAGAGCTCGAGCGATTTTAGGTGTCAAAGGGAATTATTGAGGAAGTATGGTATGCTGGGATGACCTG'
+        'TACATCGACGGAATCTACCACCCTACTCGGCCTAATACTCCCCGTTCCGTATACTGTATAGGACCTATA'
         'ATGGTTACTGACTGAACGAGTCCTACACTTCATGTCGCTGTAACATGGCGGATGTCCCAGTTGTTGTGC'
-        'CGATATTCCCAATCTGTAAGTGTTCTATTCCGGC', 'C', 'T', 'C', 'T'
+        'AGATATTCCCAATCTGTAAGAGTTCTCTTCTGGC', 'A', 'T', 'TTTTCCTTGAGCTGTCTAGTG'
+        'CCGTAGGTGAACCTCGTGGATATTAAGGCGTACGGACCATAGAGAGCTACCTCTAAGAGGTCCGGGGAT'
+        'AGGTTCCGGTCGTTGGTACACCCTGTATACCCCGCGACAGTTTTGAGGTCACAGCGTAGAGGGTGTAAC'
+        'GCAGTATGCAGGATTGGGATGGATGTGGACTTTGTATAGGTAGTATGTGTTTTTG', 'CAAATCGCCT'
+        'TTACCTAATCGACAAATAGGTTCCGTTGTACTTGCTCTAACCGTCGGTGATTTGAACACTTTCCATGTT'
+        'ACCACACTAG'
     ]
 
     assert refrs == testrefrs
@@ -153,16 +168,20 @@ def test_sim_var_geno():
     )
 
     variants = list(simulator)
-    print('DEBUG', variants, file=sys.stderr)
+    seqids = [v.seqid for v in variants]
+    positions = [v.position for v in variants]
+    genotypes = [v.genotypes for v in variants]
+
+    print('DEBUG', seqids, positions, genotypes)
 
     assert len(variants) == 4
-    assert [v.seqid for v in variants] == ['scaf3', 'scaf3', 'scaf2', 'scaf2']
-    assert [v.position for v in variants] == [4936, 57391, 23670, 99928]
-    assert [v.genotypes for v in variants] == [
+    assert seqids == ['scaf3', 'scaf3', 'scaf3', 'scaf1']
+    assert positions == [4936, 57391, 86540, 68352]
+    assert genotypes == [
         ('0/1', '0/1', '1/0'),
-        ('1/0', '1/1', '0/0'),
+        ('1/0', '0/1', '0/0'),
         ('0/1', '0/0', '0/0'),
-        ('1/0', '0/0', '0/0'),
+        ('0/1', '0/0', '0/0')
     ]
 
 
@@ -259,3 +278,9 @@ def test_gentrio_cli(capsys):
     outlines = out.strip().split('\n')
     numvariants = sum([1 for line in outlines if not line.startswith('#')])
     assert numvariants == 30
+
+
+def test_mutagenize():
+    rng = random.Random(1123581321)
+    mutseq = kevlar.gentrio.mutagenize('GATTACA' * 3, rng, rate=0.1)
+    assert mutseq == 'GATAACAGATTACAGATTACG'
