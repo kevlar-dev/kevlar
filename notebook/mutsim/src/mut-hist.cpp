@@ -74,7 +74,7 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
             args->muttype = optarg;
         }
         else if (c == 'y') {
-            args->memory = atoi(optarg);
+            args->memory = strtoul(optarg, NULL, 10);
         }
         else if (c == 'z') {
             args->delsize = atoi(optarg);
@@ -105,7 +105,7 @@ int main(int argc, const char **argv)
 
     timepoint alloc_start = std::chrono::system_clock::now();
     std::cerr << "# allocating counttable...";
-    std::vector<uint64_t> tablesizes = get_n_primes_near_x(args.memory / 4, 4);
+    std::vector<uint64_t> tablesizes = get_n_primes_near_x(4, args.memory / 4);
     Counttable counttable(args.ksize, tablesizes);
     timepoint alloc_end = std::chrono::system_clock::now();
     std::chrono::duration<double> alloc_elapsed = alloc_end - alloc_start;
