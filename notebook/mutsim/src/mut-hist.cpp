@@ -1,12 +1,11 @@
 #include <chrono>
 #include <getopt.h>
 #include <memory>
-#include "primes.hpp"
 #include "snv.hpp"
 #include "del.hpp"
 #include "read_parsers.hh"
 
-using namespace khmer;
+using namespace oxli;
 using namespace read_parsers;
 typedef Read Sequence;
 typedef std::chrono::time_point<std::chrono::system_clock> timepoint;
