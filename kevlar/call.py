@@ -75,7 +75,7 @@ def set_error_rates(error, nsamples):
     return errors
 
 
-def abund_log_prob(genotype, abundance, mean, sd, error):
+def abund_log_prob(genotype, abundance, mean=40.0, sd=8.0, error=0.01):
     """
     Calculate conditional k-mer abundance probability
 
@@ -89,10 +89,10 @@ def abund_log_prob(genotype, abundance, mean, sd, error):
     if genotype == 0:
         return abundance * log10(error)
     if genotype == 1:
-        p = scipy.stats.norm.cdf(abund, mean / 2, sd / 2)
+        p = scipy.stats.norm.cdf(abundance, mean / 2, sd / 2)
         return log10(p)
     if genotype == 2:
-        p = scipy.stats.norm.cdf(abund, mean, sd)
+        p = scipy.stats.norm.cdf(abundance, mean, sd)
         return log10(p)
 
 
@@ -113,7 +113,7 @@ def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
     single float, the same error rate will be applied to all control samples.
     If it is a list of floats, it must contain 1 value per control sample.
     """
-    errors = set_error_rates(error, nsamples=len(refrabunds) + 1)
+    errors = set_error_rates(error, nsamples=len(altabunds))
     logsum = 0.0
     for alt, refr in zip(altabunds[0], refrabunds[0]):
         logsum += abund_log_prob(1, alt, mean=mean, sd=sd)
@@ -176,9 +176,9 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
     for a_c, a_m, a_f in abundances:
         maxval = None
         for g_c, g_m, g_f in scenarios:
-            testsum = calc_log_prob(g_c, a_c, mean, sd, errors[0]) + \
-                      calc_log_prob(g_m, a_m, mean, sd, errors[1]) + \
-                      calc_log_prob(g_f, a_f, mean, sd, errors[2]) + \
+            testsum = abund_log_prob(g_c, a_c, mean, sd, errors[0]) + \
+                      abund_log_prob(g_m, a_m, mean, sd, errors[1]) + \
+                      abund_log_prob(g_f, a_f, mean, sd, errors[2]) + \
                       log10(1.0 / 15.0)
             if maxval is None or testsum > maxval:
                 maxval = testsum
