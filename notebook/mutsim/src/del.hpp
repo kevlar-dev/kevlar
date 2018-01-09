@@ -3,7 +3,7 @@
 
 #include "mut.hpp"
 
-using namespace khmer;
+using namespace oxli;
 
 class MutatorDel : public Mutator
 {
