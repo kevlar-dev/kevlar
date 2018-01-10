@@ -8,9 +8,80 @@
 # -----------------------------------------------------------------------------
 
 from collections import defaultdict
-
+import threading
+import sys
 import khmer
 import kevlar
+
+
+def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
+                        mask=None, maskmaxabund=1, numbands=None, band=None,
+                        outfile=None, numthreads=1, logfile=sys.stderr):
+    """
+    Compute k-mer abundances for the specified sequence input.
+
+    Expected input is a list of one or more FASTA/FASTQ files corresponding
+    to a single sample. A counttable is created and populated with abundances
+    of all k-mers observed in the input. If `mask` is provided, only k-mers not
+    present in the mask will be loaded.
+    """
+    message = 'loading from ' + ','.join(seqfiles)
+    print('[kevlar::counting]    ', message, file=logfile)
+
+    sketch = khmer.Counttable(ksize, memory / 4, 4)
+    n, nkmers = 0, 0
+    for seqfile in seqfiles:
+        parser = khmer.ReadParser(seqfile)
+        threads = list()
+        for _ in range(numthreads):
+            if mask:
+                if numbands:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_banding_with_mask,
+                        args=(parser, numbands, band, mask, ),
+                    )
+                else:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_with_mask,
+                        args=(parser, mask, ),
+                    )
+            else:
+                if numbands:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile_banding,
+                        args=(parser, numbands, band, ),
+                    )
+                else:
+                    thread = threading.Thread(
+                        target=sketch.consume_seqfile,
+                        args=(parser, ),
+                    )
+            threads.append(thread)
+            thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    message = 'done loading reads'
+    if numbands:
+        message += ' (band {:d}/{:d})'.format(band+1, numbands)
+    fpr = kevlar.sketch.estimate_fpr(sketch)
+    message += ';\n    {:d} reads processed'.format(parser.num_reads)
+    message += ', {:d} distinct k-mers stored'.format(sketch.n_unique_kmers())
+    message += ';\n    estimated false positive rate is {:1.3f}'.format(fpr)
+    if fpr > maxfpr:
+        message += ' (FPR too high, bailing out!!!)'
+        message = '[kevlar::counting]     ' + message
+        raise SystemExit(message)
+
+    if outfile:
+        if not outfile.endswith(('.ct', '.counttable')):
+            outfile += '.counttable'
+        sketch.save(outfile)
+        message += ';\n    saved to "{:s}"'.format(outfile)
+    print('[kevlar::counting]    ', message, file=logfile)
+
+    return sketch
 
 
 def main(args):
@@ -21,7 +92,7 @@ def main(args):
     timer = kevlar.Timer()
     timer.start()
 
-    sketch = kevlar.counting.load_sample_seqfile(
+    sketch = load_sample_seqfile(
         args.seqfile, args.ksize, args.memory, args.max_fpr,
         numbands=args.num_bands, band=myband, numthreads=args.threads,
         outfile=args.counttable, logfile=args.logfile

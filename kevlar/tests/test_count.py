@@ -34,7 +34,7 @@ def triomask():
 def test_load_threading(mask, numbands, band):
     # Smoke test: make sure things don't explode when run in "threaded" mode.
     infiles = data_glob('trio1/case1.fq')
-    sketch = kevlar.counting.load_sample_seqfile(
+    sketch = kevlar.count.load_sample_seqfile(
         infiles, 19, 1e7, mask=mask, numbands=numbands, band=band, numthreads=2
     )
 
