@@ -34,7 +34,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     of all k-mers observed in the input. If `mask` is provided, only k-mers not
     present in the mask will be loaded.
     """
-    message = 'loading sample from ' + ','.join(seqfiles)
+    message = 'loading from ' + ','.join(seqfiles)
     print('[kevlar::counting]    ', message, file=logfile)
 
     sketch = khmer.Counttable(ksize, memory / 4, 4)
@@ -75,18 +75,19 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     if numbands:
         message += ' (band {:d}/{:d})'.format(band+1, numbands)
     fpr = kevlar.sketch.estimate_fpr(sketch)
-    message += '; {:d} reads processed'.format(parser.num_reads)
+    message += ';\n    {:d} reads processed'.format(parser.num_reads)
     message += ', {:d} distinct k-mers stored'.format(sketch.n_unique_kmers())
-    message += '; estimated false positive rate is {:1.3f}'.format(fpr)
+    message += ';\n    estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
+        message = '[kevlar::counting]     ' + message
         raise SystemExit(message)
 
     if outfile:
         if not outfile.endswith(('.ct', '.counttable')):
             outfile += '.counttable'
         sketch.save(outfile)
-        message += '; saved to "{:s}"'.format(outfile)
+        message += ';\n    saved to "{:s}"'.format(outfile)
     print('[kevlar::counting]    ', message, file=logfile)
 
     return sketch

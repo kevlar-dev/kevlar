@@ -47,46 +47,34 @@ def test_load_sketches():
         assert sketch.get('GATTACA' * 3) == 0
 
 
-@pytest.mark.parametrize('numbands,band,kmers_stored', [
-    (0, 0, 947),
-    (2, 1, 500),
-    (16, 7, 68),
+@pytest.mark.parametrize('infile,testout,numbands,band,kmers_stored', [
+    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case.ct'), 0, 0, 973),
+    (data_file('simple-genome-ctrl1-reads.fa.gz'), data_file('simple-genome-ctrl1.ct'), 0, 0, 973),
+    (data_file('simple-genome-ctrl2-reads.fa.gz'), data_file('simple-genome-ctrl2.ct'), 0, 0, 966),
+    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case-band-2-1.ct'), 2, 1, 501),
+    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case-band-16-7.ct'), 16, 7, 68),
 ])
-def test_count_simple(numbands, band, kmers_stored, capsys):
-    with NamedTemporaryFile(suffix='.counttable') as ctrl1out, \
-            NamedTemporaryFile(suffix='.counttable') as ctrl2out, \
-            NamedTemporaryFile(suffix='.counttable') as caseout:
-        case = data_file('simple-genome-case-reads.fa.gz')
-        ctrls = data_glob('simple-genome-ctrl[1,2]-reads.fa.gz')
-        arglist = [
-            'count',
-            '--case', caseout.name, case,
-            '--control', ctrl1out.name, ctrls[0],
-            '--control', ctrl2out.name, ctrls[1],
-            '--ksize', '25', '--memory', '5K', '--ctrl-max', '0',
-            '--num-bands', str(numbands), '--band', str(band),
-        ]
+def test_count_simple(infile, testout, numbands, band, kmers_stored, capsys):
+    with NamedTemporaryFile(suffix='.counttable') as outfile:
+        arglist = ['count', '--ksize', '25', '--memory', '10K',
+                   '--num-bands', str(numbands), '--band', str(band),
+                   outfile.name, infile]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.count.main(args)
-    out, err = capsys.readouterr()
+        out, err = capsys.readouterr()
 
-    assert '600 reads processed' in str(err)
-    assert '{:d} distinct k-mers stored'.format(kmers_stored) in str(err)
+        assert '600 reads processed' in str(err)
+        assert '{:d} distinct k-mers stored'.format(kmers_stored) in str(err)
+
+        with open(outfile.name, 'rb') as f1, open(testout, 'rb') as f2:
+            assert f1.read() == f2.read()
 
 
 def test_count_threading():
-    with NamedTemporaryFile(suffix='.counttable') as ctrl1out, \
-            NamedTemporaryFile(suffix='.counttable') as ctrl2out, \
-            NamedTemporaryFile(suffix='.counttable') as caseout:
-        case = data_file('trio1/case1.fq')
-        ctrls = data_glob('trio1/ctrl[1,2].fq')
-        arglist = [
-            'count',
-            '--ksize', '19', '--memory', '500K', '--threads', '2',
-            '--case', caseout.name, case,
-            '--control', ctrl1out.name, ctrls[0],
-            '--control', ctrl2out.name, ctrls[1],
-        ]
+    with NamedTemporaryFile(suffix='.counttable') as outfile:
+        infile = data_file('trio1/case1.fq')
+        arglist = ['count', '--ksize', '19', '--memory', '500K',
+                   '--threads', '2', outfile.name, infile]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.count.main(args)
 
