@@ -26,7 +26,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     present in the mask will be loaded.
     """
     message = 'loading from ' + ','.join(seqfiles)
-    print('[kevlar::counting]    ', message, file=logfile)
+    print('[kevlar::count]    ', message, file=logfile)
 
     sketch = khmer.Counttable(ksize, memory / 4, 4)
     n, nkmers = 0, 0
@@ -71,7 +71,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     message += ';\n    estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
-        message = '[kevlar::counting]     ' + message
+        message = '[kevlar::count]     ' + message
         raise SystemExit(message)
 
     if outfile:

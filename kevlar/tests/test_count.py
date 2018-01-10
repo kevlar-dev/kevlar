@@ -41,7 +41,7 @@ def test_load_threading(mask, numbands, band):
 
 def test_load_sketches():
     infiles = data_glob('test.counttable')
-    sketches = kevlar.counting.load_samples_sketchfiles(infiles, maxfpr=0.5)
+    sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.5)
     for sketch in sketches:
         assert sketch.get('CCTGATATCCGGAATCTTAGC') > 0
         assert sketch.get('GATTACA' * 3) == 0
