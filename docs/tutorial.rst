@@ -126,7 +126,6 @@ Several types of pre-processing can lead to large improvements in kevlar's perfo
 
   .. code:: bash
 
-      kevlar count --ksize 31 --memory 8G \
-          --case proband.counttable proband-r1.fq.gz proband-r2.fq.gz proband-ru.fq.gz \
-          --control father.counttable father-r1.fq.gz father-r2.fq.gz \
-          --control mother.counttable mother-reads-interleaved.fq.gz
+      kevlar count --ksize 31 --memory 8G proband.counttable proband-r1.fq.gz proband-r2.fq.gz proband-ru.fq.gz
+      kevlar count --ksize 31 --memory 8G father.counttable father-r1.fq.gz father-r2.fq.gz
+      kevlar count --ksize 31 --memory 8G mother.counttable mother-reads-interleaved.fq.gz

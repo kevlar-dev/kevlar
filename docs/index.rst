@@ -23,6 +23,7 @@ Documentation for **kevlar**
    quick-start
    tutorial
    formats
+   banding
    sim
    cli
    conduct
