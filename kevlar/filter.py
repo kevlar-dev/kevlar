@@ -13,6 +13,7 @@ import sys
 import khmer
 from khmer import khmer_args
 import kevlar
+from kevlar.sketch import KevlarUnsuitableFPRError
 
 
 def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
@@ -41,7 +42,7 @@ def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
     message += '; estimated false positive rate is {:1.3f}'.format(fpr)
     print(message, file=logstream)
     if fpr > maxfpr:
-        raise SystemExit('FPR too high, bailing out')
+        raise KevlarUnsuitableFPRError('FPR too high, bailing out!!!')
     if savefile:
         mask.save(savefile)
         message = '    nodetable saved to "{:s}"'.format(savefile)
@@ -107,8 +108,7 @@ def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
         readset.add(record)
     fpr = summarize_readset(readset, logstream)
     if fpr > maxfpr:
-        print('[kevlar::filter] FPR too high, bailing out', file=logstream)
-        sys.exit(1)
+        raise KevlarUnsuitableFPRError('FPR too high, bailing out!!!')
     elapsed = timer.stop('recalc')
     print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),
           file=logstream)

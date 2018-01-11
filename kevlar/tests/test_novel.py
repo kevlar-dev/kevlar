@@ -114,14 +114,14 @@ def test_novel_two_cases(capsys):
             NamedTemporaryFile(suffix='.ct') as case2ct, \
             NamedTemporaryFile(suffix='.ct') as ctrl1ct, \
             NamedTemporaryFile(suffix='.ct') as ctrl2ct:
-        arglist = ['count', '--ksize', '19', '--memory', '1e7',
-                   '--case', case1ct.name, cases[0],
-                   '--case', case2ct.name, cases[1],
-                   '--control', ctrl1ct.name, controls[0],
-                   '--control', ctrl2ct.name, controls[1]]
-        print(arglist)
-        args = kevlar.cli.parser().parse_args(arglist)
-        kevlar.count.main(args)
+        counttables = [case1ct, case2ct, ctrl1ct, ctrl2ct]
+        seqfiles = cases + controls
+        for ct, seqfile in zip(counttables, seqfiles):
+            arglist = ['count', '--ksize', '19', '--memory', '1e7', ct.name,
+                       seqfile]
+            print(arglist)
+            args = kevlar.cli.parser().parse_args(arglist)
+            kevlar.count.main(args)
 
         arglist = ['novel', '--ksize', '19', '--memory', '1e7',
                    '--ctrl-max', '1', '--case-min', '7',

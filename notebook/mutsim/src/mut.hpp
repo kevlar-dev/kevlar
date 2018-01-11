@@ -6,9 +6,8 @@
 #include "hist.hpp"
 #include "log.hpp"
 #include "hashtable.hh"
-#include "khmer.hh"
 
-using namespace khmer;
+using namespace oxli;
 
 class Mutator
 {

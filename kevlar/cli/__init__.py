@@ -13,6 +13,7 @@ import sys
 import kevlar
 from . import dump
 from . import count
+from . import effcount
 from . import novel
 from . import filter
 from . import reaugment
@@ -28,6 +29,7 @@ from . import simplex
 mains = {
     'dump': kevlar.dump.main,
     'count': kevlar.count.main,
+    'effcount': kevlar.effcount.main,
     'novel': kevlar.novel.main,
     'filter': kevlar.filter.main,
     'reaugment': kevlar.reaugment.main,
@@ -44,6 +46,7 @@ mains = {
 subparser_funcs = {
     'dump': dump.subparser,
     'count': count.subparser,
+    'effcount': effcount.subparser,
     'novel': novel.subparser,
     'filter': filter.subparser,
     'reaugment': reaugment.subparser,

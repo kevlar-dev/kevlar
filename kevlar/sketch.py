@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import khmer
+import sys
 
 
 sketch_loader_by_filename_extension = {
@@ -27,6 +28,10 @@ sketch_loader_by_filename_extension = {
 
 
 class KevlarSketchTypeError(ValueError):
+    pass
+
+
+class KevlarUnsuitableFPRError(SystemExit):
     pass
 
 
@@ -118,3 +123,20 @@ def autoload(infile, count=True, graph=False, ksize=31, table_size=1e4,
         else:
             sketch.consume_seqfile(infile)
         return sketch
+
+
+def load_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
+    """Load samples from pre-computed k-mer abundances."""
+    sketches = list()
+    for sketchfile in sketchfiles:
+        message = 'loading sketchfile "{}"...'.format(sketchfile)
+        print('[kevlar::sketch]    ', message, end='', file=logfile)
+        sketch = autoload(sketchfile)
+        fpr = estimate_fpr(sketch)
+        message = 'done! estimated false positive rate is {:1.3f}'.format(fpr)
+        if fpr > maxfpr:
+            message += ' (FPR too high, bailing out!!!)'
+            raise KevlarUnsuitableFPRError(message)
+        print(message, file=logfile)
+        sketches.append(sketch)
+    return sketches

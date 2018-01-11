@@ -23,7 +23,6 @@ import screed
 # Internal modules
 from kevlar import seqio
 from kevlar import overlap
-from kevlar import counting
 from kevlar import sketch
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
@@ -40,6 +39,7 @@ from kevlar import reaugment
 from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
+from kevlar import effcount
 from kevlar import partition
 from kevlar import localize
 from kevlar import call

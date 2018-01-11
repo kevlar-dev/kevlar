@@ -55,6 +55,17 @@ def weighted_choice(values, weights, rng=random.Random()):
     assert False  # pragma: no cover
 
 
+def mutagenize(sequence, rng=None, rate=0.05):
+    mutseq = list()
+    for nucl in sequence:
+        if rng and rng.random() < rate:
+            offset = rng.choice([1, 2, 3])
+            newindex = (nucl_to_index[nucl] + offset) % 4
+            nucl = index_to_nucl[newindex]
+        mutseq.append(nucl)
+    return ''.join(mutseq)
+
+
 def mutate_snv(sequence, position, offset, ksize=31):
     orignucl = sequence[position]
     nuclindex = nucl_to_index[orignucl]
@@ -72,8 +83,8 @@ def mutate_snv(sequence, position, offset, ksize=31):
     return orignucl, newnucl, refrwindow, altwindow
 
 
-def mutate_insertion(sequence, position, length, duplpos, ksize=31):
-    duplseq = sequence[duplpos:duplpos + length]
+def mutate_insertion(sequence, position, length, duplpos, rng=None, ksize=31):
+    duplseq = mutagenize(sequence[duplpos:duplpos + length], rng, rate=0.05)
     refrseq = sequence[position - 1]
     altseq = refrseq + duplseq
 
@@ -126,7 +137,7 @@ def generate_mutations(sequences, n=10, ksize=31, weights=DWEIGHTS, rng=None):
             length = rng.randint(5, 350)
             duplpos = rng.randint(0, seqlength)
             refrseq, altseq, refrwindow, altwindow = mutate_insertion(
-                seq, position, length, duplpos, ksize
+                seq, position, length, duplpos, rng, ksize
             )
         elif muttype == 'del':
             length = rng.randint(5, 350)
