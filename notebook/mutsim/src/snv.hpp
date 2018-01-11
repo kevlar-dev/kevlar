@@ -4,7 +4,7 @@
 #include <array>
 #include "mut.hpp"
 
-using namespace khmer;
+using namespace oxli;
 
 class MutatorSNV : public Mutator
 {

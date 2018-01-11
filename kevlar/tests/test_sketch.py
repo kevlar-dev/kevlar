@@ -10,6 +10,7 @@
 import pytest
 import khmer
 import kevlar
+from kevlar.tests import data_file, data_glob
 
 
 @pytest.mark.parametrize('filename,testkmer', [
@@ -21,14 +22,14 @@ import kevlar
     ('test.nodetable', 'CTGTTCGATATGAGGAATCTG'),
 ])
 def test_sketch_load(filename, testkmer):
-    infile = kevlar.tests.data_file(filename)
+    infile = data_file(filename)
     sketch = kevlar.sketch.load(infile)
     assert sketch.get(testkmer) > 0
     assert sketch.get('GATTACA' * 3) == 0
 
 
 def test_sketch_load_badfilename():
-    infile = kevlar.tests.data_file('test.notasketchtype')
+    infile = data_file('test.notasketchtype')
     with pytest.raises(kevlar.sketch.KevlarSketchTypeError) as kste:
         sketch = kevlar.sketch.load(infile)
     assert ('sketch type from filename ' + infile) in str(kste)
@@ -69,11 +70,11 @@ def test_allocate_sketch_non_graphy(count, smallcount):
 
 
 def test_autoload():
-    infile = kevlar.tests.data_file('test.nodegraph')
+    infile = data_file('test.nodegraph')
     sketch1 = kevlar.sketch.autoload(infile)
     assert sketch1.get('GGGAACTTACCTGGGGGTGCG') > 0
 
-    infile = kevlar.tests.data_file('simple-genome-case-reads.fa.gz')
+    infile = data_file('simple-genome-case-reads.fa.gz')
     sketch2 = kevlar.sketch.autoload(infile, ksize=25, table_size=1e7)
     assert sketch2.get('AGCTCAGACACTGGCGGTCTCTCCT') > 0
 
@@ -81,3 +82,18 @@ def test_autoload():
                                      count=True, graph=True, num_bands=4,
                                      band=0)
     assert sketch3.get('CAGCTGACCCACCGACACATAGGTT') > 0
+
+
+def test_load_sketches():
+    infiles = data_glob('test.counttable')
+    sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.5)
+    for sketch in sketches:
+        assert sketch.get('CCTGATATCCGGAATCTTAGC') > 0
+        assert sketch.get('GATTACA' * 3) == 0
+
+
+def test_load_sketches_fpr_fail():
+    infiles = data_glob('test.counttable')
+    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError) as e:
+        sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.001)
+    assert 'FPR too high, bailing out!!!' in str(e)

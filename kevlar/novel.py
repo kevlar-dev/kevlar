@@ -64,15 +64,17 @@ def load_samples(counttables=None, filelists=None, ksize=31, memory=1e6,
         message += ', any corresponding FASTA/FASTQ input will be ignored '
         message += 'for computing k-mer abundances'
         print('[kevlar::novel]    INFO:', message, file=logstream)
-        samples = kevlar.counting.load_samples_sketchfiles(
+        samples = kevlar.sketch.load_sketchfiles(
             counttables, maxfpr, logstream,
         )
     else:
-        samples = kevlar.counting.load_samples(
-            filelists, ksize, memory, maxfpr=maxfpr, memfraction=None,
-            numbands=numbands, band=band, numthreads=numthreads,
-            logfile=logstream,
-        )
+        samples = list()
+        for filelist in filelists:
+            sample = kevlar.count.load_sample_seqfile(
+                filelist, ksize, memory, maxfpr=maxfpr, numbands=numbands,
+                band=band, numthreads=numthreads, logfile=logstream
+            )
+            samples.append(sample)
     return samples
 
 
