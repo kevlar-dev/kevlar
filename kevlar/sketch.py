@@ -31,6 +31,10 @@ class KevlarSketchTypeError(ValueError):
     pass
 
 
+class KevlarUnsuitableFPRError(SystemExit):
+    pass
+
+
 def estimate_fpr(sketch):
     """
     Get a rough estimate of the false positive rate of this sketch.
@@ -132,7 +136,7 @@ def load_sketchfiles(sketchfiles, maxfpr=0.2, logfile=sys.stderr):
         message = 'done! estimated false positive rate is {:1.3f}'.format(fpr)
         if fpr > maxfpr:
             message += ' (FPR too high, bailing out!!!)'
-            raise SystemExit(message)
+            raise KevlarUnsuitableFPRError(message)
         print(message, file=logfile)
         sketches.append(sketch)
     return sketches

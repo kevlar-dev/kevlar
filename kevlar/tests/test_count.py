@@ -39,14 +39,6 @@ def test_load_threading(mask, numbands, band):
     )
 
 
-def test_load_sketches():
-    infiles = data_glob('test.counttable')
-    sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.5)
-    for sketch in sketches:
-        assert sketch.get('CCTGATATCCGGAATCTTAGC') > 0
-        assert sketch.get('GATTACA' * 3) == 0
-
-
 @pytest.mark.parametrize('infile,testout,numbands,band,kmers_stored', [
     ('case', 'case', 0, 0, 973),
     ('ctrl1', 'ctrl1', 0, 0, 973),
@@ -57,7 +49,7 @@ def test_load_sketches():
 def test_count_simple(infile, testout, numbands, band, kmers_stored, capsys):
     infile = data_file('simple-genome-{}-reads.fa.gz'.format(infile))
     testout = data_file('simple-genome-{}.ct'.format(testout))
-    with NamedTemporaryFile(suffix='.counttable') as outfile:
+    with NamedTemporaryFile() as outfile:
         arglist = ['count', '--ksize', '25', '--memory', '10K',
                    '--num-bands', str(numbands), '--band', str(band),
                    outfile.name, infile]
@@ -68,7 +60,8 @@ def test_count_simple(infile, testout, numbands, band, kmers_stored, capsys):
         assert '600 reads processed' in str(err)
         assert '{:d} distinct k-mers stored'.format(kmers_stored) in str(err)
 
-        with open(outfile.name, 'rb') as f1, open(testout, 'rb') as f2:
+        outputfilename = outfile.name + '.counttable'
+        with open(outputfilename, 'rb') as f1, open(testout, 'rb') as f2:
             assert f1.read() == f2.read()
 
 
@@ -82,6 +75,25 @@ def test_count_threading():
 
     # No checks, just doing a "smoke test" to make sure things don't explode
     # when counting is done in "threaded" mode.
+
+
+def test_count_problematic():
+    arglist = [
+        'count', '--ksize', '21', '--memory', '200K', '--band', '2',
+        'bogusoutput', data_file('trio1/ctrl1.fq')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    with pytest.raises(ValueError) as ve:
+        kevlar.count.main(args)
+    assert 'Must specify --num-bands and --band together' in str(ve)
+
+    arglist = [
+        'count', '--ksize', '21', '--memory', '97',
+        'bogusoutput', data_file('trio1/ctrl1.fq')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError):
+        kevlar.count.main(args)
 
 
 def test_effcount_smoketest():

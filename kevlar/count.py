@@ -72,7 +72,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
         message = '[kevlar::count]     ' + message
-        raise SystemExit(message)
+        raise kevlar.sketch.KevlarUnsuitableFPRError(message)
 
     if outfile:
         if not outfile.endswith(('.ct', '.counttable')):

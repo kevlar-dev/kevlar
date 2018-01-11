@@ -60,7 +60,7 @@ def assemble_jca(readstream, memory, maxfpr=0.01, collapse=True,
     msg += '; estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > maxfpr:
         msg += ' (FPR too high, bailing out!!!)'
-        raise SystemExit(msg)
+        raise kevlar.sketch.KevlarUnsuitableFPRError(msg)
     print(msg, file=logstream)
 
     asm = khmer.JunctionCountAssembler(countgraph)
