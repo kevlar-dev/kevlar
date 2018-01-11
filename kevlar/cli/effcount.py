@@ -24,6 +24,9 @@ def subparser(subparsers):
     present in the mask (aboved some threshold) is not stored in any subsequent
     samples. As a result, many uninteresting k-mers can be ignored and the
     potentially interesting k-mers stored accurately in much less memory.
+
+    Also supports k-mer banding. See
+    http://kevlar.readthedocs.io/en/latest/banding.html for more details
     """
     desc = textwrap.dedent(desc)
 

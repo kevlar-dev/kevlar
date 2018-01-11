@@ -17,15 +17,8 @@ def subparser(subparsers):
     """Define the `kevlar count` command-line interface."""
 
     desc = """\
-    Compute k-mer abundances for the provided sample.
-
-    If memory is a limiting factor, it is possible to get a linear
-    decrease in memory consumption by running kevlar in "banded" mode.
-    Splitting the hashed k-mer space into N bands and only considering k-mers
-    from one band at a time reduces the memory consumption to approximately 1/N
-    of the total memory required. This implements a scatter/gather approach in
-    which `kevlar count` and/or `kevlar novel` is run N times, after which the
-    results are combined using `kevlar filter`.
+    Compute k-mer abundances for the provided sample. Supports k-mer banding:
+    see http://kevlar.readthedocs.io/en/latest/banding.html for more details.
     """
     desc = textwrap.dedent(desc)
 
