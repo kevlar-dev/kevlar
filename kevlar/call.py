@@ -7,7 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from math import log10
+from math import log
 import re
 import sys
 import khmer
@@ -20,15 +20,19 @@ def filter_refr(akmers, rkmers, refr):
     """
     Remove k-mers that are present in the reference.
 
-    The `akmers` and `rkmers` variables are lists storing paired k-mers that
-    contain an alternate and reference allele, respectively. Each pair of
-    k-mers is kept only if the alternate allele k-mer is not present
-    (elsewhere) in the genome.
+    The `akmers` and `rkmers` variables are lists of k-mers that contain an
+    alternate and reference allele, respectively. The `refr` variable is a
+    table of k-mer counts from the reference genome. Any alternate allele k-mer
+    is discarded if it is present in the reference genome, and any reference
+    allele k-mer is discarded if it is present in multiple copies in the
+    reference genome.
     """
     newa, newr = list(), list()
-    for a, r in zip(akmers, rkmers):
+    for a in akmers:
         if refr.get(a) == 0:
             newa.append(a)
+    for r in rkmers:
+        if refr.get(r) < 2:
             newr.append(r)
     return newa, newr
 
@@ -46,21 +50,19 @@ def get_abundances(kmers, casecounts, controlcounts):
         [0, 1, 1, 0, 1, 0, 2, 0],  # k-mer abundances from parent/control 2
     ]
     """
-    abundances = list()
-    for _ in range(len(controlcounts) + 1):
-        abundances.append(list())
-
+    nsamples = len(controlcounts) + 1
+    abundances = [list()] * nsamples
     for kmer in kmers:
         a = casecounts.get(kmer)
         abundances[0].append(a)
         for i in range(len(controlcounts)):
             a = controlcounts[i].get(kmer)
-            abundances[i+1].append()
-
+            abundances[i+1].append(a)
     return abunds
 
 
 def set_error_rates(error, nsamples):
+    """Set error rate dynamically"""
     if isinstance(error, float):
         errors = [error] * nsamples
     elif isinstance(error, list):
@@ -87,13 +89,13 @@ def abund_log_prob(genotype, abundance, mean=40.0, sd=8.0, error=0.01):
     with copy number 2. The `error` parameter is the error rate.
     """
     if genotype == 0:
-        return abundance * log10(error)
+        return abundance * log(error)
     if genotype == 1:
-        p = scipy.stats.norm.cdf(abundance, mean / 2, sd / 2)
-        return log10(p)
+        p = scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
+        return log(p)
     if genotype == 2:
-        p = scipy.stats.norm.cdf(abundance, mean, sd)
-        return log10(p)
+        p = scipy.stats.norm.logpdf(abundance, mean, sd)
+        return log(p)
 
 
 def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
@@ -115,13 +117,15 @@ def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
     """
     errors = set_error_rates(error, nsamples=len(altabunds))
     logsum = 0.0
-    for alt, refr in zip(altabunds[0], refrabunds[0]):
-        logsum += abund_log_prob(1, alt, mean=mean, sd=sd)
-        logsum += abund_log_prob(1, refr, mean=mean, sd=sd)
-    for i in range(len(controlcounts)):
-        for a, r, e in zip(altabunds[i+1], refrabunds[i+1], errors):
-            logsum += abund_log_prob(0, a, error=e)
-            logsum += abund_log_prob(2, r, mean=mean, sd=sd)
+    # Case
+    for abund in altabunds[0] + refrabunds[0]:
+        logsum += abund_log_prob(1, abund, mean=mean, sd=sd)
+    # Controls
+    for alt, refr, err in zip(altabunds[1:], refrabunds[1:], errors[1:]):
+        for aabund in alt:
+            logsum += abund_log_prob(0, aabund, error=err)
+        for rabund in refr:
+            logsum += abund_log_prob(2, rabund, mean=mean, sd=sd)
     return logsum
 
 
@@ -163,13 +167,13 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
     The other likelihood calculations are implemented to handle an arbitrary
     number of controls, but this can only handle trios.
     """
-    scenarios = [
+    scenarios = (
         (1, 0, 1), (1, 0, 2),
         (1, 1, 0), (1, 1, 1), (1, 1, 2),
         (1, 2, 0), (1, 2, 1),
         (2, 1, 1), (2, 1, 2),
         (2, 2, 1), (2, 2, 2),
-    ]
+    )
     errors = set_error_rates(error, nsamples=3)
     logsum = 0.0
     abundances = zip(altabunds[0], altabunds[1], altabunds[2])
@@ -179,11 +183,11 @@ def likelihood_inherited(altabunds, mean=30.0, sd=8.0, error=0.01):
             testsum = abund_log_prob(g_c, a_c, mean, sd, errors[0]) + \
                       abund_log_prob(g_m, a_m, mean, sd, errors[1]) + \
                       abund_log_prob(g_f, a_f, mean, sd, errors[2]) + \
-                      log10(1.0 / 15.0)
+                      log(1.0 / 15.0)
             if maxval is None or testsum > maxval:
                 maxval = testsum
         logsum += maxval
-    return log10(15.0 / 11.0) * logsum  # 1 / (11/15)
+    return log(15.0 / 11.0) * logsum  # 1 / (11/15)
 
 
 def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
@@ -197,8 +201,17 @@ def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
 
     altkmers = casecounts.get_kmers(window)
     refrkmers = casecounts.get_kmers(refrwindow)
+    altdrop, refrdrop = 0, 0
     if refr:
+        nalt = len(altkmers)
+        nrefr = len(refrkmers)
         altkmers, refrkmers = filter_refr(altkmers, refrkmers, refr)
+        altdrop = nalt - len(altkmers)
+        refrdrop = nrefr - len(refrkmers)
+        if len(altkmers) == 0:
+            variant.info['DN'] = '-inf'
+            variant.info['NC'] = 'allaltinreference'
+            return
 
     altabunds = get_abundances(altkmers, casecounts, controlcounts)
     refrabunds = get_abundances(refrkmers, casecounts, controlcounts)
@@ -208,6 +221,8 @@ def compute_likelihoods(variant, casecounts, controlcounts, refr=None,
         variant.format(label, 'AA', abundstr)
 
     variant.info['FP'] = likelihood_false(altabunds, error=error)
+    variant.info['IH'] = likelihood_inherited(altabunds, mean=mean, sd=sd,
+                                              error=error)
     variant.info['DN'] = likelihood_denovo(altabunds, refrabunds, mean=mean,
                                            sd=sd, error=error)
     return
