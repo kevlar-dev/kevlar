@@ -79,7 +79,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
             outfile += '.counttable'
         sketch.save(outfile)
         message += ';\n    saved to "{:s}"'.format(outfile)
-    print('[kevlar::counting]    ', message, file=logfile)
+    print('[kevlar::count]    ', message, file=logfile)
 
     return sketch
 
