@@ -121,12 +121,14 @@ def generate_mutations(sequences, n=10, ksize=31, weights=DWEIGHTS, rng=None):
     if isinstance(rng, int):
         rng = random.Random(rng)
 
+    weightkeys = sorted(weights.keys())
+    weightvalues = [weights[k] for k in weightkeys]
     for _ in range(n):
         seqid = rng.choice(list(sorted(sequences.keys())))
         seq = sequences[seqid]
         seqlength = len(sequences[seqid])
         position = rng.randint(0, seqlength - 1)
-        muttype = weighted_choice(weights.keys(), weights.values(), rng)
+        muttype = weighted_choice(weightkeys, weightvalues, rng)
 
         if muttype == 'snv':
             offset = rng.randint(1, 3)
