@@ -19,6 +19,10 @@ from kevlar.call import Variant
 nucl_to_index = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 index_to_nucl = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
 
+# Default weights/probabilities for different mutation types
+DWEIGHTS = {'snv': 0.8, 'ins': 0.1, 'del': 0.1}
+
+
 """
 Viable inheritance scenarios
 
@@ -32,7 +36,6 @@ Combinations of genotypes that are not valid inheritance scenarios are
 excluded.
 """
 inheritance_scenarios = [
-
     (0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 1), (1, 0, 2), (1, 1, 0),
     (1, 1, 1), (1, 1, 2), (1, 2, 0), (1, 2, 1), (2, 1, 1), (2, 1, 2),
     (2, 2, 1), (2, 2, 2),
@@ -110,7 +113,7 @@ def mutate_deletion(sequence, position, length, ksize=31):
     return refrseq, altseq, refrwindow, altwindow
 
 
-def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
+def generate_mutations(sequences, n=10, ksize=31, weights=DWEIGHTS, rng=None):
     if rng is None:
         seed = random.randrange(sys.maxsize)
         print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
@@ -118,18 +121,14 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
     if isinstance(rng, int):
         rng = random.Random(rng)
 
-    types = ['snv', 'ins', 'del']
-    weights = [0.7, 0.15, 0.15]
-    if inversions:
-        # types.append('inv')
-        raise NotImplementedError('feature pending')
-
+    weightkeys = sorted(weights.keys())
+    weightvalues = [weights[k] for k in weightkeys]
     for _ in range(n):
         seqid = rng.choice(list(sorted(sequences.keys())))
         seq = sequences[seqid]
         seqlength = len(sequences[seqid])
-        position = rng.randint(0, seqlength)
-        muttype = weighted_choice(types, weights, rng)
+        position = rng.randint(0, seqlength - 1)
+        muttype = weighted_choice(weightkeys, weightvalues, rng)
 
         if muttype == 'snv':
             offset = rng.randint(1, 3)
@@ -142,12 +141,13 @@ def generate_mutations(sequences, n=10, inversions=False, ksize=31, rng=None):
             refrseq, altseq, refrwindow, altwindow = mutate_insertion(
                 seq, position, length, duplpos, rng, ksize
             )
-        else:
-            assert muttype == 'del'
+        elif muttype == 'del':
             length = rng.randint(5, 350)
             refrseq, altseq, refrwindow, altwindow = mutate_deletion(
                 seq, position, length, ksize
             )
+        else:
+            raise ValueError('unknown mutation type {}'.format(muttype))
         yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
                       RW=refrwindow)
 
@@ -166,7 +166,8 @@ def pick_inheritance_genotypes(rng):
     return tuple(genotypes)
 
 
-def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
+def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10,
+                               weights=DWEIGHTS, rng=None):
     if rng is None:
         seed = random.randrange(sys.maxsize)
         print('[kevlar::gentrio] using random seed', seed, file=sys.stderr)
@@ -174,15 +175,15 @@ def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10, rng=None):
     if isinstance(rng, int):
         rng = random.Random(rng)
 
-    mutator = generate_mutations(sequences, n=ninh, rng=rng)
+    mutator = generate_mutations(sequences, n=ninh, weights=weights, rng=rng)
     for variant in mutator:
         genotypes = pick_inheritance_genotypes(rng)
         gtstring = ','.join(genotypes)
         variant.info['GT'] = gtstring
         yield variant
 
-    mutator = generate_mutations(sequences, n=ndenovo, rng=rng)
-    for variant in mutator:
+    mut8r = generate_mutations(sequences, n=ndenovo, weights=weights, rng=rng)
+    for variant in mut8r:
         genotypes = (rng.choice(['0/1', '1/0']), '0/0', '0/0')
         gtstring = ','.join(genotypes)
         variant.info['GT'] = gtstring
@@ -200,11 +201,25 @@ def apply_mutation(sequence, position, refr, alt):
         del sequence[position:position+dellength]
 
 
-def gentrio(sequences, outstreams, ninh=20, ndenovo=10, seed=None, upint=100,
-            logstream=sys.stderr):
+def weights_str_to_dict(wstring):
+    weights = dict()
+    for keyvaluepair in wstring.split(','):
+        muttype, relfreq = keyvaluepair.split('=')
+        relfreq = float(relfreq)
+        weights[muttype] = relfreq
+
+    # Normalize!
+    total = sum(weights.values())
+    weights = {t: (v / total) for t, v in weights.items()}
+
+    return weights
+
+
+def gentrio(sequences, outstreams, ninh=20, ndenovo=10, weights=DWEIGHTS,
+            seed=None, upint=100, logstream=sys.stderr):
     assert len(outstreams) == 3
     mutator = simulate_variant_genotypes(
-        sequences, ninh=ninh, ndenovo=ndenovo, rng=seed
+        sequences, ninh=ninh, ndenovo=ndenovo, weights=weights, rng=seed
     )
     variants = list(mutator)
     variants.sort(key=lambda v: v.position, reverse=True)
@@ -261,9 +276,10 @@ def main(args):
     if args.vcf:
         vcfout = kevlar.open(args.vcf, 'w')
         kevlar.vcf_header(vcfout, source='kevlar::gentrio', infoheader=True)
+    weights = weights_str_to_dict(args.weights)
     mutator = gentrio(
         genomeseqs, outstreams, ninh=args.inherited, ndenovo=args.de_novo,
-        seed=args.seed, logstream=args.logfile
+        weights=weights, seed=args.seed, logstream=args.logfile
     )
 
     timer.start('mutate')

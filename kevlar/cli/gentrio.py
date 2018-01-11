@@ -25,6 +25,12 @@ def subparser(subparsers):
     subparser.add_argument('--prefix', metavar='PFX', default='trio',
                            help='prefix for output fasta files; default is '
                            '"trio"')
+    subparser.add_argument('--weights', metavar='WT',
+                           default='snv=0.8,ins=0.1,del=0.1',
+                           help='comma-separated list of key/value pairs '
+                           'indicating the relative frequency of different '
+                           'variant types; default is "snv=0.8,ins=0.1,'
+                           'del=0.1"; ')
     subparser.add_argument('-s', '--seed', metavar='S', default=None, type=int,
                            help='seed for random number generator')
     subparser.add_argument('genome', help='genome to mutate')
