@@ -48,13 +48,15 @@ def test_load_sketches():
 
 
 @pytest.mark.parametrize('infile,testout,numbands,band,kmers_stored', [
-    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case.ct'), 0, 0, 973),
-    (data_file('simple-genome-ctrl1-reads.fa.gz'), data_file('simple-genome-ctrl1.ct'), 0, 0, 973),
-    (data_file('simple-genome-ctrl2-reads.fa.gz'), data_file('simple-genome-ctrl2.ct'), 0, 0, 966),
-    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case-band-2-1.ct'), 2, 1, 501),
-    (data_file('simple-genome-case-reads.fa.gz'), data_file('simple-genome-case-band-16-7.ct'), 16, 7, 68),
+    ('case', 'case', 0, 0, 973),
+    ('ctrl1', 'ctrl1', 0, 0, 973),
+    ('ctrl2', 'ctrl2', 0, 0, 966),
+    ('case', 'case-band-2-1', 2, 1, 501),
+    ('case', 'case-band-16-7', 16, 7, 68),
 ])
 def test_count_simple(infile, testout, numbands, band, kmers_stored, capsys):
+    infile = data_file('simple-genome-{}-reads.fa.gz'.format(infile))
+    testout = data_file('simple-genome-{}.ct'.format(testout))
     with NamedTemporaryFile(suffix='.counttable') as outfile:
         arglist = ['count', '--ksize', '25', '--memory', '10K',
                    '--num-bands', str(numbands), '--band', str(band),
