@@ -56,6 +56,7 @@ from kevlar import simlike
 from kevlar import dist
 from kevlar import split
 from kevlar import gentrio
+from kevlar import genexp
 from kevlar import cli
 
 # C extensions
