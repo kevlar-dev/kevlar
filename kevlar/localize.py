@@ -24,11 +24,6 @@ class KevlarBWAError(RuntimeError):
     pass
 
 
-class KevlarNoReferenceMatchesError(ValueError):
-    """Raised if contigs have no k-mer matches against the reference."""
-    pass
-
-
 class KevlarRefrSeqNotFoundError(ValueError):
     """Raised if the reference sequence cannot be found."""
     pass
@@ -166,15 +161,14 @@ def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
         raise KevlarRefrSeqNotFoundError(','.join(missing))
 
 
-def autoindex(refrfile):
+def autoindex(refrfile, logstream=sys.stderr):
     bwtfile = refrfile + '.bwt'
     if os.path.isfile(bwtfile):
         return
 
-    message = '[kevlar::localize]'
-    message += ' WARNING: BWA index not found for "{:s}"'.format(refrfile)
+    message = 'WARNING: BWA index not found for "{:s}"'.format(refrfile)
     message += ', indexing now'
-    print(message, file=sys.stderr)
+    print('[kevlar::localize]', message, file=logstream)
 
     try:
         check_call(['bwa', 'index', refrfile])
@@ -182,7 +176,8 @@ def autoindex(refrfile):
         raise KevlarBWAError('Could not run "bwa index"') from err
 
 
-def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
+def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000,
+             logstream=sys.stderr):
     """
     Wrap the `kevlar localize` task as a generator.
 
@@ -190,12 +185,14 @@ def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
     stored as khmer or screed sequence records, the filename of the reference
     genome sequence, and the desired k-size.
     """
-    autoindex(refrfile)
+    autoindex(refrfile, logstream)
     seedmatches = KmerMatchSet(ksize)
     for seqid, pos in get_exact_matches(contigstream, refrfile, ksize):
         seedmatches.add(seqid, pos)
     if len(seedmatches) == 0:
-        raise KevlarNoReferenceMatchesError()
+        message = 'WARNING: no reference matches'
+        print('[kevlar::localize]', message, file=logstream)
+        return
     refrstream = kevlar.open(refrfile, 'r')
     for subseqid, subseq in extract_regions(refrstream, seedmatches,
                                             delta=delta, maxdiff=maxdiff):
@@ -205,6 +202,9 @@ def localize(contigstream, refrfile, ksize=31, delta=25, maxdiff=10000):
 def main(args):
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(args.contigs, 'r'))
     outstream = kevlar.open(args.out, 'w')
-    for record in localize(contigstream, args.refr, ksize=args.ksize,
-                           delta=args.delta, maxdiff=args.max_diff):
+    localizer = localize(
+        contigstream, args.refr, ksize=args.ksize, delta=args.delta,
+        maxdiff=args.max_diff, logstream=args.logfile
+    )
+    for record in localizer:
         khmer.utils.write_record(record, outstream)

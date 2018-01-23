@@ -12,8 +12,7 @@ import pytest
 import screed
 import kevlar
 from kevlar.localize import KmerMatchSet
-from kevlar.localize import (KevlarRefrSeqNotFoundError,
-                             KevlarNoReferenceMatchesError)
+from kevlar.localize import KevlarRefrSeqNotFoundError
 from kevlar.localize import (extract_regions, get_unique_kmers,
                              unique_kmer_string)
 from kevlar.tests import data_file
@@ -144,10 +143,11 @@ def test_main(capsys):
     assert '>seq1_10-191' in out
 
 
-def test_main_no_matches():
+def test_main_no_matches(capsys):
     contig = data_file('localize-contig-bad.fa')
     refr = data_file('localize-refr.fa')
     arglist = ['localize', '--ksize', '23', contig, refr]
     args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(KevlarNoReferenceMatchesError) as nrm:
-        kevlar.localize.main(args)
+    kevlar.localize.main(args)
+    out, err = capsys.readouterr()
+    assert 'WARNING: no reference matches' in err
