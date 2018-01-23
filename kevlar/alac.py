@@ -21,7 +21,8 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
 
     for partition in pstream:
         contigs = [c for c in assembler(partition, logstream=logstream)]
-        targets = [t for t in localize(contigs, refrfile, ksize, delta=delta)]
+        targets = [t for t in localize(contigs, refrfile, ksize, delta=delta,
+                                       logstream=logstream)]
         caller = call(
             targets, contigs, match, mismatch, gapopen, gapextend, ksize
         )
