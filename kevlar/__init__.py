@@ -36,6 +36,7 @@ from kevlar import dump
 from kevlar import novel
 from kevlar import filter
 from kevlar import reaugment
+from kevlar import augment
 from kevlar import mutate
 from kevlar import assemble
 from kevlar import count

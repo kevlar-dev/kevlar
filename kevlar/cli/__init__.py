@@ -17,6 +17,7 @@ from . import effcount
 from . import novel
 from . import filter
 from . import reaugment
+from . import augment
 from . import assemble
 from . import mutate
 from . import gentrio
@@ -33,6 +34,7 @@ mains = {
     'novel': kevlar.novel.main,
     'filter': kevlar.filter.main,
     'reaugment': kevlar.reaugment.main,
+    'augment': kevlar.augment.main,
     'assemble': kevlar.assemble.main,
     'mutate': kevlar.mutate.main,
     'gentrio': kevlar.gentrio.main,
@@ -50,6 +52,7 @@ subparser_funcs = {
     'novel': novel.subparser,
     'filter': filter.subparser,
     'reaugment': reaugment.subparser,
+    'augment': augment.subparser,
     'assemble': assemble.subparser,
     'mutate': mutate.subparser,
     'gentrio': gentrio.subparser,
