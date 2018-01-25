@@ -97,7 +97,7 @@ kevlar dump
    :prog: kevlar
    :path: dump
 
-kevlar reaugment
+kevlar augment
 ----------------
 
 .. argparse::
@@ -105,7 +105,7 @@ kevlar reaugment
    :func: parser
    :nodefault:
    :prog: kevlar
-   :path: reaugment
+   :path: augment
 
 kevlar mutate
 -------------
