@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter.
 - Split the functionality of the `count` subcommand: simple single-sample k-mer counting was kept in `count` with a much simplified interface, while the memory efficient multi-sample "masked counting" strategy was split out to a new subcommand `effcount`.
+- Replaced `kevlar reaugment` with a more generalizable `kevlar augment` subcommand.
 
 ### Fixed
 - Incorrect file names in the quick start documentation page.

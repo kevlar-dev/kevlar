@@ -12,12 +12,15 @@ def subparser(subparsers):
     """Define the `kevlar augment` command-line interface."""
 
     desc = """\
-    Annotate the given sequences with interested k-mers annotated in the given
-    augmented Fastq file.
+    Internally, kevlar annotates sequences with "interesting k-mers" and uses
+    "augmented" Fastq and Fasta formats. Processing sequences with third-part
+    tools usually requires discarding these annotations. This command is used
+    to augment/reaugment a set of sequences using annotations from an already
+    augmented sequence file.
     """
 
     subparser = subparsers.add_parser('augment', description=desc)
     subparser.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
-    subparser.add_argument('augfastq', help='original augmented Fastq file')
-    subparser.add_argument('sequences', help='sequences to annotate')
+    subparser.add_argument('augseqs', help='augmented sequence file')
+    subparser.add_argument('seqs', help='sequences to annotate')
