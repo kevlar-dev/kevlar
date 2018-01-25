@@ -50,9 +50,9 @@ def augment(augseqstream, nakedseqstream):
 
 
 def main(args):
-    augfh = kevlar.open(args.augfastq, 'r')
+    augfh = kevlar.open(args.augseqs, 'r')
     augseqs = kevlar.parse_augmented_fastx(augfh)
-    nakedseqs = screed.open(args.sequences)
+    nakedseqs = screed.open(args.seqs)
     outstream = kevlar.open(args.out, 'w')
     for record in augment(augseqs, nakedseqs):
         kevlar.print_augmented_fastx(record, outstream)
