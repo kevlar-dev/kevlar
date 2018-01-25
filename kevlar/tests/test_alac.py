@@ -25,7 +25,7 @@ def test_pico_4(greedy, capsys):
 
     vcf = '\t'.join([
         'seq1', '1175768', '.', 'T', 'C', '.', 'PASS',
-        'RW=CCCTGCCATTATAGATGCTAGATTTACATCTTCATTTATTTTTACTTTT;'
+        'IK=25;RW=CCCTGCCATTATAGATGCTAGATTTACATCTTCATTTATTTTTACTTTT;'
         'VW=CCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTTACTTTT'
     ])
     assert vcf.strip() == out.strip()

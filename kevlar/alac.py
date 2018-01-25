@@ -33,7 +33,6 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
             contigs = [c for c in contigs if len(c.ikmers) > min_ikmers]
         if len(contigs) == 0:
             continue
-
         targets = [t for t in localize(contigs, refrfile, ksize, delta=delta,
                                        logstream=logstream)]
         caller = call(
