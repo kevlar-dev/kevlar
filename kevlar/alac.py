@@ -30,7 +30,7 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
         contigs = [c for c in assembler(reads, logstream=logstream)]
         contigs = list(augment_and_mark(reads, contigs))
         if min_ikmers is not None:
-            contigs = [c for c in contigs if len(c.ikmers) > min_ikmers]
+            contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
         if len(contigs) == 0:
             continue
         targets = [t for t in localize(contigs, refrfile, ksize, delta=delta,
@@ -50,7 +50,7 @@ def main(args):
         pstream, args.refr, ksize=args.ksize, delta=args.delta,
         maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, greedy=args.greedy,
-        logstream=args.logfile
+        min_ikmers=args.min_ikmers, logstream=args.logfile
     )
 
     for varcall in workflow:

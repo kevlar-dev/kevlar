@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - New `kevlar gentrio` command for a more realistic similation of trios for testing and evaluation.
+- New filter for `kevlar alac` for discarding partitions with a small number of interesting k-mers.
 
 ### Changed
 - The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter.

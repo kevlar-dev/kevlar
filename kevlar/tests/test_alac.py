@@ -75,3 +75,24 @@ def test_pico_partitioned(capsys):
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
     assert numnocalls == 2
+
+
+def test_ikmer_filter_python():
+    """
+    Smoke test for filtering based in number of supporting ikmers.
+
+    Each partition in the data set has only 2 supporting interesting k-mers.
+    The supplied reference file doesn't exist, so if this test passes it's
+    because the filtering worked correctly and the `localize` code is never
+    invoked.
+    """
+    readfile = data_file('min_ikmers_filt.augfastq.gz')
+    reads = kevlar.parse_augmented_fastx(readfile)
+    calls = list(kevlar.alac.alac(reads, 'BOGUSREFR', ksize=31, min_ikmers=3))
+
+
+def test_ikmer_filter_cli():
+    reads = data_file('min_ikmers_filt.augfastq.gz')
+    arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, 'FAKEREFR']
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.alac.main(args)
