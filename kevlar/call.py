@@ -168,7 +168,7 @@ def call_snv(target, query, offset, length, ksize):
         localcoord = offset + diff[0]
         seqid, globalcoord = local_to_global(localcoord, target.name)
         snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window,
-                         RW=refrwindow)
+                         RW=refrwindow, IK=str(len(query.ikmers)))
         snvs.append(snv)
     return snvs
 
@@ -187,7 +187,7 @@ def call_deletion(target, query, offset, ksize, leftmatch, indellength):
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
     return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window,
-                         RW=refrwindow)]
+                         RW=refrwindow, IK=str(len(query.ikmers)))]
 
 
 def call_insertion(target, query, offset, ksize, leftmatch, indellength):
@@ -204,7 +204,7 @@ def call_insertion(target, query, offset, ksize, leftmatch, indellength):
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
     return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window,
-                         RW=refrwindow)]
+                         RW=refrwindow, IK=str(len(query.ikmers)))]
 
 
 def make_call(target, query, cigar, ksize):
