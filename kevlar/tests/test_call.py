@@ -110,8 +110,7 @@ def test_call_ssc_two_proximal_snvs():
     ('pico-7-refr.fa', 'pico-7-asmbl.fa', '10D83M190D75M20I1M'),
     ('pico-2-refr.fa', 'pico-2-asmbl.fa', '10D89M153I75M20I'),
 ])
-def test_call_cli(targetfile, queryfile, cigar, capsys):
-    """Smoke test for `kevlar call` cli"""
+def test_call_formerly_inscrutable(targetfile, queryfile, cigar, capsys):
     target = data_file(targetfile)
     query = data_file(queryfile)
     args = kevlar.cli.parser().parse_args(['call', query, target])
@@ -119,13 +118,7 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
 
     out, err = capsys.readouterr()
     print(out)
-    cigars = list()
-    for line in out.strip().split('\n'):
-        cigarmatch = re.search('CG=([^;\n]+)', line)
-        if cigarmatch:
-            cigar = cigarmatch.group(1)
-            cigars.append(cigar)
-    assert cigar in cigars
+    assert 'GC=' not in out
 
 
 def test_snv_obj():

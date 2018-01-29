@@ -183,7 +183,8 @@ def call_deletion(target, query, offset, ksize, leftmatch, indellength):
 
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
-    assert len(refr) == indellength + 1
+    # This assertion is no longer valid when query is longer than target
+    # assert len(refr) == indellength + 1
     localcoord = offset + leftmatch
     seqid, globalcoord = local_to_global(localcoord, target.name)
     return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window,
@@ -208,8 +209,8 @@ def call_insertion(target, query, offset, ksize, leftmatch, indellength):
 
 
 def make_call(target, query, cigar, ksize):
-    snvmatch = re.search('^(\d+)D(\d+)M(\d+)D$', cigar)
-    snvmatch2 = re.search('^(\d+)D(\d+)M(\d+)D(\d+)M$', cigar)
+    snvmatch = re.search('^(\d+)[DI](\d+)M(\d+)[DI]$', cigar)
+    snvmatch2 = re.search('^(\d+)[DI](\d+)M(\d+)[DI](\d+)M$', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
         length = int(snvmatch.group(2))
@@ -219,21 +220,21 @@ def make_call(target, query, cigar, ksize):
         length = int(snvmatch2.group(2))
         return call_snv(target, query, offset, length, ksize)
 
-    indelmatch = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D$', cigar)
-    indelmatch2 = re.search('^(\d+)D(\d+)M(\d+)([ID])(\d+)M(\d+)D(\d+)M$',
+    indmatch = re.search('^(\d+)[DI](\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', cigar)
+    indmatch2 = re.search('^(\d+)[DI](\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$',
                             cigar)
-    if indelmatch:
-        offset = int(indelmatch.group(1))
-        leftmatch = int(indelmatch.group(2))
-        indellength = int(indelmatch.group(3))
-        indeltype = indelmatch.group(4)
+    if indmatch:
+        offset = int(indmatch.group(1))
+        leftmatch = int(indmatch.group(2))
+        indellength = int(indmatch.group(3))
+        indeltype = indmatch.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, ksize, leftmatch, indellength)
-    elif indelmatch2 and int(indelmatch2.group(7)) <= 5:
-        offset = int(indelmatch2.group(1))
-        leftmatch = int(indelmatch2.group(2))
-        indellength = int(indelmatch2.group(3))
-        indeltype = indelmatch2.group(4)
+    elif indmatch2 and int(indmatch2.group(7)) <= 5:
+        offset = int(indmatch2.group(1))
+        leftmatch = int(indmatch2.group(2))
+        indellength = int(indmatch2.group(3))
+        indeltype = indmatch2.group(4)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, ksize, leftmatch, indellength)
 
