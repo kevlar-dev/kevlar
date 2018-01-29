@@ -43,6 +43,9 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
+    misc_args.add_argument('-i', '--min-ikmers', metavar='I', type=int,
+                           default=None, help='do not report calls that a '
+                           'supported by fewer than `I` interesting k-mers')
     misc_args.add_argument('--greedy', action='store_true', help='Use the '
                            'greedy assembly algorithm instead of the default '
                            'fermi-lite algorithm')
