@@ -221,3 +221,26 @@ def test_nocall():
         'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
         'TGCAAGAAAAT'
     )
+
+
+@pytest.mark.parametrize('part,coord,window', [
+    (12, 7027071, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
+                  'GG'),
+    (16, 25755121, 'TTTTGGTGTTTAGACATGAAGTCCTTGCCCATCGAGTTATGCCTATGTCCTGAATGCT'
+                   'ATTGCCTAGG'),
+    (23, 59459928, 'CAGGCGTGAGCCACCGCGCCTGGCCAGGAGCATTGTTTGAACCCAGAAGGCGGAGGTT'
+                   'GCA'),
+])
+def test_funky_cigar(part, coord, window):
+    contigfile = data_file('funkycigar/part.cc{:d}.contig.fa.gz'.format(part))
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('funkycigar/part.cc{:d}.gdna.fa.gz'.format(part))
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == '17'
+    assert calls[0].position == coord - 1
+    assert calls[0].info['VW'] == window
