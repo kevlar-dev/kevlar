@@ -231,7 +231,7 @@ def make_call(target, query, cigar, ksize):
         return call_snv(target, query, offset, length, ksize)
     elif snvmatch2 and int(snvmatch2.group(5)) <= 5:
         offset = int(snvmatch2.group(1))
-        if snvmatch.group(2) == 'I':
+        if snvmatch2.group(2) == 'I':
             offset *= -1
         length = int(snvmatch2.group(3))
         return call_snv(target, query, offset, length, ksize)
