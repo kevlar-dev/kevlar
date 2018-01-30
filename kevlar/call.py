@@ -321,8 +321,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
 def main(args):
     outstream = kevlar.open(args.out, 'w')
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
-    queryseqs = [record for record in qinstream]
-    targetseqs = [record for record in khmer.ReadParser(args.targetseq)]
+    queryseqs = list(qinstream)
+    targetseqs = list(khmer.ReadParser(args.targetseq))
     caller = call(
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend,
