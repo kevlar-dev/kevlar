@@ -145,11 +145,21 @@ def local_to_global(localcoord, subseqid):
 
 
 def call_snv(target, query, offset, length, ksize):
-    t = target.sequence[offset:offset+length]
-    q = query.sequence[:length]
+    targetshort = False
+    if offset < 0:
+        offset *= -1
+        gdnaoffset = 0
+        targetshort = True
+        t = target.sequence[:length]
+        q = query.sequence[offset:offset+length]
+    else:
+        gdnaoffset = offset
+        t = target.sequence[offset:offset+length]
+        q = query.sequence[:length]
+    print('DEBUG', t, q, sep='\n', file=sys.stderr)
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 0:
-        seqid, globalcoord = local_to_global(offset, target.name)
+        seqid, globalcoord = local_to_global(gdnaoffset, target.name)
         nocall = Variant(seqid, globalcoord, '.', '.', NC='perfectmatch',
                          QN=query.name, QS=q)
         return [nocall]
@@ -161,11 +171,13 @@ def call_snv(target, query, offset, length, ksize):
         window = q[minpos:maxpos]
         refrwindow = t[minpos:maxpos]
 
-        numoverlappingkmers = len(window) - ksize + 1
-        kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
+        # numoverlappingkmers = len(window) - ksize + 1
+        # kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
         refr = diff[1].upper()
         alt = diff[2].upper()
-        localcoord = offset + diff[0]
+        localcoord = diff[0]
+        if not targetshort:
+            localcoord += offset
         seqid, globalcoord = local_to_global(localcoord, target.name)
         snv = VariantSNV(seqid, globalcoord, refr, alt, VW=window,
                          RW=refrwindow, IK=str(len(query.ikmers)))
@@ -209,15 +221,19 @@ def call_insertion(target, query, offset, ksize, leftmatch, indellength):
 
 
 def make_call(target, query, cigar, ksize):
-    snvmatch = re.search('^(\d+)[DI](\d+)M(\d+)[DI]$', cigar)
-    snvmatch2 = re.search('^(\d+)[DI](\d+)M(\d+)[DI](\d+)M$', cigar)
+    snvmatch = re.search('^(\d+)([DI])(\d+)M(\d+)[DI]$', cigar)
+    snvmatch2 = re.search('^(\d+)([DI])(\d+)M(\d+)[DI](\d+)M$', cigar)
     if snvmatch:
         offset = int(snvmatch.group(1))
-        length = int(snvmatch.group(2))
+        if snvmatch.group(2) == 'I':
+            offset *= -1
+        length = int(snvmatch.group(3))
         return call_snv(target, query, offset, length, ksize)
-    elif snvmatch2 and int(snvmatch2.group(4)) <= 5:
+    elif snvmatch2 and int(snvmatch2.group(5)) <= 5:
         offset = int(snvmatch2.group(1))
-        length = int(snvmatch2.group(2))
+        if snvmatch.group(2) == 'I':
+            offset *= -1
+        length = int(snvmatch2.group(3))
         return call_snv(target, query, offset, length, ksize)
 
     indmatch = re.search('^(\d+)[DI](\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', cigar)
