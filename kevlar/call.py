@@ -185,38 +185,74 @@ def call_snv(target, query, offset, length, ksize):
     return snvs
 
 
-def call_deletion(target, query, offset, ksize, leftmatch, indellength):
+def deletion_allele(target, query, offset, ksize, leftmatch, indellength):
     minpos = leftmatch - ksize + 1
     maxpos = leftmatch + ksize - 1
-    window = query.sequence[minpos:maxpos]
+    altwindow = query.sequence[minpos:maxpos]
     minpos += offset
     maxpos += offset + indellength
     refrwindow = target.sequence[minpos:maxpos]
+    print('DEBUGLY', refrwindow, altwindow, sep='\n', file=sys.stderr)
 
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
-    # This assertion is no longer valid when query is longer than target
-    # assert len(refr) == indellength + 1
-    localcoord = offset + leftmatch
-    seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=window,
-                         RW=refrwindow, IK=str(len(query.ikmers)))]
+    return refr, alt, refrwindow, altwindow
 
 
-def call_insertion(target, query, offset, ksize, leftmatch, indellength):
+def insertion_allele(target, query, offset, ksize, leftmatch, indellength):
     minpos = leftmatch - ksize + 1
     maxpos = leftmatch + ksize + indellength - 1
-    window = query.sequence[minpos:maxpos]
+    altwindow = query.sequence[minpos:maxpos]
     minpos += offset
     maxpos += offset - indellength
     refrwindow = target.sequence[minpos:maxpos]
 
-    insertion = query.sequence[leftmatch-1:leftmatch+indellength]
-    refr = insertion[0]
-    assert len(insertion) == indellength + 1
-    localcoord = offset + leftmatch
+    alt = query.sequence[leftmatch-1:leftmatch+indellength]
+    refr = alt[0]
+    return refr, alt, refrwindow, altwindow
+
+
+def call_deletion(target, query, offset, ksize, leftmatch, indellength):
+    if offset < 0:
+        offset *= -1
+        targetshort = True
+        alt, refr, altwindow, refrwindow = insertion_allele(
+            query, target, offset, ksize, leftmatch, indellength
+        )
+    else:
+        targetshort = False
+        refr, alt, refrwindow, altwindow = deletion_allele(
+            target, query, offset, ksize, leftmatch, indellength
+        )
+    # This assertion is no longer valid when query is longer than target
+    # assert len(refr) == indellength + 1
+    localcoord = leftmatch
+    if not targetshort:
+        localcoord += offset
     seqid, globalcoord = local_to_global(localcoord, target.name)
-    return [VariantIndel(seqid, globalcoord - 1, refr, insertion, VW=window,
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=altwindow,
+                         RW=refrwindow, IK=str(len(query.ikmers)))]
+
+
+def call_insertion(target, query, offset, ksize, leftmatch, indellength):
+    if offset < 0:
+        offset *= -1
+        targetshort = True
+        alt, refr, altwindow, refrwindow = deletion_allele(
+            query, target, offset, ksize, leftmatch, indellength
+        )
+    else:
+        targetshort = False
+        refr, alt, refrwindow, altwindow = insertion_allele(
+            target, query, offset, ksize, leftmatch, indellength
+        )
+
+    assert len(alt) == indellength + 1
+    localcoord = leftmatch
+    if not targetshort:
+        localcoord += offset
+    seqid, globalcoord = local_to_global(localcoord, target.name)
+    return [VariantIndel(seqid, globalcoord - 1, refr, alt, VW=altwindow,
                          RW=refrwindow, IK=str(len(query.ikmers)))]
 
 
@@ -236,21 +272,28 @@ def make_call(target, query, cigar, ksize):
         length = int(snvmatch2.group(3))
         return call_snv(target, query, offset, length, ksize)
 
-    indmatch = re.search('^(\d+)[DI](\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', cigar)
-    indmatch2 = re.search('^(\d+)[DI](\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$',
-                            cigar)
-    if indmatch:
-        offset = int(indmatch.group(1))
-        leftmatch = int(indmatch.group(2))
-        indellength = int(indmatch.group(3))
-        indeltype = indmatch.group(4)
+    indelmatch = re.search(
+        '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', cigar
+    )
+    indelmatch2 = re.search(
+        '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$', cigar
+    )
+    if indelmatch:
+        offset = int(indelmatch.group(1))
+        if indelmatch.group(2) == 'I':
+            offset *= -1
+        leftmatch = int(indelmatch.group(3))
+        indellength = int(indelmatch.group(4))
+        indeltype = indelmatch.group(5)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, ksize, leftmatch, indellength)
-    elif indmatch2 and int(indmatch2.group(7)) <= 5:
-        offset = int(indmatch2.group(1))
-        leftmatch = int(indmatch2.group(2))
-        indellength = int(indmatch2.group(3))
-        indeltype = indmatch2.group(4)
+    elif indelmatch2 and int(indelmatch2.group(8)) <= 5:
+        offset = int(indelmatch2.group(1))
+        if indelmatch2.group(2) == 'I':
+            offset *= -1
+        leftmatch = int(indelmatch2.group(3))
+        indellength = int(indelmatch2.group(4))
+        indeltype = indelmatch2.group(5)
         callfunc = call_deletion if indeltype == 'D' else call_insertion
         return callfunc(target, query, offset, ksize, leftmatch, indellength)
 
