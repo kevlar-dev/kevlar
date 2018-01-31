@@ -110,8 +110,7 @@ def test_call_ssc_two_proximal_snvs():
     ('pico-7-refr.fa', 'pico-7-asmbl.fa', '10D83M190D75M20I1M'),
     ('pico-2-refr.fa', 'pico-2-asmbl.fa', '10D89M153I75M20I'),
 ])
-def test_call_cli(targetfile, queryfile, cigar, capsys):
-    """Smoke test for `kevlar call` cli"""
+def test_call_formerly_inscrutable(targetfile, queryfile, cigar, capsys):
     target = data_file(targetfile)
     query = data_file(queryfile)
     args = kevlar.cli.parser().parse_args(['call', query, target])
@@ -119,13 +118,7 @@ def test_call_cli(targetfile, queryfile, cigar, capsys):
 
     out, err = capsys.readouterr()
     print(out)
-    cigars = list()
-    for line in out.strip().split('\n'):
-        cigarmatch = re.search('CIGAR=([^;\n]+)', line)
-        if cigarmatch:
-            cigar = cigarmatch.group(1)
-            cigars.append(cigar)
-    assert cigar in cigars
+    assert 'GC=' not in out
 
 
 def test_snv_obj():
@@ -228,3 +221,59 @@ def test_nocall():
         'CS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
         'TGCAAGAAAAT'
     )
+
+
+@pytest.mark.parametrize('part,coord,window', [
+    (12, 7027071, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
+                  'GG'),
+    (16, 25755121, 'TTTTGGTGTTTAGACATGAAGTCCTTGCCCATCGAGTTATGCCTATGTCCTGAATGCT'
+                   'ATTGCCTAGG'),
+    (23, 59459928, 'CAGGCGTGAGCCACCGCGCCTGGCCAGGAGCATTGTTTGAACCCAGAAGGCGGAGGTT'
+                   'GCA'),
+    (192, 28556906, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
+                    'GGC')
+])
+def test_funky_cigar(part, coord, window):
+    contigfile = data_file('funkycigar/part.cc{:d}.contig.fa.gz'.format(part))
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('funkycigar/part.cc{:d}.gdna.fa.gz'.format(part))
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == '17'
+    assert calls[0].position == coord - 1
+    assert calls[0].info['VW'] == window
+
+
+def test_funky_cigar_deletion():
+    contigfile = data_file('funkycigar/deletion.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('funkycigar/deletion.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == 'chr42'
+    assert calls[0].position == 53644
+    assert calls[0]._refr == 'ATGTCTGTTTTCTTAACCT'
+    assert calls[0]._alt == 'A'
+
+
+def test_perfect_match():
+    contigfile = data_file('nodiff.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('nodiff.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == 'chr99'
+    assert calls[0].position == 2899377
+    assert calls[0].info['NC'] == 'perfectmatch'
