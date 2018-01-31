@@ -156,7 +156,6 @@ def call_snv(target, query, offset, length, ksize):
         gdnaoffset = offset
         t = target.sequence[offset:offset+length]
         q = query.sequence[:length]
-    print('DEBUG', t, q, sep='\n', file=sys.stderr)
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 0:
         seqid, globalcoord = local_to_global(gdnaoffset, target.name)
@@ -192,7 +191,6 @@ def deletion_allele(target, query, offset, ksize, leftmatch, indellength):
     minpos += offset
     maxpos += offset + indellength
     refrwindow = target.sequence[minpos:maxpos]
-    print('DEBUGLY', refrwindow, altwindow, sep='\n', file=sys.stderr)
 
     refr = target.sequence[offset+leftmatch-1:offset+leftmatch+indellength]
     alt = refr[0]
