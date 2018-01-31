@@ -11,10 +11,11 @@ import sys
 import khmer
 import kevlar
 from kevlar.vcf import Variant
-import scipy
+from math import log
+import scipy.stats
 
 
-def KevlarUnknownGenotypeError(ValueError):
+class KevlarUnknownGenotypeError(ValueError):
     pass
 
 
@@ -31,10 +32,10 @@ def filter_refr(akmers, rkmers, refrcounts):
     """
     newa, newr = list(), list()
     for a in akmers:
-        if refr.get(a) == 0:
+        if refrcounts.get(a) == 0:
             newa.append(a)
     for r in rkmers:
-        if refr.get(r) < 2:
+        if refrcounts.get(r) < 2:
             newr.append(r)
     return newa, newr
 
@@ -52,12 +53,13 @@ def get_abundances(kmers, casecounts, controlcounts):
         [0, 1, 1, 0, 1, 0, 2, 0],  # k-mer abundances from parent/control 2
     ]
     """
-    nsamples = len(controlcounts) + 1
-    abundances = [list()] * nsamples
+    ncontrols = len(controlcounts)
+    nsamples = ncontrols + 1
+    abundances = [list() for _ in range(nsamples)]
     for kmer in kmers:
         abund = casecounts.get(kmer)
         abundances[0].append(abund)
-        for i in range(len(controlcounts)):
+        for i in range(ncontrols):
             abund = controlcounts[i].get(kmer)
             abundances[i+1].append(abund)
     return abundances
@@ -79,7 +81,7 @@ def set_error_rates(error, nsamples):
     return errors
 
 
-def abund_log_prob(genotype, abundance, mean=40.0, sd=8.0, error=0.01):
+def abund_log_prob(genotype, abundance, mean=30.0, sd=8.0, error=0.01):
     """
     Calculate conditional k-mer abundance probability
 
@@ -91,15 +93,13 @@ def abund_log_prob(genotype, abundance, mean=40.0, sd=8.0, error=0.01):
     The `error` parameter is the error rate.
     """
     if genotype not in (0, 1, 2):
-        raise KevlarUnknownGenotypeError(gentype)
+        raise KevlarUnknownGenotypeError(genotype)
     if genotype == 0:
         return abundance * log(error)
     if genotype == 1:
-        p = scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
-        return log(p)
+        return scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
     if genotype == 2:
-        p = scipy.stats.norm.logpdf(abundance, mean, sd)
-        return log(p)
+        return scipy.stats.norm.logpdf(abundance, mean, sd)
 
 
 def likelihood_denovo(altabunds, refrabunds, mean=30.0, sd=8.0, error=0.01):
