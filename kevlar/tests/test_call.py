@@ -248,6 +248,22 @@ def test_funky_cigar(part, coord, window):
     assert calls[0].info['VW'] == window
 
 
+def test_funky_cigar_deletion():
+    contigfile = data_file('funkycigar/deletion.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('funkycigar/deletion.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == 'chr42'
+    assert calls[0].position == 53644
+    assert calls[0]._refr == 'ATGTCTGTTTTCTTAACCT'
+    assert calls[0]._alt == 'A'
+
+
 def test_perfect_match():
     contigfile = data_file('nodiff.contig.fa')
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
