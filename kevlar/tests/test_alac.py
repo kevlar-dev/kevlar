@@ -87,8 +87,9 @@ def test_ikmer_filter_python():
     invoked.
     """
     readfile = data_file('min_ikmers_filt.augfastq.gz')
-    reads = kevlar.parse_augmented_fastx(readfile)
-    calls = list(kevlar.alac.alac(reads, 'BOGUSREFR', ksize=31, min_ikmers=3))
+    reads = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    parts = kevlar.parse_partitioned_reads(reads)
+    calls = list(kevlar.alac.alac(parts, 'BOGUSREFR', ksize=31, min_ikmers=3))
 
 
 def test_ikmer_filter_cli():
@@ -96,3 +97,14 @@ def test_ikmer_filter_cli():
     arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, 'FAKEREFR']
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
+
+
+def test_no_reference_match(capsys):
+    readfile = data_file('pico-4.augfastq.gz')
+    reads = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partitions = kevlar.parse_partitioned_reads(reads)
+    refr = data_file('localize-refr.fa')
+    baldwin = kevlar.alac.alac(partitions, refr, logstream=sys.stderr)
+    calls = list(baldwin)
+    out, err = capsys.readouterr()
+    assert 'WARNING: no reference matches' in err

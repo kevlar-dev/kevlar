@@ -29,7 +29,7 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
         reads = list(partition)
 
         # Assemble partitioned reads into contig(s)
-        contigs = [c for c in assembler(reads, logstream=logstream)]
+        contigs = list(assembler(reads, logstream=logstream))
         contigs = list(augment_and_mark(reads, contigs))
         if min_ikmers is not None:
             # Apply min ikmer filter if it's set
