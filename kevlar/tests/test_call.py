@@ -230,6 +230,8 @@ def test_nocall():
                    'ATTGCCTAGG'),
     (23, 59459928, 'CAGGCGTGAGCCACCGCGCCTGGCCAGGAGCATTGTTTGAACCCAGAAGGCGGAGGTT'
                    'GCA'),
+    (192, 28556906, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
+                    'GGC')
 ])
 def test_funky_cigar(part, coord, window):
     contigfile = data_file('funkycigar/part.cc{:d}.contig.fa.gz'.format(part))
@@ -244,3 +246,18 @@ def test_funky_cigar(part, coord, window):
     assert calls[0].seqid == '17'
     assert calls[0].position == coord - 1
     assert calls[0].info['VW'] == window
+
+
+def test_perfect_match():
+    contigfile = data_file('nodiff.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('nodiff.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == 'chr99'
+    assert calls[0].position == 2899377
+    assert calls[0].info['NC'] == 'perfectmatch'
