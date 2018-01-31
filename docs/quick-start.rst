@@ -14,7 +14,7 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
         curl -L https://osf.io/fuaty/download?version=1 -o father.fq.gz
         curl -L https://osf.io/f5trh/download?version=1 -o proband.fq.gz
         curl -L https://osf.io/58rwa/download?version=1 -o refr.fa.gz
-        bwa index refr.fq.gz
+        bwa index refr.fa.gz
 
         kevlar simplex \
             --case proband.fq.gz --case-min 6 \
