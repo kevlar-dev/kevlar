@@ -16,6 +16,7 @@ Virtual environment
 -------------------
 
 We recommend installing kevlar and its dependencies in a dedicated virtual environment using `venv <https://docs.python.org/3/library/venv.html>`_ or `conda <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_.
+
 - If you use ``venv``, the command ``python3 -m venv kevlar-env`` will create a new virtual environment, and only needs to be executed once.
   The command ``source kevlar-env/bin/activate`` will need to be re-executed any time you open a new session in your terminal.
 - If you use ``conda``, the command ``conda create --name kevlar-env python=3.6`` will create a new virtual environment, and only needs to be executed once.
