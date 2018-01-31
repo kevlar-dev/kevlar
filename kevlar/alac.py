@@ -27,17 +27,26 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
+
+        # Assemble partitioned reads into contig(s)
         contigs = [c for c in assembler(reads, logstream=logstream)]
         contigs = list(augment_and_mark(reads, contigs))
         if min_ikmers is not None:
+            # Apply min ikmer filter if it's set
             contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
         if len(contigs) == 0:
             continue
-        targets = [t for t in localize(contigs, refrfile, ksize, delta=delta,
-                                       logstream=logstream)]
-        caller = call(
-            targets, contigs, match, mismatch, gapopen, gapextend, ksize
-        )
+
+        # Identify the genomic region(s) associated with each contig
+        localizer = localize(contigs, refrfile, ksize, delta=delta,
+                             logstream=logstream)
+        targets = list(localizer)
+        if len(targets) == 0:
+            continue
+
+        # Align contigs to genomic targets to make variant calls
+        caller = call(targets, contigs, match, mismatch, gapopen, gapextend,
+                      ksize)
         for varcall in caller:
             yield varcall
 
