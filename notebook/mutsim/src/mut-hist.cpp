@@ -20,14 +20,13 @@ typedef struct
     double sampling_rate;
     int seed;
     std::string muttype;
-    ulong memory;
-    std::string infile;
-    std::string refrfile;
+    std::string seqfile;
+    std::string refrcounts;
 } ProgramArgs;
 
 void print_usage(std::ostream& stream = std::cerr)
 {
-    stream << "Usage: snv-hist [options] seqs.fa [genome.fa]\n";
+    stream << "Usage: snv-hist [options] genome.fa kmercounts.counttable\n";
     stream << "  options:\n";
     stream << "    -h    print this help message and exit\n";
     stream << "    -i    debug output interval (default: 1000000)\n";
@@ -37,7 +36,6 @@ void print_usage(std::ostream& stream = std::cerr)
     stream << "    -r    sampling rate (default: 1.0)\n";
     stream << "    -s    seed for random number generator (default: 42)\n";
     stream << "    -t    mutation type: snv (default), del\n";
-    stream << "    -y    memory consumption (in bytes; default: 2000000000)\n";
     stream << "    -z    deletion size (default: 5)\n";
 }
 
@@ -73,9 +71,6 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
         else if (c == 't') {
             args->muttype = optarg;
         }
-        else if (c == 'y') {
-            args->memory = strtoul(optarg, NULL, 10);
-        }
         else if (c == 'z') {
             args->delsize = atoi(optarg);
         }
@@ -86,11 +81,8 @@ void parse_args(int argc, const char **argv, ProgramArgs *args)
         }
     }
 
-    args->infile = argv[optind];
-    args->refrfile = argv[optind];
-    if (argc > optind + 1) {
-        args->refrfile = argv[optind + 1];
-    }
+    args->seqfile = argv[optind];
+    args->refrcounts = argv[optind + 1];
 }
 
 int main(int argc, const char **argv)
@@ -100,31 +92,20 @@ int main(int argc, const char **argv)
         return 0;
     }
 
-    ProgramArgs args = {5, 1000000, 31, 0, 16, 1.0, 42, "snv", 2000000000, "", ""};
+    ProgramArgs args = {5, 1000000, 31, 0, 16, 1.0, 42, "snv", "", ""};
     parse_args(argc, argv, &args);
 
     timepoint alloc_start = std::chrono::system_clock::now();
-    std::cerr << "# allocating counttable...";
-    std::vector<uint64_t> tablesizes = get_n_primes_near_x(4, args.memory / 4);
-    Counttable counttable(args.ksize, tablesizes);
+    std::cerr << "# loading reference genome k-mers counts from " << args.refrcounts << "...";
+    std::vector<uint64_t> tablesizes = {1};
+    Counttable counttable(1, tablesizes);
+    counttable.load(args.refrcounts);
     timepoint alloc_end = std::chrono::system_clock::now();
     std::chrono::duration<double> alloc_elapsed = alloc_end - alloc_start;
     std::cerr << "done! (in " << alloc_elapsed.count() << " seconds)\n";
 
-
-    std::cerr << "# consuming reference...";
-    timepoint consume_start = std::chrono::system_clock::now();
-    unsigned int seqs_consumed = 0;
-    unsigned long long kmers_consumed = 0;
-    counttable.consume_seqfile<FastxReader>(args.refrfile, seqs_consumed, kmers_consumed);
-    timepoint consume_end = std::chrono::system_clock::now();
-    std::chrono::duration<double> consume_elapsed = consume_end - consume_start;
-    std::cerr << "done! consumed " << seqs_consumed << " sequence(s) and "
-              << kmers_consumed << " " << args.ksize << "-mers (in "
-              << consume_elapsed.count() << " seconds)\n";
-
     timepoint query_start = std::chrono::system_clock::now();
-    std::cerr << "# querying k-mer abundance...";
+    std::cerr << "# iterating through " << args.seqfile << ", querying k-mer abundances...";
     Logger logger(args.interval, std::cerr);
     std::unique_ptr<Mutator> mut = NULL;
     if(args.muttype == "snv") {
@@ -139,7 +120,7 @@ int main(int argc, const char **argv)
     }
     mut->set_sampling_rate(args.sampling_rate, args.seed);
 
-    FastxParserPtr parser = get_parser<FastxReader>(args.infile);
+    FastxParserPtr parser = get_parser<FastxReader>(args.seqfile);
     Sequence seq;
     while (!parser->is_complete()) {
         try {
