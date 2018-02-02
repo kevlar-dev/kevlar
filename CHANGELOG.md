@@ -5,14 +5,20 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-- New `kevlar gentrio` command for a more realistic similation of trios for testing and evaluation.
+- New `kevlar gentrio` command for a more realistic similation of trios for testing and evaluation (#171).
+- New filter for `kevlar alac` for discarding partitions with a small number of interesting k-mers (#189).
 
 ### Changed
-- The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter.
+- Replaced `pep8` with `pycodestyle` for enforcing code style in development (see #167).
+- The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter (see #170).
+- Split the functionality of the `count` subcommand: simple single-sample k-mer counting was kept in `count` with a much simplified interface, while the memory efficient multi-sample "masked counting" strategy was split out to a new subcommand `effcount` (see #185).
+- Replaced `kevlar reaugment` with a more generalizable `kevlar augment` subcommand (see #188).
 
 ### Fixed
-- Incorrect file names in the quick start documentation page.
-- The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition labeled sequence file at the CLI level.
+- Incorrect file names in the quick start documentation page (see 9f6bec06d4).
+- The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition-labeled sequence file at the CLI level (see #165).
+- CIGARs that begin with I blocks (alternate allele contig is longer than reference locus) are now handled properly (see #191).
+- Bug with how `kevlar alac` handles "no reference match" scenarios resolved (see #192).
 
 ## [0.3.0] - 2017-11-03
 
