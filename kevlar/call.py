@@ -319,6 +319,19 @@ def align_both_strands(targetseq, queryseq, match=1, mismatch=2, gapopen=5,
     return cigar, score, strand
 
 
+def alignment_interpretable(cigar):
+    patterns = [
+        '^(\d+)([DI])(\d+)M(\d+)[DI]$',
+        '^(\d+)([DI])(\d+)M(\d+)[DI](\d+)M$',
+        '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$',
+        '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$',
+    ]
+    for pattern in patterns:
+        if re.search(pattern, cigar) is not None:
+            return True
+    return False
+
+
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
          ksize=31):
     """
@@ -338,25 +351,31 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
     and alignment CIGAR string
     """
     for query in sorted(querylist, reverse=True, key=len):
-        bestcigar = None
-        bestscore = None
-        besttarget = None
-        bestorientation = None
+        alignments = list()
         for target in sorted(targetlist, key=lambda record: record.name):
             cigar, score, strand = align_both_strands(
                 target.sequence, query.sequence, match, mismatch, gapopen,
                 gapextend
             )
-            if bestscore is None or score > bestscore:
-                bestscore = score
-                bestcigar = cigar
-                besttarget = target
-                bestorientation = strand
+            alignments.append((target, cigar, score, strand))
+        alignments.sort(key=lambda a: a[2], reverse=True)
+        if len(alignments) == 1:
+            aligns2report = alignments
+        else:
+            scrtbl = [a for a in alignments if alignment_interpretable(a[1])]
+            if len(scrtbl) == 0:
+                finallist = alignments
+            else:
+                finallist = scrtbl
+            bestscore = finallist[0][2]
+            aligns2report = [a for a in finallist if a[2] == bestscore]
 
-        if bestorientation == -1:
-            query.sequence = kevlar.revcom(query.sequence)
-        for varcall in make_call(besttarget, query, bestcigar, ksize):
-            yield varcall
+        for alignment in aligns2report:
+            besttarget, bestcigar, bestscore, bestorientation = alignment
+            if bestorientation == -1:
+                query.sequence = kevlar.revcom(query.sequence)
+            for varcall in make_call(besttarget, query, bestcigar, ksize):
+                yield varcall
 
 
 def main(args):
