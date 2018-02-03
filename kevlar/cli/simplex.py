@@ -128,6 +128,8 @@ def subparser(subparsers):
         'contig is aligned to a cutout of the reference genome, and the '
         'variant is called from the alignment.'
     )
+    alac_args.add_argument('-z', '--seed-size', type=int, default=31,
+                           metavar='Z', help='seed size; default is 31')
     alac_args.add_argument(
         '-d', '--delta', type=int, default=50, metavar='D', help='extend the '
         'genomic cutout by D bp; default is 50'

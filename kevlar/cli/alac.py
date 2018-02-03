@@ -19,6 +19,8 @@ def subparser(subparsers):
     subparser._positionals.title = 'Required inputs'
 
     local_args = subparser.add_argument_group('Target extraction')
+    local_args.add_argument('-z', '--seed-size', type=int, default=31,
+                            metavar='Z', help='seed size; default is 31')
     local_args.add_argument('-d', '--delta', type=int, default=25, metavar='D',
                             help='retrieve the genomic interval from the '
                             'reference by extending beyond the span of all '
