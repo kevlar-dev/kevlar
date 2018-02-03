@@ -11,15 +11,15 @@ from io import StringIO
 import pytest
 import screed
 import kevlar
-from kevlar.localize import KmerMatchSet
+from kevlar.localize import SeedMatchSet
 from kevlar.localize import KevlarRefrSeqNotFoundError
-from kevlar.localize import (extract_regions, get_unique_kmers,
-                             unique_kmer_string)
+from kevlar.localize import (extract_regions, get_unique_seeds,
+                             unique_seed_string)
 from kevlar.tests import data_file
 
 
-def test_kmer_match_set_simple():
-    intervals = KmerMatchSet(ksize=25)
+def test_seed_match_set_simple():
+    intervals = SeedMatchSet(seedsize=25)
     assert intervals.get_spans('chr1') is None
 
     intervals.add('chr1', 100)
@@ -39,36 +39,36 @@ def test_kmer_match_set_simple():
     ('smallseq.augfasta'),
     ('smallseq.fq'),
 ])
-def test_get_unique_kmers(infile):
+def test_get_unique_seeds(infile):
     infile = data_file(infile)
     instream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    kmers = set([k for k in get_unique_kmers(instream, ksize=9)])
-    testkmers = set(
+    seeds = set([k for k in get_unique_seeds(instream, seedsize=9)])
+    testseeds = set(
         ['TTAATTGGC', 'CTTAATTGG', 'TAATTGGCC', 'ATTACCGGT',
          'TTACCGGTA', 'CCTTAATTG', 'GCCTTAATT', 'GGCCTTAAT']
     )
-    print(sorted(kmers))
-    print(sorted(testkmers))
-    assert kmers == testkmers
+    print(sorted(seeds))
+    print(sorted(testseeds))
+    assert seeds == testseeds
 
 
-def test_unique_kmer_string():
+def test_unique_seed_string():
     infile = data_file('smallseq.augfasta')
     instream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    fastastring = unique_kmer_string(instream, ksize=9)
+    fastastring = unique_seed_string(instream, seedsize=9)
     fastafile = StringIO(fastastring)
-    kmers = set([s for d, s in kevlar.seqio.parse_fasta(fastafile)])
-    testkmers = set(
+    seeds = set([s for d, s in kevlar.seqio.parse_fasta(fastafile)])
+    testseeds = set(
         ['TTAATTGGC', 'CTTAATTGG', 'TAATTGGCC', 'ATTACCGGT',
          'TTACCGGTA', 'CCTTAATTG', 'GCCTTAATT', 'GGCCTTAAT']
     )
-    print(sorted(kmers))
-    print(sorted(testkmers))
-    assert kmers == testkmers
+    print(sorted(seeds))
+    print(sorted(testseeds))
+    assert seeds == testseeds
 
 
 def test_extract_regions_basic():
-    intervals = KmerMatchSet(ksize=10)
+    intervals = SeedMatchSet(seedsize=10)
     intervals.add('bogus-genome-chr2', 10)
     instream = open(data_file('bogus-genome/refr.fa'), 'r')
     regions = [r for r in extract_regions(instream, intervals, delta=0)]
@@ -77,7 +77,7 @@ def test_extract_regions_basic():
 
 
 def test_extract_regions_basic_2():
-    intervals = KmerMatchSet(ksize=21)
+    intervals = SeedMatchSet(seedsize=21)
     intervals.add('simple', 49)
     intervals.add('simple', 52)
     intervals.add('simple', 59)
@@ -89,7 +89,7 @@ def test_extract_regions_basic_2():
 
 
 def test_extract_regions_large_span():
-    intervals = KmerMatchSet(ksize=21)
+    intervals = SeedMatchSet(seedsize=21)
     intervals.add('simple', 100)
     intervals.add('simple', 200)
     instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
@@ -103,7 +103,7 @@ def test_extract_regions_large_span():
 
 
 def test_extract_regions_missing_seq():
-    intervals = KmerMatchSet(ksize=21)
+    intervals = SeedMatchSet(seedsize=21)
     intervals.add('simple', 100)
     intervals.add('simple', 200)
     intervals.add('TheCakeIsALie', 42)
@@ -116,14 +116,14 @@ def test_extract_regions_missing_seq():
 
 
 def test_extract_regions_boundaries():
-    intervals = KmerMatchSet(ksize=31)
+    intervals = SeedMatchSet(seedsize=31)
     intervals.add('simple', 15)
     instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
     regions = [r for r in extract_regions(instream, intervals, delta=20)]
     assert len(regions) == 1
     assert regions[0][0] == 'simple_0-66'
 
-    intervals = KmerMatchSet(ksize=31)
+    intervals = SeedMatchSet(seedsize=31)
     intervals.add('simple', 925)
     intervals.add('simple', 955)
     intervals.add('simple', 978)
@@ -136,7 +136,7 @@ def test_extract_regions_boundaries():
 def test_main(capsys):
     contig = data_file('localize-contig.fa')
     refr = data_file('localize-refr.fa')
-    arglist = ['localize', '--ksize', '23', '--delta', '50', contig, refr]
+    arglist = ['localize', '--seed-size', '23', '--delta', '50', contig, refr]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.localize.main(args)
     out, err = capsys.readouterr()
@@ -146,7 +146,7 @@ def test_main(capsys):
 def test_main_no_matches(capsys):
     contig = data_file('localize-contig-bad.fa')
     refr = data_file('localize-refr.fa')
-    arglist = ['localize', '--ksize', '23', contig, refr]
+    arglist = ['localize', '--seed-size', '23', contig, refr]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.localize.main(args)
     out, err = capsys.readouterr()

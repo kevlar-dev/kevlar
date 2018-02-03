@@ -29,7 +29,7 @@ def subparser(subparsers):
                            'of all k-mer starting positions by D bp')
     subparser.add_argument('-o', '--out', metavar='FILE', default='-',
                            help='output file; default is terminal (stdout)')
-    subparser.add_argument('-k', '--ksize', type=int, metavar='K', default=31,
-                           help='k-mer size; default is 31')
+    subparser.add_argument('-z', '--seed-size', type=int, metavar='Z',
+                           default=31, help='seed size; default is 31')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')
