@@ -21,9 +21,9 @@ def augment_and_mark(augseqs, nakedseqs):
         yield seq
 
 
-def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
-         mismatch=2, gapopen=5, gapextend=0, greedy=False, min_ikmers=None,
-         logstream=sys.stderr):
+def alac(pstream, refrfile, ksize=31, delta=25, seedsize=31, maxdiff=10000,
+         match=1, mismatch=2, gapopen=5, gapextend=0, greedy=False,
+         min_ikmers=None, logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
@@ -38,7 +38,7 @@ def alac(pstream, refrfile, ksize=31, delta=25, maxdiff=10000, match=1,
             continue
 
         # Identify the genomic region(s) associated with each contig
-        localizer = localize(contigs, refrfile, ksize, delta=delta,
+        localizer = localize(contigs, refrfile, seedsize, delta=delta,
                              logstream=logstream)
         targets = list(localizer)
         if len(targets) == 0:
@@ -57,9 +57,9 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     workflow = alac(
         pstream, args.refr, ksize=args.ksize, delta=args.delta,
-        maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
-        gapopen=args.open, gapextend=args.extend, greedy=args.greedy,
-        min_ikmers=args.min_ikmers, logstream=args.logfile
+        seedsize=args.seed_size, maxdiff=args.max_diff, match=args.match,
+        mismatch=args.mismatch, gapopen=args.open, gapextend=args.extend,
+        greedy=args.greedy, min_ikmers=args.min_ikmers, logstream=args.logfile
     )
 
     for varcall in workflow:
