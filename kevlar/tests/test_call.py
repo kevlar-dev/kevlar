@@ -288,3 +288,23 @@ def test_perfect_match():
     assert calls[0].seqid == 'chr99'
     assert calls[0].position == 2899377
     assert calls[0].info['NC'] == 'perfectmatch'
+
+
+def test_multibest_revcom():
+    contigfile = data_file('multibestrc.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('multibestrc.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 4
+
+    coordinates = [c.position + 1 for c in calls]
+    assert coordinates == [34495786, 34583830, 58088279, 60344854]
+    for c in calls:
+        assert c._refr == 'A'
+        assert c._alt == 'G'
+        assert c.window == ('CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGG'
+                            'GCCTGAGCCCCA')
