@@ -146,8 +146,8 @@ int main(int argc, const char **argv)
     parse_args(argc, argv, &args);
 
     Counttable counttable = args.refrcounts.compare("") == 0 
-                              ? load_from_counttable(args.refrcounts)
-                              : load_from_seqfile(args.refrfile, args.ksize, args.memory);
+                              ? load_from_seqfile(args.refrfile, args.ksize, args.memory)
+                              : load_from_counttable(args.refrcounts);
 
     timepoint query_start = std::chrono::system_clock::now();
     std::cerr << "# iterating through " << args.seqfile << ", querying k-mer abundances...";
