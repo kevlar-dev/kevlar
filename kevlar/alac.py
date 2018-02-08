@@ -53,7 +53,10 @@ def alac(pstream, refrfile, ksize=31, delta=25, seedsize=31, maxdiff=10000,
 
 def main(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.infile, 'r'))
-    pstream = kevlar.parse_partitioned_reads(readstream)
+    if args.part_id:
+        pstream = kevlar.parse_single_partition(readstream, args.part_id)
+    else:
+        pstream = kevlar.parse_partitioned_reads(readstream)
     outstream = kevlar.open(args.out, 'w')
     workflow = alac(
         pstream, args.refr, ksize=args.ksize, delta=args.delta,
