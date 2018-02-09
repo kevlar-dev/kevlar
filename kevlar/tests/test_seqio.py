@@ -117,25 +117,25 @@ def test_parse_single_partition():
     infile = kevlar.tests.data_file('part-reads-simple.fa')
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partition = list(kevlar.parse_single_partition(readstream, '1'))
-    assert len(partition) == 1
-    assert len(partition[0]) == 4
+    partitions = list(kevlar.parse_single_partition(readstream, '1'))
+    assert len(partitions) == 1
+    assert len(partitions[0]) == 4
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partition = list(kevlar.parse_single_partition(readstream, '2'))
-    assert len(partition) == 1
-    assert len(partition[0]) == 2
+    partitions = list(kevlar.parse_single_partition(readstream, '2'))
+    assert len(partitions) == 1
+    assert len(partitions[0]) == 2
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partition = list(kevlar.parse_single_partition(readstream, 'alFrED'))
-    assert partition == []
+    partitions = list(kevlar.parse_single_partition(readstream, 'alFrED'))
+    assert partitions == []
 
 
 def test_parse_single_partition_nonpartitioned_reads():
     infile = kevlar.tests.data_file('dup.augfastq')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partition = list(kevlar.parse_single_partition(readstream, '42'))
-    assert partition == []
+    partitions = list(kevlar.parse_single_partition(readstream, '42'))
+    assert partitions == []
 
 
 @pytest.mark.parametrize('basename', [
