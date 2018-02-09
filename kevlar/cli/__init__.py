@@ -25,6 +25,7 @@ from . import localize
 from . import call
 from . import alac
 from . import simplex
+from . import split
 
 mains = {
     'dump': kevlar.dump.main,
@@ -41,6 +42,7 @@ mains = {
     'call': kevlar.call.main,
     'alac': kevlar.alac.main,
     'simplex': kevlar.simplex.main,
+    'split': kevlar.split.main,
 }
 
 subparser_funcs = {
@@ -58,6 +60,7 @@ subparser_funcs = {
     'call': call.subparser,
     'alac': alac.subparser,
     'simplex': simplex.subparser,
+    'split': split.subparser,
 }
 
 
