@@ -43,6 +43,11 @@ def subparser(subparsers):
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
+    misc_args.add_argument('-p', '--part-id', type=str, metavar='ID',
+                           help='only process partition "PID" in the input')
+    misc_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
+                           help='do not process any partitions with more than '
+                           'N reads (default: 10000)')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('-i', '--min-ikmers', metavar='I', type=int,
