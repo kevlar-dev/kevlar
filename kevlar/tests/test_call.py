@@ -12,7 +12,7 @@ import re
 import sys
 import khmer
 import kevlar
-from kevlar.call import call, make_call
+from kevlar.call import call, make_call, alignment_interpretable
 from kevlar.tests import data_file
 
 
@@ -26,6 +26,17 @@ def test_align():
              'TTCAAGCGCAGGTTCGAGCCAGTCAGGACTGCTCCCCCACTTCCTCAAGTCTCATCGTGTTTTT'
              'TTTAGAGCTAGTTTCTTAGTCTCATTAGGCTTCAGTCACCATCATTTCTTATAGGAATACCA')
     assert kevlar.align(target, query) == ('10D91M69D79M20I', 155)
+
+
+def test_alignment_interpretable():
+    assert alignment_interpretable('6M73I13M4I5M4D63M11I') is False
+    assert alignment_interpretable('29I17M7I3M24I36M10D7M11I14M23I4M') is False
+    assert alignment_interpretable('57I16M7I3M8D33M1I28M27I3M') is False
+
+    assert alignment_interpretable('25D100M25D') is True
+    assert alignment_interpretable('50I50M50I50M24D1M') is True
+    assert alignment_interpretable('47I127M30D1M') is True
+    assert alignment_interpretable('30D100M16D67M30D') is True
 
 
 @pytest.mark.parametrize('ccid,varcall', [
@@ -277,3 +288,23 @@ def test_perfect_match():
     assert calls[0].seqid == 'chr99'
     assert calls[0].position == 2899377
     assert calls[0].info['NC'] == 'perfectmatch'
+
+
+def test_multibest_revcom():
+    contigfile = data_file('multibestrc.contig.fa')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('multibestrc.gdna.fa')
+    targets = list(khmer.ReadParser(gdnafile))
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 4
+
+    coordinates = [c.position + 1 for c in calls]
+    assert coordinates == [34495786, 34583830, 58088279, 60344854]
+    for c in calls:
+        assert c._refr == 'A'
+        assert c._alt == 'G'
+        assert c.window == ('CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGG'
+                            'GCCTGAGCCCCA')

@@ -19,6 +19,8 @@ def subparser(subparsers):
     subparser._positionals.title = 'Required inputs'
 
     local_args = subparser.add_argument_group('Target extraction')
+    local_args.add_argument('-z', '--seed-size', type=int, default=31,
+                            metavar='Z', help='seed size; default is 31')
     local_args.add_argument('-d', '--delta', type=int, default=25, metavar='D',
                             help='retrieve the genomic interval from the '
                             'reference by extending beyond the span of all '
@@ -41,6 +43,11 @@ def subparser(subparsers):
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
+    misc_args.add_argument('-p', '--part-id', type=str, metavar='ID',
+                           help='only process partition "PID" in the input')
+    misc_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
+                           help='do not process any partitions with more than '
+                           'N reads (default: 10000)')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('-i', '--min-ikmers', metavar='I', type=int,
