@@ -120,7 +120,6 @@ def test_no_reference_match(capsys):
 def test_alac_single_partition(label, position):
     readfile = data_file('fiveparts.augfastq.gz')
     refrfile = data_file('fiveparts-refr.fa.gz')
-
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_single_partition(readstream, label)
     calls = list(kevlar.alac.alac(partstream, refrfile))
@@ -130,9 +129,18 @@ def test_alac_single_partition(label, position):
 
 def test_alac_single_partition_badlabel(capsys):
     readfile = data_file('fiveparts.augfastq.gz')
-    refrfile = data_file('fiveparts-refq.fa.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
     arglist = ['alac', '--part-id', '6', readfile, refrfile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
     assert out == ''
+
+
+def test_alac_bigpart():
+    readfile = data_file('fiveparts.augfastq.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
+    assert len(calls) == 3
