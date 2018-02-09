@@ -99,7 +99,7 @@ def test_aug_fastq_reader_e2():
 def test_partition_reader_simple():
     infile = kevlar.tests.data_file('part-reads-simple.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+    partitions = list(kevlar.parse_partitioned_reads(readstream))
     assert len(partitions) == 2
     assert len(partitions[0]) == 4
     assert len(partitions[1]) == 2
@@ -109,8 +109,33 @@ def test_partition_reader_mixed():
     infile = kevlar.tests.data_file('part-reads-mixed.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     with pytest.raises(KevlarPartitionLabelError) as ple:
-        partitions = [p for p in kevlar.parse_partitioned_reads(readstream)]
+        partitions = list(kevlar.parse_partitioned_reads(readstream))
     assert 'with and without partition labels' in str(ple)
+
+
+def test_parse_single_partition():
+    infile = kevlar.tests.data_file('part-reads-simple.fa')
+
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = list(kevlar.parse_single_partition(readstream, '1'))
+    assert len(partitions) == 1
+    assert len(partitions[0]) == 4
+
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = list(kevlar.parse_single_partition(readstream, '2'))
+    assert len(partitions) == 1
+    assert len(partitions[0]) == 2
+
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = list(kevlar.parse_single_partition(readstream, 'alFrED'))
+    assert partitions == []
+
+
+def test_parse_single_partition_nonpartitioned_reads():
+    infile = kevlar.tests.data_file('dup.augfastq')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
+    partitions = list(kevlar.parse_single_partition(readstream, '42'))
+    assert partitions == []
 
 
 @pytest.mark.parametrize('basename', [

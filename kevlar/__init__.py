@@ -27,7 +27,7 @@ from kevlar import sketch
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
-from kevlar.seqio import parse_partitioned_reads
+from kevlar.seqio import parse_partitioned_reads, parse_single_partition
 from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 
@@ -45,6 +45,7 @@ from kevlar import localize
 from kevlar import call
 from kevlar import alac
 from kevlar import simplex
+from kevlar import split
 from kevlar import gentrio
 from kevlar import cli
 

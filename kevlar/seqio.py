@@ -131,6 +131,19 @@ def parse_partitioned_reads(readstream):
         yield reads
 
 
+def parse_single_partition(readstream, partid):
+    """
+    Retrieve a single partition (by label) from a stream of partitioned reads.
+    """
+    for partition in parse_partitioned_reads(readstream):
+        readname = partition[0].name
+        partmatch = re.search('kvcc=(\d+)', readname)
+        if not partmatch:
+            continue
+        if partmatch.group(1) == partid:
+            yield partition
+
+
 def load_reads_and_kmers(instream, logstream=None):
     """
     Load reads into lookup tables for convenient access.
