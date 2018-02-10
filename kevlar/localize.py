@@ -16,6 +16,7 @@ import sys
 
 import kevlar
 import khmer
+from khmer import CyclicCounttable as Counttable
 import pysam
 
 
@@ -81,7 +82,7 @@ def get_unique_seeds(recordstream, seedsize=31):
     Input is expected to be an iterable containing screed or khmer sequence
     records.
     """
-    ct = khmer.Counttable(seedsize, 1, 1)
+    ct = Counttable(seedsize, 1, 1)
     kmers = set()
     for record in recordstream:
         for kmer in ct.get_kmers(record.sequence):

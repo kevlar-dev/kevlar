@@ -11,6 +11,7 @@ from collections import defaultdict
 import threading
 import sys
 import khmer
+from khmer import CyclicCounttable as Counttable
 import kevlar
 
 
@@ -25,7 +26,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
     of all k-mers observed in the input. If `mask` is provided, only k-mers not
     present in the mask will be loaded.
     """
-    sketch = khmer.Counttable(ksize, memory / 4, 4)
+    sketch = Counttable(ksize, memory / 4, 4)
     numreads = 0
     for seqfile in seqfiles:
         print('[kevlar::count]      loading from', seqfile, file=logfile)
