@@ -75,7 +75,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
         raise kevlar.sketch.KevlarUnsuitableFPRError(message)
 
     if outfile:
-        if not outfile.endswith(('.ct', '.counttable')):
+        if not outfile.endswith(('.cct', '.cycliccounttable')):
             outfile += '.counttable'
         sketch.save(outfile)
         message += ';\n    saved to "{:s}"'.format(outfile)
