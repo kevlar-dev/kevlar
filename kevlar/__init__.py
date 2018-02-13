@@ -18,6 +18,7 @@ import sys
 
 # Third-party libraries
 import khmer
+from khmer.utils import broken_paired_reader
 import screed
 
 # Internal modules
@@ -113,6 +114,18 @@ def multi_file_iter_khmer(filenames):
     for filename in filenames:
         for record in khmer.ReadParser(filename):
             yield record
+
+
+def paired_reader(readstream):
+    i = 0
+    for n, ispaired, read1, read2 in broken_paired_reader(readstream):
+        pair_iter = zip((read1, read2), (read2, read1))
+        for record, mate in pair_iter:
+            if record is not None:
+                i += 1
+                yield i, n + 1, record, mate
+
+
 
 
 def clean_subseqs(sequence, ksize):
