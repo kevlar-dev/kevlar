@@ -125,13 +125,19 @@ def subparser(subparsers):
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
+    out_args = subparser.add_argument_group('Output settings')
+    out_args.add_argument('-o', '--out', metavar='FILE',
+                          help='output file for storing interesting reads; '
+                          'default is terminal (stdout)')
+    out_args.add_argument('--mate-file', metavar='FILE',
+                          help='ancillary output file for storing mates of '
+                          'interesting reads')
+
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
                            '1000000 (1 update message per millon reads)')
