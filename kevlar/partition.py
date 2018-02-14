@@ -7,10 +7,21 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import json
 import sys
 import networkx
 import khmer
 import kevlar
+import screed
+
+
+def load_mate_map(matefile):
+    mapfile = matefile + '.map.json'
+    matemap = json.load(open(mapfile, 'r'))
+    matereads = dict()
+    for record in screed.open(matefile):
+        matereads[record.name] = record
+    return matereads, matemap
 
 
 def partition(readstream, strict=False, minabund=None, maxabund=None,
@@ -57,6 +68,18 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
 def main(args):
     if args.split:
         kevlar.mkdirp(args.split, trim=True)
+    matereads, matemap, mateout = None, None, None
+    if args.mate_file:
+        if not args.split and not args.mate_out:
+            msg = 'must declare "--split" or "--mate-out" with "--mate-file"'
+            raise ValueError(msg)
+        if args.mate_out:
+            if args.split:
+                msg = 'WARNING: ignoring mate output file in "--split" mode'
+                print('[kevlar::partition]', msg, file=args.logfile)
+            else:
+                mateout = kevlar.open(args.mate_out, 'w')
+        matereads, matemap = load_mate_map(args.mate_file)
     outstream = None if args.split else kevlar.open(args.out, 'w')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.infile, 'r'))
     partitioner = partition(readstream, strict=args.strict,
@@ -69,12 +92,27 @@ def main(args):
         numreads += len(part)
         if args.split:
             ofname = '{:s}.cc{:d}.augfastq.gz'.format(args.split, partnum)
+            if args.mate_file:
+                mateoutfile = '{:s}.cc{:d}.mates.augfastq.gz'.format(
+                    args.split, partnum
+                )
+                mateout = kevlar.open(mateoutfile, 'w')
             with kevlar.open(ofname, 'w') as outfile:
                 for read in part:
                     kevlar.print_augmented_fastx(read, outfile)
+                    if args.mate_file:
+                        mateid = matemap[read.name]
+                        materead = matereads[mateid]
+                        khmer.utils.write_record(materead, mateout)
+
         else:
             for read in part:
-                read.name += '{:s} kvcc={:d}'.format(read.name, partnum)
+                if mateout:
+                    mateid = matemap[read.name]
+                    materead = matereads[mateid]
+                    materead.name += ' kvcc={:d}'.format(partnum)
+                    khmer.utils.write_record(materead, mateout)
+                read.name += ' kvcc={:d}'.format(partnum)
                 kevlar.print_augmented_fastx(read, outstream)
     message = '[kevlar::partition] grouped {:d} reads'.format(numreads)
     message += ' into {:d} connected components'.format(partnum)

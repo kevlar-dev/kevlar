@@ -214,7 +214,6 @@ def main(args):
         mapfile = args.mate_file + '.map.json'
         json.dump(read_mates, open(mapfile, 'w'))
 
-
     elapsed = timer.stop('iter')
     message = 'Iterated over all case reads in {:.2f} seconds'.format(elapsed)
     print('[kevlar::novel]', message, file=args.logfile)
