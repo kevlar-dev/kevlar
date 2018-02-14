@@ -9,19 +9,11 @@
 
 from __future__ import print_function
 from collections import defaultdict
-from subprocess import Popen, PIPE, check_call
-from tempfile import TemporaryFile
-import os.path
 import sys
 
 import kevlar
+from kevlar.reference import bwa_align, autoindex
 import khmer
-import pysam
-
-
-class KevlarBWAError(RuntimeError):
-    """Raised if the delegated BWA call fails for any reason."""
-    pass
 
 
 class KevlarRefrSeqNotFoundError(ValueError):
@@ -117,20 +109,8 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
     kmers = unique_seed_string(contigstream, seedsize)
     cmd = 'bwa mem -k {k} -T {k} {idx} -'.format(k=seedsize, idx=bwaindexfile)
     cmdargs = cmd.split(' ')
-    with TemporaryFile() as samfile:
-        bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
-                        universal_newlines=True)
-        stdout, stderr = bwaproc.communicate(input=kmers)
-        if bwaproc.returncode != 0:  # pragma: no cover
-            print(stderr, file=sys.stderr)
-            raise KevlarBWAError('problem running BWA')
-        samfile.seek(0)
-        sam = pysam.AlignmentFile(samfile, 'r')
-        for record in sam:
-            if record.is_unmapped:
-                continue
-            seqid = sam.get_reference_name(record.reference_id)
-            yield seqid, record.pos
+    for seqid, pos in bwa_align(cmdargs, seqstring=kmers):
+        yield seqid, pos
 
 
 def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
@@ -159,21 +139,6 @@ def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
     missing = [s for s in seedmatches.seqids if s not in observed_seqids]
     if len(missing) > 0:
         raise KevlarRefrSeqNotFoundError(','.join(missing))
-
-
-def autoindex(refrfile, logstream=sys.stderr):
-    bwtfile = refrfile + '.bwt'
-    if os.path.isfile(bwtfile):
-        return
-
-    message = 'WARNING: BWA index not found for "{:s}"'.format(refrfile)
-    message += ', indexing now'
-    print('[kevlar::localize]', message, file=logstream)
-
-    try:
-        check_call(['bwa', 'index', refrfile])
-    except Exception as err:  # pragma: no cover
-        raise KevlarBWAError('Could not run "bwa index"') from err
 
 
 def localize(contigstream, refrfile, seedsize=31, delta=25, maxdiff=10000,
