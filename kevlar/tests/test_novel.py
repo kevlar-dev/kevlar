@@ -9,10 +9,12 @@
 # -----------------------------------------------------------------------------
 
 import glob
+import json
 import pytest
 import re
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 import screed
+from shutil import rmtree
 import kevlar
 from khmer import Counttable
 
@@ -203,3 +205,51 @@ def test_skip_until(capsys):
                '(skipped 1001 reads)')
     assert message in err
     assert '29 unique novel kmers in 14 reads' in err
+
+
+def test_novel_mate_files():
+    tempdir = mkdtemp()
+    novelfile = tempdir + '/novel.augfastq'
+    matefile = tempdir + '/novel-mates.augfastq'
+    mapfile = matefile + '.map.json'
+
+    kid = kevlar.tests.data_file('minitrio/trio-proband.fq.gz')
+    mom = kevlar.tests.data_file('minitrio/trio-mother.fq.gz')
+    dad = kevlar.tests.data_file('minitrio/trio-father.fq.gz')
+    testnovel = kevlar.tests.data_file('minitrio/novel.augfastq.gz')
+    testmates = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz')
+    testmap = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz.map.json')
+
+    try:
+        arglist = [
+            'novel', '--out', novelfile, '--case', kid, '--case-min', '5',
+            '--control', mom, '--control', dad, '--ctrl-max', '1',
+            '--memory', '5M', '--mate-file', matefile
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.novel.main(args)
+
+        # Verify novel reads
+        stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile, 'r'))
+        novelreads = sorted([r.name for r in stream])
+        print(novelreads)
+        stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
+        testreads = sorted([r.name for r in stream])
+        print(testreads)
+        assert novelreads == testreads
+
+        # Verify mates of novel reads
+        stream = kevlar.parse_augmented_fastx(kevlar.open(matefile, 'r'))
+        matereads = sorted([r.name for r in stream])
+        print(matereads)
+        stream = kevlar.parse_augmented_fastx(kevlar.open(testmates, 'r'))
+        testreads = sorted([r.name for r in stream])
+        print(testreads)
+        assert matereads == testreads
+
+        # Verify mapping of novel reads to their mates
+        readmap = json.load(open(mapfile, 'r'))
+        testreadmap = json.load(open(testmap, 'r'))
+        assert readmap == testreadmap
+    finally:
+        rmtree(tempdir)

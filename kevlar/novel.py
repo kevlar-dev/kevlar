@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import json
 import re
 import sys
 
@@ -193,7 +194,7 @@ def main(args):
     message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
     print('[kevlar::novel]', message, file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
-    matestream = kevlar.open(args.mate_file) if args.mate_file else None
+    matestream = kevlar.open(args.mate_file, 'w') if args.mate_file else None
     read_mates = dict()
     infiles = [f for filelist in args.case for f in filelist]
     caserecords = kevlar.multi_file_iter_screed(infiles)
@@ -207,11 +208,11 @@ def main(args):
     for augmented_read, read_mate in readstream:
         kevlar.print_augmented_fastx(augmented_read, outstream)
         if read_mate and matestream:
-            kevlar.print_augmented_fastx(read_mate, matestream)
+            kevlar.khmer.utils.write_record(read_mate, matestream)
             read_mates[augmented_read.name] = read_mate.name
     if args.mate_file:
         mapfile = args.mate_file + '.map.json'
-        json.dump(read_mates, mapfile)
+        json.dump(read_mates, open(mapfile, 'w'))
 
 
     elapsed = timer.stop('iter')
