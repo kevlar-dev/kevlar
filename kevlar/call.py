@@ -7,10 +7,9 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import re
-import sys
 import khmer
 import kevlar
+import re
 
 
 class Variant(object):
@@ -301,6 +300,24 @@ def make_call(target, query, cigar, ksize):
     return [nocall]
 
 
+def align_mates(matefile, refrfile):
+    cmd = 'bwa mem {:s} {:s}'.format(refrfile, matefile)
+    cmdargs = cmd.split()
+    for seqid, pos in kevlar.bwa_align(cmdargs):
+        yield seqid, pos
+
+
+def mate_distance(mate_positions, gdna_position):
+    gdnaseq, gdnapos = gdna_position
+    distances = list()
+    for seqid, pos in mate_positions:
+        if seqid != gdnaseq:
+            continue
+        d = abs(pos - gdnapos)
+        distances.append(d)
+    return sum(distances) / len(distances)
+
+
 def align_both_strands(targetseq, queryseq, match=1, mismatch=2, gapopen=5,
                        gapextend=0):
     cigar1, score1 = kevlar.align(targetseq, queryseq, match, mismatch,
@@ -332,8 +349,8 @@ def alignment_interpretable(cigar):
     return False
 
 
-def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
-         ksize=31):
+def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
+         gapextend=0, ksize=31, matefile=None, refrfile=None):
     """
     Wrap the `kevlar call` procedure as a generator function.
 
@@ -346,10 +363,14 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
     - alignment mismatch penalty (integer)
     - alignment gap open penalty (integer)
     - alignment gap extension penalty (integer)
+    - mates of interesting reads, in case these are needed to distinguish
+      between multiple best hist (filename)
+    - reference file to which mates will be mapped
 
     The function yields tuples of target sequence name, query sequence name,
     and alignment CIGAR string
     """
+    mate_pos = None
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
         for target in sorted(targetlist, key=lambda record: record.name):
@@ -370,16 +391,26 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5, gapextend=0,
             bestscore = finallist[0][2]
             aligns2report = [a for a in finallist if a[2] == bestscore]
 
+        if len(aligns2report) > 1:
+            if matefile and refrfile:
+                if mate_pos is None:
+                    mate_pos = list(align_mates(matefile, refrfile))
+                aligns2report.sort(key=lambda a: mate_distance(mate_pos, local_to_global(0, a[0].name)))
+
+        best = True
         for alignment in aligns2report:
             besttarget, bestcigar, bestscore, bestorientation = alignment
             if bestorientation == -1:
                 query.sequence = kevlar.revcom(query.sequence)
             for varcall in make_call(besttarget, query, bestcigar, ksize):
+                if mate_pos and not best:
+                    varcall.info['NC'] = 'matefail'
                 yield varcall
             if bestorientation == -1:
                 # Change it back!
                 # There's a better way to do this, but this works for now.
                 query.sequence = kevlar.revcom(query.sequence)
+            best = False
 
 
 def main(args):

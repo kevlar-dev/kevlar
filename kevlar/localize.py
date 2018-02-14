@@ -7,21 +7,12 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 from collections import defaultdict
-from subprocess import Popen, PIPE, check_call
-from tempfile import TemporaryFile
 import os.path
 import sys
 
 import kevlar
 import khmer
-import pysam
-
-
-class KevlarBWAError(RuntimeError):
-    """Raised if the delegated BWA call fails for any reason."""
-    pass
 
 
 class KevlarRefrSeqNotFoundError(ValueError):
@@ -117,20 +108,8 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
     kmers = unique_seed_string(contigstream, seedsize)
     cmd = 'bwa mem -k {k} -T {k} {idx} -'.format(k=seedsize, idx=bwaindexfile)
     cmdargs = cmd.split(' ')
-    with TemporaryFile() as samfile:
-        bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
-                        universal_newlines=True)
-        stdout, stderr = bwaproc.communicate(input=kmers)
-        if bwaproc.returncode != 0:  # pragma: no cover
-            print(stderr, file=sys.stderr)
-            raise KevlarBWAError('problem running BWA')
-        samfile.seek(0)
-        sam = pysam.AlignmentFile(samfile, 'r')
-        for record in sam:
-            if record.is_unmapped:
-                continue
-            seqid = sam.get_reference_name(record.reference_id)
-            yield seqid, record.pos
+    for seqid, pos in kevlar.bwa_align(cmdargs, seqstring=kmers):
+        yield seqid, pos
 
 
 def extract_regions(refr, seedmatches, delta=25, maxdiff=10000):
