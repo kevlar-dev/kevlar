@@ -117,7 +117,7 @@ class ReferenceCutout(object):
             return
         if len(self) != len(self.sequence):
             message = 'defline length: {:d}, sequence length: {:d}'.format(
-                len(self), len(self._sequence)
+                len(self), len(self.sequence)
             )
             raise DeflineSequenceLengthMismatchError(message)
 
@@ -127,3 +127,8 @@ class ReferenceCutout(object):
 
     def local_to_global(self, coordinate):
         return self._startpos + coordinate
+
+
+def load_refr_cutouts(instream):
+    for defline, sequence in kevlar.seqio.parse_fasta(instream):
+        yield ReferenceCutout(defline[1:], sequence)
