@@ -14,8 +14,8 @@ from tempfile import mkdtemp
 
 import kevlar
 from kevlar.reference import autoindex, load_refr_cutouts, ReferenceCutout
-from kevlar.reference import KevlarBWAError, InvalidCutoutDeflineError
-from kevlar.reference import DeflineSequenceLengthMismatchError
+from kevlar.reference import KevlarBWAError, KevlarInvalidCutoutDeflineError
+from kevlar.reference import KevlarDeflineSequenceLengthMismatchError
 from kevlar.tests import data_file
 import pytest
 
@@ -29,7 +29,7 @@ def test_cutout_basic():
     assert c2.sequence is None
     assert c2.interval == ('1', 1000, 2000)
 
-    with pytest.raises(InvalidCutoutDeflineError):
+    with pytest.raises(KevlarInvalidCutoutDeflineError):
         c3 = ReferenceCutout('deFlIne FOrMaT WHat arEYoutALKingAb out')
 
     c4 = ReferenceCutout('chr3_1000-2000', 'A' * 1000)
@@ -38,7 +38,7 @@ def test_cutout_basic():
 
     assert c4.local_to_global(40) == 1040
 
-    with pytest.raises(DeflineSequenceLengthMismatchError):
+    with pytest.raises(KevlarDeflineSequenceLengthMismatchError):
         c5 = ReferenceCutout('scaffold_4000-5000', 'A' * 42)
 
 

@@ -19,17 +19,16 @@ import pysam
 import screed
 
 
-
 class KevlarBWAError(RuntimeError):
     """Raised if a delegated BWA call fails for any reason."""
     pass
 
 
-class InvalidCutoutDeflineError(ValueError):
+class KevlarInvalidCutoutDeflineError(ValueError):
     pass
 
 
-class DeflineSequenceLengthMismatchError(RuntimeError):
+class KevlarDeflineSequenceLengthMismatchError(RuntimeError):
     pass
 
 
@@ -109,7 +108,7 @@ class ReferenceCutout(object):
     def parse_defline(self, defline):
         match = re.search('(\S+)_(\d+)-(\d+)', defline)
         if not match:
-            raise InvalidCutoutDeflineError(defline)
+            raise KevlarInvalidCutoutDeflineError(defline)
         self._seqid = match.group(1)
         self._startpos = int(match.group(2))
         self._endpos = int(match.group(3))
@@ -119,7 +118,7 @@ class ReferenceCutout(object):
             message = 'defline length: {:d}, sequence length: {:d}'.format(
                 len(self), len(self.sequence)
             )
-            raise DeflineSequenceLengthMismatchError(message)
+            raise KevlarDeflineSequenceLengthMismatchError(message)
 
     @property
     def interval(self):
