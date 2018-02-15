@@ -131,13 +131,9 @@ def localize(contigstream, refrfile, seedsize=31, delta=25, maxdiff=10000,
         return
     if not refrseqs:
         refrstream = kevlar.open(refrfile, 'r')
-        refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
-    for cutout in localizer.get_cutouts(clusterdist=maxdiff):
-        if cutout._seqid not in refrseqs:
-            raise KevlarRefrSeqNotFoundError(cutout._seqid)
-        sequence = refrseqs[cutout._seqid]
-        subseq = sequence[cutout._startpos:cutout._endpos]
-        yield khmer.Read(name=cutout.defline, sequence=subseq)
+        seqs = kevlar.seqio.parse_seq_dict(refrstream)
+    for cutout in localizer.get_cutouts(refrseqs=seqs, clusterdist=maxdiff):
+        yield khmer.Read(name=cutout.defline, sequence=cutout.sequence)
 
 
 def main(args):
