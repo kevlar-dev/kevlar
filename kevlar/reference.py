@@ -82,10 +82,11 @@ class ReferenceCutout(object):
 
     Reference cutouts are operationally defined as follows.
 
-    - decompose the contig into its constituent k-mers (this is not necessarily
-      the same k that is used for variant discovery)
-    - find all perfect matches of all k-mers in the reference genome
-    - sort each k-mer match by genomic position
+    - decompose the contig into its constituent k-mers (seeds); note, the value
+      of k used here is not necessarily the same k that is used for variant
+      discovery
+    - find all perfect reference genome matches of all seeds
+    - sort each seed match by genomic position
     - split two adjacent matches into distinct bins if they are on different
       reference sequences (chromosomes) or if they are separated by more than X
       nucleotides
@@ -105,8 +106,8 @@ class ReferenceCutout(object):
     def __len__(self):
         return self._endpos - self._startpos
 
-    def parse_defline(defline):
-        match = re.search('(\S+)_(\d+)-(\d+)', subseqid)
+    def parse_defline(self, defline):
+        match = re.search('(\S+)_(\d+)-(\d+)', defline)
         if not match:
             raise InvalidCutoutDeflineError(defline)
         self._seqid = match.group(1)
