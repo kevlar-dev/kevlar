@@ -24,6 +24,7 @@ import screed
 from kevlar import seqio
 from kevlar import overlap
 from kevlar import sketch
+from kevlar import reference
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
@@ -122,7 +123,7 @@ def clean_subseqs(sequence, ksize):
 
 
 def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
-    print('##fileFormat=VCFv', version, sep='', file=outstream)
+    print('##fileformat=VCFv', version, sep='', file=outstream)
     print('##source=', source, sep='', file=outstream)
     if infoheader:
         print('##INFO=<GT,Number=3,Type=String,Description="Genotypes of each '
