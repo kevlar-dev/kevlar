@@ -15,8 +15,16 @@ import kevlar
 import screed
 
 
-def load_mate_map(matefile):
-    mapfile = matefile + '.map.json'
+def load_mate_map(matefile, mapfile=None):
+    """Load mate sequences into a dictionary.
+
+    The `matefile` variable contains mates of interesting reads in Fast[aq]
+    format, and `mapfile` contains a mapping of interesting read IDs to mate
+    read IDs in JSON. Returns a dictionary with interesting read IDs as keys
+    and the corresponding mate as a read record.
+    """
+    if mapfile is None:
+        mapfile = matefile + '.map.json'
     matemap = json.load(open(mapfile, 'r'))
     matereads = dict()
     for record in screed.open(matefile):
