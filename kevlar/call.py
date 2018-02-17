@@ -225,8 +225,8 @@ def call_snv(aln, offset, length, ksize):
         q = aln.varseq[:length]
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 0:
-        nocall = Variant(aln.seqid, aln.pos, '.', '.', NC='perfectmatch',
-                         QN=aln.contig.name, QS=q)
+        nocall = Variant(aln.seqid, aln.cutout.local_to_global(gdnaoffset),
+                         '.', '.', NC='perfectmatch', QN=aln.contig.name, QS=q)
         return [nocall]
 
     snvs = list()

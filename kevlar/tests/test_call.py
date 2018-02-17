@@ -180,7 +180,8 @@ def test_variant_kmers():
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
-    targetseqs = [record for record in khmer.ReadParser(tfile)]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    targetseqs = [record for record in tinstream]
 
     calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
