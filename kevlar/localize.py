@@ -144,5 +144,5 @@ def main(args):
         maxdiff=args.max_diff, logstream=args.logfile
     )
     for cutout in localizer:
-        record = khmer.Read(name=cutout.name, sequence=cutout.sequence)
+        record = khmer.Read(name=cutout.defline, sequence=cutout.sequence)
         khmer.utils.write_record(record, outstream)

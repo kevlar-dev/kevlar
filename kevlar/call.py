@@ -34,10 +34,10 @@ class VariantMapping(object):
 
     @property
     def seqid(self):
-        return self.cutout.seqid
+        return self.cutout._seqid
 
     @property
-    def seqid(self):
+    def pos(self):
         return self.cutout._startpos
 
     def call_variants(self, ksize):
@@ -57,10 +57,10 @@ class VariantMapping(object):
             return call_snv(self, offset, length, ksize)
 
         indelmatch = re.search(
-            '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', cigar
+            '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', self.cigar
         )
         indelmatch2 = re.search(
-            '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$', cigar
+            '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$', self.cigar
         )
         if indelmatch:
             offset = int(indelmatch.group(1))
@@ -82,8 +82,8 @@ class VariantMapping(object):
             return callfunc(self, offset, ksize, leftmatch, indellength)
 
         nocall = Variant(
-            self.seqid, self._startpos, '.', '.', NC='inscrutablecigar',
-            QN=self.contig.name, QS=self.contig.sequence, CG=cigar,
+            self.seqid, self.pos, '.', '.', NC='inscrutablecigar',
+            QN=self.contig.name, QS=self.contig.sequence, CG=self.cigar,
         )
         return [nocall]
 
@@ -217,16 +217,16 @@ def call_snv(aln, offset, length, ksize):
         offset *= -1
         gdnaoffset = 0
         targetshort = True
-        t = aln.cutout.sequence[:length]
-        q = aln.contig.sequence[offset:offset+length]
+        t = aln.refrseq[:length]
+        q = aln.varseq[offset:offset+length]
     else:
         gdnaoffset = offset
-        t = aln.cutout.sequence[offset:offset+length]
-        q = aln.contig.sequence[:length]
+        t = aln.refrseq[offset:offset+length]
+        q = aln.varseq[:length]
     diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
     if len(diffs) == 0:
         nocall = Variant(aln.seqid, aln.pos, '.', '.', NC='perfectmatch',
-                         QN=query.name, QS=q)
+                         QN=aln.contig.name, QS=q)
         return [nocall]
 
     snvs = list()
@@ -419,7 +419,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
             mapping = align_both_strands(target, query, match, mismatch,
                                          gapopen, gapextend)
             alignments.append(mapping)
-        alignments2report = alignments_to_report(alignments)
+        aligns2report = alignments_to_report(alignments)
         if len(aligns2report) > 1:
             if matefile and refrfile:
                 if mate_pos is None:
@@ -431,7 +431,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                 )
 
         for n, alignment in enumerate(aligns2report):
-            for varcall in make_call(alignment, ksize):
+            for varcall in alignment.call_variants(ksize):
                 if mate_pos and n > 0:
                     varcall.info['NC'] = 'matefail'
                 yield varcall
@@ -441,8 +441,8 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
     queryseqs = list(qinstream)
-    tinstream = kevlar.open(args.targetseqs, 'r')
-    targetseqs = list(khmer.reference.load_refr_cutouts(tinstream))
+    tinstream = kevlar.open(args.targetseq, 'r')
+    targetseqs = list(kevlar.reference.load_refr_cutouts(tinstream))
     caller = call(
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend,
