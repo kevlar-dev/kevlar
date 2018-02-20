@@ -172,4 +172,5 @@ def bwa_align(cmd, seqstring=None):
             seqid = sam.get_reference_name(record.reference_id)
             yield seqid, record.pos
 
+
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

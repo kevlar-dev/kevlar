@@ -446,7 +446,7 @@ def main(args):
     caller = call(
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend,
-        args.ksize,
+        args.ksize, args.mate_reads, args.refr
     )
     for varcall in caller:
         print(varcall.vcf, file=outstream)

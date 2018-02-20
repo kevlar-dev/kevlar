@@ -29,6 +29,13 @@ def subparser(subparsers):
     score_args.add_argument('-E', '--extend', type=int, default=0, metavar='E',
                             help='gap extension penalty; default is 0')
 
+    mate_args = subparser.add_argument_group('Pairing info')
+    mate_args.add_argument('--mate-reads', metavar='FILE',
+                           help='mates of interesting reads, to help make '
+                           'accurate calls for multi-mapping contigs')
+    mate_args.add_argument('--refr', metavar='FILE',
+                           help='reference genome indexed for BWA search')
+
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
