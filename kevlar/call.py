@@ -21,6 +21,10 @@ class VariantMapping(object):
         self.strand = strand
 
     @property
+    def interval(self):
+        return self.cutout.interval
+
+    @property
     def varseq(self):
         assert self.strand in (-1, 1)
         if self.strand == 1:
@@ -329,12 +333,19 @@ def align_mates(matefile, refrfile):
 
 
 def mate_distance(mate_positions, gdna_position):
-    gdnaseq, gdnapos = gdna_position
+    gdnaseq, startpos, endpos = gdna_position
+    def pointdist(point):
+        if point < startpos:
+            return startpos - point
+        elif point > endpos:
+            return point - endpos
+        else:
+            return 0
     distances = list()
     for seqid, pos in mate_positions:
         if seqid != gdnaseq:
             continue
-        d = abs(pos - gdnapos)
+        d = pointdist(pos)
         distances.append(d)
     return sum(distances) / len(distances)
 
