@@ -21,10 +21,6 @@ class KevlarPartitionLabelError(ValueError):
     pass
 
 
-class KevlarPairedPartitionError(ValueError):
-    pass
-
-
 def parse_fasta(data):
     """Load sequences in Fasta format.
 
@@ -74,14 +70,14 @@ def parse_augmented_fastx(instream):
                 _ = next(instream)
                 qual = next(instream).strip()
                 record = screed.Record(name=readid, sequence=seq, quality=qual,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
             else:
                 record = screed.Record(name=readid, sequence=seq,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
         elif line.endswith('#\n'):
             if line.startswith('#mateseq='):
                 mateseq = re.search('^#mateseq=(\S+)#\n$', line).group(1)
-                record.mateseq = mateseq
+                record.mateseqs.append(mateseq)
                 continue
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
@@ -102,8 +98,9 @@ def print_augmented_fastx(record, outstream=stdout):
         abundstr = ' '.join([str(a) for a in kmer.abund])
         print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
               sep='', file=outstream)
-    if hasattr(record, 'mateseq') and record.mateseq:
-        print('#mateseq={:s}#'.format(record.mateseq), file=outstream)
+    if hasattr(record, 'mateseqs'):
+        for mateseq in record.mateseqs:
+            print('#mateseq={:s}#'.format(mateseq), file=outstream)
 
 
 def afxstream(filelist):
@@ -143,24 +140,6 @@ def parse_partitioned_reads(readstream):
 
     if len(reads) > 0:
         yield reads
-
-
-def parse_partitioned_pairs(readstream, matestream):
-    """Parse partitioned interesting reads along with their partitioned mates.
-
-    Assumes that the partitions are in the same order in both data streams, as
-    is guaranteed by files created with `kevlar partition`.
-    """
-    readparts = parse_partitioned_reads(readstream)
-    mateparts = parse_partitioned_reads(matestream)
-    for partition, mates in zip(readparts, mateparts):
-        pid = partition_id(partition[0].readname)
-        mid = partition_id(mates[0].readname)
-        if pid != mid:
-            message = 'partition label "{:s}"'.format(pid)
-            message += '  does not match mate label "{:s}"'.format(mid)
-            raise KevlarPairedPartitionError(message)
-        yield partition, mates
 
 
 def parse_single_partition(readstream, partid):

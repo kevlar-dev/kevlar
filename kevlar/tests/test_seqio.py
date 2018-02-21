@@ -104,22 +104,24 @@ def test_augfastx_reader_withmates():
 
     record = next(reader)
     assert len(record.ikmers) == 5
-    assert hasattr(record, 'mateseq')
-    assert record.mateseq.startswith('CTGATAAGCAACTTCAGCAAA')
+    assert hasattr(record, 'mateseqs')
+    assert len(record.mateseqs) == 1
+    assert record.mateseqs[0].startswith('CTGATAAGCAACTTCAGCAAA')
 
     record = next(reader)
     assert len(record.ikmers) == 4
-    assert hasattr(record, 'mateseq')
-    assert record.mateseq.startswith('ATTAGAAAAAAAAAGTGCATT')
+    assert hasattr(record, 'mateseqs')
+    assert len(record.mateseqs) == 1
+    assert record.mateseqs[0].startswith('ATTAGAAAAAAAAAGTGCATT')
 
     record = next(reader)
     assert len(record.ikmers) == 21
-    assert not hasattr(record, 'mateseq')
+    assert not hasattr(record, 'mateseqs') or len(record.mateseqs) == 0
 
     record = next(reader)
     assert len(record.ikmers) == 2
-    assert hasattr(record, 'mateseq')
-    assert record.mateseq.startswith('CAGATGTGTCTTGTGGGCAGT')
+    assert hasattr(record, 'mateseqs')
+    assert record.mateseqs[0].startswith('CAGATGTGTCTTGTGGGCAGT')
 
     with pytest.raises(StopIteration):
         next(reader)
@@ -153,7 +155,7 @@ def test_augfastx_writer():
                 sequence='GTAATCCCAGCACTTTGGG', offset=2, abund=[7, 10, 9]
             ),
         ],
-        mateseq='CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG'
+        mateseqs=['CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG']
     )
     kevlar.print_augmented_fastx(record, output)
 

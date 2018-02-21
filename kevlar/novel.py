@@ -148,7 +148,7 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
         nreads += 1
         nkmers += read_kmers
         if mate:
-            record.mateseq = mate.sequence
+            record.mateseqs = [mate.sequence]
         yield record
 
     elapsed = timer.stop()

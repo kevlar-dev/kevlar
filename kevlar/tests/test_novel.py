@@ -228,7 +228,7 @@ def test_novel_output_has_mates():
         stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile.name, 'r'))
         for read in stream:
             intread_ids.add(read.name)
-            mate_seqs.add(read.mateseq)
+            mate_seqs.update(read.mateseqs)
 
         stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
         test_ids = set([r.name for r in stream])

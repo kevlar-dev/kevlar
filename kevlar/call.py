@@ -19,6 +19,7 @@ class VariantMapping(object):
         self.score = score
         self.cigar = cigar
         self.strand = strand
+        self.blessed = None
 
     @property
     def interval(self):
@@ -405,7 +406,7 @@ def alignments_to_report(alignments):
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-         gapextend=0, ksize=31, matefile=None, refrfile=None):
+         gapextend=0, ksize=31, refrfile=None):
     """Wrap the `kevlar call` procedure as a generator function.
 
     Input is the following.
@@ -419,12 +420,12 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
     - alignment gap extension penalty (integer)
     - mates of interesting reads, in case these are needed to distinguish
       between multiple best hist (filename)
-    - reference file to which mates will be mapped
+    - reference file to which mates of interesting reads, if any, will be
+      mapped to disambiguate multi-mapping contigs
 
     The function yields tuples of target sequence name, query sequence name,
     and alignment CIGAR string
     """
-    mate_pos = None
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
         for target in sorted(targetlist, key=lambda cutout: cutout.defline):
@@ -433,18 +434,16 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
             alignments.append(mapping)
         aligns2report = alignments_to_report(alignments)
         if len(aligns2report) > 1:
-            if matefile and refrfile:
-                if mate_pos is None:
-                    # The positions of the mates only need to be loaded once
-                    # per variant contig.
-                    mate_pos = list(align_mates(matefile, refrfile))
+            if refrfile and len(query.mateseqs) > 0:
+                mate_pos = list(align_mates(query, refrfile))
                 aligns2report.sort(
                     key=lambda aln: mate_distance(mate_pos, aln.interval)
                 )
+                aligns2report[0].blessed = True
 
         for n, alignment in enumerate(aligns2report):
             for varcall in alignment.call_variants(ksize):
-                if mate_pos and n > 0:
+                if aligns2report[0].blessed and n > 0:
                     varcall.info['NC'] = 'matefail'
                 yield varcall
 
@@ -458,7 +457,7 @@ def main(args):
     caller = call(
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend,
-        args.ksize, args.mate_reads, args.refr
+        args.ksize, args.refr
     )
     for varcall in caller:
         print(varcall.vcf, file=outstream)
