@@ -98,7 +98,7 @@ def test_novel_single_mutation(case, ctrl, mem, capsys):
     out, err = capsys.readouterr()
 
     for line in out.split('\n'):
-        if not line.endswith('#'):
+        if not line.endswith('#') or line.startswith('#mateseq'):
             continue
         abundmatch = re.search('(\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
@@ -136,7 +136,7 @@ def test_novel_two_cases(capsys):
 
     assert out.strip() != ''
     for line in out.split('\n'):
-        if not line.endswith('#'):
+        if not line.endswith('#') or line.startswith('#mateseq'):
             continue
         abundmatch = re.search('(\d+) (\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
@@ -207,49 +207,33 @@ def test_skip_until(capsys):
     assert '29 unique novel kmers in 14 reads' in err
 
 
-def test_novel_mate_files():
-    tempdir = mkdtemp()
-    novelfile = tempdir + '/novel.augfastq'
-    matefile = tempdir + '/novel-mates.augfastq'
-    mapfile = matefile + '.map.json'
-
+def test_novel_output_has_mates():
     kid = kevlar.tests.data_file('minitrio/trio-proband.fq.gz')
     mom = kevlar.tests.data_file('minitrio/trio-mother.fq.gz')
     dad = kevlar.tests.data_file('minitrio/trio-father.fq.gz')
     testnovel = kevlar.tests.data_file('minitrio/novel.augfastq.gz')
     testmates = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz')
-    testmap = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz.map.json')
 
-    try:
+    with NamedTemporaryFile(suffix='.augfastq') as novelfile:
         arglist = [
-            'novel', '--out', novelfile, '--case', kid, '--case-min', '5',
+            'novel', '--out', novelfile.name, '--case', kid, '--case-min', '5',
             '--control', mom, '--control', dad, '--ctrl-max', '1',
-            '--memory', '5M', '--mate-file', matefile
+            '--memory', '5M'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
 
-        # Verify novel reads
-        stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile, 'r'))
-        novelreads = sorted([r.name for r in stream])
-        print(novelreads)
+        intread_ids = set()
+        mate_seqs = set()
+        stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile.name, 'r'))
+        for read in stream:
+            intread_ids.add(read.name)
+            mate_seqs.add(read.mateseq)
+
         stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
-        testreads = sorted([r.name for r in stream])
-        print(testreads)
-        assert novelreads == testreads
+        test_ids = set([r.name for r in stream])
+        assert intread_ids == test_ids
 
-        # Verify mates of novel reads
-        stream = kevlar.parse_augmented_fastx(kevlar.open(matefile, 'r'))
-        matereads = sorted([r.name for r in stream])
-        print(matereads)
         stream = kevlar.parse_augmented_fastx(kevlar.open(testmates, 'r'))
-        testreads = sorted([r.name for r in stream])
-        print(testreads)
-        assert matereads == testreads
-
-        # Verify mapping of novel reads to their mates
-        readmap = json.load(open(mapfile, 'r'))
-        testreadmap = json.load(open(testmap, 'r'))
-        assert readmap == testreadmap
-    finally:
-        rmtree(tempdir)
+        test_mate_seqs = set([r.sequence for r in stream])
+        assert mate_seqs == test_mate_seqs
