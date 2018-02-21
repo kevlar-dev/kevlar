@@ -21,6 +21,10 @@ class KevlarPartitionLabelError(ValueError):
     pass
 
 
+class KevlarPairedPartitionError(ValueError):
+    pass
+
+
 def parse_fasta(data):
     """
     Load sequences in Fasta format.
@@ -105,12 +109,19 @@ def afxstream(filelist):
             yield record
 
 
+def partition_id(readname):
+    partmatch = re.search('kvcc=(\d+)', readname)
+    if not partmatch:
+        return None
+    return partmatch.group(1)
+
+
 def parse_partitioned_reads(readstream):
     current_part = None
     reads = list()
     for read in readstream:
-        partmatch = re.search('kvcc=(\d+)', read.name)
-        if not partmatch:
+        part = partition_id(read.name)
+        if part is None:
             reads.append(read)
             current_part = False
             continue
@@ -119,7 +130,6 @@ def parse_partitioned_reads(readstream):
             message = 'reads with and without partition labels (kvcc=#)'
             raise KevlarPartitionLabelError(message)
 
-        part = partmatch.group(1)
         if part != current_part:
             if current_part:
                 yield reads
@@ -129,6 +139,24 @@ def parse_partitioned_reads(readstream):
 
     if len(reads) > 0:
         yield reads
+
+
+def parse_partitioned_pairs(readstream, matestream):
+    """Parse partitioned interesting reads along with their partitioned mates.
+
+    Assumes that the partitions are in the same order in both data streams, as
+    is guaranteed by files created with `kevlar partition`.
+    """
+    readparts = parse_partitioned_reads(readstream)
+    mateparts = parse_partitioned_reads(matestream)
+    for partition, mates in zip(readparts, mateparts):
+        pid = partition_id(partition[0].readname)
+        mid = partition_id(mates[0].readname)
+        if pid != mid:
+            message = 'partition label "{:s}"'.format(pid)
+            message += '  does not match mate label "{:s}"'.format(mid)
+            raise KevlarPairedPartitionError(message)
+        yield partition, mates
 
 
 def parse_single_partition(readstream, partid):

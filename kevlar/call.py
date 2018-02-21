@@ -92,7 +92,6 @@ class VariantMapping(object):
         return [nocall]
 
 
-
 class Variant(object):
     """Base class for handling variant calls and no-calls."""
 
@@ -334,6 +333,7 @@ def align_mates(matefile, refrfile):
 
 def mate_distance(mate_positions, gdna_position):
     gdnaseq, startpos, endpos = gdna_position
+
     def pointdist(point):
         if point < startpos:
             return startpos - point
@@ -341,6 +341,7 @@ def mate_distance(mate_positions, gdna_position):
             return point - endpos
         else:
             return 0
+
     distances = list()
     for seqid, pos in mate_positions:
         if seqid != gdnaseq:
