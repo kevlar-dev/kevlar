@@ -20,13 +20,6 @@ def subparser(subparsers):
     """
 
     subparser = subparsers.add_parser('partition', description=desc)
-    subparser.add_argument('--mate-file', metavar='FILE',
-                           help='file containing mates if interesting reads, '
-                           'also to be partitioned')
-    subparser.add_argument('--mate-out', metavar='FILE',
-                           help='file to which partitioned mates will be '
-                           'written; required if "--mate-file" is declared, '
-                           'unless "--split" mode is enabled')
     subparser.add_argument('-s', '--strict', action='store_true',
                            help='require perfect identity between overlapping '
                            'reads for inclusion in the same partition; by '
