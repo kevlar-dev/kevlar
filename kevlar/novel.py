@@ -7,7 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import json
 import re
 import sys
 
@@ -148,7 +147,9 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
 
         nreads += 1
         nkmers += read_kmers
-        yield record, mate
+        if mate:
+            record.mateseq = mate.sequence
+        yield record
 
     elapsed = timer.stop()
     message = 'Found {:d} instances'.format(nkmers)
@@ -194,8 +195,6 @@ def main(args):
     message = 'Iterating over reads from {:d} case sample(s)'.format(ncases)
     print('[kevlar::novel]', message, file=args.logfile)
     outstream = kevlar.open(args.out, 'w')
-    matestream = kevlar.open(args.mate_file, 'w') if args.mate_file else None
-    read_mates = dict()
     infiles = [f for filelist in args.case for f in filelist]
     caserecords = kevlar.multi_file_iter_screed(infiles)
     readstream = novel(
@@ -205,14 +204,8 @@ def main(args):
         skipuntil=args.skip_until, updateint=args.upint,
         logstream=args.logfile,
     )
-    for augmented_read, read_mate in readstream:
+    for augmented_read in readstream:
         kevlar.print_augmented_fastx(augmented_read, outstream)
-        if read_mate and matestream:
-            kevlar.khmer.utils.write_record(read_mate, matestream)
-            read_mates[augmented_read.name] = read_mate.name
-    if args.mate_file:
-        mapfile = args.mate_file + '.map.json'
-        json.dump(read_mates, open(mapfile, 'w'))
 
     elapsed = timer.stop('iter')
     message = 'Iterated over all case reads in {:.2f} seconds'.format(elapsed)

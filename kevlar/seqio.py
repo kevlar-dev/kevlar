@@ -26,8 +26,7 @@ class KevlarPairedPartitionError(ValueError):
 
 
 def parse_fasta(data):
-    """
-    Load sequences in Fasta format.
+    """Load sequences in Fasta format.
 
     This generator function yields a tuple containing a defline and a sequence
     for each record in the Fasta data. Stolen shamelessly from
@@ -57,8 +56,7 @@ def parse_seq_dict(data):
 
 
 def parse_augmented_fastx(instream):
-    """
-    Read augmented Fast[q|a] records into memory.
+    """Read augmented Fast[q|a] records into memory.
 
     The parsed records will have .name, .sequence, and .quality defined (unless
     it's augmented Fasta), as well as a list of interesting k-mers. See
@@ -81,6 +79,10 @@ def parse_augmented_fastx(instream):
                 record = screed.Record(name=readid, sequence=seq,
                                        ikmers=list())
         elif line.endswith('#\n'):
+            if line.startswith('#mateseq='):
+                mateseq = re.search('^#mateseq=(\S+)#\n$', line).group(1)
+                record.mateseq = mateseq
+                continue
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
             abundances = re.split('\s+', line)
@@ -100,6 +102,8 @@ def print_augmented_fastx(record, outstream=stdout):
         abundstr = ' '.join([str(a) for a in kmer.abund])
         print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
               sep='', file=outstream)
+    if hasattr(record, 'mateseq') and record.mateseq:
+        print('#mateseq={:s}#'.format(record.mateseq), file=outstream)
 
 
 def afxstream(filelist):
@@ -173,8 +177,7 @@ def parse_single_partition(readstream, partid):
 
 
 def load_reads_and_kmers(instream, logstream=None):
-    """
-    Load reads into lookup tables for convenient access.
+    """Load reads into lookup tables for convenient access.
 
     The first table is a dictionary of reads indexed by read name, and the
     second table is a dictionary of read sets indexed by an interesting k-mer.
@@ -193,8 +196,7 @@ def load_reads_and_kmers(instream, logstream=None):
 
 
 class AnnotatedReadSet(object):
-    """
-    Data structure for de-duplicating reads and combining annotated k-mers.
+    """Data structure for de-duplicating reads and combining annotated k-mers.
 
     The `kevlar novel` command produces output in an "augmented Fastq" format,
     with "interesting" (potentially novel) k-mers annotated like so.
