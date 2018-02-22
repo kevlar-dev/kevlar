@@ -28,14 +28,14 @@ def assemble_fml_asm(readstream, logstream=sys.stderr):
     for n, contig in enumerate(assembler, 1):
         name = 'contig{:d}'.format(n)
         record = screed.Record(name=name, sequence=contig)
-        yield record
+        yield next(kevlar.augment.augment(reads, [record]))
 
 
 def main_fml_asm(args):
     reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
     outstream = kevlar.open(args.out, 'w')
     for contig in assemble_fml_asm(reads):
-        khmer.utils.write_record(contig, outstream)
+        kevlar.print_augmented_fastx(contig, outstream)
 
 
 # =============================================================================

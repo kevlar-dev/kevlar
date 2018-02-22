@@ -94,10 +94,11 @@ def parse_augmented_fastx(instream):
 def print_augmented_fastx(record, outstream=stdout):
     """Write augmented records out to an .augfast[q|a] file."""
     khmer.utils.write_record(record, outstream)
-    for kmer in sorted(record.ikmers, key=lambda k: k.offset):
-        abundstr = ' '.join([str(a) for a in kmer.abund])
-        print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
-              sep='', file=outstream)
+    if hasattr(record, 'ikmers'):
+        for kmer in sorted(record.ikmers, key=lambda k: k.offset):
+            abundstr = ' '.join([str(a) for a in kmer.abund])
+            print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
+                  sep='', file=outstream)
     if hasattr(record, 'mateseqs'):
         for mateseq in record.mateseqs:
             print('#mateseq={:s}#'.format(mateseq), file=outstream)
