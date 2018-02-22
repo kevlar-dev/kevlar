@@ -14,6 +14,7 @@ import khmer
 import kevlar
 from kevlar.call import call, alignment_interpretable, VariantMapping
 from kevlar.tests import data_file
+import screed
 
 
 def test_align():
@@ -323,3 +324,47 @@ def test_multibest_revcom():
         assert c._alt == 'G'
         assert c.window == ('CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGG'
                             'GCCTGAGCCCCA')
+
+
+def test_variant_mapping():
+    contig = screed.Record(
+        name='contig1',
+        sequence='CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGGGCCTGAGCCCC'
+    )
+    cutout = kevlar.reference.ReferenceCutout(
+        defline='chr1_10000-10060',
+        sequence='CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCAGTCTGCCCATGAGGCTGGGCCTGAGCCCC'
+    )
+    mapping = VariantMapping(contig, cutout, score=1e6, cigar='60M')
+
+    assert mapping.seqid == 'chr1'
+    assert mapping.interval == ('chr1', 10000, 10060)
+
+
+def test_align_mates():
+    mate_seqs = kevlar.open(data_file('minitrio/novel-mates.fastq.gz'), 'r')
+    record = screed.Record(
+        name='bogusread',
+        sequence='NNNNN',
+        mateseqs=[r.sequence for r in kevlar.parse_augmented_fastx(mate_seqs)]
+    )
+    refrfile = data_file('minitrio/refr.fa')
+    kevlar.reference.autoindex(refrfile)
+    positions = list(kevlar.call.align_mates(record, refrfile))
+    seqids = set([seqid for seqid, coord in positions])
+    coords = sorted([coord for seqid, coord in positions])
+    assert seqids == set(['seq1'])
+    assert coords == [
+        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
+        46131, 46146, 46148, 48025, 48035
+    ]
+
+
+def test_mate_distance():
+    coords = [
+        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
+        46131, 46146, 46148, 48025, 48035
+    ]
+    positions = [('seq1', c) for c in coords]
+    gdna_pos = ('seq1', 45727, 45916)
+    assert kevlar.call.mate_distance(positions, gdna_pos) == 506.46666666666664

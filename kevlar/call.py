@@ -325,10 +325,13 @@ def call_insertion(aln, offset, ksize, leftmatch, indellength):
                          RW=refrwindow, IK=str(len(aln.contig.ikmers)))]
 
 
-def align_mates(matefile, refrfile):
-    cmd = 'bwa mem {:s} {:s}'.format(refrfile, matefile)
+def align_mates(record, refrfile):
+    fasta = ''
+    for n, mateseq in enumerate(record.mateseqs, 1):
+        fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
+    cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
-    for seqid, pos in kevlar.bwa_align(cmdargs):
+    for seqid, pos in kevlar.bwa_align(cmdargs, seqstring=fasta):
         yield seqid, pos
 
 

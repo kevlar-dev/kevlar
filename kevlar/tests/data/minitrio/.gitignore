@@ -1,3 +1,4 @@
 *.fa.gz
 *.fasta
 *.fastq
+refr.fa.*

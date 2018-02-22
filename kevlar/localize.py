@@ -85,14 +85,14 @@ def get_unique_seeds(recordstream, seedsize):
                 yield kmer
 
 
-def unique_seed_string(recordstream, seedsize):
+def unique_seed_string(records, seedsize):
     """Convert contigs to Fasta records of seed sequences for BWA input.
 
     Input is expected to be an iterable containing screed or khmer sequence
     records.
     """
     output = ''
-    for n, kmer in enumerate(get_unique_seeds(recordstream, seedsize)):
+    for n, kmer in enumerate(get_unique_seeds(records, seedsize)):
         output += '>kmer{:d}\n{:s}\n'.format(n, kmer)
     return output
 
