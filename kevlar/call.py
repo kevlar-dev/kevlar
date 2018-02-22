@@ -19,7 +19,7 @@ class VariantMapping(object):
         self.score = score
         self.cigar = cigar
         self.strand = strand
-        self.blessed = None
+        self.matedist = None
 
     @property
     def interval(self):
@@ -439,15 +439,16 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
         if len(aligns2report) > 1:
             if refrfile and len(query.mateseqs) > 0:
                 mate_pos = list(align_mates(query, refrfile))
-                aligns2report.sort(
-                    key=lambda aln: mate_distance(mate_pos, aln.interval)
-                )
-                aligns2report[0].blessed = True
+                for aln in aligns2report:
+                    aln.matedist = mate_distance(mate_pos, aln.interval)
+                aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
             for varcall in alignment.call_variants(ksize):
-                if aligns2report[0].blessed and n > 0:
-                    varcall.info['NC'] = 'matefail'
+                if alignment.matedist:
+                    varcall.info['MD'] = '{:.2f}'.format(alignment.matedist)
+                    if n > 0:
+                        varcall.info['NC'] = 'matefail'
                 yield varcall
 
 
