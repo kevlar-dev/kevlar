@@ -7,8 +7,8 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from __future__ import print_function
 from collections import defaultdict
+import os.path
 import sys
 
 import kevlar
@@ -85,14 +85,14 @@ def get_unique_seeds(recordstream, seedsize):
                 yield kmer
 
 
-def unique_seed_string(recordstream, seedsize):
+def unique_seed_string(records, seedsize):
     """Convert contigs to Fasta records of seed sequences for BWA input.
 
     Input is expected to be an iterable containing screed or khmer sequence
     records.
     """
     output = ''
-    for n, kmer in enumerate(get_unique_seeds(recordstream, seedsize)):
+    for n, kmer in enumerate(get_unique_seeds(records, seedsize)):
         output += '>kmer{:d}\n{:s}\n'.format(n, kmer)
     return output
 
@@ -133,7 +133,7 @@ def localize(contigstream, refrfile, seedsize=31, delta=25, maxdiff=10000,
         refrstream = kevlar.open(refrfile, 'r')
         seqs = kevlar.seqio.parse_seq_dict(refrstream)
     for cutout in localizer.get_cutouts(refrseqs=seqs, clusterdist=maxdiff):
-        yield khmer.Read(name=cutout.defline, sequence=cutout.sequence)
+        yield cutout
 
 
 def main(args):
@@ -143,5 +143,6 @@ def main(args):
         contigstream, args.refr, seedsize=args.seed_size, delta=args.delta,
         maxdiff=args.max_diff, logstream=args.logfile
     )
-    for record in localizer:
+    for cutout in localizer:
+        record = khmer.Read(name=cutout.defline, sequence=cutout.sequence)
         khmer.utils.write_record(record, outstream)

@@ -22,8 +22,7 @@ class KevlarPartitionLabelError(ValueError):
 
 
 def parse_fasta(data):
-    """
-    Load sequences in Fasta format.
+    """Load sequences in Fasta format.
 
     This generator function yields a tuple containing a defline and a sequence
     for each record in the Fasta data. Stolen shamelessly from
@@ -38,7 +37,7 @@ def parse_fasta(data):
             name, seq = line, []
         else:
             seq.append(line)
-    if name:
+    if name:  # pragma: no cover
         yield (name, ''.join(seq))
 
 
@@ -53,8 +52,7 @@ def parse_seq_dict(data):
 
 
 def parse_augmented_fastx(instream):
-    """
-    Read augmented Fast[q|a] records into memory.
+    """Read augmented Fast[q|a] records into memory.
 
     The parsed records will have .name, .sequence, and .quality defined (unless
     it's augmented Fasta), as well as a list of interesting k-mers. See
@@ -72,11 +70,15 @@ def parse_augmented_fastx(instream):
                 _ = next(instream)
                 qual = next(instream).strip()
                 record = screed.Record(name=readid, sequence=seq, quality=qual,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
             else:
                 record = screed.Record(name=readid, sequence=seq,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
         elif line.endswith('#\n'):
+            if line.startswith('#mateseq='):
+                mateseq = re.search('^#mateseq=(\S+)#\n$', line).group(1)
+                record.mateseqs.append(mateseq)
+                continue
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
             abundances = re.split('\s+', line)
@@ -85,17 +87,20 @@ def parse_augmented_fastx(instream):
             ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=offset,
                                           abund=abundances)
             record.ikmers.append(ikmer)
-    if record is not None:
-        yield record
+    yield record
 
 
 def print_augmented_fastx(record, outstream=stdout):
     """Write augmented records out to an .augfast[q|a] file."""
     khmer.utils.write_record(record, outstream)
-    for kmer in sorted(record.ikmers, key=lambda k: k.offset):
-        abundstr = ' '.join([str(a) for a in kmer.abund])
-        print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
-              sep='', file=outstream)
+    if hasattr(record, 'ikmers'):
+        for kmer in sorted(record.ikmers, key=lambda k: k.offset):
+            abundstr = ' '.join([str(a) for a in kmer.abund])
+            print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
+                  sep='', file=outstream)
+    if hasattr(record, 'mateseqs'):
+        for mateseq in record.mateseqs:
+            print('#mateseq={:s}#'.format(mateseq), file=outstream)
 
 
 def afxstream(filelist):
@@ -105,12 +110,19 @@ def afxstream(filelist):
             yield record
 
 
+def partition_id(readname):
+    partmatch = re.search('kvcc=(\d+)', readname)
+    if not partmatch:
+        return None
+    return partmatch.group(1)
+
+
 def parse_partitioned_reads(readstream):
     current_part = None
     reads = list()
     for read in readstream:
-        partmatch = re.search('kvcc=(\d+)', read.name)
-        if not partmatch:
+        part = partition_id(read.name)
+        if part is None:
             reads.append(read)
             current_part = False
             continue
@@ -119,7 +131,6 @@ def parse_partitioned_reads(readstream):
             message = 'reads with and without partition labels (kvcc=#)'
             raise KevlarPartitionLabelError(message)
 
-        part = partmatch.group(1)
         if part != current_part:
             if current_part:
                 yield reads
@@ -127,8 +138,7 @@ def parse_partitioned_reads(readstream):
             current_part = part
         reads.append(read)
 
-    if len(reads) > 0:
-        yield reads
+    yield reads
 
 
 def parse_single_partition(readstream, partid):
@@ -145,8 +155,7 @@ def parse_single_partition(readstream, partid):
 
 
 def load_reads_and_kmers(instream, logstream=None):
-    """
-    Load reads into lookup tables for convenient access.
+    """Load reads into lookup tables for convenient access.
 
     The first table is a dictionary of reads indexed by read name, and the
     second table is a dictionary of read sets indexed by an interesting k-mer.
@@ -165,8 +174,7 @@ def load_reads_and_kmers(instream, logstream=None):
 
 
 class AnnotatedReadSet(object):
-    """
-    Data structure for de-duplicating reads and combining annotated k-mers.
+    """Data structure for de-duplicating reads and combining annotated k-mers.
 
     The `kevlar novel` command produces output in an "augmented Fastq" format,
     with "interesting" (potentially novel) k-mers annotated like so.
