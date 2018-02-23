@@ -99,7 +99,7 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
     nextupdate = updateint
     unique_kmers = set()
     for n, record, mate in kevlar.paired_reader(casestream):
-        if skipuntil:
+        if skipuntil:  # pragma: no cover
             if record.name == skipuntil:
                 message = 'Found read {:s}'.format(skipuntil)
                 message += ' (skipped {:d} reads)'.format(n)

@@ -29,8 +29,7 @@ def augment(augseqstream, nakedseqstream):
             ikmers[ikmer.sequence] = ikmer.abund
             ikmers[kevlar.revcom(ikmer.sequence)] = ikmer.abund
             ksize = len(ikmer.sequence)
-        if hasattr(record, 'mateseqs'):
-            mateseqs.update(record.mateseqs)
+        mateseqs.update(record.mateseqs)
     mateseqs = sorted(mateseqs)
 
     for record in nakedseqstream:

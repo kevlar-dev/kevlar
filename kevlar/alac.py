@@ -16,16 +16,9 @@ from kevlar.call import call
 
 def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
          maxdiff=10000, match=1, mismatch=2, gapopen=5, gapextend=0,
-         greedy=False, min_ikmers=None, matestream=None, logstream=sys.stderr):
+         greedy=False, min_ikmers=None, logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
-    instream = pstream
-    if matestream:
-        instream = kevlar.seqio.parse_partitioned_pairs(pstream, matestream)
-    for data in instream:
-        if matestream:
-            partition, mates = data
-        else:
-            partition = data
+    for partition in pstream:
         reads = list(partition)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))

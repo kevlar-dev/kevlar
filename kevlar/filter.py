@@ -105,8 +105,6 @@ def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
           file=logstream)
     readset = kevlar.seqio.AnnotatedReadSet(ksize, memory)
     for record in readstream:
-        if isinstance(record, tuple):
-            record, mate = record
         readset.add(record)
     fpr = summarize_readset(readset, logstream)
     if fpr > maxfpr:

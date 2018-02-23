@@ -368,3 +368,7 @@ def test_mate_distance():
     positions = [('seq1', c) for c in coords]
     gdna_pos = ('seq1', 45727, 45916)
     assert kevlar.call.mate_distance(positions, gdna_pos) == 506.46666666666664
+
+    positions = [('seq2', 4000), ('seq2', 3000), ('seq2', 5100), ('seq3', 1)]
+    gdna_pos = ('seq2', 5000, 5500)
+    assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0
