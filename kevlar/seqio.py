@@ -37,7 +37,7 @@ def parse_fasta(data):
             name, seq = line, []
         else:
             seq.append(line)
-    if name:
+    if name:  # pragma: no cover
         yield (name, ''.join(seq))
 
 
@@ -87,8 +87,7 @@ def parse_augmented_fastx(instream):
             ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=offset,
                                           abund=abundances)
             record.ikmers.append(ikmer)
-    if record is not None:
-        yield record
+    yield record
 
 
 def print_augmented_fastx(record, outstream=stdout):
@@ -139,8 +138,7 @@ def parse_partitioned_reads(readstream):
             current_part = part
         reads.append(read)
 
-    if len(reads) > 0:
-        yield reads
+    yield reads
 
 
 def parse_single_partition(readstream, partid):

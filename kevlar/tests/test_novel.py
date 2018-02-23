@@ -83,6 +83,7 @@ def test_assumptions(kmer):
     ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
     ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
     ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
+    ('trio1/case7.fq', 'trio1/ctrl[5,6].fq', '1M'),
 ])
 def test_novel_single_mutation(case, ctrl, mem, capsys):
     from sys import stdout, stderr
@@ -199,12 +200,22 @@ def test_skip_until(capsys):
                '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
-
     out, err = capsys.readouterr()
     message = ('Found read bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1 '
                '(skipped 1001 reads)')
     assert message in err
     assert '29 unique novel kmers in 14 reads' in err
+
+    readname = 'BOGUSREADNAME'
+    arglist = ['novel', '--ctrl-max', '0', '--case-min', '6',
+               '--skip-until', readname, '--upint', '50',
+               '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.novel.main(args)
+    out, err = capsys.readouterr()
+    assert 'Found read' not in err
+    assert '(skipped ' not in err
+    assert 'Found 0 instances of 0 unique novel kmers in 0 reads' in err
 
 
 def test_novel_output_has_mates():
