@@ -40,8 +40,8 @@ def test_assembly_edgeless(cc):
     reads = [r for r in kevlar.parse_augmented_fastx(fh)]
     contigs = [c for c in kevlar.assembly.fml_asm(reads)]
     assert len(contigs) == 0
-    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError):
-        contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+    contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+    assert len(contigs) == 0
 
 
 @pytest.mark.parametrize('cc,contig', [
@@ -558,6 +558,7 @@ def test_assemble_no_edges(capsys):
 def test_assemble_greedy_no_edges(capsys):
     cliargs = ['assemble', '--greedy', data_file('asmbl-no-edges.augfastq.gz')]
     args = kevlar.cli.parser().parse_args(cliargs)
-    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError) as ege:
-        kevlar.assemble.main(args)
-    assert 'nothing to be done, aborting' in str(ege)
+    kevlar.assemble.main(args)
+    out, err = capsys.readouterr()
+    assert out == ''
+    assert 'nothing to be done' in str(err)

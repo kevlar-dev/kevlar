@@ -109,10 +109,6 @@ def main_jca(args):
 # Greedy assembly mode
 # =============================================================================
 
-class KevlarEdgelessGraphError(ValueError):
-    """Raised if shared k-mer graph has no edges."""
-    pass
-
 
 def merge_pair(pair):
     """
@@ -294,8 +290,8 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     print('[kevlar::assemble::greedy]', message, file=logstream)
 
     if graph.number_of_edges() == 0:
-        message = 'nothing to be done, aborting'
-        raise KevlarEdgelessGraphError(message)
+        print('[kevlar::assemble::greedy] nothing to be done', file=logstream)
+        return
 
     if gmlfilename:
         tempgraph = graph.copy()
