@@ -284,14 +284,14 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     inputreads = set(graph.nodes())
     message = 'loaded {:d} reads'.format(graph.number_of_nodes())
     message += ' and {:d} interesting k-mers'.format(len(graph.ikmers))
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
 
     graph.populate_edges(strict=True)
     message = 'populated "shared interesting k-mers" graph'
     message += ' with {:d} edges'.format(graph.number_of_edges())
     # If number of nodes is less than number of reads, it's probably because
     # some reads have no valid overlaps with other reads.
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
 
     if graph.number_of_edges() == 0:
         message = 'nothing to be done, aborting'
@@ -305,7 +305,7 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
             tempgraph[n1][n2]['ikmers'] = ikmerstr
         networkx.write_gml(tempgraph, gmlfilename)
         message = 'graph written to {:s}'.format(gmlfilename)
-        print('[kevlar::assemble::default]', message, file=logstream)
+        print('[kevlar::assemble::greedy]', message, file=logstream)
 
     edges_dropped = prune_graph(graph)
     cc_stream = networkx.connected_component_subgraphs(graph, copy=False)
@@ -315,10 +315,10 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     message += ', graph now has {:d} connected component(s)'.format(len(ccs))
     message += ', {:d} nodes'.format(ccnodes)
     message += ', and {:d} edges'.format(graph.number_of_edges())
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
     if len(ccs) > 1:
         message = 'multiple connected components designated by cc=N in output'
-        print('[kevlar::assemble::default] WARNING:', message, file=logstream)
+        print('[kevlar::assemble::greedy] WARNING:', message, file=logstream)
 
     contigcount = 0
     unassembledcount = 0
@@ -334,7 +334,7 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
             yield contigrecord
 
     assembledcount = ccnodes - unassembledcount
-    message = '[kevlar::assemble] assembled'
+    message = '[kevlar::assemble::greedy] assembled'
     message += ' {:d}/{:d} reads'.format(assembledcount, ccnodes)
     message += ' from {:d} connected component(s)'.format(len(ccs))
     message += ' into {:d} contig(s)'.format(contigcount)
