@@ -9,10 +9,12 @@
 # -----------------------------------------------------------------------------
 
 import glob
+import json
 import pytest
 import re
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 import screed
+from shutil import rmtree
 import kevlar
 from khmer import Counttable
 
@@ -81,6 +83,7 @@ def test_assumptions(kmer):
     ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
     ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
     ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
+    ('trio1/case7.fq', 'trio1/ctrl[5,6].fq', '1M'),
 ])
 def test_novel_single_mutation(case, ctrl, mem, capsys):
     from sys import stdout, stderr
@@ -96,7 +99,7 @@ def test_novel_single_mutation(case, ctrl, mem, capsys):
     out, err = capsys.readouterr()
 
     for line in out.split('\n'):
-        if not line.endswith('#'):
+        if not line.endswith('#') or line.startswith('#mateseq'):
             continue
         abundmatch = re.search('(\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
@@ -134,7 +137,7 @@ def test_novel_two_cases(capsys):
 
     assert out.strip() != ''
     for line in out.split('\n'):
-        if not line.endswith('#'):
+        if not line.endswith('#') or line.startswith('#mateseq'):
             continue
         abundmatch = re.search('(\d+) (\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
@@ -197,9 +200,51 @@ def test_skip_until(capsys):
                '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
-
     out, err = capsys.readouterr()
     message = ('Found read bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1 '
                '(skipped 1001 reads)')
     assert message in err
     assert '29 unique novel kmers in 14 reads' in err
+
+    readname = 'BOGUSREADNAME'
+    arglist = ['novel', '--ctrl-max', '0', '--case-min', '6',
+               '--skip-until', readname, '--upint', '50',
+               '--case', case, '--control', ctrls[0], '--control', ctrls[1]]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.novel.main(args)
+    out, err = capsys.readouterr()
+    assert 'Found read' not in err
+    assert '(skipped ' not in err
+    assert 'Found 0 instances of 0 unique novel kmers in 0 reads' in err
+
+
+def test_novel_output_has_mates():
+    kid = kevlar.tests.data_file('minitrio/trio-proband.fq.gz')
+    mom = kevlar.tests.data_file('minitrio/trio-mother.fq.gz')
+    dad = kevlar.tests.data_file('minitrio/trio-father.fq.gz')
+    testnovel = kevlar.tests.data_file('minitrio/novel.augfastq.gz')
+    testmates = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz')
+
+    with NamedTemporaryFile(suffix='.augfastq') as novelfile:
+        arglist = [
+            'novel', '--out', novelfile.name, '--case', kid, '--case-min', '5',
+            '--control', mom, '--control', dad, '--ctrl-max', '1',
+            '--memory', '5M'
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.novel.main(args)
+
+        intread_ids = set()
+        mate_seqs = set()
+        stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile.name, 'r'))
+        for read in stream:
+            intread_ids.add(read.name)
+            mate_seqs.update(read.mateseqs)
+
+        stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
+        test_ids = set([r.name for r in stream])
+        assert intread_ids == test_ids
+
+        stream = kevlar.parse_augmented_fastx(kevlar.open(testmates, 'r'))
+        test_mate_seqs = set([r.sequence for r in stream])
+        assert mate_seqs == test_mate_seqs

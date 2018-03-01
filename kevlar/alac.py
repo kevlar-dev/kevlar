@@ -10,15 +10,8 @@
 import sys
 import kevlar
 from kevlar.assemble import assemble_greedy, assemble_fml_asm
-from kevlar.augment import augment
 from kevlar.localize import localize
 from kevlar.call import call
-
-
-def augment_and_mark(augseqs, nakedseqs):
-    for seq in augment(augseqs, nakedseqs):
-        seq.name = '{:s} nikmers={:d}'.format(seq.name, len(seq.ikmers))
-        yield seq
 
 
 def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
@@ -34,7 +27,6 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
 
         # Assemble partitioned reads into contig(s)
         contigs = list(assembler(reads, logstream=logstream))
-        contigs = list(augment_and_mark(reads, contigs))
         if min_ikmers is not None:
             # Apply min ikmer filter if it's set
             contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
@@ -50,7 +42,7 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
 
         # Align contigs to genomic targets to make variant calls
         caller = call(targets, contigs, match, mismatch, gapopen, gapextend,
-                      ksize)
+                      ksize, refrfile)
         for varcall in caller:
             yield varcall
 
