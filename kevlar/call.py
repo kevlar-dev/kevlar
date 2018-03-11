@@ -439,9 +439,10 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
         if len(aligns2report) > 1:
             if refrfile and len(query.mateseqs) > 0:
                 mate_pos = list(align_mates(query, refrfile))
-                for aln in aligns2report:
-                    aln.matedist = mate_distance(mate_pos, aln.interval)
-                aligns2report.sort(key=lambda aln: aln.matedist)
+                if len(mate_pos) > 0:
+                    for aln in aligns2report:
+                        aln.matedist = mate_distance(mate_pos, aln.interval)
+                    aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
             for varcall in alignment.call_variants(ksize):

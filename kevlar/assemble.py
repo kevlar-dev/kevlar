@@ -269,7 +269,7 @@ def prune_graph(graph, quant=0.1):
     return len(edges_to_drop)
 
 
-def assemble_greedy(readstream, gmlfilename=None, debug=False,
+def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
                     logstream=sys.stderr):
     debugout = None
     if debug:
@@ -278,7 +278,8 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     graph = kevlar.ReadGraph()
     graph.load(readstream)
     inputreads = set(graph.nodes())
-    message = 'loaded {:d} reads'.format(graph.number_of_nodes())
+    orignumnodes = graph.number_of_nodes()
+    message = 'loaded {:d} reads'.format(orignumnodes)
     message += ' and {:d} interesting k-mers'.format(len(graph.ikmers))
     print('[kevlar::assemble::greedy]', message, file=logstream)
 
@@ -312,6 +313,11 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     message += ', {:d} nodes'.format(ccnodes)
     message += ', and {:d} edges'.format(graph.number_of_edges())
     print('[kevlar::assemble::greedy]', message, file=logstream)
+    if ccnodes / orignumnodes < compat:
+        msg = 'only {:d} of {:d} reads '.format(ccnodes, orignumnodes)
+        msg += 'have compatible overlaps; discarding'
+        print('[kevlar::assemble::greedy]', msg, file=logstream)
+        return
     if len(ccs) > 1:
         message = 'multiple connected components designated by cc=N in output'
         print('[kevlar::assemble::greedy] WARNING:', message, file=logstream)
@@ -320,6 +326,10 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     unassembledcount = 0
     for n, cc in enumerate(ccs, 1):
         cc = graph.full_cc(cc)
+        ccreads = list()
+        for readname in cc.nodes():
+            if readname in inputreads:
+                ccreads.append(graph.get_record(readname))
         assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:
@@ -327,7 +337,7 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
                 continue
             contigcount += 1
             contigrecord = cc.get_record(seqname)
-            yield contigrecord
+            yield next(kevlar.augment.augment(ccreads, [contigrecord]))
 
     assembledcount = ccnodes - unassembledcount
     message = '[kevlar::assemble::greedy] assembled'
@@ -340,8 +350,8 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
 def main_greedy(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
     outstream = None  # Only create output file if there are contigs
-    contigstream = assemble_greedy(readstream, args.gml, args.debug,
-                                   args.logfile)
+    contigstream = assemble_greedy(readstream, gmlfilename=args.gml,
+                                   debug=args.debug, logstream=args.logfile)
     for contig in contigstream:
         if outstream is None:
             outstream = kevlar.open(args.out, 'w')
