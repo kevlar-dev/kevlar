@@ -110,7 +110,7 @@ class Variant(object):
         self._alt = alt
         self.info = dict()
         for key, value in kwargs.items():
-            self.info[key] = value
+            self.annotate(key, value)
 
     @property
     def seqid(self):
@@ -172,10 +172,23 @@ class Variant(object):
         """Similar to `window`, but encapsulating the reference allele."""
         return self.attribute('RW')
 
+    def annotate(self, key, value):
+        if key in self.info:
+            if isinstance(self.info[key], set):
+                self.info[key].add(value)
+            else:
+                oldvalue = self.info[key]
+                self.info[key] = set((oldvalue, value))
+        else:
+            self.info[key] = value
+
     def attribute(self, key, pair=False):
         if key not in self.info:
             return None
-        value = self.info[key].replace(';', ':')
+        value = self.info[key]
+        if isinstance(value, set):
+            value = ','.join(sorted(value))
+        value = value.replace(';', ':')
         if pair:
             keyvaluepair = '{:s}={:s}'.format(key, value)
             return keyvaluepair
@@ -451,7 +464,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                 if alignment.matedist:
                     varcall.info['MD'] = '{:.2f}'.format(alignment.matedist)
                     if n > 0:
-                        varcall.info['NC'] = 'matefail'
+                        varcall.annotate('NC', 'matefail')
                 yield varcall
 
 
