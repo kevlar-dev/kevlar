@@ -322,7 +322,7 @@ def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
         message = 'multiple connected components designated by cc=N in output'
         print('[kevlar::assemble::greedy] WARNING:', message, file=logstream)
 
-    contigcount = 0
+    contigs2report = list()
     unassembledcount = 0
     for n, cc in enumerate(ccs, 1):
         cc = graph.full_cc(cc)
@@ -335,16 +335,22 @@ def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
             if seqname in inputreads:
                 unassembledcount += 1
                 continue
-            contigcount += 1
             contigrecord = cc.get_record(seqname)
-            yield next(kevlar.augment.augment(ccreads, [contigrecord]))
+            contig = next(kevlar.augment.augment(ccreads, [contigrecord]))
+            contigs2report.append(contig)
 
     assembledcount = ccnodes - unassembledcount
-    message = '[kevlar::assemble::greedy] assembled'
-    message += ' {:d}/{:d} reads'.format(assembledcount, ccnodes)
+    message = 'assembled {:d}/{:d} reads'.format(assembledcount, ccnodes)
     message += ' from {:d} connected component(s)'.format(len(ccs))
-    message += ' into {:d} contig(s)'.format(contigcount)
-    print(message, file=logstream)
+    message += ' into {:d} contig(s)'.format(len(contigs2report))
+    print('[kevlar::assemble::greedy]', message, file=logstream)
+    if assembledcount / ccnodes < compat:
+        message = 'too few reads assembled; discarding'
+        print('[kevlar::assemble::greedy]', message, file=logstream)
+        return
+
+    for contig in contigs2report:
+        yield contig
 
 
 def main_greedy(args):
