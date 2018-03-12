@@ -352,6 +352,8 @@ def mate_distance(mate_positions, gdna_position):
             continue
         d = pointdist(pos)
         distances.append(d)
+    if len(distances) == 0:
+        return float('Inf')
     return sum(distances) / len(distances)
 
 
