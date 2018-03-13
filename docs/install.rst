@@ -84,7 +84,7 @@ These can be installed with ``make`` for your convenience.
     git clone https://github.com/dib-lab/kevlar.git
     cd kevlar
     make devenv
+    pip install -e .
 
 Hack away!
-The ``./cli`` script is the entry point for executing kevlar in the development.
 Feel free to ask questions or submit bug reports to the kevlar `issue tracker <https://github.com/dib-lab/kevlar/issues>`_.
