@@ -574,3 +574,15 @@ def test_assemble_below_compat_threshold(thresh, numcontigs):
     assembler = kevlar.assemble.assemble_greedy(readstream, compat=thresh)
     contigs = list(assembler)
     assert len(contigs) == numcontigs
+
+
+@pytest.mark.parametrize('cc', ['3396', '4068'])
+def test_asmbl_too_few_assembled_reads(cc, capsys):
+    from sys import stderr
+    readfile = data_file('too-few-asmbl-reads-{}.augfastq'.format(cc))
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    assembler = kevlar.assemble.assemble_greedy(readstream, logstream=stderr)
+    contigs = list(assembler)
+    assert len(contigs) == 0
+    out, err = capsys.readouterr()
+    assert 'too few reads assembled; discarding' in err
