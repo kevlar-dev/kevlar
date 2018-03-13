@@ -20,7 +20,7 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 
 ## test:     execute the automated test suite
 test: ext
-	py.test --cov=kevlar kevlar/tests/*.py -m 'not long' -m 'not toolong'
+	py.test --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
 ## testmore: execute the automated test suite, including longer-running tests
 testmore: ext
