@@ -144,3 +144,16 @@ def test_alac_bigpart():
     partstream = kevlar.parse_partitioned_reads(readstream)
     calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
     assert len(calls) == 3
+
+
+def test_alac_inf_mate_dist():
+    readfile = data_file('inf-mate-dist.augfastq.gz')
+    refrfile = data_file('inf-mate-dist.genome.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
+                              seedsize=51)
+    calls = list(caller)
+    assert len(calls) == 7
+    filtcalls = [c for c in calls if c.attribute('NC') is None]
+    assert len(filtcalls) == 1
