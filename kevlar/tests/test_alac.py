@@ -146,8 +146,8 @@ def test_alac_bigpart():
     assert len(calls) == 3
 
 
-@pytest.mark.parametrize('cc,numrawcalls',[
-    ('26849', [3, 5, 7]), # Assembly is deterministic on OS X, but not on Linux
+@pytest.mark.parametrize('cc,numrawcalls', [
+    ('26849', [3, 5, 7]),  # Assembly deterministic on OS X, but not on Linux
     ('138713', [14]),
 ])
 def test_alac_inf_mate_dist(cc, numrawcalls):
