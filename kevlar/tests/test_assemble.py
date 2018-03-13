@@ -40,8 +40,8 @@ def test_assembly_edgeless(cc):
     reads = [r for r in kevlar.parse_augmented_fastx(fh)]
     contigs = [c for c in kevlar.assembly.fml_asm(reads)]
     assert len(contigs) == 0
-    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError):
-        contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+    contigs = [c for c in kevlar.assemble.assemble_greedy(reads)]
+    assert len(contigs) == 0
 
 
 @pytest.mark.parametrize('cc,contig', [
@@ -558,6 +558,31 @@ def test_assemble_no_edges(capsys):
 def test_assemble_greedy_no_edges(capsys):
     cliargs = ['assemble', '--greedy', data_file('asmbl-no-edges.augfastq.gz')]
     args = kevlar.cli.parser().parse_args(cliargs)
-    with pytest.raises(kevlar.assemble.KevlarEdgelessGraphError) as ege:
-        kevlar.assemble.main(args)
-    assert 'nothing to be done, aborting' in str(ege)
+    kevlar.assemble.main(args)
+    out, err = capsys.readouterr()
+    assert out == ''
+    assert 'nothing to be done' in str(err)
+
+
+@pytest.mark.parametrize('thresh,numcontigs', [
+    (0.6, 0),
+    (0.01, 1),
+])
+def test_assemble_below_compat_threshold(thresh, numcontigs):
+    readfile = kevlar.open(data_file('compat-threshold.augfastq'), 'r')
+    readstream = kevlar.parse_augmented_fastx(readfile)
+    assembler = kevlar.assemble.assemble_greedy(readstream, compat=thresh)
+    contigs = list(assembler)
+    assert len(contigs) == numcontigs
+
+
+@pytest.mark.parametrize('cc', ['3396', '4068'])
+def test_asmbl_too_few_assembled_reads(cc, capsys):
+    from sys import stderr
+    readfile = data_file('too-few-asmbl-reads-{}.augfastq'.format(cc))
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    assembler = kevlar.assemble.assemble_greedy(readstream, logstream=stderr)
+    contigs = list(assembler)
+    assert len(contigs) == 0
+    out, err = capsys.readouterr()
+    assert 'too few reads assembled; discarding' in err

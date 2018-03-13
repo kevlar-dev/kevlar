@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import re
 import sys
 import kevlar
 from kevlar.assemble import assemble_greedy, assemble_fml_asm
@@ -16,7 +17,7 @@ from kevlar.call import call
 
 def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
          maxdiff=10000, match=1, mismatch=2, gapopen=5, gapextend=0,
-         greedy=False, min_ikmers=None, logstream=sys.stderr):
+         greedy=False, fallback=True, min_ikmers=None, logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
@@ -27,6 +28,14 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=25, seedsize=31,
 
         # Assemble partitioned reads into contig(s)
         contigs = list(assembler(reads, logstream=logstream))
+        if len(contigs) == 0 and assembler == assemble_fml_asm and fallback:
+            message = 'WARNING: no contig assembled by fermi-lite'
+            ccmatch = re.search('kvcc=(\d+)', reads[0].name)
+            if ccmatch:
+                message += ' for CC={:s}'.format(ccmatch.group(1))
+            message += '; attempting again with home-grown greedy assembler'
+            print('[kevlar::alac]', message, file=logstream)
+            contigs = list(assemble_greedy(reads, logstream=logstream))
         if min_ikmers is not None:
             # Apply min ikmer filter if it's set
             contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
@@ -58,8 +67,8 @@ def main(args):
         pstream, args.refr, ksize=args.ksize, bigpart=args.bigpart,
         delta=args.delta, seedsize=args.seed_size, maxdiff=args.max_diff,
         match=args.match, mismatch=args.mismatch, gapopen=args.open,
-        gapextend=args.extend, greedy=args.greedy, min_ikmers=args.min_ikmers,
-        logstream=args.logfile
+        gapextend=args.extend, greedy=args.greedy, fallback=args.fallback,
+        min_ikmers=args.min_ikmers, logstream=args.logfile
     )
 
     for varcall in workflow:

@@ -109,10 +109,6 @@ def main_jca(args):
 # Greedy assembly mode
 # =============================================================================
 
-class KevlarEdgelessGraphError(ValueError):
-    """Raised if shared k-mer graph has no edges."""
-    pass
-
 
 def merge_pair(pair):
     """
@@ -216,7 +212,7 @@ def assemble_with_greed(graph, ccindex, debugout=None):
         pair = fetch_largest_overlapping_pair(graph)
         newname = 'contig{:d}:cc={:d}'.format(count, ccindex)
         newrecord = merge_and_reannotate(pair, newname)
-        if debugout:
+        if debugout:  # pragma: no cover
             print('### DEBUG', pair.tail.name, pair.head.name, pair.offset,
                   pair.overlap, pair.sameorient, file=debugout)
             kevlar.print_augmented_fastx(newrecord, debugout)
@@ -273,39 +269,29 @@ def prune_graph(graph, quant=0.1):
     return len(edges_to_drop)
 
 
-def assemble_greedy(readstream, gmlfilename=None, debug=False,
-                    logstream=sys.stderr):
+def assemble_greedy(readstream, compat=0.6, debug=False, logstream=sys.stderr):
     debugout = None
-    if debug:
+    if debug:  # pragma: no cover
         debugout = logstream
 
     graph = kevlar.ReadGraph()
     graph.load(readstream)
     inputreads = set(graph.nodes())
-    message = 'loaded {:d} reads'.format(graph.number_of_nodes())
+    orignumnodes = graph.number_of_nodes()
+    message = 'loaded {:d} reads'.format(orignumnodes)
     message += ' and {:d} interesting k-mers'.format(len(graph.ikmers))
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
 
     graph.populate_edges(strict=True)
     message = 'populated "shared interesting k-mers" graph'
     message += ' with {:d} edges'.format(graph.number_of_edges())
     # If number of nodes is less than number of reads, it's probably because
     # some reads have no valid overlaps with other reads.
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
 
     if graph.number_of_edges() == 0:
-        message = 'nothing to be done, aborting'
-        raise KevlarEdgelessGraphError(message)
-
-    if gmlfilename:
-        tempgraph = graph.copy()
-        for n1, n2 in tempgraph.edges():
-            ikmerset = tempgraph[n1][n2]['ikmers']
-            ikmerstr = ','.join(ikmerset)
-            tempgraph[n1][n2]['ikmers'] = ikmerstr
-        networkx.write_gml(tempgraph, gmlfilename)
-        message = 'graph written to {:s}'.format(gmlfilename)
-        print('[kevlar::assemble::default]', message, file=logstream)
+        print('[kevlar::assemble::greedy] nothing to be done', file=logstream)
+        return
 
     edges_dropped = prune_graph(graph)
     cc_stream = networkx.connected_component_subgraphs(graph, copy=False)
@@ -315,40 +301,53 @@ def assemble_greedy(readstream, gmlfilename=None, debug=False,
     message += ', graph now has {:d} connected component(s)'.format(len(ccs))
     message += ', {:d} nodes'.format(ccnodes)
     message += ', and {:d} edges'.format(graph.number_of_edges())
-    print('[kevlar::assemble::default]', message, file=logstream)
+    print('[kevlar::assemble::greedy]', message, file=logstream)
+    if ccnodes / orignumnodes < compat:
+        msg = 'only {:d} of {:d} reads '.format(ccnodes, orignumnodes)
+        msg += 'have compatible overlaps; discarding'
+        print('[kevlar::assemble::greedy]', msg, file=logstream)
+        return
     if len(ccs) > 1:
         message = 'multiple connected components designated by cc=N in output'
-        print('[kevlar::assemble::default] WARNING:', message, file=logstream)
+        print('[kevlar::assemble::greedy] WARNING:', message, file=logstream)
 
-    contigcount = 0
+    contigs2report = list()
     unassembledcount = 0
     for n, cc in enumerate(ccs, 1):
         cc = graph.full_cc(cc)
+        ccreads = list()
+        for readname in cc.nodes():
+            if readname in inputreads:
+                ccreads.append(graph.get_record(readname))
         assemble_with_greed(cc, n, debugout)
         for seqname in cc.nodes():
             if seqname in inputreads:
                 unassembledcount += 1
                 continue
-            contigcount += 1
             contigrecord = cc.get_record(seqname)
-            yield contigrecord
+            contig = next(kevlar.augment.augment(ccreads, [contigrecord]))
+            contigs2report.append(contig)
 
     assembledcount = ccnodes - unassembledcount
-    message = '[kevlar::assemble] assembled'
-    message += ' {:d}/{:d} reads'.format(assembledcount, ccnodes)
+    message = 'assembled {:d}/{:d} reads'.format(assembledcount, ccnodes)
     message += ' from {:d} connected component(s)'.format(len(ccs))
-    message += ' into {:d} contig(s)'.format(contigcount)
-    print(message, file=logstream)
+    message += ' into {:d} contig(s)'.format(len(contigs2report))
+    print('[kevlar::assemble::greedy]', message, file=logstream)
+    if assembledcount / ccnodes < compat:
+        message = 'too few reads assembled; discarding'
+        print('[kevlar::assemble::greedy]', message, file=logstream)
+        return
+
+    for contig in contigs2report:
+        yield contig
 
 
 def main_greedy(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
-    outstream = None  # Only create output file if there are contigs
-    contigstream = assemble_greedy(readstream, args.gml, args.debug,
-                                   args.logfile)
+    outstream = kevlar.open(args.out, 'w')
+    contigstream = assemble_greedy(readstream, debug=args.debug,
+                                   logstream=args.logfile)
     for contig in contigstream:
-        if outstream is None:
-            outstream = kevlar.open(args.out, 'w')
         kevlar.print_augmented_fastx(contig, outstream)
 
 
