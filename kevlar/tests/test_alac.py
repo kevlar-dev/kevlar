@@ -161,6 +161,7 @@ def test_alac_inf_mate_dist(cc, numrawcalls):
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
     assert len(calls) in numrawcalls
     filtcalls = [c for c in calls if c.attribute('NC') is None]
+    print(*[c.vcf for c in filtcalls], sep='\n', file=sys.stderr)
     assert len(filtcalls) == 1
 
 
