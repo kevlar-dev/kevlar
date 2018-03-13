@@ -18,6 +18,22 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('alac', description=desc, add_help=False)
     subparser._positionals.title = 'Required inputs'
 
+    asmbl_args = subparser.add_argument_group('Read assembly')
+    asmbl_args.add_argument('-p', '--part-id', type=str, metavar='ID',
+                            help='only process partition "PID" in the input')
+    asmbl_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
+                            help='do not attempt to assembly any partitions '
+                            'with more than N reads (default: 10000)')
+    asmbl_args.add_argument('--greedy', action='store_true', help='Use a home-'
+                            'grown greedy assembly algorithm instead of the '
+                            'default fermi-lite algorithm')
+    asmbl_args.add_argument('--no-fallback', action='store_false',
+                            dest='fallback', help='by default, if fermi-lite '
+                            'fails to assemble a contig, `kevlar alac` will '
+                            'attempt to assemble reads with a home-grown '
+                            'greedy assembler; use this flag to deactivate '
+                            'this behavior')
+
     local_args = subparser.add_argument_group('Target extraction')
     local_args.add_argument('-z', '--seed-size', type=int, default=31,
                             metavar='Z', help='seed size; default is 31')
@@ -43,19 +59,11 @@ def subparser(subparsers):
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
-    misc_args.add_argument('-p', '--part-id', type=str, metavar='ID',
-                           help='only process partition "PID" in the input')
-    misc_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
-                           help='do not process any partitions with more than '
-                           'N reads (default: 10000)')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('-i', '--min-ikmers', metavar='I', type=int,
                            default=None, help='do not report calls that a '
                            'supported by fewer than `I` interesting k-mers')
-    misc_args.add_argument('--greedy', action='store_true', help='Use the '
-                           'greedy assembly algorithm instead of the default '
-                           'fermi-lite algorithm')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
     subparser.add_argument('infile', help='partitioned reads in augmented '

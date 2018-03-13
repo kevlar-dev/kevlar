@@ -110,7 +110,7 @@ class Variant(object):
         self._alt = alt
         self.info = dict()
         for key, value in kwargs.items():
-            self.info[key] = value
+            self.annotate(key, value)
 
     @property
     def seqid(self):
@@ -172,10 +172,23 @@ class Variant(object):
         """Similar to `window`, but encapsulating the reference allele."""
         return self.attribute('RW')
 
+    def annotate(self, key, value):
+        if key in self.info:
+            if isinstance(self.info[key], set):
+                self.info[key].add(value)
+            else:
+                oldvalue = self.info[key]
+                self.info[key] = set((oldvalue, value))
+        else:
+            self.info[key] = value
+
     def attribute(self, key, pair=False):
         if key not in self.info:
             return None
-        value = self.info[key].replace(';', ':')
+        value = self.info[key]
+        if isinstance(value, set):
+            value = ','.join(sorted(value))
+        value = value.replace(';', ':')
         if pair:
             keyvaluepair = '{:s}={:s}'.format(key, value)
             return keyvaluepair
@@ -352,6 +365,8 @@ def mate_distance(mate_positions, gdna_position):
             continue
         d = pointdist(pos)
         distances.append(d)
+    if len(distances) == 0:
+        return float('Inf')
     return sum(distances) / len(distances)
 
 
@@ -439,16 +454,17 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
         if len(aligns2report) > 1:
             if refrfile and len(query.mateseqs) > 0:
                 mate_pos = list(align_mates(query, refrfile))
-                for aln in aligns2report:
-                    aln.matedist = mate_distance(mate_pos, aln.interval)
-                aligns2report.sort(key=lambda aln: aln.matedist)
+                if len(mate_pos) > 0:
+                    for aln in aligns2report:
+                        aln.matedist = mate_distance(mate_pos, aln.interval)
+                    aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
             for varcall in alignment.call_variants(ksize):
                 if alignment.matedist:
                     varcall.info['MD'] = '{:.2f}'.format(alignment.matedist)
                     if n > 0:
-                        varcall.info['NC'] = 'matefail'
+                        varcall.annotate('NC', 'matefail')
                 yield varcall
 
 
