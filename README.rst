@@ -25,8 +25,8 @@ How do I use kevlar?
 - Quick start guide: http://kevlar.readthedocs.io/en/latest/quick-start.html
 - Tutorial: http://kevlar.readthedocs.io/en/latest/tutorial.html
 
-**Note**: kevlar is currently focused almost entirely on finding novel germline variants in simplex pedigrees.
-We hope to support a wider range of experimental designs soon.
+**Note**: kevlar is currently focused almost entirely on finding novel germline variants in related individuals.
+We hope to benchmark kevlar a wider range of experimental designs soon.
 
 Contributing
 ------------
