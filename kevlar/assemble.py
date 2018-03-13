@@ -212,7 +212,7 @@ def assemble_with_greed(graph, ccindex, debugout=None):
         pair = fetch_largest_overlapping_pair(graph)
         newname = 'contig{:d}:cc={:d}'.format(count, ccindex)
         newrecord = merge_and_reannotate(pair, newname)
-        if debugout:
+        if debugout:  # pragma: no cover
             print('### DEBUG', pair.tail.name, pair.head.name, pair.offset,
                   pair.overlap, pair.sameorient, file=debugout)
             kevlar.print_augmented_fastx(newrecord, debugout)
@@ -269,10 +269,9 @@ def prune_graph(graph, quant=0.1):
     return len(edges_to_drop)
 
 
-def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
-                    logstream=sys.stderr):
+def assemble_greedy(readstream, compat=0.6, debug=False, logstream=sys.stderr):
     debugout = None
-    if debug:
+    if debug:  # pragma: no cover
         debugout = logstream
 
     graph = kevlar.ReadGraph()
@@ -293,16 +292,6 @@ def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
     if graph.number_of_edges() == 0:
         print('[kevlar::assemble::greedy] nothing to be done', file=logstream)
         return
-
-    if gmlfilename:
-        tempgraph = graph.copy()
-        for n1, n2 in tempgraph.edges():
-            ikmerset = tempgraph[n1][n2]['ikmers']
-            ikmerstr = ','.join(ikmerset)
-            tempgraph[n1][n2]['ikmers'] = ikmerstr
-        networkx.write_gml(tempgraph, gmlfilename)
-        message = 'graph written to {:s}'.format(gmlfilename)
-        print('[kevlar::assemble::greedy]', message, file=logstream)
 
     edges_dropped = prune_graph(graph)
     cc_stream = networkx.connected_component_subgraphs(graph, copy=False)
@@ -355,12 +344,10 @@ def assemble_greedy(readstream, gmlfilename=None, compat=0.6, debug=False,
 
 def main_greedy(args):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
-    outstream = None  # Only create output file if there are contigs
-    contigstream = assemble_greedy(readstream, gmlfilename=args.gml,
-                                   debug=args.debug, logstream=args.logfile)
+    outstream = kevlar.open(args.out, 'w')
+    contigstream = assemble_greedy(readstream, debug=args.debug,
+                                   logstream=args.logfile)
     for contig in contigstream:
-        if outstream is None:
-            outstream = kevlar.open(args.out, 'w')
         kevlar.print_augmented_fastx(contig, outstream)
 
 

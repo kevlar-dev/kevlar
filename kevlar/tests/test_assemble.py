@@ -562,3 +562,15 @@ def test_assemble_greedy_no_edges(capsys):
     out, err = capsys.readouterr()
     assert out == ''
     assert 'nothing to be done' in str(err)
+
+
+@pytest.mark.parametrize('thresh,numcontigs', [
+    (0.6, 0),
+    (0.01, 1),
+])
+def test_assemble_below_compat_threshold(thresh, numcontigs):
+    readfile = kevlar.open(data_file('compat-threshold.augfastq'), 'r')
+    readstream = kevlar.parse_augmented_fastx(readfile)
+    assembler = kevlar.assemble.assemble_greedy(readstream, compat=thresh)
+    contigs = list(assembler)
+    assert len(contigs) == numcontigs
