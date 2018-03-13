@@ -43,7 +43,7 @@ def pico_trio(request):
     return mother.name, father.name, proband.name, refr.name
 
 
-@pytest.mark.long
+@pytest.mark.toolong
 def test_simplex_pico(pico_trio, capsys):
     mother, father, proband, refr = pico_trio
 
@@ -95,3 +95,19 @@ def test_simplex_trio1(capsys):
         'CCGTGGAAGCATAA'
     ])
     assert out.strip() == testvcf
+
+
+def test_simplex_minitrio():
+    proband = data_file('minitrio/trio-proband.fq.gz')
+    mother = data_file('minitrio/trio-mother.fq.gz')
+    father = data_file('minitrio/trio-father.fq.gz')
+    refr = data_file('minitrio/refr.fa')
+
+    arglist = [
+        'simplex', '--novel-memory', '10M', '--case', proband,
+        '--control', mother, '--control', father, '--threads', '2',
+        '--ctrl-max', '1', '--case-min', '5', '--ksize', '25',
+        refr
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.simplex.main(args)
