@@ -154,6 +154,7 @@ def test_alac_inf_mate_dist():
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
                               seedsize=51)
     calls = list(caller)
+    print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
     assert len(calls) == 7
     filtcalls = [c for c in calls if c.attribute('NC') is None]
     assert len(filtcalls) == 1
