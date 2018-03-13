@@ -3,8 +3,8 @@ language: python
 addons:
     apt:
         packages:
-            - bwa
             - cloc
+            - git
 branches:
   only:  # don't build "pushes" except on the master branch
     - master
@@ -12,6 +12,8 @@ cache: pip
 python:
     - 3.5
     - 3.6
+before_install:
+    - git clone https://github.com/lh3/bwa.git && cd bwa && make -j 2 && sudo cp bwa /usr/local/bin
 install:
     - make devenv
     - pip install wheel
