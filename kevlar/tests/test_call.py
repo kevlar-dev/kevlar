@@ -12,8 +12,9 @@ import re
 import sys
 import khmer
 import kevlar
-from kevlar.call import call, make_call, alignment_interpretable
+from kevlar.call import call, alignment_interpretable, VariantMapping
 from kevlar.tests import data_file
+import screed
 
 
 def test_align():
@@ -28,7 +29,7 @@ def test_align():
     assert kevlar.align(target, query) == ('10D91M69D79M20I', 155)
 
 
-def test_alignment_interpretable():
+def test_cigar_scrutability():
     assert alignment_interpretable('6M73I13M4I5M4D63M11I') is False
     assert alignment_interpretable('29I17M7I3M24I36M10D7M11I14M23I4M') is False
     assert alignment_interpretable('57I16M7I3M8D33M1I28M27I3M') is False
@@ -49,10 +50,11 @@ def test_call_pico_indel(ccid, varcall):
     tfile = data_file('pico' + ccid + '.gdna.fa')
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
-    queryseqs = [record for record in qinstream]
-    targetseqs = [record for record in khmer.ReadParser(tfile)]
+    queries = [record for record in qinstream]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    targets = [record for record in tinstream]
 
-    calls = list(call(targetseqs, queryseqs))
+    calls = list(call(targets, queries))
     assert len(calls) == 1
     assert str(calls[0]) == varcall
 
@@ -76,7 +78,8 @@ def test_call_ssc_isolated_snv(ccid, cigar, varcall):
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
-    targetseqs = [record for record in khmer.ReadParser(tfile)]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    targetseqs = [record for record in tinstream]
 
     calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
@@ -90,8 +93,10 @@ def test_call_ssc_1bpdel():
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
-    target = [record for record in khmer.ReadParser(tfile)][0]
-    variants = make_call(target, query, '50D132M1D125M50D', 31)
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    target = [record for record in tinstream][0]
+    aln = VariantMapping(query, target, 1e6, '50D132M1D125M50D')
+    variants = aln.call_variants(31)
 
     assert isinstance(variants, list)
     assert len(variants) == 1
@@ -111,9 +116,11 @@ def test_call_ssc_two_proximal_snvs():
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
-    target = [record for record in khmer.ReadParser(tfile)][0]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    target = [record for record in tinstream][0]
 
-    variants = make_call(target, query, '25D263M25D', 31)
+    aln = VariantMapping(query, target, 1e6, '25D263M25D')
+    variants = aln.call_variants(31)
     assert len(variants) == 2
 
 
@@ -174,7 +181,8 @@ def test_variant_kmers():
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     queryseqs = [record for record in qinstream]
-    targetseqs = [record for record in khmer.ReadParser(tfile)]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    targetseqs = [record for record in tinstream]
 
     calls = list(call(targetseqs, queryseqs))
     assert len(calls) == 1
@@ -207,9 +215,11 @@ def test_variant_window(prefix, cigar, refrwindow, altwindow):
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
-    target = [record for record in khmer.ReadParser(tfile)][0]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    target = [record for record in tinstream][0]
 
-    variants = make_call(target, query, cigar, 21)
+    aln = VariantMapping(query, target, 1e6, cigar)
+    variants = aln.call_variants(21)
     assert len(variants) == 1
     assert variants[0].window == altwindow
     assert variants[0].refrwindow == refrwindow
@@ -222,9 +232,11 @@ def test_nocall():
 
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(qfile, 'r'))
     query = [record for record in qinstream][0]
-    target = [record for record in khmer.ReadParser(tfile)][0]
+    tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
+    target = [record for record in tinstream][0]
 
-    variants = make_call(target, query, '25D5M22I5M46D8M13D2M35I', 21)
+    aln = VariantMapping(query, target, 1e6, '25D5M22I5M46D8M13D2M35I')
+    variants = aln.call_variants(21)
     assert len(variants) == 1
     assert variants[0].vcf == (
         'yourchr\t801\t.\t.\t.\t.\t.\t'
@@ -250,7 +262,8 @@ def test_funky_cigar(part, coord, window):
     contigs = list(contigstream)
 
     gdnafile = data_file('funkycigar/part.cc{:d}.gdna.fa.gz'.format(part))
-    targets = list(khmer.ReadParser(gdnafile))
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
 
     calls = list(call(targets, contigs))
     assert len(calls) == 1
@@ -265,7 +278,8 @@ def test_funky_cigar_deletion():
     contigs = list(contigstream)
 
     gdnafile = data_file('funkycigar/deletion.gdna.fa')
-    targets = list(khmer.ReadParser(gdnafile))
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
 
     calls = list(call(targets, contigs))
     assert len(calls) == 1
@@ -281,7 +295,8 @@ def test_perfect_match():
     contigs = list(contigstream)
 
     gdnafile = data_file('nodiff.gdna.fa')
-    targets = list(khmer.ReadParser(gdnafile))
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
 
     calls = list(call(targets, contigs))
     assert len(calls) == 1
@@ -296,7 +311,8 @@ def test_multibest_revcom():
     contigs = list(contigstream)
 
     gdnafile = data_file('multibestrc.gdna.fa')
-    targets = list(khmer.ReadParser(gdnafile))
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
 
     calls = list(call(targets, contigs))
     assert len(calls) == 4
@@ -308,3 +324,51 @@ def test_multibest_revcom():
         assert c._alt == 'G'
         assert c.window == ('CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGG'
                             'GCCTGAGCCCCA')
+
+
+def test_variant_mapping():
+    contig = screed.Record(
+        name='contig1',
+        sequence='CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCGGTCTGCCCATGAGGCTGGGCCTGAGCCCC'
+    )
+    cutout = kevlar.reference.ReferenceCutout(
+        defline='chr1_10000-10060',
+        sequence='CCTGAGCCCTCTCAAGTCGGGTCCTGGCCCAGTCTGCCCATGAGGCTGGGCCTGAGCCCC'
+    )
+    mapping = VariantMapping(contig, cutout, score=1e6, cigar='60M')
+
+    assert mapping.seqid == 'chr1'
+    assert mapping.interval == ('chr1', 10000, 10060)
+
+
+def test_align_mates():
+    mate_seqs = kevlar.open(data_file('minitrio/novel-mates.fastq.gz'), 'r')
+    record = screed.Record(
+        name='bogusread',
+        sequence='NNNNN',
+        mateseqs=[r.sequence for r in kevlar.parse_augmented_fastx(mate_seqs)]
+    )
+    refrfile = data_file('minitrio/refr.fa')
+    kevlar.reference.autoindex(refrfile)
+    positions = list(kevlar.call.align_mates(record, refrfile))
+    seqids = set([seqid for seqid, coord in positions])
+    coords = sorted([coord for seqid, coord in positions])
+    assert seqids == set(['seq1'])
+    assert coords == [
+        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
+        46131, 46146, 46148, 48025, 48035
+    ]
+
+
+def test_mate_distance():
+    coords = [
+        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
+        46131, 46146, 46148, 48025, 48035
+    ]
+    positions = [('seq1', c) for c in coords]
+    gdna_pos = ('seq1', 45727, 45916)
+    assert kevlar.call.mate_distance(positions, gdna_pos) == 506.46666666666664
+
+    positions = [('seq2', 4000), ('seq2', 3000), ('seq2', 5100), ('seq3', 1)]
+    gdna_pos = ('seq2', 5000, 5500)
+    assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0

@@ -23,11 +23,14 @@ def augment(augseqstream, nakedseqstream):
     """
     ksize = None
     ikmers = dict()
+    mateseqs = set()
     for record in augseqstream:
         for ikmer in record.ikmers:
             ikmers[ikmer.sequence] = ikmer.abund
             ikmers[kevlar.revcom(ikmer.sequence)] = ikmer.abund
             ksize = len(ikmer.sequence)
+        mateseqs.update(record.mateseqs)
+    mateseqs = sorted(mateseqs)
 
     for record in nakedseqstream:
         newikmers = list()
@@ -40,11 +43,12 @@ def augment(augseqstream, nakedseqstream):
         if hasattr(record, 'quality'):
             newrecord = screed.Record(
                 name=record.name, sequence=record.sequence, ikmers=newikmers,
-                quality=record.quality
+                quality=record.quality, mateseqs=mateseqs
             )
         else:
             newrecord = screed.Record(
-                name=record.name, sequence=record.sequence, ikmers=newikmers
+                name=record.name, sequence=record.sequence, ikmers=newikmers,
+                mateseqs=mateseqs
             )
         yield newrecord
 

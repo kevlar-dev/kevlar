@@ -55,6 +55,10 @@ def subparser(subparsers):
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
+    misc_args.add_argument('--refridx', metavar='FILE',
+                           help='reference genome indexed for BWA search; if '
+                           'provided, mates of interesting reads will be used '
+                           'to diambiguate multi-mapping contigs')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     misc_args.add_argument('--case-label', metavar='LBL', help='name or label '

@@ -96,16 +96,18 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
     timer.start()
     nkmers = 0
     nreads = 0
+    nextupdate = updateint
     unique_kmers = set()
-    for n, record in enumerate(casestream, 1):
-        if skipuntil:
+    for n, record, mate in kevlar.paired_reader(casestream):
+        if skipuntil:  # pragma: no cover
             if record.name == skipuntil:
                 message = 'Found read {:s}'.format(skipuntil)
                 message += ' (skipped {:d} reads)'.format(n)
                 print('[kevlar::novel]', message, file=logstream)
                 skipuntil = False
             continue
-        if n > 0 and n % updateint == 0:
+        if n >= nextupdate:
+            nextupdate += updateint
             elapsed = timer.probe()
             msg = '    processed {} reads'.format(n)
             msg += ' in {:.2f} seconds...'.format(elapsed)
@@ -145,6 +147,8 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
 
         nreads += 1
         nkmers += read_kmers
+        if mate:
+            record.mateseqs = [mate.sequence]
         yield record
 
     elapsed = timer.stop()

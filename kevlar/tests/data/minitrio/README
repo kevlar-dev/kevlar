@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+nuclmm simulate --order 6 --numseqs 1 --seqlen 100000 --seed 1308974 --out kevlar/tests/data/minitrio/refr.fa
+./cli gentrio -i 2 -d 1 --vcf kevlar/tests/data/minitrio/variants.vcf --prefix kevlar/tests/data/minitrio/trio --weights snv=1.0 --seed 101982347 kevlar/tests/data/minitrio/refr.fa.gz
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 15000 -1 100 -2 100 -S 5647348 kevlar/tests/data/minitrio/trio-father.fasta kevlar/tests/data/minitrio/trio-father-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 15000 -1 100 -2 100 -S 12893475 kevlar/tests/data/minitrio/trio-mother.fasta kevlar/tests/data/minitrio/trio-mother-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 15000 -1 100 -2 100 -S 678678 kevlar/tests/data/minitrio/trio-proband.fasta kevlar/tests/data/minitrio/trio-proband-{1,2}.fastq
+interleave-reads.py kevlar/tests/data/minitrio/trio-father-{1,2}.fastq | gzip -c > kevlar/tests/data/minitrio/trio-father.fq.gz
+interleave-reads.py kevlar/tests/data/minitrio/trio-mother-{1,2}.fastq | gzip -c > kevlar/tests/data/minitrio/trio-mother.fq.gz
+interleave-reads.py kevlar/tests/data/minitrio/trio-proband-{1,2}.fastq | gzip -c > kevlar/tests/data/minitrio/trio-proband.fq.gz
