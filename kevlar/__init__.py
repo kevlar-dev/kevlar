@@ -28,6 +28,7 @@ import screed
 from kevlar import seqio
 from kevlar import overlap
 from kevlar import sketch
+from kevlar import vcf
 from kevlar import reference
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
@@ -50,6 +51,7 @@ from kevlar import localize
 from kevlar import call
 from kevlar import alac
 from kevlar import simplex
+from kevlar import simlike
 from kevlar import split
 from kevlar import gentrio
 from kevlar import cli
