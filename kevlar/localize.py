@@ -113,7 +113,7 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
         yield seqid, pos
 
 
-def localize(contigstream, refrfile, seedsize=31, delta=25, maxdiff=10000,
+def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=10000,
              refrseqs=None, logstream=sys.stderr):
     """Wrap the `kevlar localize` task as a generator.
 

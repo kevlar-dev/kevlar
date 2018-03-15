@@ -35,9 +35,9 @@ def subparser(subparsers):
                             'this behavior')
 
     local_args = subparser.add_argument_group('Target extraction')
-    local_args.add_argument('-z', '--seed-size', type=int, default=31,
-                            metavar='Z', help='seed size; default is 31')
-    local_args.add_argument('-d', '--delta', type=int, default=25, metavar='D',
+    local_args.add_argument('-z', '--seed-size', type=int, default=51,
+                            metavar='Z', help='seed size; default is 51')
+    local_args.add_argument('-d', '--delta', type=int, default=50, metavar='D',
                             help='retrieve the genomic interval from the '
                             'reference by extending beyond the span of all '
                             'k-mer starting positions by D bp')

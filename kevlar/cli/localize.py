@@ -24,12 +24,12 @@ def subparser(subparsers):
                            'positions should not exceed X bp; default is '
                            '10000 (10 kb)')
     subparser.add_argument('-d', '--delta', type=int, metavar='D',
-                           default=25, help='retrieve the genomic interval '
+                           default=50, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
                            'of all k-mer starting positions by D bp')
     subparser.add_argument('-o', '--out', metavar='FILE', default='-',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('-z', '--seed-size', type=int, metavar='Z',
-                           default=31, help='seed size; default is 31')
+                           default=51, help='seed size; default is 51')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')

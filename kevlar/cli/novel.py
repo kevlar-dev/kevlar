@@ -91,9 +91,9 @@ def subparser(subparsers):
         'default is X=1'
     )
     samp_args.add_argument(
-        '-y', '--case-min', metavar='Y', type=int, default=5,
+        '-y', '--case-min', metavar='Y', type=int, default=6,
         help='k-mers with abund < Y in any case sample are uninteresting; '
-        'default is Y=5'
+        'default is Y=6'
     )
     samp_args.add_argument(
         '-M', '--memory', default='1e6', type=khmer_args.memory_setting,
