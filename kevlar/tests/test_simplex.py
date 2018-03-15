@@ -83,7 +83,7 @@ def test_simplex_trio1(capsys):
         controls[1], '--case-min', '6', '--ctrl-max', '0', '--novel-memory',
         '1M', '--novel-fpr', '0.2', '--filter-memory', '50K', '--mask-files',
         refr, '--mask-memory', '1M', '--filter-fpr', '0.005', '--ksize', '21',
-        refr
+        '--seed-size', '31', '--delta', '25', refr
     ]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.simplex.main(args)

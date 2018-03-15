@@ -39,7 +39,7 @@ def test_cli():
         'cntl2.fq', '-k', '17',
     ])
     assert args.ksize == 17
-    assert args.case_min == 5
+    assert args.case_min == 6
     assert args.ctrl_max == 1
     assert args.num_bands is None
     assert args.band is None
@@ -49,7 +49,7 @@ def test_cli():
         '--control', 'cntl1.fq', '--control', 'cntl2.fq',
     ])
     assert args.ksize == 31
-    assert args.case_min == 5
+    assert args.case_min == 6
     assert args.ctrl_max == 1
     assert args.num_bands == 8
     assert args.band == 1
