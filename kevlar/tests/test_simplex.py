@@ -7,11 +7,13 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import filecmp
 from os import remove
 import pytest
 import subprocess
 import sys
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
+from shutil import rmtree
 import kevlar
 from kevlar.tests import data_file, data_glob
 
@@ -111,3 +113,36 @@ def test_simplex_minitrio():
     ]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.simplex.main(args)
+
+
+def test_simplex_save_counts():
+    outdir = mkdtemp()
+    try:
+        for ind in ('father', 'mother', 'proband'):
+            outfile = '{:s}/{:s}.ct'.format(outdir, ind)
+            infile = data_file('minitrio/trio-{:s}.fq.gz'.format(ind))
+            arglist = ['count', '--ksize', '27', '--memory', '5M', outfile,
+                       infile]
+            args = kevlar.cli.parser().parse_args(arglist)
+            kevlar.count.main(args)
+
+        arglist = [
+            'simplex', '--ksize', '27', '--out', outdir + '/calls.vcf',
+            '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
+            outdir + '/mom.ct', outdir + '/dad.ct', '--case',
+            data_file('minitrio/trio-proband.fq.gz'),
+            '--control', data_file('minitrio/trio-mother.fq.gz'),
+            '--control', data_file('minitrio/trio-father.fq.gz'),
+            '--novel-memory', '5M', data_file('minitrio/refr.fa')
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.simplex.main(args)
+
+        counts = ('father', 'mother', 'proband')
+        testcounts = ('dad', 'mom', 'kid')
+        for c1, c2 in zip(counts, testcounts):
+            f1 = '{:s}/{:s}.ct'.format(outdir, c1)
+            f2 = '{:s}/{:s}.ct'.format(outdir, c2)
+            assert filecmp.cmp(f1, f2)
+    finally:
+        rmtree(outdir)

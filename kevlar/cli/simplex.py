@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from argparse import SUPPRESS
 from khmer import khmer_args
 
 
@@ -163,3 +164,5 @@ def subparser(subparsers):
         '-k', '--ksize', type=int, default=31, metavar='K', help='k-mer size; '
         'default is 31'
     )
+    misc_args.add_argument('--save-case-counts', nargs='+', help=SUPPRESS)
+    misc_args.add_argument('--save-ctrl-counts', nargs='+', help=SUPPRESS)
