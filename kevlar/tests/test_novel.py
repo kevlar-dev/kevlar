@@ -284,6 +284,7 @@ def test_novel_save_counts():
     finally:
         rmtree(outdir)
 
+
 def test_novel_save_counts_mismatch(capsys):
     outdir = mkdtemp()
     try:
