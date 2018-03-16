@@ -20,7 +20,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
             mask=None, filtermem=1e6, filterfpr=0.001,
             partminabund=2, partmaxabund=200, dedup=True,
             delta=50, seedsize=31, match=1, mismatch=2, gapopen=5, gapextend=0,
-            ksize=31, logstream=sys.stderr):
+            fallback=False, ksize=31, logstream=sys.stderr):
     """
     Execute the simplex germline variant discovery workflow.
 
@@ -55,6 +55,8 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     - mismatch: alignment mismatch penalty
     - gapopen: alignment gap open penalty
     - gapextend: alignment gap extension penalty
+    - fallback: try assembly with home-grown greedy assembly algorithm if
+                assembly with fermi-lite fails for a partition
     """
     discoverer = novel(
         case, [casecounts], controlcounts, ksize=ksize, casemin=casemin,
@@ -72,7 +74,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     caller = alac(
         partitioner, refrfile, ksize=ksize, delta=delta, seedsize=seedsize,
         match=match, mismatch=mismatch, gapopen=gapopen, gapextend=gapextend,
-        logstream=logstream
+        fallback=fallback, logstream=logstream
     )
 
     for variant in caller:

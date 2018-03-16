@@ -17,7 +17,7 @@ from kevlar.call import call
 
 def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
          maxdiff=10000, match=1, mismatch=2, gapopen=5, gapextend=0,
-         greedy=False, fallback=True, min_ikmers=None, logstream=sys.stderr):
+         greedy=False, fallback=False, min_ikmers=None, logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
