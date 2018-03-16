@@ -156,7 +156,7 @@ def test_alac_inf_mate_dist(cc, numrawcalls):
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
-                              seedsize=51)
+                              seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
     assert len(calls) in numrawcalls
@@ -171,7 +171,7 @@ def test_alac_no_mates():
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
-                              seedsize=51)
+                              seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
     assert len(calls) in [3, 5, 7]
