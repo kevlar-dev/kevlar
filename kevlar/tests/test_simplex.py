@@ -128,8 +128,8 @@ def test_simplex_save_counts():
 
         arglist = [
             'simplex', '--ksize', '27', '--out', outdir + '/calls.vcf',
-            '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
-            outdir + '/mom.ct', outdir + '/dad.ct', '--case',
+            '--save-case-counts', outdir + '/kid', '--save-ctrl-counts',
+            outdir + '/mom', outdir + '/dad', '--case',
             data_file('minitrio/trio-proband.fq.gz'),
             '--control', data_file('minitrio/trio-mother.fq.gz'),
             '--control', data_file('minitrio/trio-father.fq.gz'),
@@ -142,7 +142,7 @@ def test_simplex_save_counts():
         testcounts = ('dad', 'mom', 'kid')
         for c1, c2 in zip(counts, testcounts):
             f1 = '{:s}/{:s}.ct'.format(outdir, c1)
-            f2 = '{:s}/{:s}.ct'.format(outdir, c2)
+            f2 = '{:s}/{:s}.counttable'.format(outdir, c2)
             assert filecmp.cmp(f1, f2)
     finally:
         rmtree(outdir)

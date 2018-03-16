@@ -283,3 +283,23 @@ def test_novel_save_counts():
             assert filecmp.cmp(f1, f2)
     finally:
         rmtree(outdir)
+
+def test_novel_save_counts_mismatch(capsys):
+    outdir = mkdtemp()
+    try:
+        arglist = [
+            'novel', '--ksize', '27', '--out', outdir + '/novel.augfastq.gz',
+            '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
+            outdir + '/mom.ct', outdir + '/dad.ct', outdir + '/sibling.ct',
+            '--case', data_file('minitrio/trio-proband.fq.gz'),
+            '--control', data_file('minitrio/trio-mother.fq.gz'),
+            '--control', data_file('minitrio/trio-father.fq.gz'),
+            '--memory', '5M'
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.novel.main(args)
+    finally:
+        rmtree(outdir)
+
+    out, err = capsys.readouterr()
+    assert 'stubbornly refusing to save k-mer counts' in err
