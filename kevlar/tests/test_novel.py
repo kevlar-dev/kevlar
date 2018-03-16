@@ -8,6 +8,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import filecmp
 import glob
 import json
 import pytest
@@ -16,6 +17,7 @@ from tempfile import NamedTemporaryFile, mkdtemp
 import screed
 from shutil import rmtree
 import kevlar
+from kevlar.tests import data_file
 from khmer import Counttable
 
 
@@ -87,7 +89,7 @@ def test_assumptions(kmer):
 ])
 def test_novel_single_mutation(case, ctrl, mem, capsys):
     from sys import stdout, stderr
-    casestr = kevlar.tests.data_file(case)
+    casestr = data_file(case)
     ctrls = kevlar.tests.data_glob(ctrl)
     arglist = ['novel', '--case', casestr, '--ksize', '13', '--case-min', '8',
                '--control', ctrls[0], '--control', ctrls[1],
@@ -180,8 +182,8 @@ def test_iter_read_multi_file():
 
 
 def test_novel_abund_screen(capsys):
-    case = kevlar.tests.data_file('screen-case.fa')
-    ctrl = kevlar.tests.data_file('screen-ctrl.fa')
+    case = data_file('screen-case.fa')
+    ctrl = data_file('screen-ctrl.fa')
     arglist = ['novel', '--ksize', '25', '--ctrl-max', '1', '--case-min', '8',
                '--case', case, '--control', ctrl, '--abund-screen', '3']
     args = kevlar.cli.parser().parse_args(arglist)
@@ -193,7 +195,7 @@ def test_novel_abund_screen(capsys):
 
 def test_skip_until(capsys):
     readname = 'bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1'
-    case = kevlar.tests.data_file('trio1/case1.fq')
+    case = data_file('trio1/case1.fq')
     ctrls = kevlar.tests.data_glob('trio1/ctrl[1,2].fq')
     arglist = ['novel', '--ctrl-max', '0', '--case-min', '6',
                '--skip-until', readname, '--upint', '50',
@@ -219,11 +221,11 @@ def test_skip_until(capsys):
 
 
 def test_novel_output_has_mates():
-    kid = kevlar.tests.data_file('minitrio/trio-proband.fq.gz')
-    mom = kevlar.tests.data_file('minitrio/trio-mother.fq.gz')
-    dad = kevlar.tests.data_file('minitrio/trio-father.fq.gz')
-    testnovel = kevlar.tests.data_file('minitrio/novel.augfastq.gz')
-    testmates = kevlar.tests.data_file('minitrio/novel-mates.fastq.gz')
+    kid = data_file('minitrio/trio-proband.fq.gz')
+    mom = data_file('minitrio/trio-mother.fq.gz')
+    dad = data_file('minitrio/trio-father.fq.gz')
+    testnovel = data_file('minitrio/novel.augfastq.gz')
+    testmates = data_file('minitrio/novel-mates.fastq.gz')
 
     with NamedTemporaryFile(suffix='.augfastq') as novelfile:
         arglist = [
@@ -248,3 +250,36 @@ def test_novel_output_has_mates():
         stream = kevlar.parse_augmented_fastx(kevlar.open(testmates, 'r'))
         test_mate_seqs = set([r.sequence for r in stream])
         assert mate_seqs == test_mate_seqs
+
+
+def test_novel_save_counts():
+    outdir = mkdtemp()
+    try:
+        for ind in ('father', 'mother', 'proband'):
+            outfile = '{:s}/{:s}.ct'.format(outdir, ind)
+            infile = data_file('minitrio/trio-{:s}.fq.gz'.format(ind))
+            arglist = ['count', '--ksize', '27', '--memory', '5M', outfile,
+                       infile]
+            args = kevlar.cli.parser().parse_args(arglist)
+            kevlar.count.main(args)
+
+        arglist = [
+            'novel', '--ksize', '27', '--out', outdir + '/novel.augfastq.gz',
+            '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
+            outdir + '/mom.ct', outdir + '/dad.ct', '--case',
+            data_file('minitrio/trio-proband.fq.gz'),
+            '--control', data_file('minitrio/trio-mother.fq.gz'),
+            '--control', data_file('minitrio/trio-father.fq.gz'),
+            '--memory', '5M'
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.novel.main(args)
+
+        counts = ('father', 'mother', 'proband')
+        testcounts = ('dad', 'mom', 'kid')
+        for c1, c2 in zip(counts, testcounts):
+            f1 = '{:s}/{:s}.ct'.format(outdir, c1)
+            f2 = '{:s}/{:s}.ct'.format(outdir, c2)
+            assert filecmp.cmp(f1, f2)
+    finally:
+        rmtree(outdir)

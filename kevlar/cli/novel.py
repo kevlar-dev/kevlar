@@ -41,7 +41,8 @@ def subparser(subparsers):
         kevlar novel --out output.augfastq \\
             --case proband1.fq --case proband2.fq \\
             --control control1a.fq control1b.fq \\
-            --control control2a.fq control2b.fq"""
+            --control control2a.fq control2b.fq \\
+            --save-case-counts p1.ct p2.ct --save-ctrl-counts c1.ct c2.ct"""
     epilog = textwrap.dedent(epilog)
     subparser = subparsers.add_parser(
         'novel', description=desc, epilog=epilog, add_help=False,
@@ -125,13 +126,23 @@ def subparser(subparsers):
                            help='a number between 1 and N (inclusive) '
                            'indicating the band to be processed')
 
+    out_args = subparser.add_argument_group('Output settings')
+    out_args.add_argument('-o', '--out', metavar='FILE',
+                          help='file to which interesting reads will be '
+                          'written; default is terminal (stdout)')
+    out_args.add_argument('--save-case-counts', metavar='CT', nargs='+',
+                          help='save the computed k-mer counts for each case '
+                          'sample to the specified count table file(s)')
+    out_args.add_argument('--save-ctrl-counts', metavar='CT', nargs='+',
+                          help='save the computed k-mer counts for each '
+                          'control sample to the specified count table '
+                          'file(s)')
+
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
-    misc_args.add_argument('-o', '--out', metavar='FILE',
-                           help='output file; default is terminal (stdout)')
     misc_args.add_argument('--upint', type=float, default=1e6, metavar='INT',
                            help='update interval for log messages; default is '
                            '1000000 (1 update message per millon reads)')
