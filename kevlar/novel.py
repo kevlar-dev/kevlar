@@ -78,6 +78,33 @@ def load_samples(counttables=None, filelists=None, ksize=31, memory=1e6,
     return samples
 
 
+def save_counts(filelist, tablelist, logstream=sys.stderr):
+    if len(filelist) != len(tablelist):
+        msg = 'number of filenames provided ({:d})'.format(len(filelist))
+        msg += 'does not match the number of '
+        msg += 'samples provided ({:d})'.format(len(tablelist))
+        msg += '; stubbornly refusing to save k-mer counts'
+        print('[kevlar::novel] WARNING:', msg, file=logstream)
+        return
+    for outfile, counttable in zip(filelist, tablelist):
+        if not outfile.endswith(('.ct', '.counttable')):
+            outfile += '.counttable'
+        print('   ', outfile, file=logstream)
+        counttable.save(outfile)
+
+
+def save_all_counts(casecounts, casefiles, ctrlcounts, ctrlfiles,
+                    logstream=sys.stderr):
+    if casefiles:
+        message = 'saving k-mer counts for case samples'
+        print('[kevlar::novel]', message, file=logstream)
+        save_counts(casefiles, casecounts, logstream=logstream)
+    if ctrlfiles:
+        message = 'saving k-mer counts for control samples'
+        print('[kevlar::novel]', message, file=logstream)
+        save_counts(ctrlfiles, ctrlcounts, logstream=logstream)
+
+
 def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
           casemin=5, ctrlmax=0, numbands=None, band=None, skipuntil=None,
           updateint=10000, logstream=sys.stderr):
@@ -189,6 +216,9 @@ def main(args):
     elapsed = timer.stop('loadall')
     print('[kevlar::novel] All samples loaded in {:.2f} sec'.format(elapsed),
           file=args.logfile)
+
+    save_all_counts(cases, args.save_case_counts, controls,
+                    args.save_ctrl_counts, logstream=args.logfile)
 
     timer.start('iter')
     ncases = len(args.case)

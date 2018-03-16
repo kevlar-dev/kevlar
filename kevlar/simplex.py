@@ -96,6 +96,10 @@ def main(args):
         args.mask_files, args.ksize, args.mask_memory, maxfpr=args.filter_fpr,
         logstream=args.logfile
     )
+    kevlar.novel.save_all_counts(
+        cases, args.save_case_counts, controls, args.save_ctrl_counts,
+        logstream=args.logfile
+    )
 
     outstream = kevlar.open(args.out, 'w')
     caserecords = kevlar.multi_file_iter_screed(args.case)
