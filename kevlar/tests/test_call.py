@@ -379,7 +379,7 @@ def test_mate_distance():
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 5, 1, 1),
     ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 5, 1, 1),
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 2, 2, 0),
-    ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 2, 2, 0),
+    ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', None, 2, 0),
 ])
 def test_call_near_end(query, target, dist, n, msgcount):
     log = StringIO()
