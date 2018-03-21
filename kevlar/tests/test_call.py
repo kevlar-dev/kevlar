@@ -375,7 +375,7 @@ def test_mate_distance():
     assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0
 
 
-@pytest.mark.parametrize('query,target,dist,n,msgcount',[
+@pytest.mark.parametrize('query,target,dist,n,msgcount', [
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 5, 1, 1),
     ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 5, 1, 1),
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 2, 2, 0),
