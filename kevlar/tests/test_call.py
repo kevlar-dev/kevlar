@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from io import StringIO
 import pytest
 import re
 import sys
@@ -372,3 +373,30 @@ def test_mate_distance():
     positions = [('seq2', 4000), ('seq2', 3000), ('seq2', 5100), ('seq3', 1)]
     gdna_pos = ('seq2', 5000, 5500)
     assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0
+
+
+@pytest.mark.parametrize('query,target,dist,n,msgcount',[
+    ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 5, 1, 1),
+    ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 5, 1, 1),
+    ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 2, 2, 0),
+    ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 2, 2, 0),
+])
+def test_call_near_end(query, target, dist, n, msgcount):
+    log = StringIO()
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file(query), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file(target), 'r')
+        )
+    )
+    aln = kevlar.call.align_both_strands(cutout, contig)
+    calls = list(aln.call_variants(31, mindist=dist, logstream=log))
+    assert len(calls) == n
+
+    err = log.getvalue()
+    count = err.count('discarding SNV due to proximity to end of the contig')
+    assert count == msgcount

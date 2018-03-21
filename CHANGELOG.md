@@ -11,7 +11,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New `-p/--part-id` flag in `kevlar alac` for processing a single partition in a partitioned augfastq file (see #206).
 - New reader/parser for parititioned augfastx files (see #206).
 - New strategy for discriminating between variants and off-target calls using pairing information (see #210).
-- New "fallback" assembly strategy: if fermi-lite fails, try our homegrown greedy assembly algorithm (see #214).
+- New optional "fallback" assembly strategy: if fermi-lite fails, try our homegrown greedy assembly algorithm (see #214 and #219).
+- New parameter for excluding SNV calls too near to the end of a contig (see #222).
 
 ### Changed
 - Replaced `pep8` with `pycodestyle` for enforcing code style in development (see #167).
