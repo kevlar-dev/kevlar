@@ -402,15 +402,33 @@ def test_call_near_end(query, target, dist, n, msgcount):
     assert count == msgcount
 
 
-def test_call_truncated_windows():
+def test_call_truncated_windows_snv():
     contig = next(
         kevlar.parse_augmented_fastx(
-            kevlar.open(data_file('trunc.contig.augfasta'), 'r')
+            kevlar.open(data_file('trunc-snv.contig.fa'), 'r')
         )
     )
     cutout = next(
         kevlar.reference.load_refr_cutouts(
-            kevlar.open(data_file('trunc.gdna.augfasta'), 'r')
+            kevlar.open(data_file('trunc-snv.gdna.fa'), 'r')
+        )
+    )
+    aln = kevlar.call.align_both_strands(cutout, contig)
+    calls = list(aln.call_variants(31))
+    assert len(calls) == 1
+    assert calls[0].window == 'TAGCATACAGGTAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
+    assert calls[0].refrwindow == 'TAGCATACAGGAAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
+
+
+def test_call_truncated_windows_indel():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('trunc-indel.contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('trunc-indel.gdna.augfasta'), 'r')
         )
     )
     aln = kevlar.call.align_both_strands(cutout, contig)
