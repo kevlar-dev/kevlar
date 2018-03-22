@@ -229,6 +229,16 @@ class VariantIndel(Variant):
             return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
 
 
+def n_ikmers_present(ikmers, window):
+    n = 0
+    for ikmer in ikmers:
+        if ikmer.sequence in window:
+            n += 1
+        elif kevlar.revcom(ikmer.sequence) in window:
+            n += 1
+    return n
+
+
 def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
     targetshort = False
     if offset < 0:
@@ -267,8 +277,9 @@ def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
         if not targetshort:
             localcoord += offset
         globalcoord = aln.cutout.local_to_global(localcoord)
+        nikmers = n_ikmers_present(aln.contig.ikmers, window)
         snv = VariantSNV(aln.seqid, globalcoord, refr, alt, VW=window,
-                         RW=refrwindow, IK=str(len(aln.contig.ikmers)))
+                         RW=refrwindow, IK=str(nikmers))
         snvs.append(snv)
     return snvs
 
@@ -317,8 +328,9 @@ def call_deletion(aln, offset, ksize, leftmatch, indellength):
     if not targetshort:
         localcoord += offset
     globalcoord = aln.cutout.local_to_global(localcoord)
+    nikmers = n_ikmers_present(aln.contig.ikmers, altwindow)
     return [VariantIndel(aln.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-                         RW=refrwindow, IK=str(len(aln.contig.ikmers)))]
+                         RW=refrwindow, IK=str(nikmers))]
 
 
 def call_insertion(aln, offset, ksize, leftmatch, indellength):
@@ -339,8 +351,9 @@ def call_insertion(aln, offset, ksize, leftmatch, indellength):
     if not targetshort:
         localcoord += offset
     globalcoord = aln.cutout.local_to_global(localcoord)
+    nikmers = n_ikmers_present(aln.contig.ikmers, altwindow)
     return [VariantIndel(aln.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-                         RW=refrwindow, IK=str(len(aln.contig.ikmers)))]
+                         RW=refrwindow, IK=str(nikmers))]
 
 
 def align_mates(record, refrfile):
