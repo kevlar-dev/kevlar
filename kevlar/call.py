@@ -10,6 +10,7 @@
 import khmer
 import kevlar
 import re
+import sys
 
 
 class VariantMapping(object):
@@ -45,7 +46,7 @@ class VariantMapping(object):
     def pos(self):
         return self.cutout._startpos
 
-    def call_variants(self, ksize):
+    def call_variants(self, ksize, mindist=5, logstream=sys.stderr):
         snvmatch = re.search('^(\d+)([DI])(\d+)M(\d+)[DI]$', self.cigar)
         snvmatch2 = re.search('^(\d+)([DI])(\d+)M(\d+)[DI](\d+)M$', self.cigar)
         if snvmatch:
@@ -53,13 +54,13 @@ class VariantMapping(object):
             if snvmatch.group(2) == 'I':
                 offset *= -1
             length = int(snvmatch.group(3))
-            return call_snv(self, offset, length, ksize)
+            return call_snv(self, offset, length, ksize, mindist, logstream)
         elif snvmatch2 and int(snvmatch2.group(5)) <= 5:
             offset = int(snvmatch2.group(1))
             if snvmatch2.group(2) == 'I':
                 offset *= -1
             length = int(snvmatch2.group(3))
-            return call_snv(self, offset, length, ksize)
+            return call_snv(self, offset, length, ksize, mindist, logstream)
 
         indelmatch = re.search(
             '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$', self.cigar
@@ -228,7 +229,7 @@ class VariantIndel(Variant):
             return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
 
 
-def call_snv(aln, offset, length, ksize):
+def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
     targetshort = False
     if offset < 0:
         offset *= -1
@@ -248,6 +249,11 @@ def call_snv(aln, offset, length, ksize):
 
     snvs = list()
     for diff in diffs:
+        if mindist:
+            if diff[0] < mindist or length - diff[0] < mindist:
+                msg = 'discarding SNV due to proximity to end of the contig'
+                print('[kevlar::call] NOTE:', msg, file=logstream)
+                continue
         minpos = max(diff[0] - ksize + 1, 0)
         maxpos = min(diff[0] + ksize, length)
         window = q[minpos:maxpos]
@@ -424,7 +430,8 @@ def alignments_to_report(alignments):
 
 
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-         gapextend=0, ksize=31, refrfile=None):
+         gapextend=0, ksize=31, refrfile=None, mindist=5,
+         logstream=sys.stderr):
     """Wrap the `kevlar call` procedure as a generator function.
 
     Input is the following.
@@ -460,7 +467,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                     aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
-            for varcall in alignment.call_variants(ksize):
+            for varcall in alignment.call_variants(ksize, mindist, logstream):
                 if alignment.matedist:
                     varcall.info['MD'] = '{:.2f}'.format(alignment.matedist)
                     if n > 0:
