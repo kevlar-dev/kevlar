@@ -124,7 +124,7 @@ def test_validate():
                 kevlar.revcom(kmer.sequence) in goodkmers
 
 
-def test_validate_minabund():
+def test_validate_casemin():
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
     readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
@@ -184,7 +184,7 @@ def test_filter_main(capsys):
         '--mask-max-fpr', '0.001',
         '--abund-memory', '10M',
         '--abund-max-fpr', '0.001',
-        '--min-abund', '6',
+        '--case-min', '6',
         '--ksize', '13',
         kevlar.tests.data_file('trio1/novel_3_1,2.txt'),
     ]
