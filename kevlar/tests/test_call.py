@@ -402,38 +402,43 @@ def test_call_near_end(query, target, dist, n, msgcount):
     assert count == msgcount
 
 
-def test_call_truncated_windows_snv():
+@pytest.mark.parametrize('query,target,vw,rw', [
+    (
+        'trunc-snv.contig.fa', 'trunc-snv.gdna.fa',
+        'TAGCATACAGGTAGTCAGGGGGTGTCTGCGACCACAGCTGAA',
+        'TAGCATACAGGAAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
+    ),
+    (
+        'trunc-indel.contig.augfasta', 'trunc-indel.gdna.augfasta',
+        'GTATATACACATATATGTGTATATATGTGTATATATGT',
+        'GTATATACATATATGTGTATATATGTGTATATACATATATGTGTATATATGTGTATATATGT'
+    ),
+    (
+        'trunc-snv-funky.contig.fa', 'trunc-snv-funky.gdna.fa',
+        'TGTGTCTGAGAGGGTGTTGCCAAAGGAGATTAACATTTG',
+        'TGTGTCTGTGAGGGTGTTGCCAAAGGAGATTAACATTTG'
+    ),
+    (
+        'trunc-indel-funky.contig.fa', 'trunc-snv-funky.gdna.fa',
+        'TGTGTCTGTGAGTATATAGGTGTTGCCAAAGGAGATTAACATTTGAGT',
+        'TGTGTCTGTGAGGGTGTTGCCAAAGGAGATTAACATTTGAGT'
+    ),
+])
+def test_call_truncated_windows(query, target, vw, rw):
     contig = next(
         kevlar.parse_augmented_fastx(
-            kevlar.open(data_file('trunc-snv.contig.fa'), 'r')
+            kevlar.open(data_file(query), 'r')
         )
     )
     cutout = next(
         kevlar.reference.load_refr_cutouts(
-            kevlar.open(data_file('trunc-snv.gdna.fa'), 'r')
+            kevlar.open(data_file(target), 'r')
         )
     )
     aln = kevlar.call.align_both_strands(cutout, contig)
     calls = list(aln.call_variants(31))
     assert len(calls) == 1
-    assert calls[0].window == 'TAGCATACAGGTAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
-    assert calls[0].refrwindow == 'TAGCATACAGGAAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
-
-
-def test_call_truncated_windows_indel():
-    contig = next(
-        kevlar.parse_augmented_fastx(
-            kevlar.open(data_file('trunc-indel.contig.augfasta'), 'r')
-        )
-    )
-    cutout = next(
-        kevlar.reference.load_refr_cutouts(
-            kevlar.open(data_file('trunc-indel.gdna.augfasta'), 'r')
-        )
-    )
-    aln = kevlar.call.align_both_strands(cutout, contig)
-    calls = list(aln.call_variants(31))
-    assert len(calls) == 1
-    assert calls[0].window == 'GTATATACACATATATGTGTATATATGTGTATATATGT'
-    assert calls[0].refrwindow == ('GTATATACATATATGTGTATATATGTGTATATACATATATGT'
-                                   'GTATATATGTGTATATATGT')
+    print('VW:', calls[0].window, file=sys.stderr)
+    print('RW:', calls[0].refrwindow, file=sys.stderr)
+    assert calls[0].window == vw
+    assert calls[0].refrwindow == rw
