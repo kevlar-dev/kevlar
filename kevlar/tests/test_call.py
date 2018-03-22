@@ -442,3 +442,20 @@ def test_call_truncated_windows(query, target, vw, rw):
     print('RW:', calls[0].refrwindow, file=sys.stderr)
     assert calls[0].window == vw
     assert calls[0].refrwindow == rw
+
+
+def test_call_num_interesting_kmers():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('iktest.contig.fa'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('iktest.gdna.fa'), 'r')
+        )
+    )
+    aln = kevlar.call.align_both_strands(cutout, contig)
+    calls = list(aln.call_variants(29))
+    assert len(calls) == 1
+    assert calls[0].info['IK'] == '1'
