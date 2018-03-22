@@ -274,8 +274,8 @@ def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
 
 
 def deletion_allele(target, query, offset, ksize, leftmatch, indellength):
-    minpos = leftmatch - ksize + 1
-    maxpos = leftmatch + ksize - 1
+    minpos = max(leftmatch - ksize + 1, 0)
+    maxpos = min(leftmatch + ksize - 1, len(query))
     altwindow = query[minpos:maxpos]
     minpos += offset
     maxpos += offset + indellength
@@ -287,8 +287,8 @@ def deletion_allele(target, query, offset, ksize, leftmatch, indellength):
 
 
 def insertion_allele(target, query, offset, ksize, leftmatch, indellength):
-    minpos = leftmatch - ksize + 1
-    maxpos = leftmatch + ksize + indellength - 1
+    minpos = max(leftmatch - ksize + 1, 0)
+    maxpos = min(leftmatch + ksize + indellength - 1, len(query))
     altwindow = query[minpos:maxpos]
     minpos += offset
     maxpos += offset - indellength
@@ -333,7 +333,6 @@ def call_insertion(aln, offset, ksize, leftmatch, indellength):
         refr, alt, refrwindow, altwindow = insertion_allele(
             aln.refrseq, aln.varseq, offset, ksize, leftmatch, indellength
         )
-
     # This assertion is no longer valid when query is longer than target
     # assert len(alt) == indellength + 1
     localcoord = leftmatch
