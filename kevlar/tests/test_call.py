@@ -400,3 +400,22 @@ def test_call_near_end(query, target, dist, n, msgcount):
     err = log.getvalue()
     count = err.count('discarding SNV due to proximity to end of the contig')
     assert count == msgcount
+
+
+def test_call_truncated_windows():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('trunc.contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('trunc.gdna.augfasta'), 'r')
+        )
+    )
+    aln = kevlar.call.align_both_strands(cutout, contig)
+    calls = list(aln.call_variants(31))
+    assert len(calls) == 1
+    assert calls[0].window == 'GTATATACACATATATGTGTATATATGTGTATATATGT'
+    assert calls[0].refrwindow == ('GTATATACATATATGTGTATATATGTGTATATACATATATGT'
+                                   'GTATATATGTGTATATATGT')
