@@ -63,7 +63,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
         ctrlmax=ctrlmax, updateint=100000, logstream=logstream
     )
     filterer = kfilter(
-        discoverer, mask=mask, minabund=casemin, ksize=ksize,
+        discoverer, mask=mask, casemin=casemin, ksize=ksize,
         memory=filtermem, maxfpr=filterfpr, logstream=logstream
     )
     partitioner = partition(

@@ -66,10 +66,12 @@ def subparser(subparsers):
                              default=0.001, help='terminate if the expected '
                              'false positive rate is higher than the specified'
                              ' FPR; default is 0.001')
-    filter_args.add_argument('--min-abund', type=int, default=5, metavar='Y',
-                             help='minimum abundance required to call a '
-                             'k-mer novel; should be the same value used for '
-                             '--case_min in `kevlar novel`; default is 5')
+    filter_args.add_argument('--ctrl-max', type=int, default=1, metavar='X',
+                             help='k-mers with abund > X in any control '
+                             'sample are uninteresting; default is X=1')
+    filter_args.add_argument('--case-min', type=int, default=6, metavar='Y',
+                             help='k-mers with abund < Y in any case sample '
+                             'are uninteresting; default is Y=6')
     filter_args.add_argument('--ignore', metavar='KM', nargs='+',
                              help='ignore the specified k-mer(s)')
 

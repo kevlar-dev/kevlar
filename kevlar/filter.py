@@ -96,7 +96,7 @@ def summarize_validate(readset, n, logfile=sys.stderr):
         print(message, file=logfile)
 
 
-def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
+def filter(readstream, mask=None, casemin=6, ctrlmax=1, ksize=31, memory=1e6,
            maxfpr=0.001, logstream=sys.stderr):
     timer = kevlar.Timer()
     timer.start('recalc')
@@ -116,7 +116,7 @@ def filter(readstream, mask=None, minabund=5, ksize=31, memory=1e6,
     timer.start('validate')
     print('[kevlar::filter] Validate k-mers and print reads',
           file=logstream)
-    readset.validate(mask=mask, minabund=minabund)
+    readset.validate(mask=mask, minabund=casemin)
     for n, record in enumerate(readset, 1):
         yield record
     summarize_validate(readset, n, logstream)
@@ -136,7 +136,7 @@ def main(args):
     readstream = kevlar.seqio.afxstream(args.augfastq)
     outstream = kevlar.open(args.out, 'w')
     filterstream = filter(
-        readstream, mask, minabund=args.min_abund, ksize=args.ksize,
+        readstream, mask, casemin=args.case_min, ksize=args.ksize,
         memory=args.abund_memory, maxfpr=args.abund_max_fpr,
         logstream=args.logfile
     )
