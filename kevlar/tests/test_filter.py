@@ -29,15 +29,6 @@ def bogusrefrcontam():
     return kevlar.filter.load_mask([maskfile], 1, 1)
 
 
-@pytest.fixture
-def ctrl3():
-    augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
-    readset = ReadSet(13, 1e7)
-    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
-        readset.add(record)
-    return readset
-
-
 def test_load_mask():
     infile = kevlar.tests.data_file('bogus-genome/refr.fa')
     mask = kevlar.filter.load_mask([infile], 25, 1e7)
@@ -135,7 +126,7 @@ def test_validate_minabund():
     readset = ReadSet(19, 5e3)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
-    readset.validate(minabund=9)
+    readset.validate(casemin=9)
     assert readset.valid == (0, 0)
 
 
@@ -145,10 +136,10 @@ def test_validate_with_mask():
     mask.add(kmer)
 
     filelist = kevlar.tests.data_glob('collect.beta.?.txt')
-    readset = ReadSet(19, 5e3)
+    readset = ReadSet(19, 5e3, mask=mask)
     for record in kevlar.seqio.afxstream(filelist):
         readset.add(record)
-    readset.validate(mask=mask)
+    readset.validate()
     assert readset.valid == (3, 24)
     for record in readset:
         for ikmer in record.ikmers:
@@ -156,21 +147,30 @@ def test_validate_with_mask():
             assert kevlar.revcom(ikmer.sequence) != kmer
 
 
-def test_ctrl3(ctrl3):
-    readset = ctrl3
-    readset.validate(minabund=6)
+def test_ctrl3():
+    augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
+    readset = ReadSet(13, 1e7)
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    readset.validate(casemin=6)
     assert readset.valid == (424, 5782)
 
 
-def test_ctrl3_refr(ctrl3, bogusrefr):
-    readset = ctrl3
-    readset.validate(mask=bogusrefr, minabund=6)
+def test_ctrl3_refr(bogusrefr):
+    augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
+    readset = ReadSet(13, 1e7, mask=bogusrefr)
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    readset.validate()
     assert readset.valid == (424, 5782)
 
 
-def test_ctrl3_refr_contam(ctrl3, bogusrefrcontam):
-    readset = ctrl3
-    readset.validate(mask=bogusrefrcontam, minabund=6)
+def test_ctrl3_refr_contam(bogusrefrcontam):
+    augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
+    readset = ReadSet(13, 1e7, mask=bogusrefrcontam)
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    readset.validate()
     assert readset.valid == (13, 171)
 
 
@@ -184,7 +184,7 @@ def test_filter_main(capsys):
         '--mask-max-fpr', '0.001',
         '--abund-memory', '10M',
         '--abund-max-fpr', '0.001',
-        '--min-abund', '6',
+        '--case-min', '6',
         '--ksize', '13',
         kevlar.tests.data_file('trio1/novel_3_1,2.txt'),
     ]

@@ -194,14 +194,15 @@ class AnnotatedReadSet(object):
     multiple augmented Fastq files and combining their annotated k-mers.
     """
 
-    def __init__(self, ksize, abundmem):
+    def __init__(self, ksize, abundmem, mask=None):
         self._reads = dict()
         self._counts = khmer.Counttable(ksize, abundmem / 4, 4)
+        self._mask = mask
         self._readcounts = defaultdict(int)
         self._ikmercounts = defaultdict(int)
 
         self._masked = defaultdict(int)
-        self._lowabund = defaultdict(int)
+        self._abundfilt = defaultdict(int)
         self._valid = defaultdict(int)
 
         self._novalidkmers_count = 0
@@ -221,8 +222,8 @@ class AnnotatedReadSet(object):
         return len(self._masked), sum(self._masked.values())
 
     @property
-    def lowabund(self):
-        return len(self._lowabund), sum(self._lowabund.values())
+    def abundfilt(self):
+        return len(self._abundfilt), sum(self._abundfilt.values())
 
     @property
     def valid(self):
@@ -249,34 +250,37 @@ class AnnotatedReadSet(object):
         return sum(self._ikmercounts.values())
 
     def add(self, newrecord):
+        self._readcounts[newrecord.name] += 1
         if newrecord.name in self._reads:
             record = self._reads[newrecord.name]
             assert record.sequence == newrecord.sequence
             record.ikmers.extend(newrecord.ikmers)
         else:
             self._reads[newrecord.name] = newrecord
-            self._counts.consume(newrecord.sequence)
 
-        self._readcounts[newrecord.name] += 1
         for kmer in newrecord.ikmers:
-            minkmer = kevlar.revcommin(kmer.sequence)
-            self._ikmercounts[minkmer] += 1
+            kmerhash = self._counts.hash(kmer.sequence)
+            self._ikmercounts[kmerhash] += 1
+            if self._mask and self._mask.get(kmerhash) > 0:
+                self._masked[kmerhash] += 1
+            else:
+                self._counts.add(kmerhash)
 
-    def validate(self, mask=None, minabund=5):
+    def validate(self, casemin=6, ctrlmax=1):
         for readid in self._reads:
             record = self._reads[readid]
-
             validated_kmers = list()
             for kmer in record.ikmers:
-                kmerseq = kevlar.revcommin(kmer.sequence)
-                if mask and mask.get(kmerseq) > 0:
-                    self._masked[kmerseq] += 1
-                elif self._counts.get(kmerseq) < minabund:
-                    self._lowabund[kmerseq] += 1
+                kmerhash = self._counts.hash(kmer.sequence)
+                kmercount = self._counts.get(kmerhash)
+                if kmercount < casemin:
+                    self._abundfilt[kmerhash] += 1
+                elif sum([1 for a in kmer.abund[1:] if a > ctrlmax]):
+                    self._abundfilt[kmerhash] += 1
                 else:
-                    kmer.abund[0] = self._counts.get(kmerseq)
+                    kmer.abund[0] = kmercount
                     validated_kmers.append(kmer)
-                    self._valid[kmerseq] += 1
+                    self._valid[kmerhash] += 1
             record.ikmers = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1

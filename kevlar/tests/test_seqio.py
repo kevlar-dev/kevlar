@@ -265,6 +265,6 @@ def test_ikmer_abund_after_recalc():
 
     assert read.ikmers[0].abund[0] == 28
 
-    rs.validate(minabund=8)
+    rs.validate(casemin=8)
     assert rs.valid == (1, 1)
     assert read.ikmers[0].abund[0] == 10
