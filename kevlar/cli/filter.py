@@ -31,7 +31,7 @@ def subparser(subparsers):
         'reference genome assemblies and contaminant databases to "mask" out '
         'these k-mers and remove their "interesting" classification.'
     )
-    mask_args.add_argument('--mask', metavar='FA', type=str, required=True,
+    mask_args.add_argument('--mask', metavar='FA', type=str, default=None,
                            nargs='+', help='sequences to mask (reference '
                            'genomes, contaminants); can provide as one or more'
                            ' Fasta/Fastq files or as a single pre-computed '

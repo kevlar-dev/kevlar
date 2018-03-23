@@ -174,6 +174,16 @@ def test_ctrl3_refr_contam(bogusrefrcontam):
     assert readset.valid == (13, 171)
 
 
+def test_filter_abundfilt():
+    readset = ReadSet(31, 1000)
+    augfastq = kevlar.tests.data_file('worm.augfasta')
+    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+        readset.add(record)
+    readset.validate(casemin=5, ctrlmax=0)
+    assert readset.valid == (1, 5)
+    assert readset.discarded == 2
+
+
 def test_filter_main(capsys):
     arglist = [
         'filter',

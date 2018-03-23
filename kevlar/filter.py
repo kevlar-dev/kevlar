@@ -117,6 +117,7 @@ def filter(readstream, mask=None, casemin=6, ctrlmax=1, ksize=31, memory=1e6,
     print('[kevlar::filter] Validate k-mers and print reads',
           file=logstream)
     readset.validate(casemin=casemin, ctrlmax=ctrlmax)
+    n = 0
     for n, record in enumerate(readset, 1):
         yield record
     summarize_validate(readset, n, logstream)
