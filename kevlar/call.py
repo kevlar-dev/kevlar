@@ -68,24 +68,24 @@ class VariantMapping(object):
         indelmatch2 = re.search(
             '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$', self.cigar
         )
+        indmatch = None
         if indelmatch:
-            offset = int(indelmatch.group(1))
-            if indelmatch.group(2) == 'I':
-                offset *= -1
-            leftmatch = int(indelmatch.group(3))
-            indellength = int(indelmatch.group(4))
-            indeltype = indelmatch.group(5)
-            callfunc = call_deletion if indeltype == 'D' else call_insertion
-            return callfunc(self, offset, ksize, leftmatch, indellength)
+            indmatch = indelmatch
         elif indelmatch2 and int(indelmatch2.group(8)) <= 5:
-            offset = int(indelmatch2.group(1))
-            if indelmatch2.group(2) == 'I':
+            indmatch = indelmatch2
+        if indmatch:
+            offset = int(indmatch.group(1))
+            if indmatch.group(2) == 'I':
                 offset *= -1
-            leftmatch = int(indelmatch2.group(3))
-            indellength = int(indelmatch2.group(4))
-            indeltype = indelmatch2.group(5)
+            leftmatchlen = int(indmatch.group(3))
+            indellength = int(indmatch.group(4))
+            indeltype = indmatch.group(5)
+            rightmatchlen = int(indmatch.group(6))
             callfunc = call_deletion if indeltype == 'D' else call_insertion
-            return callfunc(self, offset, ksize, leftmatch, indellength)
+            indels = callfunc(self, offset, ksize, leftmatchlen, indellength)
+            snvs = call_indel_snvs(self, offset, ksize, leftmatchlen,
+                                   rightmatchlen)
+            return indels + snvs
 
         nocall = Variant(
             self.seqid, self.pos, '.', '.', NC='inscrutablecigar',
@@ -239,35 +239,14 @@ def n_ikmers_present(ikmers, window):
     return n
 
 
-def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
-    targetshort = False
-    if offset < 0:
-        offset *= -1
-        gdnaoffset = 0
-        targetshort = True
-        t = aln.refrseq[:length]
-        q = aln.varseq[offset:offset+length]
-    else:
-        gdnaoffset = offset
-        t = aln.refrseq[offset:offset+length]
-        q = aln.varseq[:length]
-    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
-    if len(diffs) == 0:
-        nocall = Variant(aln.seqid, aln.cutout.local_to_global(gdnaoffset),
-                         '.', '.', NC='perfectmatch', QN=aln.contig.name, QS=q)
-        return [nocall]
-
+def snv_variant(aln, mismatches, query, target, ksize):
     snvs = list()
-    for diff in diffs:
-        if mindist:
-            if diff[0] < mindist or length - diff[0] < mindist:
-                msg = 'discarding SNV due to proximity to end of the contig'
-                print('[kevlar::call] NOTE:', msg, file=logstream)
-                continue
+    length = len(query)
+    for diff in mismatches:
         minpos = max(diff[0] - ksize + 1, 0)
         maxpos = min(diff[0] + ksize, length)
-        window = q[minpos:maxpos]
-        refrwindow = t[minpos:maxpos]
+        window = query[minpos:maxpos]
+        refrwindow = target[minpos:maxpos]
 
         # numoverlappingkmers = len(window) - ksize + 1
         # kmers = [window[i:i+ksize] for i in range(numoverlappingkmers)]
@@ -281,6 +260,68 @@ def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
         snv = VariantSNV(aln.seqid, globalcoord, refr, alt, VW=window,
                          RW=refrwindow, IK=str(nikmers))
         snvs.append(snv)
+    return snvs
+
+
+def trim_terminal_snvs(mismatches, alnlength, mindist=5, logstream=sys.stderr):
+    valid = list()
+    for mm in mismatches:
+        if mm[0] < mindist or alnlength - mm[0] < mindist:
+            msg = 'discarding SNV due to proximity to end of the contig'
+            print('[kevlar::call] NOTE:', msg, file=logstream)
+        else:
+            valid.append(d)
+    return valid
+
+
+def call_indel_snvs(aln, offset, ksize, leftmatch, indellength, rightmatch,
+                    mindist, logstream=sys.stderr):
+    calls = list()
+    targetshort = False
+    if offset < 0:
+        offset *= -1
+        targetshort = True
+
+    # Left flank of the indel
+    if targetshort:
+        gdnaoffset = 0
+        t = aln.refrseq[:leftmatch]
+        q = aln.varseq[offset:offset+leftmatch]
+    else:
+        gdnaoffset = offset
+        t = aln.refrseq[offset:offset+leftmatch]
+        q = aln.varseq[:leftmatch]
+    assert len(t) == len(q)
+    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
+    if mindist:
+        diffs = trim_terminal_snvs(diffs, leftmatch, mindist, logstream)
+    if len(diffs) > 0:
+        snvs = snv_variant(aln, diffs, q, t, ksize)
+        calls.extend(snvs)
+
+
+def call_snv(aln, offset, length, ksize, mindist, logstream=sys.stderr):
+    targetshort = False
+    if offset < 0:
+        offset *= -1
+        gdnaoffset = 0
+        targetshort = True
+        t = aln.refrseq[:length]
+        q = aln.varseq[offset:offset+length]
+    else:
+        gdnaoffset = offset
+        t = aln.refrseq[offset:offset+length]
+        q = aln.varseq[:length]
+
+    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
+    if mindist:
+        diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
+    if len(diffs) == 0:
+        nocall = Variant(aln.seqid, aln.cutout.local_to_global(gdnaoffset),
+                         '.', '.', NC='perfectmatch', QN=aln.contig.name, QS=q)
+        return [nocall]
+
+    snvs = snv_variant(aln, diffs, q, t, ksize)
     return snvs
 
 
