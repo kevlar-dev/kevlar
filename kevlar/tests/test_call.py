@@ -13,7 +13,9 @@ import re
 import sys
 import khmer
 import kevlar
-from kevlar.call import call, alignment_interpretable, VariantMapping
+from kevlar.call import call
+from kevlar.varmap import VariantMapping
+from kevlar.vcf import Variant, VariantIndel, VariantSNV
 from kevlar.tests import data_file
 import screed
 
@@ -28,17 +30,6 @@ def test_align():
              'TTCAAGCGCAGGTTCGAGCCAGTCAGGACTGCTCCCCCACTTCCTCAAGTCTCATCGTGTTTTT'
              'TTTAGAGCTAGTTTCTTAGTCTCATTAGGCTTCAGTCACCATCATTTCTTATAGGAATACCA')
     assert kevlar.align(target, query) == ('10D91M69D79M20I', 155)
-
-
-def test_cigar_scrutability():
-    assert alignment_interpretable('6M73I13M4I5M4D63M11I') is False
-    assert alignment_interpretable('29I17M7I3M24I36M10D7M11I14M23I4M') is False
-    assert alignment_interpretable('57I16M7I3M8D33M1I28M27I3M') is False
-
-    assert alignment_interpretable('25D100M25D') is True
-    assert alignment_interpretable('50I50M50I50M24D1M') is True
-    assert alignment_interpretable('47I127M30D1M') is True
-    assert alignment_interpretable('30D100M16D67M30D') is True
 
 
 @pytest.mark.parametrize('ccid,varcall', [
@@ -139,13 +130,13 @@ def test_call_formerly_inscrutable(targetfile, queryfile, cigar, capsys):
 
 
 def test_snv_obj():
-    snv = kevlar.call.VariantSNV('scaffold42', 10773, 'A', 'G')
+    snv = VariantSNV('scaffold42', 10773, 'A', 'G')
     assert str(snv) == 'scaffold42:10773:A->G'
     vcfvalues = ['scaffold42', '10774', '.', 'A', 'G', '.', 'PASS', '.']
     assert snv.vcf == '\t'.join(vcfvalues)
     assert snv.cigar is None
 
-    snv2 = kevlar.call.VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    snv2 = VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
     assert snv2.cigar == '10D200M10D'
     assert snv2.window is None
 
@@ -160,12 +151,12 @@ def test_indel_obj():
     output is increased by 1 to transform to a 1-based system where the shared
     nucleotide is the point of reference.
     """
-    indel1 = kevlar.call.VariantIndel('chr3', 8998622, 'GATTACA', 'G')
+    indel1 = VariantIndel('chr3', 8998622, 'GATTACA', 'G')
     assert str(indel1) == 'chr3:8998623:6D'
     vcfvalues = ['chr3', '8998623', '.', 'GATTACA', 'G', '.', 'PASS', '.']
     assert indel1.vcf == '\t'.join(vcfvalues)
 
-    indel2 = kevlar.call.VariantIndel('chr6', 75522411, 'G', 'GATTACA')
+    indel2 = VariantIndel('chr6', 75522411, 'G', 'GATTACA')
     assert str(indel2) == 'chr6:75522412:I->ATTACA'
     vcfvalues = ['chr6', '75522412', '.', 'G', 'GATTACA', '.', 'PASS', '.']
     assert indel2.vcf == '\t'.join(vcfvalues)
