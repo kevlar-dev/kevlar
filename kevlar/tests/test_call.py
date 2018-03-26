@@ -97,16 +97,14 @@ def test_call_ssc_1bpdel():
     tinstream = kevlar.reference.load_refr_cutouts(kevlar.open(tfile, 'r'))
     target = [record for record in tinstream][0]
     aln = VariantMapping(query, target, 1e6, '50D132M1D125M50D')
-    variants = aln.call_variants(31)
+    variants = list(aln.call_variants(31))
 
-    assert isinstance(variants, list)
     assert len(variants) == 1
     assert str(variants[0]) == '6:23230160:1D'
 
 
 def test_call_ssc_two_proximal_snvs():
-    """
-    Test two proximal SNVs
+    """Test two proximal SNVs
 
     Currently this serves as a negative control for calling isolated SNVs, but
     distinguishing which (if any) of a set of proximal SNVs is novel will be
@@ -121,7 +119,7 @@ def test_call_ssc_two_proximal_snvs():
     target = [record for record in tinstream][0]
 
     aln = VariantMapping(query, target, 1e6, '25D263M25D')
-    variants = aln.call_variants(31)
+    variants = list(aln.call_variants(31))
     assert len(variants) == 2
 
 
@@ -220,7 +218,7 @@ def test_variant_window(prefix, cigar, refrwindow, altwindow):
     target = [record for record in tinstream][0]
 
     aln = VariantMapping(query, target, 1e6, cigar)
-    variants = aln.call_variants(21)
+    variants = list(aln.call_variants(21))
     assert len(variants) == 1
     assert variants[0].window == altwindow
     assert variants[0].refrwindow == refrwindow
@@ -237,7 +235,7 @@ def test_nocall():
     target = [record for record in tinstream][0]
 
     aln = VariantMapping(query, target, 1e6, '25D5M22I5M46D8M13D2M35I')
-    variants = aln.call_variants(21)
+    variants = list(aln.call_variants(21))
     assert len(variants) == 1
     assert variants[0].vcf == (
         'yourchr\t801\t.\t.\t.\t.\t.\t'
@@ -248,13 +246,13 @@ def test_nocall():
 
 
 @pytest.mark.parametrize('part,coord,window', [
-    (12, 7027071, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
+    (12, 7027087, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
                   'GG'),
     (16, 25755121, 'TTTTGGTGTTTAGACATGAAGTCCTTGCCCATCGAGTTATGCCTATGTCCTGAATGCT'
                    'ATTGCCTAGG'),
     (23, 59459928, 'CAGGCGTGAGCCACCGCGCCTGGCCAGGAGCATTGTTTGAACCCAGAAGGCGGAGGTT'
                    'GCA'),
-    (192, 28556906, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
+    (192, 28556953, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
                     'GGC')
 ])
 def test_funky_cigar(part, coord, window):
@@ -268,6 +266,7 @@ def test_funky_cigar(part, coord, window):
 
     calls = list(call(targets, contigs))
     assert len(calls) == 1
+    print('DEBUG', calls[0].vcf, file=sys.stderr)
     assert calls[0].seqid == '17'
     assert calls[0].position == coord - 1
     assert calls[0].info['VW'] == window
@@ -393,7 +392,7 @@ def test_call_near_end(query, target, dist, n, msgcount):
             kevlar.open(data_file(target), 'r')
         )
     )
-    aln = kevlar.call.align_both_strands(cutout, contig)
+    aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(31, mindist=dist, logstream=log))
     assert len(calls) == n
 
@@ -435,7 +434,7 @@ def test_call_truncated_windows(query, target, vw, rw):
             kevlar.open(data_file(target), 'r')
         )
     )
-    aln = kevlar.call.align_both_strands(cutout, contig)
+    aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(31))
     assert len(calls) == 1
     print('VW:', calls[0].window, file=sys.stderr)
@@ -455,7 +454,7 @@ def test_call_num_interesting_kmers():
             kevlar.open(data_file('iktest.gdna.fa'), 'r')
         )
     )
-    aln = kevlar.call.align_both_strands(cutout, contig)
+    aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 1
     assert calls[0].info['IK'] == '1'
