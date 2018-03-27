@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import defaultdict
 import sys
 import kevlar
 from kevlar.varmap import VariantMapping
@@ -64,10 +65,25 @@ def alignments_to_report(alignments):
     return aligns2report
 
 
-def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-         gapextend=0, ksize=31, refrfile=None, mindist=5,
-         logstream=sys.stderr):
-    """Wrap the `kevlar call` procedure as a generator function.
+def dedup(callstream):
+    calls = dict()
+    for call in callstream:
+        if call.seqid not in calls:
+            calls[call.seqid] = defaultdict(set)
+        calls[call.seqid][call.position].add(call)
+    for seqid in calls:
+        for position in calls[seqid]:
+            sortedcalls = sorted(
+                calls[seqid][position], key=lambda call: call.windowlength,
+                reverse=True
+            )
+            yield sortedcalls[0]
+
+
+def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
+                gapextend=0, ksize=31, refrfile=None, mindist=5,
+                logstream=sys.stderr):
+    """Implement the `kevlar call` procedure as a generator function.
 
     Input is the following.
     - an iterable containing one or more target sequences from the reference
@@ -110,6 +126,15 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                     if n > 0:
                         varcall.annotate('NC', 'matefail')
                 yield varcall
+
+
+def call(*args, **kwargs):
+    """Thin wrapper over the `prelim_call` function.
+
+    This function applies a deduplication procedure to preliminary calls.
+    """
+    for call in dedup(prelim_call(*args, **kwargs)):
+        yield call
 
 
 def main(args):
