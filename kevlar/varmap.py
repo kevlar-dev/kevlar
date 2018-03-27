@@ -56,6 +56,12 @@ class VariantMapping(object):
         return self.cutout.interval
 
     @property
+    def ikmers(self):
+        for kmer in self.contig.ikmers:
+            yield kmer.sequence
+            yield kevlar.revcom(kmer.sequence)
+
+    @property
     def varseq(self):
         assert self.strand in (-1, 1)
         if self.strand == 1:
@@ -111,22 +117,40 @@ class VariantMapping(object):
             return None
         return int(self.alnmatch.group(6))
 
+    def is_passenger(self, call):
+        if call.window is None:
+            return False
+        numikmers = sum([1 for k in self.ikmers if k in call.window])
+        return numikmers == 0
+
     def call_variants(self, ksize, mindist=5, logstream=sys.stderr):
         """Attempt to call variants from this contig alignment.
 
         If the alignment CIGAR matches a known pattern, the appropriate caller
         is invoked (SNV or INDEL caller). If not, a "no call" is reported.
+
+        If an SNV call is within `mindist` base pairs of the end of the
+        alignment it is ignored. Set to `None` to disable this behavior.
+
+        Variant calls with no spanning interesting k-mers are designated as
+        "passenger calls" and discarded.
         """
         if self.vartype == 'snv':
             for call in self.call_snv(ksize, mindist, logstream=logstream):
+                if self.is_passenger(call):
+                    call.annotate('NC', 'passenger')
                 yield call
         elif self.vartype == 'indel':
             caller = self.call_insertion
             if self.indeltype == 'D':
                 caller = self.call_deletion
             for call in caller(ksize):
+                if self.is_passenger(call):
+                    call.annotate('NC', 'passenger')
                 yield call
             for call in self.call_indel_snvs(ksize, mindist, logstream):
+                if self.is_passenger(call):
+                    call.annotate('NC', 'passenger')
                 yield call
         else:
             nocall = Variant(

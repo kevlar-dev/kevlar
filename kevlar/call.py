@@ -106,7 +106,7 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
         for n, alignment in enumerate(aligns2report):
             for varcall in alignment.call_variants(ksize, mindist, logstream):
                 if alignment.matedist:
-                    varcall.info['MD'] = '{:.2f}'.format(alignment.matedist)
+                    varcall.annotate('MD', '{:.2f}'.format(alignment.matedist))
                     if n > 0:
                         varcall.annotate('NC', 'matefail')
                 yield varcall

@@ -242,4 +242,22 @@ def test_call_num_interesting_kmers():
     aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 1
-    assert calls[0].info['IK'] == '1'
+    assert calls[0].attribute('IK') == '1'
+
+
+def test_passenger_screen():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('wasp-pass.contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('wasp.gdna.fa'), 'r')
+        )
+    )
+    aln = VariantMapping(contig, cutout)
+    calls = list(aln.call_variants(29))
+    assert len(calls) == 2
+    assert calls[0].attribute('NC') is None
+    assert calls[1].attribute('NC') == 'passenger'
