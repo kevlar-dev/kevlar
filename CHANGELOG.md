@@ -32,6 +32,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Bug with `kevlar count` when reading from multiple input files (see #202).
 - Can now call SNVs near INDELs (see #229).
 
+### Removed
+- The JCA assembly mode is no longer supported (see #231).
+
+
 ## [0.3.0] - 2017-11-03
 
 This release includes many new features, some refactoring of the core codebase, and the first end-to-end analysis workflow implemented in a single command.
