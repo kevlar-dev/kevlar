@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Replaced `--ksize` with `--seed-size` in `kevlar localize` so that `kevlar alac` can now support different values for k-mers and localizing seeds/anchors (see #198).
 - Improved variant sorting, scoring, and reporting strategy (see #199).
 - The augmented Fastx format now permits annotation of 1 or more mate sequences (see #210).
+- Split `vcf.py` and `varmap.py` modules off from the `call.py` module (see #229).
 
 ### Fixed
 - Incorrect file names in the quick start documentation page (see 9f6bec06d4).
@@ -29,6 +30,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - CIGARs that begin with I blocks (alternate allele contig is longer than reference locus) are now handled properly (see #191).
 - Bug with how `kevlar alac` handles "no reference match" scenarios resolved (see #192).
 - Bug with `kevlar count` when reading from multiple input files (see #202).
+- Can now call SNVs near INDELs (see #229).
 
 ## [0.3.0] - 2017-11-03
 

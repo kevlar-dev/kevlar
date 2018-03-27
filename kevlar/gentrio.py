@@ -12,7 +12,7 @@ import random
 import sys
 import kevlar
 from kevlar import MutableString
-from kevlar.call import Variant
+from kevlar.vcf import Variant
 
 
 # Mappings for SNVs
