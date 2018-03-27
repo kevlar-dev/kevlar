@@ -147,7 +147,7 @@ def test_alac_bigpart():
 
 
 @pytest.mark.parametrize('cc,numrawcalls', [
-    ('26849', [3, 4, 7]),  # Assembly deterministic on OS X, but not on Linux
+    ('26849', [3, 4, 5, 7]),  # Assembly deterministic on OS X, but not Linux
     ('138713', [14]),
 ])
 def test_alac_inf_mate_dist(cc, numrawcalls):
@@ -174,6 +174,6 @@ def test_alac_no_mates():
                               seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in [3, 4, 7]
+    assert len(calls) in [3, 4, 5, 7]
     filtcalls = [c for c in calls if c.attribute('NC') is None]
     assert len(filtcalls) == 2
