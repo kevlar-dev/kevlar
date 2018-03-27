@@ -294,7 +294,8 @@ class VariantMapping(object):
         if self.targetshort:
             if self.indeltype == 'I':
                 gdnaoffset = leftmatch
-                q = self.varseq[offset+leftmatch+indellength:offset+leftmatch+indellength+rightmatch]
+                baseindex = offset + leftmatch + indellength
+                q = self.varseq[baseindex:baseindex+rightmatch]
             else:
                 gdnaoffset = leftmatch + indellength
                 q = self.varseq[offset+leftmatch:offset+leftmatch+rightmatch]
@@ -302,7 +303,8 @@ class VariantMapping(object):
         else:
             if self.indeltype == 'I':
                 gdnaoffset = offset + leftmatch
-                q = self.varseq[leftmatch+indellength:leftmatch+indellength+rightmatch]
+                baseindex = leftmatch + indellength
+                q = self.varseq[baseindex:baseindex+rightmatch]
             else:
                 gdnaoffset = offset + leftmatch + indellength
                 q = self.varseq[leftmatch:leftmatch+rightmatch]
