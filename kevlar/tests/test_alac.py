@@ -174,6 +174,6 @@ def test_alac_no_mates():
                               seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in [3, 5, 7]
+    assert len(calls) in [3, 4, 7]
     filtcalls = [c for c in calls if c.attribute('NC') is None]
     assert len(filtcalls) == 2
