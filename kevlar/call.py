@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import defaultdict
 import sys
 import kevlar
 from kevlar.varmap import VariantMapping
@@ -64,6 +65,21 @@ def alignments_to_report(alignments):
     return aligns2report
 
 
+def dedup(callstream):
+    calls = dict()
+    for call in callstream:
+        if call.seqid not in calls:
+            calls[call.seqid] = defaultdict(set)
+        calls[call.seqid][call.position].add(call)
+    for seqid in calls:
+        for position in calls[seqid]:
+            sortedcalls = sorted(
+                calls[seqid][position], key=lambda call: call.windowlength,
+                reverse=True
+            )
+            yield sortedcalls[0]
+
+
 def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
          gapextend=0, ksize=31, refrfile=None, mindist=5,
          logstream=sys.stderr):
@@ -104,7 +120,8 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                     aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
-            for varcall in alignment.call_variants(ksize, mindist, logstream):
+            caller = alignment.call_variants(ksize, mindist, logstream)
+            for varcall in dedup(caller):
                 if alignment.matedist:
                     varcall.annotate('MD', '{:.2f}'.format(alignment.matedist))
                     if n > 0:
