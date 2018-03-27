@@ -126,7 +126,7 @@ class VariantMapping(object):
                 caller = self.call_deletion
             for call in caller(ksize):
                 yield call
-            for call in self.call_indel_snvs(ksize):
+            for call in self.call_indel_snvs(ksize, mindist, logstream):
                 yield call
         else:
             nocall = Variant(
@@ -337,29 +337,3 @@ def trim_terminal_snvs(mismatches, alnlength, mindist=5, logstream=sys.stderr):
         else:
             valid.append(mm)
     return valid
-
-
-def call_indel_snvs(aln, offset, ksize, leftmatch, indellength, rightmatch,
-                    mindist, logstream=sys.stderr):
-    calls = list()
-    targetshort = False
-    if offset < 0:
-        offset *= -1
-        targetshort = True
-
-    # Left flank of the indel
-    if targetshort:
-        gdnaoffset = 0
-        t = aln.refrseq[:leftmatch]
-        q = aln.varseq[offset:offset+leftmatch]
-    else:
-        gdnaoffset = offset
-        t = aln.refrseq[offset:offset+leftmatch]
-        q = aln.varseq[:leftmatch]
-    assert len(t) == len(q)
-    diffs = [(i, t[i], q[i]) for i in range(length) if t[i] != q[i]]
-    if mindist:
-        diffs = trim_terminal_snvs(diffs, leftmatch, mindist, logstream)
-    if len(diffs) > 0:
-        snvs = snv_variant(aln, diffs, q, t, ksize)
-        calls.extend(snvs)
