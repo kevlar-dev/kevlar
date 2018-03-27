@@ -86,13 +86,6 @@ class Variant(object):
         return self.attribute('VW')
 
     @property
-    def windowlength(self):
-        window = self.window
-        if window is None:
-            return 0
-        return len(window)
-
-    @property
     def refrwindow(self):
         """Similar to `window`, but encapsulating the reference allele."""
         return self.attribute('RW')
