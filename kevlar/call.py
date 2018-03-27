@@ -80,10 +80,10 @@ def dedup(callstream):
             yield sortedcalls[0]
 
 
-def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-         gapextend=0, ksize=31, refrfile=None, mindist=5,
-         logstream=sys.stderr):
-    """Wrap the `kevlar call` procedure as a generator function.
+def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
+                gapextend=0, ksize=31, refrfile=None, mindist=5,
+                logstream=sys.stderr):
+    """Implement the `kevlar call` procedure as a generator function.
 
     Input is the following.
     - an iterable containing one or more target sequences from the reference
@@ -120,13 +120,21 @@ def call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                     aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
-            caller = alignment.call_variants(ksize, mindist, logstream)
-            for varcall in dedup(caller):
+            for varcall in alignment.call_variants(ksize, mindist, logstream):
                 if alignment.matedist:
                     varcall.annotate('MD', '{:.2f}'.format(alignment.matedist))
                     if n > 0:
                         varcall.annotate('NC', 'matefail')
                 yield varcall
+
+
+def call(*args, **kwargs):
+    """Thin wrapper over the `prelim_call` function.
+
+    This function applies a deduplication procedure to preliminary calls.
+    """
+    for call in dedup(prelim_call(*args, **kwargs)):
+        yield call
 
 
 def main(args):

@@ -218,3 +218,18 @@ def test_mate_distance():
     positions = [('seq2', 4000), ('seq2', 3000), ('seq2', 5100), ('seq3', 1)]
     gdna_pos = ('seq2', 5000, 5500)
     assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0
+
+
+def test_snv_dedup():
+    contigfile = data_file('bee-dupl.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('bee-dupl.gdna.fa')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    calls = list(call(targets, contigs, ksize=27))
+    assert len(calls) == 1
+    assert calls[0].seqid == 'linkagegroup5'
+    assert calls[0].position == 8174 - 1

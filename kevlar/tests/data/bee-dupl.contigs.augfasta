@@ -1,0 +1,18 @@
+>contig1
+TCCTCGGACCCCCGTCGGTAAAGAAGAGGCCGGAGCGATAAACAATAAGGCTAAGATGTAACGGTAAACGGCAGATCCTGGAAAGTGTATTATGAACTTTTGCAGGCGCAGGTGGCCGCGCGAGGCAGGTGCGAGCCTGACCTAGCCCAGCGGGGAGGCTC
+                                               AGGCTAAGATGTAACGGTAAACGGCAG     18 1 1#
+                                                   TAAGATGTAACGGTAAACGGCAGATCC     19 0 1#
+                                                     AGATGTAACGGTAAACGGCAGATCCTG     18 1 1#
+                                                      GATGTAACGGTAAACGGCAGATCCTGG     23 0 1#
+                                                              GGTAAACGGCAGATCCTGGAAAGTGTA     20 1 0#
+                                                                TAAACGGCAGATCCTGGAAAGTGTATT     19 1 1#
+                                                                         GATCCTGGAAAGTGTATTATGAACTTT     22 0 1#
+>contig2
+GTCGGTAAAGAAGAGGCCGGAGCGATAAACAATAAGGCTAAGATGTAACGGTAAACGGCAGATCCTGGAAAGTGTATTATGAACTTTTGCAGGCGCAGGTGGCCGCGCGAGGCAGGTGCGAGCCTGACCTAGCCCAGCGGGGAGGC
+                                  AGGCTAAGATGTAACGGTAAACGGCAG     18 1 1#
+                                      TAAGATGTAACGGTAAACGGCAGATCC     19 0 1#
+                                        AGATGTAACGGTAAACGGCAGATCCTG     18 1 1#
+                                         GATGTAACGGTAAACGGCAGATCCTGG     23 0 1#
+                                                 GGTAAACGGCAGATCCTGGAAAGTGTA     20 1 0#
+                                                   TAAACGGCAGATCCTGGAAAGTGTATT     19 1 1#
+                                                            GATCCTGGAAAGTGTATTATGAACTTT     22 0 1#
