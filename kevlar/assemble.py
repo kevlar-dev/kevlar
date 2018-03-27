@@ -39,73 +39,6 @@ def main_fml_asm(args):
 
 
 # =============================================================================
-# Junction count assembly mode
-# =============================================================================
-
-def assemble_jca(readstream, memory, maxfpr=0.01, collapse=True,
-                 kmers_to_ignore=set(), logstream=sys.stderr):
-    print('[kevlar::assemble::jca] loading reads', file=logstream)
-    countgraph = None
-    variants = kevlar.VariantSet()
-    for record in readstream:
-        for kmer in record.ikmers:
-            variants.add_kmer(kmer.sequence, record.name)
-            if countgraph is None:
-                ksize = len(kmer.sequence)
-                countgraph = khmer.Countgraph(ksize, memory / 4, 4)
-        countgraph.consume(record.sequence)
-    fpr = kevlar.sketch.estimate_fpr(countgraph)
-    msg = '[kevlar::assemble::jca]    done loading reads'
-    msg += ', {:d} distinct k-mers stored'.format(countgraph.n_unique_kmers())
-    msg += '; estimated false positive rate is {:1.3f}'.format(fpr)
-    if fpr > maxfpr:
-        msg += ' (FPR too high, bailing out!!!)'
-        raise kevlar.sketch.KevlarUnsuitableFPRError(msg)
-    print(msg, file=logstream)
-
-    asm = khmer.JunctionCountAssembler(countgraph)
-    for kmer in variants.kmers:
-        if kmer in kmers_to_ignore:
-            continue
-        contigs = asm.assemble(kmer)
-        for contig in contigs:
-            if hasattr(contig, 'decode'):
-                contig = contig.decode()
-            if contig == '':
-                print('    WARNING: no assembly found for k-mer', kmer,
-                      file=args.logfile)
-                continue
-            variants.add_contig(contig, kmer)
-
-    print('    {:d} linear paths'.format(variants.ncontigs), file=logstream)
-
-    if collapse:
-        print('[kevlar::assemble::jca] Collapsing contigs', file=logstream)
-        variants.collapse()
-        print('    {:d} collapsed contigs'.format(variants.ncontigs),
-              file=logstream)
-
-    for n, contigdata in enumerate(variants, 1):
-        contig, contigrc, kmers, reads = contigdata
-        contigname = 'contig{:d}:length={:d}:nkmers={:d}:nreads={:d}'.format(
-            n, len(contig), len(kmers), len(reads)
-        )
-        contig = screed.Record(name=contigname, sequence=contig)
-        yield contig
-
-
-def main_jca(args):
-    reads = kevlar.parse_augmented_fastx(kevlar.open(args.augfastq, 'r'))
-    outstream = kevlar.open(args.out, 'w')
-    ignore = set(args.ignore) if args.ignore else set()
-    contigstream = assemble_jca(reads, args.memory, args.max_fpr,
-                                collapse=args.collapse, kmers_to_ignore=ignore,
-                                logstream=args.logfile)
-    for contig in contigstream:
-        khmer.utils.write_record(contig, outstream)
-
-
-# =============================================================================
 # Greedy assembly mode
 # =============================================================================
 
@@ -357,8 +290,6 @@ def main_greedy(args):
 
 def main(args):
     mainfunc = main_fml_asm
-    if args.jca:
-        mainfunc = main_jca
-    elif args.greedy:
+    if args.greedy:
         mainfunc = main_greedy
     mainfunc(args)
