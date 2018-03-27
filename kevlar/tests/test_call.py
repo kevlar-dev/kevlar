@@ -399,11 +399,6 @@ def test_call_near_end(query, target, dist, n, msgcount):
         'TAGCATACAGGAAGTCAGGGGGTGTCTGCGACCACAGCTGAA'
     ),
     (
-        'trunc-indel.contig.augfasta', 'trunc-indel.gdna.augfasta',
-        'GTATATACACATATATGTGTATATATGTGTATATATGT',
-        'GTATATACATATATGTGTATATATGTGTATATACATATATGTGTATATATGTGTATATATGT'
-    ),
-    (
         'trunc-snv-funky.contig.fa', 'trunc-snv-funky.gdna.fa',
         'TGTGTCTGAGAGGGTGTTGCCAAAGGAGATTAACATTTG',
         'TGTGTCTGTGAGGGTGTTGCCAAAGGAGATTAACATTTG'
@@ -432,6 +427,30 @@ def test_call_truncated_windows(query, target, vw, rw):
     print('RW:', calls[0].refrwindow, file=sys.stderr)
     assert calls[0].window == vw
     assert calls[0].refrwindow == rw
+
+
+def test_call_indel_snv():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('indel-snv.contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('indel-snv.gdna.fa'), 'r')
+        )
+    )
+    aln = VariantMapping(contig, cutout)
+    calls = list(aln.call_variants(31))
+    assert len(calls) == 2
+
+    assert calls[0]._refr == 'CA'
+    assert calls[0]._alt == 'C'
+    assert calls[0]._pos == 501 - 1
+
+    assert calls[1]._refr == 'C'
+    assert calls[1]._alt == 'A'
+    assert calls[1]._pos == 474 - 1
 
 
 def test_call_num_interesting_kmers():

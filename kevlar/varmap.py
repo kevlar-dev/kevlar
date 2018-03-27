@@ -105,6 +105,12 @@ class VariantMapping(object):
             return None
         return self.alnmatch.group(5)
 
+    @property
+    def rightmatchlen(self):
+        if self.alnmatch is None:
+            return None
+        return int(self.alnmatch.group(6))
+
     def call_variants(self, ksize, mindist=5, logstream=sys.stderr):
         """Attempt to call variants from this contig alignment.
 
@@ -120,8 +126,8 @@ class VariantMapping(object):
                 caller = self.call_deletion
             for call in caller(ksize):
                 yield call
-            # for call in self.call_indel_snvs(ksize):
-            #     yield call
+            for call in self.call_indel_snvs(ksize):
+                yield call
         else:
             nocall = Variant(
                 self.seqid, self.pos, '.', '.', NC='inscrutablecigar',
@@ -259,6 +265,55 @@ class VariantMapping(object):
             RW=refrwindow, IK=str(nikmers)
         )
         yield indel
+
+    def call_indel_snvs(self, ksize, mindist=5, logstream=sys.stderr):
+        offset = self.offset
+        leftmatch = self.leftmatchlen
+        indellength = self.indellength
+        rightmatch = self.rightmatchlen
+
+        # Left flank of the indel
+        if self.targetshort:
+            gdnaoffset = 0
+            t = self.refrseq[:leftmatch]
+            q = self.varseq[offset:offset+leftmatch]
+        else:
+            gdnaoffset = offset
+            t = self.refrseq[offset:offset+leftmatch]
+            q = self.varseq[:leftmatch]
+        assert len(t) == len(q)
+        diffs = [i for i in range(len(t)) if t[i] != q[i]]
+        if mindist:
+            diffs = trim_terminal_snvs(diffs, leftmatch, mindist, logstream)
+        if len(diffs) > 0:
+            for call in self.snv_variant(q, t, diffs, gdnaoffset, ksize):
+                yield call
+
+        # Right flank of the indel
+        lcrf = leftmatch + indellength  # local coordinate of right flank
+        if self.targetshort:
+            if self.indeltype == 'I':
+                gdnaoffset = leftmatch
+                q = self.varseq[offset+leftmatch+indellength:offset+leftmatch+indellength+rightmatch]
+            else:
+                gdnaoffset = leftmatch + indellength
+                q = self.varseq[offset+leftmatch:offset+leftmatch+rightmatch]
+            t = self.refrseq[gdnaoffset:gdnaoffset+rightmatch]
+        else:
+            if self.indeltype == 'I':
+                gdnaoffset = offset + leftmatch
+                q = self.varseq[leftmatch+indellength:leftmatch+indellength+rightmatch]
+            else:
+                gdnaoffset = offset + leftmatch + indellength
+                q = self.varseq[leftmatch:leftmatch+rightmatch]
+            t = self.refrseq[gdnaoffset:gdnaoffset+rightmatch]
+        assert len(t) == len(q)
+        diffs = [i for i in range(len(t)) if t[i] != q[i]]
+        if mindist:
+            diffs = trim_terminal_snvs(diffs, rightmatch, mindist, logstream)
+        if len(diffs) > 0:
+            for call in self.snv_variant(q, t, diffs, gdnaoffset, ksize):
+                yield call
 
 
 def n_ikmers_present(ikmers, window):
