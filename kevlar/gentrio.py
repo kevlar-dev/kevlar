@@ -179,14 +179,14 @@ def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10,
     for variant in mutator:
         genotypes = pick_inheritance_genotypes(rng)
         gtstring = ','.join(genotypes)
-        variant.info['GT'] = gtstring
+        variant.annotate('GT', gtstring)
         yield variant
 
     mut8r = generate_mutations(sequences, n=ndenovo, weights=weights, rng=rng)
     for variant in mut8r:
         genotypes = (rng.choice(['0/1', '1/0']), '0/0', '0/0')
         gtstring = ','.join(genotypes)
-        variant.info['GT'] = gtstring
+        variant.annotate('GT', gtstring)
         yield variant
 
 

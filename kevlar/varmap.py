@@ -58,8 +58,8 @@ class VariantMapping(object):
     @property
     def ikmers(self):
         for kmer in self.contig.ikmers:
-            yield kmer
-            yield kevlar.revcom(kmer)
+            yield kmer.sequence
+            yield kevlar.revcom(kmer.sequence)
 
     @property
     def varseq(self):
@@ -118,6 +118,8 @@ class VariantMapping(object):
         return int(self.alnmatch.group(6))
 
     def is_passenger(self, call):
+        if call.window is None:
+            return False
         numikmers = sum([1 for k in self.ikmers if k in call.window])
         return numikmers == 0
 
