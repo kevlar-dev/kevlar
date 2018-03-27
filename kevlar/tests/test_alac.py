@@ -147,7 +147,7 @@ def test_alac_bigpart():
 
 
 @pytest.mark.parametrize('cc,numrawcalls', [
-    ('26849', [3, 5, 7]),  # Assembly deterministic on OS X, but not on Linux
+    ('26849', [3, 4, 7]),  # Assembly deterministic on OS X, but not on Linux
     ('138713', [14]),
 ])
 def test_alac_inf_mate_dist(cc, numrawcalls):
