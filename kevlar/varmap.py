@@ -89,25 +89,25 @@ class VariantMapping(object):
 
     @property
     def leftmatchlen(self):
-        if self.alnmatch is None:
+        if self.alnmatch is None or self.vartype != 'indel':
             return None
         return int(self.alnmatch.group(3))
 
     @property
     def indellength(self):
-        if self.alnmatch is None:
+        if self.alnmatch is None or self.vartype != 'indel':
             return None
         return int(self.alnmatch.group(4))
 
     @property
     def indeltype(self):
-        if self.alnmatch is None:
+        if self.alnmatch is None or self.vartype != 'indel':
             return None
         return self.alnmatch.group(5)
 
     @property
     def rightmatchlen(self):
-        if self.alnmatch is None:
+        if self.alnmatch is None or self.vartype != 'indel':
             return None
         return int(self.alnmatch.group(6))
 

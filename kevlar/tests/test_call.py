@@ -57,8 +57,7 @@ def test_call_pico_indel(ccid, varcall):
     ('223', '50D268M50D1M', '5:42345359:C->G'),
 ])
 def test_call_ssc_isolated_snv(ccid, cigar, varcall):
-    """
-    Ensure isolated SNVs are called correctly.
+    """Ensure isolated SNVs are called correctly.
 
     SNVs that are well separated from other variants have a distinct alignment
     signature as reflected in the CIGAR string reported by ksw2. They are
@@ -226,6 +225,13 @@ def test_nocall():
     target = [record for record in tinstream][0]
 
     aln = VariantMapping(query, target, 1e6, '25D5M22I5M46D8M13D2M35I')
+    assert aln.offset is None
+    assert aln.targetshort is None
+    assert aln.leftmatchlen is None
+    assert aln.indellength is None
+    assert aln.indeltype is None
+    assert aln.rightmatchlen is None
+
     variants = list(aln.call_variants(21))
     assert len(variants) == 1
     assert variants[0].vcf == (
@@ -421,6 +427,12 @@ def test_call_truncated_windows(query, target, vw, rw):
         )
     )
     aln = VariantMapping(contig, cutout)
+    if aln.vartype == 'snv':
+        assert aln.leftmatchlen is None
+        assert aln.indeltype is None
+        assert aln.indellength is None
+        assert aln.rightmatchlen is None
+
     calls = list(aln.call_variants(31))
     assert len(calls) == 1
     print('VW:', calls[0].window, file=sys.stderr)
