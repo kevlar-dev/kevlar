@@ -78,25 +78,18 @@ def test_assumptions(kmer):
 
 
 @pytest.mark.long
-@pytest.mark.parametrize('case,ctrl,mem', [
-    ('trio1/case1.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case2.fq', 'trio1/ctrl[1,2].fq', '1M'),
-    ('trio1/case3.fq', 'trio1/ctrl[1,2].fq', '1M'),
-    ('trio1/case4.fq', 'trio1/ctrl[1,2].fq', '500K'),
-    ('trio1/case5.fq', 'trio1/ctrl[3,4].fq', '1M'),
-    ('trio1/case6.fq', 'trio1/ctrl[5,6].fq', '1M'),
-    ('trio1/case7.fq', 'trio1/ctrl[5,6].fq', '1M'),
+@pytest.mark.parametrize('case,ctrl', [
+    ('microtrios/trio-li-proband.fq.gz', 'microtrios/trio-li-??ther.fq.gz'),
+    ('microtrios/trio-na-proband.fq.gz', 'microtrios/trio-na-??ther.fq.gz'),
+    ('microtrios/trio-k-proband.fq.gz',  'microtrios/trio-k-??ther.fq.gz'),
 ])
-def test_novel_single_mutation(case, ctrl, mem, capsys):
-    from sys import stdout, stderr
+def test_novel_single_mutation(case, ctrl, capsys):
     casestr = data_file(case)
     ctrls = kevlar.tests.data_glob(ctrl)
-    arglist = ['novel', '--case', casestr, '--ksize', '13', '--case-min', '8',
+    arglist = ['novel', '--case', casestr, '--ksize', '25', '--case-min', '7',
                '--control', ctrls[0], '--control', ctrls[1],
-               '--ctrl-max', '0', '--memory', mem]
+               '--ctrl-max', '0', '--memory', '500K']
     args = kevlar.cli.parser().parse_args(arglist)
-    args.out = None
-    args.err = stderr
     kevlar.novel.main(args)
     out, err = capsys.readouterr()
 
@@ -108,7 +101,7 @@ def test_novel_single_mutation(case, ctrl, mem, capsys):
         case = int(abundmatch.group(1))
         ctl1 = int(abundmatch.group(2))
         ctl2 = int(abundmatch.group(3))
-        assert case >= 8, line
+        assert case >= 7, line
         assert ctl1 == 0 and ctl2 == 0, line
 
 
@@ -221,17 +214,16 @@ def test_skip_until(capsys):
 
 
 def test_novel_output_has_mates():
-    kid = data_file('minitrio/trio-proband.fq.gz')
-    mom = data_file('minitrio/trio-mother.fq.gz')
-    dad = data_file('minitrio/trio-father.fq.gz')
-    testnovel = data_file('minitrio/novel.augfastq.gz')
-    testmates = data_file('minitrio/novel-mates.fastq.gz')
+    kid = data_file('microtrios/trio-na-proband.fq.gz')
+    mom = data_file('microtrios/trio-na-mother.fq.gz')
+    dad = data_file('microtrios/trio-na-father.fq.gz')
+    testnovel = data_file('microtrios/novel-na.augfastq.gz')
 
     with NamedTemporaryFile(suffix='.augfastq') as novelfile:
         arglist = [
             'novel', '--out', novelfile.name, '--case', kid, '--case-min', '5',
             '--control', mom, '--control', dad, '--ctrl-max', '1',
-            '--memory', '5M'
+            '--memory', '500K'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
@@ -247,8 +239,8 @@ def test_novel_output_has_mates():
         test_ids = set([r.name for r in stream])
         assert intread_ids == test_ids
 
-        stream = kevlar.parse_augmented_fastx(kevlar.open(testmates, 'r'))
-        test_mate_seqs = set([r.sequence for r in stream])
+        stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
+        test_mate_seqs = set([m for r in stream for m in r.mateseqs])
         assert mate_seqs == test_mate_seqs
 
 
@@ -257,9 +249,9 @@ def test_novel_save_counts():
     try:
         for ind in ('father', 'mother', 'proband'):
             outfile = '{:s}/{:s}.ct'.format(outdir, ind)
-            infile = data_file('minitrio/trio-{:s}.fq.gz'.format(ind))
-            arglist = ['count', '--ksize', '27', '--memory', '5M', outfile,
-                       infile]
+            infile = data_file('microtrios/trio-na-{:s}.fq.gz'.format(ind))
+            arglist = ['count', '--ksize', '27', '--memory', '500K', outfile,
+                       '--threads', '2', infile]
             args = kevlar.cli.parser().parse_args(arglist)
             kevlar.count.main(args)
 
@@ -267,10 +259,10 @@ def test_novel_save_counts():
             'novel', '--ksize', '27', '--out', outdir + '/novel.augfastq.gz',
             '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
             outdir + '/mom.ct', outdir + '/dad.ct', '--case',
-            data_file('minitrio/trio-proband.fq.gz'),
-            '--control', data_file('minitrio/trio-mother.fq.gz'),
-            '--control', data_file('minitrio/trio-father.fq.gz'),
-            '--memory', '5M'
+            data_file('microtrios/trio-na-proband.fq.gz'),
+            '--control', data_file('microtrios/trio-na-mother.fq.gz'),
+            '--control', data_file('microtrios/trio-na-father.fq.gz'),
+            '--memory', '500K', '--threads', '2'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
@@ -292,10 +284,10 @@ def test_novel_save_counts_mismatch(capsys):
             'novel', '--ksize', '27', '--out', outdir + '/novel.augfastq.gz',
             '--save-case-counts', outdir + '/kid.ct', '--save-ctrl-counts',
             outdir + '/mom.ct', outdir + '/dad.ct', outdir + '/sibling.ct',
-            '--case', data_file('minitrio/trio-proband.fq.gz'),
-            '--control', data_file('minitrio/trio-mother.fq.gz'),
-            '--control', data_file('minitrio/trio-father.fq.gz'),
-            '--memory', '5M'
+            '--case', data_file('microtrios/trio-k-proband.fq.gz'),
+            '--control', data_file('microtrios/trio-k-mother.fq.gz'),
+            '--control', data_file('microtrios/trio-k-father.fq.gz'),
+            '--memory', '500K'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
