@@ -99,14 +99,14 @@ def test_simplex_trio1(capsys):
     assert out.strip() == testvcf
 
 
-def test_simplex_minitrio():
+def test_simplex_minitrio(capsys):
     proband = data_file('minitrio/trio-proband.fq.gz')
     mother = data_file('minitrio/trio-mother.fq.gz')
     father = data_file('minitrio/trio-father.fq.gz')
     refr = data_file('minitrio/refr.fa')
 
     arglist = [
-        'simplex', '--novel-memory', '10M', '--case', proband,
+        'simplex', '--novel-memory', '5M', '--case', proband,
         '--control', mother, '--control', father, '--threads', '2',
         '--ctrl-max', '1', '--case-min', '5', '--ksize', '25',
         refr
@@ -114,14 +114,18 @@ def test_simplex_minitrio():
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.simplex.main(args)
 
+    out, err = capsys.readouterr()
+    print('DEBUG', out)
+    assert len(out.strip().split('\n')) == 1
+
 
 def test_simplex_save_counts():
     outdir = mkdtemp()
     try:
         for ind in ('father', 'mother', 'proband'):
             outfile = '{:s}/{:s}.ct'.format(outdir, ind)
-            infile = data_file('minitrio/trio-{:s}.fq.gz'.format(ind))
-            arglist = ['count', '--ksize', '27', '--memory', '5M', outfile,
+            infile = data_file('microtrios/trio-k-{:s}.fq.gz'.format(ind))
+            arglist = ['count', '--ksize', '27', '--memory', '500K', outfile,
                        infile]
             args = kevlar.cli.parser().parse_args(arglist)
             kevlar.count.main(args)
@@ -130,10 +134,10 @@ def test_simplex_save_counts():
             'simplex', '--ksize', '27', '--out', outdir + '/calls.vcf',
             '--save-case-counts', outdir + '/kid', '--save-ctrl-counts',
             outdir + '/mom', outdir + '/dad', '--case',
-            data_file('minitrio/trio-proband.fq.gz'),
-            '--control', data_file('minitrio/trio-mother.fq.gz'),
-            '--control', data_file('minitrio/trio-father.fq.gz'),
-            '--novel-memory', '5M', data_file('minitrio/refr.fa')
+            data_file('microtrios/trio-k-proband.fq.gz'),
+            '--control', data_file('microtrios/trio-k-mother.fq.gz'),
+            '--control', data_file('microtrios/trio-k-father.fq.gz'),
+            '--novel-memory', '500K', data_file('microtrios/refr-k.fa.gz')
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.simplex.main(args)

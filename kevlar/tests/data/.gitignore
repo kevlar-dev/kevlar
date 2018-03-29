@@ -1,3 +1,4 @@
 pico-trio-refr.fa.gz.*
 fiveparts-refr.fa.gz.*
 inf-mate-dist/*.genome.fa.gz.*
+calls-*.vcf

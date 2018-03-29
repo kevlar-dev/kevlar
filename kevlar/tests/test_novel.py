@@ -251,7 +251,7 @@ def test_novel_save_counts():
             outfile = '{:s}/{:s}.ct'.format(outdir, ind)
             infile = data_file('microtrios/trio-na-{:s}.fq.gz'.format(ind))
             arglist = ['count', '--ksize', '27', '--memory', '500K', outfile,
-                       '--threads', '2', infile]
+                       infile]
             args = kevlar.cli.parser().parse_args(arglist)
             kevlar.count.main(args)
 
@@ -262,7 +262,7 @@ def test_novel_save_counts():
             data_file('microtrios/trio-na-proband.fq.gz'),
             '--control', data_file('microtrios/trio-na-mother.fq.gz'),
             '--control', data_file('microtrios/trio-na-father.fq.gz'),
-            '--memory', '500K', '--threads', '2'
+            '--memory', '500K'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.novel.main(args)
