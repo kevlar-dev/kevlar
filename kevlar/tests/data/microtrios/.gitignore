@@ -1,4 +1,4 @@
-*.fa.gz
+*.fa
 *.fasta
 *.fastq
-refr-*.fa.*
+refr-*.fa.gz.*

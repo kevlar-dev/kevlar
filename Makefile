@@ -1,4 +1,6 @@
 SHELL=bash
+TESTTHREADS ?= 2
+
 
 ## #≠≠≠≠≠ build targets ≠≠≠≠≠#
 
@@ -8,7 +10,7 @@ help: Makefile
 
 ## devenv:   install software development pre-requisites
 devenv:
-	pip install --upgrade pip setuptools pytest pytest-cov pycodestyle cython sphinx sphinx-argparse
+	pip install --upgrade pip setuptools pytest pytest-cov pytest-xdist pycodestyle cython sphinx sphinx-argparse
 
 ## style:    check Python code style against PEP8
 style:
@@ -20,15 +22,15 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 
 ## test:     execute the automated test suite
 test: ext
-	py.test --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
+	py.test -n=$(TESTTHREADS) --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
 ## testmore: execute the automated test suite, including longer-running tests
 testmore: ext
-	py.test -v --cov=kevlar kevlar/tests/*.py -m 'not toolong'
+	py.test -n=$(TESTTHREADS) -v --cov=kevlar kevlar/tests/*.py -m 'not toolong'
 
 ## testall:  execute the automated test suite, including all tests
 testall: ext
-	py.test -v --cov=kevlar kevlar/tests/*.py
+	py.test -n=$(TESTTHREADS) -v --cov=kevlar kevlar/tests/*.py
 
 ## doc:      build the documentation locally
 doc: ext
