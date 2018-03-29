@@ -1,5 +1,6 @@
 SHELL=bash
 
+
 ## #≠≠≠≠≠ build targets ≠≠≠≠≠#
 
 ## help:     print this help message and exit
@@ -8,7 +9,7 @@ help: Makefile
 
 ## devenv:   install software development pre-requisites
 devenv:
-	pip install --upgrade pip setuptools pytest pytest-cov pycodestyle cython sphinx sphinx-argparse
+	pip install --upgrade pip setuptools pytest pytest-cov pytest-xdist pycodestyle cython sphinx sphinx-argparse
 
 ## style:    check Python code style against PEP8
 style:
@@ -21,6 +22,10 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 ## test:     execute the automated test suite
 test: ext
 	py.test --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
+
+## test:     execute the automated test suite with 4 parallel threads
+test4: ext
+	py.test -n=4 --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
 ## testmore: execute the automated test suite, including longer-running tests
 testmore: ext
