@@ -1,5 +1,4 @@
 SHELL=bash
-TESTTHREADS ?= 2
 
 
 ## #≠≠≠≠≠ build targets ≠≠≠≠≠#
@@ -22,15 +21,19 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 
 ## test:     execute the automated test suite
 test: ext
-	py.test -n=$(TESTTHREADS) --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
+	py.test --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
+
+## test:     execute the automated test suite with 4 parallel threads
+test4: ext
+	py.test -n=4 --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
 ## testmore: execute the automated test suite, including longer-running tests
 testmore: ext
-	py.test -n=$(TESTTHREADS) -v --cov=kevlar kevlar/tests/*.py -m 'not toolong'
+	py.test -v --cov=kevlar kevlar/tests/*.py -m 'not toolong'
 
 ## testall:  execute the automated test suite, including all tests
 testall: ext
-	py.test -n=$(TESTTHREADS) -v --cov=kevlar kevlar/tests/*.py
+	py.test -v --cov=kevlar kevlar/tests/*.py
 
 ## doc:      build the documentation locally
 doc: ext
