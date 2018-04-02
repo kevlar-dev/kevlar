@@ -7,8 +7,15 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from enum import Enum
 import sys
 import kevlar
+
+
+class VariantFilter(Enum):
+    PerfectMatch = 1
+    InscrutableCigar = 2
+    PassengerVariant = 3
 
 
 class Variant(object):
@@ -26,6 +33,7 @@ class Variant(object):
         self._pos = pos
         self._refr = refr
         self._alt = alt
+        self._filters = set()
         self.info = dict()
         for key, value in kwargs.items():
             self.annotate(key, value)
@@ -52,9 +60,8 @@ class Variant(object):
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)
 
-        filterstr = 'PASS' if self._refr != '.' else '.'
         return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\t{:s}\t{:s}'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt, filterstr,
+            self._seqid, self._pos + 1, self._refr, self._alt, self.filterstr,
             attrstr
         )
 
@@ -119,6 +126,20 @@ class Variant(object):
             return keyvaluepair
         else:
             return value
+
+    def filter(self, filtertype):
+        if not isinstance(filtertype, VariantFilter):
+            return
+        self._filters.add(filtertype)
+
+    @property
+    def filterstr(self):
+        if len(self._filters) > 0:
+            return ';'.join(sorted([vf.name for vf in self._filters]))
+        elif self._refr == '.':
+            return '.'
+        else:
+            return 'PASS'
 
     @property
     def genotypes(self):
