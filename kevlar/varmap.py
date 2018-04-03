@@ -16,10 +16,10 @@ import sys
 
 
 patterns = {
-    '^(\d+)([DI])(\d+)M(\d+)[DI]$': 'snv',
-    '^(\d+)([DI])(\d+)M(\d+)[DI](\d+)M$': 'snv',
-    '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$': 'indel',
-    '^(\d+)([DI])(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$': 'indel',
+    '^((\d+)([DI]))?(\d+)M(\d+)[DI]$': 'snv',
+    '^((\d+)([DI]))?(\d+)M(\d+)[DI](\d+)M$': 'snv',
+    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$': 'indel',
+    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$': 'indel',
 }
 
 
@@ -86,37 +86,41 @@ class VariantMapping(object):
     def offset(self):
         if self.alnmatch is None:
             return None
-        return int(self.alnmatch.group(1))
+        if self.alnmatch.group(1) is None:
+            return 0
+        return int(self.alnmatch.group(2))
 
     @property
     def targetshort(self):
         if self.alnmatch is None:
             return None
-        return self.alnmatch.group(2) == 'I'
+        if self.alnmatch.group(1) is None:
+            return False
+        return self.alnmatch.group(3) == 'I'
 
     @property
     def leftmatchlen(self):
         if self.alnmatch is None or self.vartype != 'indel':
             return None
-        return int(self.alnmatch.group(3))
+        return int(self.alnmatch.group(4))
 
     @property
     def indellength(self):
         if self.alnmatch is None or self.vartype != 'indel':
             return None
-        return int(self.alnmatch.group(4))
+        return int(self.alnmatch.group(5))
 
     @property
     def indeltype(self):
         if self.alnmatch is None or self.vartype != 'indel':
             return None
-        return self.alnmatch.group(5)
+        return self.alnmatch.group(6)
 
     @property
     def rightmatchlen(self):
         if self.alnmatch is None or self.vartype != 'indel':
             return None
-        return int(self.alnmatch.group(6))
+        return int(self.alnmatch.group(7))
 
     def is_passenger(self, call):
         if call.window is None:
@@ -192,7 +196,7 @@ class VariantMapping(object):
 
     def call_snv(self, ksize, mindist=5, logstream=sys.stderr):
         """Call SNVs from the given alignment."""
-        length = int(self.alnmatch.group(3))
+        length = int(self.alnmatch.group(4))
         offset = self.offset
         if self.targetshort:
             gdnaoffset = 0
