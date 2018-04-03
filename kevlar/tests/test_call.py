@@ -163,7 +163,7 @@ def test_perfect_match():
     assert len(calls) == 1
     assert calls[0].seqid == 'chr99'
     assert calls[0].position == 2899377
-    assert calls[0].info['NC'] == 'perfectmatch'
+    assert calls[0].filterstr == 'PerfectMatch'
 
 
 def test_multibest_revcom():

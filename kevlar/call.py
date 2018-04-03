@@ -11,6 +11,7 @@ from collections import defaultdict
 import sys
 import kevlar
 from kevlar.varmap import VariantMapping
+from kevlar.vcf import VariantFilter as vf
 
 
 def align_mates(record, refrfile):
@@ -124,7 +125,7 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                 if alignment.matedist:
                     varcall.annotate('MD', '{:.2f}'.format(alignment.matedist))
                     if n > 0:
-                        varcall.annotate('NC', 'matefail')
+                        varcall.filter(vf.MateFail)
                 yield varcall
 
 

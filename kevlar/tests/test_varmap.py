@@ -109,8 +109,8 @@ def test_nocall():
     variants = list(aln.call_variants(21))
     assert len(variants) == 1
     assert variants[0].vcf == (
-        'yourchr\t801\t.\t.\t.\t.\t.\t'
-        'CG=25D5M22I5M46D8M13D2M35I;NC=inscrutablecigar;QN=contig4:cc=1;'
+        'yourchr\t801\t.\t.\t.\t.\tInscrutableCigar\t'
+        'CG=25D5M22I5M46D8M13D2M35I;QN=contig4:cc=1;'
         'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
         'TGCAAGAAAAT'
     )
@@ -259,5 +259,5 @@ def test_passenger_screen():
     aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 2
-    assert calls[0].attribute('NC') is None
-    assert calls[1].attribute('NC') == 'passenger'
+    assert calls[0].filterstr == 'PASS'
+    assert calls[1].filterstr == 'PassengerVariant'

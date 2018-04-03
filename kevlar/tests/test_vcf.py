@@ -9,6 +9,7 @@
 
 import kevlar
 from kevlar.vcf import Variant, VariantIndel, VariantSNV
+from kevlar.vcf import VariantFilter as vf
 
 
 def test_snv_obj():
@@ -42,3 +43,50 @@ def test_indel_obj():
     assert str(indel2) == 'chr6:75522412:I->ATTACA'
     vcfvalues = ['chr6', '75522412', '.', 'G', 'GATTACA', '.', 'PASS', '.']
     assert indel2.vcf == '\t'.join(vcfvalues)
+
+
+def test_filter_field():
+    v = Variant('scaffold1', 12345, '.', '.')
+    assert v.filterstr == '.'
+    v.filter(vf.InscrutableCigar)
+    assert v.filterstr == 'InscrutableCigar'
+
+    v = Variant('chr1', 55555, '.', '.')
+    v.filter(vf.PerfectMatch)
+    assert v.filterstr == 'PerfectMatch'
+
+    v = Variant('1', 809768, 'C', 'CAT')
+    assert v.filterstr == 'PASS'
+    v.filter(vf.PassengerVariant)
+    assert v.filterstr == 'PassengerVariant'
+    v.filter(vf.MateFail)
+    assert v.filterstr == 'MateFail;PassengerVariant'
+
+    v = Variant('one', 112358, 'T', 'A')
+    v.filter('SNPyMcSNPface')
+    v.filter(6.022e23)
+    v.filter(dict(chicken='waffles', biscuits='gravy'))
+    v.filterstr == 'PASS'  # These "filters" shouldn't actually do anything
+
+
+def test_info():
+    """Test handling of "info" field attributes.
+
+    Note: this is testing the mechanics of the .annotate() and .attribute()
+    API. The `VW` attribute should not be handled in this way.
+    """
+    v = Variant('1', 12345, 'G', 'C')
+    assert v.attribute('VW') is None
+
+    v.annotate('VW', 'GATTACA')
+    assert v.attribute('VW') == 'GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA'
+
+    v.annotate('VW', 'ATGCCCTAG')
+    assert v.info['VW'] == set(['GATTACA', 'ATGCCCTAG'])
+    assert v.attribute('VW') == 'ATGCCCTAG,GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=ATGCCCTAG,GATTACA'
+
+    v.annotate('VW', 'AAAAAAAAA')
+    assert v.attribute('VW') == 'AAAAAAAAA,ATGCCCTAG,GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=AAAAAAAAA,ATGCCCTAG,GATTACA'
