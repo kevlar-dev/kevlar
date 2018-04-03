@@ -61,3 +61,23 @@ def test_filter_field():
     assert v.filterstr == 'PassengerVariant'
     v.filter(vf.MateFail)
     assert v.filterstr == 'MateFail;PassengerVariant'
+
+    v = Variant('one', 112358, 'T', 'A')
+    v.filter('SNPyMcSNPface')
+    v.filter(6.022e23)
+    v.filter(dict(chicken='waffles', biscuits='gravy'))
+    v.filterstr == 'PASS'  # These "filters" shouldn't actually do anything
+
+
+def test_info():
+    v = Variant('1', 12345, 'G', 'C')
+    assert v.attribute('VW') is None
+
+    v.annotate('VW', 'GATTACA')
+    assert v.attribute('VW') == 'GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA'
+
+    v.annotate('VW', 'ATGCCCTAG')
+    assert v.info['VW'] == set(['GATTACA', 'ATGCCCTAG'])
+    assert v.attribute('VW') == 'ATGCCCTAG,GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=ATGCCCTAG,GATTACA'
