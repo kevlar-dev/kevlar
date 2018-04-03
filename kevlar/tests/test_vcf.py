@@ -70,6 +70,11 @@ def test_filter_field():
 
 
 def test_info():
+    """Test handling of "info" field attributes.
+
+    Note: this is testing the mechanics of the .annotate() and .attribute()
+    API. The `VW` attribute should not be handled in this way.
+    """
     v = Variant('1', 12345, 'G', 'C')
     assert v.attribute('VW') is None
 
