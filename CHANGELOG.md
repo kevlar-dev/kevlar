@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Incorrect handling of VCF `FILTER` field resolved (see #235).
+
+
 ## [0.4.0] 2018-03-29
 
 ### Added
