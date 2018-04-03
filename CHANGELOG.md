@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Incorrect handling of VCF `FILTER` field resolved (see #235).
+- A bug causing some calls to be erroneously filtered (see #237).
 
 
 ## [0.4.0] 2018-03-29

@@ -1,0 +1,44 @@
+>contig1
+AACAGAAAGATAAGGATCCTCCTAGGGCAGAGCAGTGATCTTCTTACCAGGCAGGTTCCCAAGCATAGGCATAGGAAAATGGAAGTGGGACCTTAACCTCATTCACGCCATTACAGCGCCGGGCAGAAGTGTTTCTA
+                                                                   GGCATAGGAAAATGGAAGTGGGACCTTAACC          7 0 1#
+                                                                    GCATAGGAAAATGGAAGTGGGACCTTAACCT          7 0 0#
+                                                                     CATAGGAAAATGGAAGTGGGACCTTAACCTC          7 1 0#
+                                                                      ATAGGAAAATGGAAGTGGGACCTTAACCTCA          7 0 0#
+                                                                       TAGGAAAATGGAAGTGGGACCTTAACCTCAT          7 0 0#
+                                                                        AGGAAAATGGAAGTGGGACCTTAACCTCATT          8 0 0#
+                                                                         GGAAAATGGAAGTGGGACCTTAACCTCATTC          8 0 1#
+                                                                          GAAAATGGAAGTGGGACCTTAACCTCATTCA          8 0 0#
+                                                                           AAAATGGAAGTGGGACCTTAACCTCATTCAC          8 0 0#
+                                                                            AAATGGAAGTGGGACCTTAACCTCATTCACG          8 0 0#
+                                                                             AATGGAAGTGGGACCTTAACCTCATTCACGC          8 0 0#
+                                                                              ATGGAAGTGGGACCTTAACCTCATTCACGCC          8 0 0#
+                                                                               TGGAAGTGGGACCTTAACCTCATTCACGCCA          8 0 0#
+                                                                                GGAAGTGGGACCTTAACCTCATTCACGCCAT          8 0 0#
+                                                                                 GAAGTGGGACCTTAACCTCATTCACGCCATT          7 0 0#
+                                                                                  AAGTGGGACCTTAACCTCATTCACGCCATTA          7 0 0#
+                                                                                   AGTGGGACCTTAACCTCATTCACGCCATTAC          7 0 0#
+                                                                                    GTGGGACCTTAACCTCATTCACGCCATTACA          7 0 0#
+                                                                                     TGGGACCTTAACCTCATTCACGCCATTACAG          7 0 0#
+                                                                                      GGGACCTTAACCTCATTCACGCCATTACAGC          6 0 0#
+                                                                                       GGACCTTAACCTCATTCACGCCATTACAGCG          6 0 0#
+                                                                                        GACCTTAACCTCATTCACGCCATTACAGCGC          6 0 0#
+                                                                                         ACCTTAACCTCATTCACGCCATTACAGCGCC          6 0 0#
+                                                                                          CCTTAACCTCATTCACGCCATTACAGCGCCG          6 0 0#
+                                                                                           CTTAACCTCATTCACGCCATTACAGCGCCGG          8 1 1#
+                                                                                            TTAACCTCATTCACGCCATTACAGCGCCGGG          8 0 1#
+                                                                                             TAACCTCATTCACGCCATTACAGCGCCGGGC          8 0 0#
+                                                                                              AACCTCATTCACGCCATTACAGCGCCGGGCA          8 0 0#
+                                                                                               ACCTCATTCACGCCATTACAGCGCCGGGCAG          8 0 0#
+                                                                                                CCTCATTCACGCCATTACAGCGCCGGGCAGA          8 1 0#
+                                                                                                 CTCATTCACGCCATTACAGCGCCGGGCAGAA          8 0 0#
+#mateseq=ACAGTTACTTTTCAACATAATTCTCAGACTCCATACTGTTTATTTTATGTTGATAGACTCGCACCACACTTCTGCCATTTTAAAACCCATATTCTGGTCA#
+#mateseq=ACTACGTGACTCATTTTTGACAATTCAGTTACATTCATTTCTGTGGGTATTTTTTGTTTATGTAATCATTGGATACATAACCTCTGGACCCTTTCCATCT#
+#mateseq=AGCTTATTATATTCCTCAGTGGCAAAATATACATCACTCTTTTGAGACTGATAGGGAAAAAGGCCAACAGTTACTTTTCAACATAATTCTCAGACTCCAT#
+#mateseq=AGGCAGTGCCCGCCTTGGGCTCCTGAGTAAGGACTACGTGACTCATTTTTGACAATTCAGTTACATTCATTTCTTTGGGTATTTTTTGTTTATGTAATCA#
+#mateseq=CGCCTTGGGCTCCTGAGTAAGGACTACGTGACTCATTTTTGACAATTCAGTTACATTCATTTCTGTGGGTATTTTTTGTTTATGTAATCATTGGATACAT#
+#mateseq=CGGCATTTGCTTTATAAACACATCCCACCGCAGGCCCGAAGGGGGAAGATGAGCTGGCTGAGGCAGTGCCCGCCTTGGGCTCCTGAGTAAGGACTACGTG#
+#mateseq=GCCAACAGTTACTTTTCAACATAATTCTCAGACTCCATACTGTTTATTTTATGTTGATAGAATCGCACCACACTTCTGCCATTTTAAAACCCATATTCTG#
+#mateseq=TCATTGGATACATAACCTCTGGACCCTTTCCATCTTCAAATGTATAGATTAAAATCTTATAAGTATTCCTTAAATTTGCGTGGGGGGCACATCTGAGAGA#
+#mateseq=TGTTTATTTTATGTTGATAGAATCGCACCACACTTCTGCCATTTTAAAACCCATATTCTGGTCAGCAGTTTGGTATTATGTTTTGACCTCATCTTCGTCT#
+#mateseq=TTATTTTATGTTGATAGAATCGCACCACACTTCTGCCATTTTAAAACCCATATTCTGGTCAGCAGTTTGGTATTATGTTTTGACCTCATCTTCGTCTGTT#
+#mateseq=TTTTCAACATAATTCTCAGACTCCATACTGTTTATTTTATGTTGATAGAAACGCACCACACTTCTGCCATTTTAAAACCCATATTCTGGTCAGCAGTTTG#

@@ -261,3 +261,28 @@ def test_passenger_screen():
     assert len(calls) == 2
     assert calls[0].filterstr == 'PASS'
     assert calls[1].filterstr == 'PassengerVariant'
+
+
+@pytest.mark.parametrize('query,target,refr,alt', [
+    ('nomargin-snv-contigs.augfasta', 'nomargin-gdna.fa', 'A', 'G'),
+    ('nomargin-indel-contigs.augfasta', 'nomargin-gdna.fa', 'AAGT', 'A'),
+    ('nomargin-r-snv-contigs.augfasta', 'nomargin-r-gdna.fa', 'A', 'G'),
+    ('nomargin-r-indel-contigs.augfasta', 'nomargin-r-gdna.fa', 'C', 'CTAT'),
+])
+def test_no_margin(query, target, refr, alt):
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file(query), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file(target), 'r')
+        )
+    )
+    aln = VariantMapping(contig, cutout)
+    calls = list(aln.call_variants(31))
+    assert len(calls) == 1
+    assert calls[0].filterstr == 'PASS'
+    assert calls[0]._refr == refr
+    assert calls[0]._alt == alt
