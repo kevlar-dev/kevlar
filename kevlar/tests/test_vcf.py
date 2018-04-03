@@ -81,3 +81,7 @@ def test_info():
     assert v.info['VW'] == set(['GATTACA', 'ATGCCCTAG'])
     assert v.attribute('VW') == 'ATGCCCTAG,GATTACA'
     assert v.attribute('VW', pair=True) == 'VW=ATGCCCTAG,GATTACA'
+
+    v.annotate('VW', 'AAAAAAAAA')
+    assert v.attribute('VW') == 'AAAAAAAAA,ATGCCCTAG,GATTACA'
+    assert v.attribute('VW', pair=True) == 'VW=AAAAAAAAA,ATGCCCTAG,GATTACA'
