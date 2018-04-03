@@ -10,6 +10,7 @@
 import kevlar
 from kevlar.alignment import align_both_strands
 from kevlar.vcf import Variant, VariantSNV, VariantIndel
+from kevlar.vcf import VariantFilter as vf
 import re
 import sys
 
@@ -138,7 +139,7 @@ class VariantMapping(object):
         if self.vartype == 'snv':
             for call in self.call_snv(ksize, mindist, logstream=logstream):
                 if self.is_passenger(call):
-                    call.annotate('NC', 'passenger')
+                    call.filter(vf.PassengerVariant)
                 yield call
         elif self.vartype == 'indel':
             caller = self.call_insertion
@@ -146,17 +147,18 @@ class VariantMapping(object):
                 caller = self.call_deletion
             for call in caller(ksize):
                 if self.is_passenger(call):
-                    call.annotate('NC', 'passenger')
+                    call.filter(vf.PassengerVariant)
                 yield call
             for call in self.call_indel_snvs(ksize, mindist, logstream):
                 if self.is_passenger(call):
-                    call.annotate('NC', 'passenger')
+                    call.filter(vf.PassengerVariant)
                 yield call
         else:
             nocall = Variant(
-                self.seqid, self.pos, '.', '.', NC='inscrutablecigar',
-                QN=self.contig.name, QS=self.varseq, CG=self.cigar,
+                self.seqid, self.pos, '.', '.', QN=self.contig.name,
+                QS=self.varseq, CG=self.cigar,
             )
+            nocall.filter(vf.InscrutableCigar)
             yield nocall
 
     def snv_variant(self, qseq, tseq, mismatches, offset, ksize):
@@ -206,8 +208,9 @@ class VariantMapping(object):
         if len(diffs) == 0:
             nocall = Variant(
                 self.seqid, self.cutout.local_to_global(gdnaoffset), '.', '.',
-                NC='perfectmatch', QN=self.contig.name, QS=q
+                QN=self.contig.name, QS=q
             )
+            nocall.filter(vf.PerfectMatch)
             yield nocall
             return
 
