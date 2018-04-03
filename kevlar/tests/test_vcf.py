@@ -9,6 +9,7 @@
 
 import kevlar
 from kevlar.vcf import Variant, VariantIndel, VariantSNV
+from kevlar.vcf import VariantFilter as vf
 
 
 def test_snv_obj():
@@ -42,3 +43,21 @@ def test_indel_obj():
     assert str(indel2) == 'chr6:75522412:I->ATTACA'
     vcfvalues = ['chr6', '75522412', '.', 'G', 'GATTACA', '.', 'PASS', '.']
     assert indel2.vcf == '\t'.join(vcfvalues)
+
+
+def test_filter_field():
+    v = Variant('scaffold1', 12345, '.', '.')
+    assert v.filterstr == '.'
+    v.filter(vf.InscrutableCigar)
+    assert v.filterstr == 'InscrutableCigar'
+
+    v = Variant('chr1', 55555, '.', '.')
+    v.filter(vf.PerfectMatch)
+    assert v.filterstr == 'PerfectMatch'
+
+    v = Variant('1', 809768, 'C', 'CAT')
+    assert v.filterstr == 'PASS'
+    v.filter(vf.PassengerVariant)
+    assert v.filterstr == 'PassengerVariant'
+    v.filter(vf.MateFail)
+    assert v.filterstr == 'MateFail;PassengerVariant'

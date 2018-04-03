@@ -16,6 +16,7 @@ class VariantFilter(Enum):
     PerfectMatch = 1
     InscrutableCigar = 2
     PassengerVariant = 3
+    MateFail = 4
 
 
 class Variant(object):
