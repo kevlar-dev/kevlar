@@ -264,7 +264,10 @@ def test_passenger_screen():
 
 
 @pytest.mark.parametrize('query,target,refr,alt', [
-    ('nomargin-snv-contigs.augfastq', 'nomargin-snv-gdna.fa', 'A', 'G'),
+    ('nomargin-snv-contigs.augfasta', 'nomargin-gdna.fa', 'A', 'G'),
+    ('nomargin-indel-contigs.augfasta', 'nomargin-gdna.fa', 'AAGT', 'A'),
+    ('nomargin-r-snv-contigs.augfasta', 'nomargin-r-gdna.fa', 'A', 'G'),
+    ('nomargin-r-indel-contigs.augfasta', 'nomargin-r-gdna.fa', 'C', 'CTAT'),
 ])
 def test_no_margin(query, target, refr, alt):
     contig = next(

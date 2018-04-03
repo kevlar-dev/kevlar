@@ -16,10 +16,10 @@ import sys
 
 
 patterns = {
-    '^((\d+)([DI]))?(\d+)M(\d+)[DI]$': 'snv',
-    '^((\d+)([DI]))?(\d+)M(\d+)[DI](\d+)M$': 'snv',
-    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI]$': 'indel',
-    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$': 'indel',
+    '^((\d+)([DI]))?(\d+)M((\d+)[DI])?$': ('snv', False),
+    '^((\d+)([DI]))?(\d+)M(\d+)[DI](\d+)M$': ('snv', True),
+    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$': ('indel', False),
+    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$': ('indel', True),
 }
 
 
@@ -45,9 +45,14 @@ class VariantMapping(object):
         self.matedist = None
         self.vartype = None
         self.alnmatch = None
-        for pattern, vartype in patterns.items():
+        for pattern, (vartype, rightcheck) in patterns.items():
             matchobj = re.match(pattern, cigar)
             if matchobj:
+                if rightcheck:
+                    idx = 6 if vartype == 'snv' else 9
+                    rightmatchlen = int(matchobj.group(idx))
+                    if rightmatchlen > 5:
+                        continue
                 self.alnmatch = matchobj
                 self.vartype = vartype
                 break
