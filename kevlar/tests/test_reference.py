@@ -78,3 +78,10 @@ def test_autoindex():
         assert log.getvalue() == ''
     finally:
         rmtree(tmpdir)
+
+
+def test_bwa_failure():
+    args = ['bwa', 'mem', data_file('not-a-real-file.fa'), '-']
+    with pytest.raises(KevlarBWAError) as e:
+        aligner = kevlar.reference.bwa_align(args, '>seq1\nACGT')
+        pos = list(aligner)

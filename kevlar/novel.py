@@ -150,7 +150,7 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
         record.ikmers = list()
         for i, kmer in enumerate(casecounts[0].get_kmers(record.sequence)):
             if numbands:
-                khash = cases[0].hash(kmer)
+                khash = casecounts[0].hash(kmer)
                 if khash & (numbands - 1) != band - 1:
                     continue
             interesting, discard, caseabund, ctrlabund = kmer_is_interesting(

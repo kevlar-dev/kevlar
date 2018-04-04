@@ -129,7 +129,9 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=10000,
         message = 'WARNING: no reference matches'
         print('[kevlar::localize]', message, file=logstream)
         return
-    if not refrseqs:
+    if refrseqs:
+        seqs = refrseqs
+    else:
         refrstream = kevlar.open(refrfile, 'r')
         seqs = kevlar.seqio.parse_seq_dict(refrstream)
     for cutout in localizer.get_cutouts(refrseqs=seqs, clusterdist=maxdiff):

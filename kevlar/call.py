@@ -20,7 +20,7 @@ def align_mates(record, refrfile):
         fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
     cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
-    for seqid, pos in kevlar.bwa_align(cmdargs, seqstring=fasta):
+    for seqid, pos in kevlar.reference.bwa_align(cmdargs, seqstring=fasta):
         yield seqid, pos
 
 
