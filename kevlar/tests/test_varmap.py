@@ -110,7 +110,7 @@ def test_nocall():
     assert len(variants) == 1
     assert variants[0].vcf == (
         'yourchr\t801\t.\t.\t.\t.\tInscrutableCigar\t'
-        'CG=25D5M22I5M46D8M13D2M35I;QN=contig4:cc=1;'
+        'CIGAR=25D5M22I5M46D8M13D2M35I;KSW2=1000000.0;QN=contig4:cc=1;'
         'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
         'TGCAAGAAAAT'
     )

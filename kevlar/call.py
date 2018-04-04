@@ -46,7 +46,7 @@ def mate_distance(mate_positions, gdna_position):
     return sum(distances) / len(distances)
 
 
-def alignments_to_report(alignments):
+def alignments_to_report(alignments, thresh=0.9):
     """Determine which alignments should be reported and used to call variants.
 
     In the simplest and best case, there is only a single alignment to
@@ -56,13 +56,11 @@ def alignments_to_report(alignments):
     """
     if len(alignments) == 1:
         return alignments
+    # Consider disabling the check on the next line
     scrtbl = [aln for aln in alignments if aln.vartype is not None]
-    if len(scrtbl) == 0:
-        finallist = alignments
-    else:
-        finallist = scrtbl
+    finallist = alignments if len(scrtbl) == 0 else scrtbl
     bestscore = max([aln.score for aln in finallist])
-    aligns2report = [aln for aln in finallist if aln.score == bestscore]
+    aligns2report = [al for al in finallist if al.score >= bestscore * thresh]
     return aligns2report
 
 

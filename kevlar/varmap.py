@@ -165,7 +165,7 @@ class VariantMapping(object):
         else:
             nocall = Variant(
                 self.seqid, self.pos, '.', '.', QN=self.contig.name,
-                QS=self.varseq, CG=self.cigar,
+                QS=self.varseq, KSW2=str(self.score), CIGAR=self.cigar,
             )
             nocall.filter(vf.InscrutableCigar)
             yield nocall
@@ -195,7 +195,8 @@ class VariantMapping(object):
             nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
             snv = VariantSNV(
                 self.seqid, globalcoord, refr, alt, VW=altwindow,
-                RW=refrwindow, IK=str(nikmers)
+                RW=refrwindow, IK=str(nikmers), KSW2=str(self.score),
+                CIGAR=self.cigar
             )
             yield snv
 
@@ -276,7 +277,8 @@ class VariantMapping(object):
         nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
         indel = VariantIndel(
             self.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-            RW=refrwindow, IK=str(nikmers)
+            RW=refrwindow, IK=str(nikmers), KSW2=str(self.score),
+            CIGAR=self.cigar
         )
         yield indel
 
@@ -298,7 +300,8 @@ class VariantMapping(object):
         nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
         indel = VariantIndel(
             self.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-            RW=refrwindow, IK=str(nikmers)
+            RW=refrwindow, IK=str(nikmers), KSW2=str(self.score),
+            CIGAR=self.cigar
         )
         yield indel
 
