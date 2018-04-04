@@ -2,11 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.4.1] 2018-04-04
 
 ### Fixed
 - Incorrect handling of VCF `FILTER` field resolved (see #235).
 - A bug causing some calls to be erroneously filtered (see #237).
+- A minor bug with banded mode in `kevlar novel`, various other minor fixes, and code that should have been removed previously (#239).
+
 
 
 ## [0.4.0] 2018-03-29
