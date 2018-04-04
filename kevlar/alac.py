@@ -21,6 +21,7 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
+        ccmatch = re.search('kvcc=(\d+)', reads[0].name)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
@@ -30,7 +31,6 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
         contigs = list(assembler(reads, logstream=logstream))
         if len(contigs) == 0 and assembler == assemble_fml_asm and fallback:
             message = 'WARNING: no contig assembled by fermi-lite'
-            ccmatch = re.search('kvcc=(\d+)', reads[0].name)
             if ccmatch:
                 message += ' for CC={:s}'.format(ccmatch.group(1))
             message += '; attempting again with home-grown greedy assembler'
@@ -53,6 +53,8 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
         caller = call(targets, contigs, match, mismatch, gapopen, gapextend,
                       ksize, refrfile)
         for varcall in caller:
+            if ccmatch:
+                varcall.annotate('PART', ccmatch.group(1))
             yield varcall
 
 
