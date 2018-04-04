@@ -119,6 +119,7 @@ def test_alac_single_partition(label, position):
     calls = list(kevlar.alac.alac(partstream, refrfile))
     assert len(calls) == 1
     assert calls[0].position == position - 1
+    assert calls[0].attribute('PART') == label
 
 
 def test_alac_single_partition_badlabel(capsys):
