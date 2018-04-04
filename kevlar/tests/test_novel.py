@@ -17,7 +17,7 @@ from tempfile import NamedTemporaryFile, mkdtemp
 import screed
 from shutil import rmtree
 import kevlar
-from kevlar.tests import data_file
+from kevlar.tests import data_file, data_glob
 from khmer import Counttable
 
 
@@ -77,7 +77,6 @@ def test_assumptions(kmer):
     assert ct.get_kmer_hashes(kmer)[0] == ct.get_kmer_hashes(kmer_rc)[0]
 
 
-@pytest.mark.long
 @pytest.mark.parametrize('case,ctrl', [
     ('microtrios/trio-li-proband.fq.gz', 'microtrios/trio-li-??ther.fq.gz'),
     ('microtrios/trio-na-proband.fq.gz', 'microtrios/trio-na-??ther.fq.gz'),
@@ -88,6 +87,7 @@ def test_novel_single_mutation(case, ctrl, capsys):
     ctrls = kevlar.tests.data_glob(ctrl)
     arglist = ['novel', '--case', casestr, '--ksize', '25', '--case-min', '7',
                '--control', ctrls[0], '--control', ctrls[1],
+               '--num-bands', '2', '--band', '2',
                '--ctrl-max', '0', '--memory', '500K']
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
@@ -296,3 +296,20 @@ def test_novel_save_counts_mismatch(capsys):
 
     out, err = capsys.readouterr()
     assert 'stubbornly refusing to save k-mer counts' in err
+
+
+def test_novel_load_counts(capsys):
+    file1 = data_file('simple-genome-case-reads.fa.gz')
+    file2 = data_file('ambig.fasta')
+    file3 = data_file('simple-genome-case.ct')
+    file4, file5 = data_glob('simple-genome-ctrl?.ct')
+    arglist = [
+        'novel', '-k', '25',
+        '--case', file1, file2, '--case-counts', file3,
+        '--control-counts', file4, file5
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.novel.main(args)
+
+    out, err = capsys.readouterr()
+    assert 'counttables for 2 sample(s) provided' in err

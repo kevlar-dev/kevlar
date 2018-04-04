@@ -43,8 +43,10 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
             continue
 
         # Identify the genomic region(s) associated with each contig
+        refrstream = kevlar.open(refrfile, 'r')
+        seqs = kevlar.seqio.parse_seq_dict(refrstream)
         localizer = localize(contigs, refrfile, seedsize, delta=delta,
-                             logstream=logstream)
+                             refrseqs=seqs, logstream=logstream)
         targets = list(localizer)
         if len(targets) == 0:
             continue

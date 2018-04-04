@@ -36,7 +36,7 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
     print('[kevlar::partition]', 'Graph built in {:.2f} sec'.format(elapsed),
           file=logstream)
 
-    if gmlfile:
+    if gmlfile:  # pragma: no cover
         kevlar.to_gml(graph, gmlfile, logstream)
 
     timer.start('partition')

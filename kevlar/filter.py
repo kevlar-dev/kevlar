@@ -55,7 +55,7 @@ def load_mask(maskfiles, ksize, memory, maxfpr=0.001, savefile=None,
     return mask
 
 
-def summarize_readset(readset, logfile):
+def summarize_readset(readset, logfile=sys.stderr):
     fpr = kevlar.sketch.estimate_fpr(readset._counts)
     message = '    {:d} instances'.format(readset.read_instances)
     message += ' of {:d} reads consumed,\n'.format(readset.distinct_reads)
@@ -64,8 +64,7 @@ def summarize_readset(readset, logfile):
     message += 'of {:d} distinct'.format(readset.distinct_ikmers)
     message += ' "interesting" k-mers;\n'
     message += '    estimated false positive rate is {:1.3f}'.format(fpr)
-    if logfile is not None:
-        print(message, file=logfile)
+    print(message, file=logfile)
     return fpr
 
 
@@ -93,8 +92,7 @@ def summarize_validate(readset, n, logfile=sys.stderr):
     message += ' with no surviving valid k-mers ignored'
     message += '\n        '
     message += '{:d} reads written to output'.format(n)
-    if logfile is not None:
-        print(message, file=logfile)
+    print(message, file=logfile)
 
 
 def filter(readstream, mask=None, casemin=6, ctrlmax=1, ksize=31, memory=1e6,
@@ -107,7 +105,7 @@ def filter(readstream, mask=None, casemin=6, ctrlmax=1, ksize=31, memory=1e6,
     for record in readstream:
         readset.add(record)
     fpr = summarize_readset(readset, logstream)
-    if fpr > maxfpr:
+    if fpr > maxfpr:  # pragma: no cover
         raise KevlarUnsuitableFPRError('FPR too high, bailing out!!!')
     elapsed = timer.stop('recalc')
     print('[kevlar::filter] Input loaded in {:.2f} sec'.format(elapsed),

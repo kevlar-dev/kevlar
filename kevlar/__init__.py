@@ -35,7 +35,6 @@ from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
-from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 
 # Subcommands and command-line interface
@@ -66,7 +65,7 @@ del get_versions
 
 
 def open(filename, mode):
-    if mode not in ['r', 'w']:
+    if mode not in ('r', 'w'):
         raise ValueError('invalid mode "{}"'.format(mode))
     if filename in ['-', None]:
         filehandle = sys.stdin if mode == 'r' else sys.stdout
@@ -132,12 +131,6 @@ def paired_reader(readstream):
             yield i, read2, read1
 
 
-def clean_subseqs(sequence, ksize):
-    for subseq in re.split('[^ACGT]', sequence):
-        if len(subseq) >= ksize:
-            yield subseq
-
-
 def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
     print('##fileformat=VCFv', version, sep='', file=outstream)
     print('##source=', source, sep='', file=outstream)
@@ -153,26 +146,6 @@ def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
           file=outstream)
     print('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO',
           sep='\t', file=outstream)
-
-
-def bwa_align(cmd, seqstring=None):
-    with TemporaryFile() as samfile:
-        bwaproc = Popen(cmd, stdin=PIPE, stdout=samfile, stderr=PIPE,
-                        universal_newlines=True)
-        if seqstring:
-            stdout, stderr = bwaproc.communicate(input=seqstring)
-        else:
-            stdout, stderr = bwaproc.communicate()
-        if bwaproc.returncode != 0:  # pragma: no cover
-            print(stderr, file=sys.stderr)
-            raise KevlarBWAError('problem running BWA')
-        samfile.seek(0)
-        sam = pysam.AlignmentFile(samfile, 'r')
-        for record in sam:
-            if record.is_unmapped:
-                continue
-            seqid = sam.get_reference_name(record.reference_id)
-            yield seqid, record.pos
 
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')

@@ -51,15 +51,12 @@ def autoindex(refrfile, logstream=sys.stderr):
         raise KevlarBWAError('Could not run "bwa index"') from err
 
 
-def bwa_align(cmdargs, seqstring=None):
+def bwa_align(cmdargs, seqstring):
     with TemporaryFile() as samfile:
         bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
                         universal_newlines=True)
-        if seqstring:
-            stdout, stderr = bwaproc.communicate(input=seqstring)
-        else:
-            stdout, stderr = bwaproc.communicate()
-        if bwaproc.returncode != 0:  # pragma: no cover
+        stdout, stderr = bwaproc.communicate(input=seqstring)
+        if bwaproc.returncode != 0:
             print(stderr, file=sys.stderr)
             raise KevlarBWAError('problem running BWA')
         samfile.seek(0)
