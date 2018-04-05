@@ -29,6 +29,7 @@ from kevlar import seqio
 from kevlar import overlap
 from kevlar import sketch
 from kevlar import reference
+from kevlar import cigar
 from kevlar import varmap
 from kevlar import vcf
 from kevlar.mutablestring import MutableString
