@@ -7,20 +7,14 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import kevlar
-from kevlar.alignment import align_both_strands
-from kevlar.vcf import Variant, VariantSNV, VariantIndel
-from kevlar.vcf import VariantFilter as vf
+from itertools import chain
 import re
 import sys
-
-
-patterns = {
-    '^((\d+)([DI]))?(\d+)M((\d+)[DI])?$': ('snv', False),
-    '^((\d+)([DI]))?(\d+)M(\d+)[DI](\d+)M$': ('snv', True),
-    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$': ('indel', False),
-    '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M(\d+)[DI](\d+)M$': ('indel', True),
-}
+import kevlar
+from kevlar.alignment import align_both_strands
+from kevlar.cigar import AlignmentTokenizer
+from kevlar.vcf import Variant, VariantSNV, VariantIndel
+from kevlar.vcf import VariantFilter as vf
 
 
 class VariantMapping(object):
@@ -40,22 +34,19 @@ class VariantMapping(object):
         self.contig = contig
         self.cutout = cutout
         self.score = score
-        self.cigar = cigar
         self.strand = strand
         self.matedist = None
+
+        self.tok = AlignmentTokenizer(self.varseq, self.refrseq, cigar)
+        self.cigar = self.tok._cigar
+
         self.vartype = None
-        self.alnmatch = None
-        for pattern, (vartype, rightcheck) in patterns.items():
-            matchobj = re.match(pattern, cigar)
-            if matchobj:
-                if rightcheck:
-                    idx = 6 if vartype == 'snv' else 9
-                    rightmatchlen = int(matchobj.group(idx))
-                    if rightmatchlen > 5:
-                        continue
-                self.alnmatch = matchobj
-                self.vartype = vartype
-                break
+        snvpattern = '^((\d+)([DI]))?(\d+)M((\d+)[DI])?$'
+        indelpattern = '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$'
+        if re.search(snvpattern, self.cigar):
+            self.vartype = 'snv'
+        elif re.search(indelpattern, self.cigar):
+            self.vartype = 'indel'
 
     @property
     def interval(self):
@@ -89,43 +80,51 @@ class VariantMapping(object):
 
     @property
     def offset(self):
-        if self.alnmatch is None:
+        if self.vartype is None:
             return None
-        if self.alnmatch.group(1) is None:
+        if self.tok.blocks[0].type == 'M':
             return 0
-        return int(self.alnmatch.group(2))
+        return self.tok.blocks[0].length
 
     @property
     def targetshort(self):
-        if self.alnmatch is None:
+        if self.vartype is None:
             return None
-        if self.alnmatch.group(1) is None:
-            return False
-        return self.alnmatch.group(3) == 'I'
+        return self.tok.blocks[0].type == 'I'
 
     @property
-    def leftmatchlen(self):
-        if self.alnmatch is None or self.vartype != 'indel':
+    def match(self):
+        if self.vartype != 'snv':
             return None
-        return int(self.alnmatch.group(4))
+        i = 0 if self.tok.blocks[0].type == 'M' else 1
+        return self.tok.blocks[i]
 
     @property
-    def indellength(self):
-        if self.alnmatch is None or self.vartype != 'indel':
+    def leftflank(self):
+        if self.vartype != 'indel':
             return None
-        return int(self.alnmatch.group(5))
+        i = 0 if self.tok.blocks[0].type == 'M' else 1
+        return self.tok.blocks[i]
+
+    @property
+    def indel(self):
+        if self.vartype != 'indel':
+            return None
+        i = 1 if self.tok.blocks[0].type == 'M' else 2
+        return self.tok.blocks[i]
 
     @property
     def indeltype(self):
-        if self.alnmatch is None or self.vartype != 'indel':
+        if self.vartype != 'indel':
             return None
-        return self.alnmatch.group(6)
+        return self.indel.type
 
     @property
-    def rightmatchlen(self):
-        if self.alnmatch is None or self.vartype != 'indel':
+    def rightflank(self):
+        if self.vartype != 'indel':
             return None
-        return int(self.alnmatch.group(7))
+        i = -1 if self.tok.blocks[-1].type == 'M' else -2
+        return self.tok.blocks[i]
 
     def is_passenger(self, call):
         if call.window is None:
@@ -133,7 +132,7 @@ class VariantMapping(object):
         numikmers = sum([1 for k in self.ikmers if k in call.window])
         return numikmers == 0
 
-    def call_variants(self, ksize, mindist=5, logstream=sys.stderr):
+    def call_variants(self, ksize, mindist=6, logstream=sys.stderr):
         """Attempt to call variants from this contig alignment.
 
         If the alignment CIGAR matches a known pattern, the appropriate caller
@@ -145,32 +144,41 @@ class VariantMapping(object):
         Variant calls with no spanning interesting k-mers are designated as
         "passenger calls" and discarded.
         """
+        offset = 0 if self.targetshort else self.offset
         if self.vartype == 'snv':
-            for call in self.call_snv(ksize, mindist, logstream=logstream):
+            caller = self.call_snv(self.match.query, self.match.target, offset,
+                                   ksize, mindist, logstream=logstream)
+            for call in caller:
                 if self.is_passenger(call):
                     call.filter(vf.PassengerVariant)
                 yield call
         elif self.vartype == 'indel':
-            caller = self.call_insertion
+            indelcaller = self.call_indel(ksize)
+            leftflankcaller = self.call_snv(
+                self.leftflank.query, self.leftflank.target, offset, ksize,
+                mindist, donocall=False
+            )
+            offset += self.leftflank.length
             if self.indeltype == 'D':
-                caller = self.call_deletion
-            for call in caller(ksize):
-                if self.is_passenger(call):
-                    call.filter(vf.PassengerVariant)
-                yield call
-            for call in self.call_indel_snvs(ksize, mindist, logstream):
+                offset += self.indel.length
+            rightflankcaller = self.call_snv(
+                self.rightflank.query, self.rightflank.target, offset, ksize,
+                mindist, donocall=False
+            )
+            for call in chain(leftflankcaller, indelcaller, rightflankcaller):
                 if self.is_passenger(call):
                     call.filter(vf.PassengerVariant)
                 yield call
         else:
             nocall = Variant(
-                self.seqid, self.pos, '.', '.', QN=self.contig.name,
-                QS=self.varseq, CG=self.cigar,
+                self.seqid, self.pos, '.', '.', CONTIG=self.varseq,
+                CIGAR=self.cigar, KSW2=str(self.score)
             )
             nocall.filter(vf.InscrutableCigar)
             yield nocall
 
-    def snv_variant(self, qseq, tseq, mismatches, offset, ksize):
+    def call_snv(self, qseq, tseq, offset, ksize, mindist=6, donocall=True,
+                 logstream=sys.stderr):
         """Call SNVs from the aligned mismatched sequences.
 
         The `qseq` and `tseq` are strings containing query and target sequences
@@ -182,7 +190,21 @@ class VariantMapping(object):
         """
         length = len(qseq)
         assert len(tseq) == length
-        for pos in mismatches:
+        diffs = [i for i in range(length) if tseq[i] != qseq[i]]
+        if mindist:
+            diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
+        if len(diffs) == 0:
+            if donocall:
+                nocall = Variant(
+                    self.seqid, self.cutout.local_to_global(offset), '.', '.',
+                    CONTIG=qseq, CIGAR=self.cigar, KSW2=str(self.score),
+                    IKMERS=len(self.contig.ikmers)
+                )
+                nocall.filter(vf.PerfectMatch)
+                yield nocall
+            return
+
+        for pos in diffs:
             minpos = max(pos - ksize + 1, 0)
             maxpos = min(pos + ksize, length)
             altwindow = qseq[minpos:maxpos]
@@ -194,164 +216,39 @@ class VariantMapping(object):
             globalcoord = self.cutout.local_to_global(localcoord)
             nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
             snv = VariantSNV(
-                self.seqid, globalcoord, refr, alt, VW=altwindow,
-                RW=refrwindow, IK=str(nikmers)
+                self.seqid, globalcoord, refr, alt, CONTIG=qseq,
+                CIGAR=self.cigar, KSW2=str(self.score), IKMERS=str(nikmers),
+                ALTWINDOW=altwindow, REFRWINDOW=refrwindow
             )
             yield snv
 
-    def call_snv(self, ksize, mindist=5, logstream=sys.stderr):
-        """Call SNVs from the given alignment."""
-        length = int(self.alnmatch.group(4))
-        offset = self.offset
-        if self.targetshort:
-            gdnaoffset = 0
-            t = self.refrseq[:length]
-            q = self.varseq[offset:offset+length]
+    def call_indel(self, ksize):
+        if self.indeltype == 'D':
+            refrwindow = self.leftflank.target[-(ksize-1):] \
+                + self.indel.target \
+                + self.rightflank.target[:(ksize-1)]
+            refrallele = self.leftflank.target[-1] + self.indel.target
+            altwindow = self.leftflank.query[-(ksize-1):] \
+                + self.rightflank.query[:(ksize-1)]
+            altallele = self.leftflank.query[-1]
         else:
-            gdnaoffset = offset
-            t = self.refrseq[offset:offset+length]
-            q = self.varseq[:length]
-        diffs = [i for i in range(length) if t[i] != q[i]]
-        if mindist:
-            diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
-        if len(diffs) == 0:
-            nocall = Variant(
-                self.seqid, self.cutout.local_to_global(gdnaoffset), '.', '.',
-                QN=self.contig.name, QS=q
-            )
-            nocall.filter(vf.PerfectMatch)
-            yield nocall
-            return
-
-        for call in self.snv_variant(q, t, diffs, offset, ksize):
-            yield call
-
-    def deletion_allele(self, target, query, ksize):
-        offset = self.offset
-        leftmatch = self.leftmatchlen
-        indellength = self.indellength
-
-        minpos = max(leftmatch - ksize + 1, 0)
-        maxpos = min(leftmatch + ksize - 1, len(query))
-        altwindow = query[minpos:maxpos]
-        minpos += offset
-        maxpos += offset + indellength
-        refrwindow = target[minpos:maxpos]
-
-        refr = target[offset+leftmatch-1:offset+leftmatch+indellength]
-        alt = refr[0]
-        return refr, alt, refrwindow, altwindow
-
-    def insertion_allele(self, target, query, ksize):
-        offset = self.offset
-        leftmatch = self.leftmatchlen
-        indellength = self.indellength
-
-        minpos = max(leftmatch - ksize + 1, 0)
-        maxpos = min(leftmatch + ksize + indellength - 1, len(query))
-        altwindow = query[minpos:maxpos]
-        minpos += offset
-        maxpos += offset - indellength
-        refrwindow = target[minpos:maxpos]
-
-        alt = query[leftmatch-1:leftmatch+indellength]
-        refr = alt[0]
-        return refr, alt, refrwindow, altwindow
-
-    def call_deletion(self, ksize):
-        if self.targetshort:
-            alt, refr, altwindow, refrwindow = self.insertion_allele(
-                self.varseq, self.refrseq, ksize
-            )
-        else:
-            refr, alt, refrwindow, altwindow = self.deletion_allele(
-                self.refrseq, self.varseq, ksize
-            )
-        # This assertion is no longer valid when query is longer than target
-        # assert len(refr) == indellength + 1
-        localcoord = self.leftmatchlen
-        if not self.targetshort:
-            localcoord += self.offset
-        globalcoord = self.cutout.local_to_global(localcoord)
+            refrwindow = self.leftflank.target[-(ksize-1):] \
+                + self.rightflank.target[:(ksize-1)]
+            refrallele = self.leftflank.target[-1]
+            altwindow = self.leftflank.query[-(ksize-1):] \
+                + self.indel.query \
+                + self.rightflank.query[:(ksize-1)]
+            altallele = self.leftflank.query[-1] + self.indel.query
         nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
+        localcoord = 0 if self.targetshort else self.offset
+        localcoord += self.leftflank.length
+        globalcoord = self.cutout.local_to_global(localcoord)
         indel = VariantIndel(
-            self.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-            RW=refrwindow, IK=str(nikmers)
+            self.seqid, globalcoord - 1, refrallele, altallele,
+            CONTIG=self.refrseq, CIGAR=self.cigar, KSW2=str(self.score),
+            IKMERS=str(nikmers), ALTWINDOW=altwindow, REFRWINDOW=refrwindow
         )
         yield indel
-
-    def call_insertion(self, ksize):
-        if self.targetshort:
-            alt, refr, altwindow, refrwindow = self.deletion_allele(
-                self.varseq, self.refrseq, ksize
-            )
-        else:
-            refr, alt, refrwindow, altwindow = self.insertion_allele(
-                self.refrseq, self.varseq, ksize
-            )
-        # This assertion is no longer valid when query is longer than target
-        # assert len(alt) == indellength + 1
-        localcoord = self.leftmatchlen
-        if not self.targetshort:
-            localcoord += self.offset
-        globalcoord = self.cutout.local_to_global(localcoord)
-        nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
-        indel = VariantIndel(
-            self.seqid, globalcoord - 1, refr, alt, VW=altwindow,
-            RW=refrwindow, IK=str(nikmers)
-        )
-        yield indel
-
-    def call_indel_snvs(self, ksize, mindist=5, logstream=sys.stderr):
-        offset = self.offset
-        leftmatch = self.leftmatchlen
-        indellength = self.indellength
-        rightmatch = self.rightmatchlen
-
-        # Left flank of the indel
-        if self.targetshort:
-            gdnaoffset = 0
-            t = self.refrseq[:leftmatch]
-            q = self.varseq[offset:offset+leftmatch]
-        else:
-            gdnaoffset = offset
-            t = self.refrseq[offset:offset+leftmatch]
-            q = self.varseq[:leftmatch]
-        assert len(t) == len(q)
-        diffs = [i for i in range(len(t)) if t[i] != q[i]]
-        if mindist:
-            diffs = trim_terminal_snvs(diffs, leftmatch, mindist, logstream)
-        if len(diffs) > 0:
-            for call in self.snv_variant(q, t, diffs, gdnaoffset, ksize):
-                yield call
-
-        # Right flank of the indel
-        lcrf = leftmatch + indellength  # local coordinate of right flank
-        if self.targetshort:
-            if self.indeltype == 'I':
-                gdnaoffset = leftmatch
-                baseindex = offset + leftmatch + indellength
-                q = self.varseq[baseindex:baseindex+rightmatch]
-            else:
-                gdnaoffset = leftmatch + indellength
-                q = self.varseq[offset+leftmatch:offset+leftmatch+rightmatch]
-            t = self.refrseq[gdnaoffset:gdnaoffset+rightmatch]
-        else:
-            if self.indeltype == 'I':
-                gdnaoffset = offset + leftmatch
-                baseindex = leftmatch + indellength
-                q = self.varseq[baseindex:baseindex+rightmatch]
-            else:
-                gdnaoffset = offset + leftmatch + indellength
-                q = self.varseq[leftmatch:leftmatch+rightmatch]
-            t = self.refrseq[gdnaoffset:gdnaoffset+rightmatch]
-        assert len(t) == len(q)
-        diffs = [i for i in range(len(t)) if t[i] != q[i]]
-        if mindist:
-            diffs = trim_terminal_snvs(diffs, rightmatch, mindist, logstream)
-        if len(diffs) > 0:
-            for call in self.snv_variant(q, t, diffs, gdnaoffset, ksize):
-                yield call
 
 
 def n_ikmers_present(ikmers, window):

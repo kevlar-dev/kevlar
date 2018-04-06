@@ -148,8 +148,8 @@ def generate_mutations(sequences, n=10, ksize=31, weights=DWEIGHTS, rng=None):
             )
         else:
             raise ValueError('unknown mutation type {}'.format(muttype))
-        yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
-                      RW=refrwindow)
+        yield Variant(seqid, position, refrseq, altseq, ALTWINDOW=altwindow,
+                      REFRWINDOW=refrwindow)
 
 
 def pick_inheritance_genotypes(rng):

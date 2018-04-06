@@ -54,9 +54,9 @@ class Variant(object):
         if len(self.info) > 0:
             kvpairs = list()
             for key in sorted(self.info):
-                if key != 'QS':
+                if key != 'CONTIG':
                     kvpairs.append(self.attribute(key, pair=True))
-            queryseq = self.attribute('QS', pair=True)
+            queryseq = self.attribute('CONTIG', pair=True)
             if queryseq:
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)
@@ -91,7 +91,7 @@ class Variant(object):
                                       encompassing all 6-mers that overlap the
                                       variant
         """
-        return self.attribute('VW')
+        return self.attribute('ALTWINDOW')
 
     @property
     def windowlength(self):
@@ -103,7 +103,7 @@ class Variant(object):
     @property
     def refrwindow(self):
         """Similar to `window`, but encapsulating the reference allele."""
-        return self.attribute('RW')
+        return self.attribute('REFRWINDOW')
 
     def annotate(self, key, value):
         if key in self.info:
