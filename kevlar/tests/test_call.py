@@ -107,13 +107,13 @@ def test_variant_kmers():
 
 
 @pytest.mark.parametrize('part,coord,window', [
-    (12, 7027087, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
+    (12, 7027071, 'CAGGGAGAGGCAGCCTGCCCTCAACCTGGGAGAGCACTGTCTAATCAGCTCCCATCTCA'
                   'GG'),
     (16, 25755121, 'TTTTGGTGTTTAGACATGAAGTCCTTGCCCATCGAGTTATGCCTATGTCCTGAATGCT'
                    'ATTGCCTAGG'),
     (23, 59459928, 'CAGGCGTGAGCCACCGCGCCTGGCCAGGAGCATTGTTTGAACCCAGAAGGCGGAGGTT'
                    'GCA'),
-    (192, 28556953, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
+    (192, 28556906, 'AAAATACAAAAATTAGCCAGGCATGGTGGTGCATGCCTGTAATACCAGCCTTTTAGA'
                     'GGC')
 ])
 def test_funky_cigar(part, coord, window):
@@ -130,7 +130,7 @@ def test_funky_cigar(part, coord, window):
     print('DEBUG', calls[0].vcf, file=sys.stderr)
     assert calls[0].seqid == '17'
     assert calls[0].position == coord - 1
-    assert calls[0].info['VW'] == window
+    assert calls[0].info['ALTWINDOW'] == window
 
 
 def test_funky_cigar_deletion():

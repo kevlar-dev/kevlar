@@ -101,18 +101,18 @@ def test_nocall():
     aln = VariantMapping(query, target, 1e6, '25D5M22I5M46D8M13D2M35I')
     assert aln.offset is None
     assert aln.targetshort is None
-    assert aln.leftmatchlen is None
-    assert aln.indellength is None
+    assert aln.match is None
+    assert aln.leftflank is None
+    assert aln.indel is None
     assert aln.indeltype is None
-    assert aln.rightmatchlen is None
+    assert aln.rightflank is None
 
     variants = list(aln.call_variants(21))
     assert len(variants) == 1
     assert variants[0].vcf == (
         'yourchr\t801\t.\t.\t.\t.\tInscrutableCigar\t'
-        'CG=25D5M22I5M46D8M13D2M35I;QN=contig4:cc=1;'
-        'QS=AACTGGTGGGCTCAAGACTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAG'
-        'TGCAAGAAAAT'
+        'CIGAR=25D5M22I5M46D8M13D2M35I;KSW2=1000000.0;CONTIG=AACTGGTGGGCTCAAGA'
+        'CTAAAAAGACTTTTTTGGTGACAAGCAGGGCGGCCTGCCCTTCCTGTAGTGCAAGAAAAT'
     )
 
 
@@ -188,10 +188,10 @@ def test_call_truncated_windows(query, target, vw, rw):
     )
     aln = VariantMapping(contig, cutout)
     if aln.vartype == 'snv':
-        assert aln.leftmatchlen is None
+        assert aln.leftflank is None
         assert aln.indeltype is None
-        assert aln.indellength is None
-        assert aln.rightmatchlen is None
+        assert aln.indel is None
+        assert aln.rightflank is None
 
     calls = list(aln.call_variants(31))
     assert len(calls) == 1
@@ -216,13 +216,13 @@ def test_call_indel_snv():
     calls = list(aln.call_variants(31))
     assert len(calls) == 2
 
-    assert calls[0]._refr == 'CA'
-    assert calls[0]._alt == 'C'
-    assert calls[0]._pos == 501 - 1
+    assert calls[0]._refr == 'C'
+    assert calls[0]._alt == 'A'
+    assert calls[0]._pos == 474 - 1
 
-    assert calls[1]._refr == 'C'
-    assert calls[1]._alt == 'A'
-    assert calls[1]._pos == 474 - 1
+    assert calls[1]._refr == 'CA'
+    assert calls[1]._alt == 'C'
+    assert calls[1]._pos == 501 - 1
 
     calls = list(aln.call_variants(31, mindist=None))
     assert len(calls) == 2
@@ -242,7 +242,7 @@ def test_call_num_interesting_kmers():
     aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 1
-    assert calls[0].attribute('IK') == '1'
+    assert calls[0].attribute('IKMERS') == '1'
 
 
 def test_passenger_screen():
@@ -259,8 +259,8 @@ def test_passenger_screen():
     aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 2
-    assert calls[0].filterstr == 'PASS'
-    assert calls[1].filterstr == 'PassengerVariant'
+    assert calls[0].filterstr == 'PassengerVariant'
+    assert calls[1].filterstr == 'PASS'
 
 
 @pytest.mark.parametrize('query,target,refr,alt', [

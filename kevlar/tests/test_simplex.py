@@ -92,9 +92,12 @@ def test_simplex_trio1(capsys):
 
     out, err = capsys.readouterr()
     testvcf = '\t'.join([
-        'bogus-genome-chr1', '3567', '.', 'A', 'C', '.', 'PASS', 'IK=21;RW=GAA'
-        'GGGCACACCTAACCGCAACATTTGCCGTGGAAGCATAA;VW=GAAGGGCACACCTAACCGCACCATTTG'
-        'CCGTGGAAGCATAA'
+        'bogus-genome-chr1', '3567', '.', 'A', 'C', '.', 'PASS',
+        'ALTWINDOW=GAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAA;CIGAR=25D95M25D;'
+        'IKMERS=21;KSW2=82;'
+        'REFRWINDOW=GAAGGGCACACCTAACCGCAACATTTGCCGTGGAAGCATAA;'
+        'CONTIG=TTGGTGCCACGATCCGGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGC'
+        'ATAAAGGTCATCATTGAGGTGGTTCGTTCCGAT'
     ])
     assert out.strip() == testvcf
 
