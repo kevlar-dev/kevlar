@@ -146,8 +146,8 @@ def test_alac_bigpart():
 
 
 @pytest.mark.parametrize('cc,numrawcalls', [
-    ('26849', [3, 4, 5, 7]),  # Assembly deterministic on OS X, but not Linux
-    ('138713', [14]),
+    # ('26849', [3, 4, 5, 7]),  # Assembly deterministic on OS X, but not Linux
+    ('138713', 19),
 ])
 def test_alac_inf_mate_dist(cc, numrawcalls):
     readfile = data_file('inf-mate-dist/cc{}.augfastq.gz'.format(cc))
@@ -158,21 +158,21 @@ def test_alac_inf_mate_dist(cc, numrawcalls):
                               seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in numrawcalls
+    assert len(calls) == numrawcalls
     filtcalls = [c for c in calls if c.filterstr == 'PASS']
     print(*[c.vcf for c in filtcalls], sep='\n', file=sys.stderr)
     assert len(filtcalls) == 1
 
 
 def test_alac_no_mates():
-    readfile = data_file('inf-mate-dist/cc26849-nomates.augfastq.gz')
-    refrfile = data_file('inf-mate-dist/cc26849.genome.fa.gz')
+    readfile = data_file('inf-mate-dist/cc138713-nomates.augfastq.gz')
+    refrfile = data_file('inf-mate-dist/cc138713.genome.fa.gz')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
-                              seedsize=51, fallback=True)
+                              seedsize=51)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in [3, 4, 5, 7]
+    assert len(calls) == 19
     filtcalls = [c for c in calls if c.filterstr == 'PASS']
-    assert len(filtcalls) == 2
+    assert len(filtcalls) == 17
