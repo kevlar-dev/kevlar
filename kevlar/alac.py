@@ -16,12 +16,12 @@ from kevlar.call import call
 
 
 def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
-         maxdiff=10000, match=1, mismatch=2, gapopen=5, gapextend=0,
+         maxdiff=None, match=1, mismatch=2, gapopen=5, gapextend=0,
          greedy=False, fallback=False, min_ikmers=None, logstream=sys.stderr):
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
-        ccmatch = re.search('kvcc=(\d+)', reads[0].name)
+        ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
@@ -46,7 +46,8 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
         refrstream = kevlar.open(refrfile, 'r')
         seqs = kevlar.seqio.parse_seq_dict(refrstream)
         localizer = localize(contigs, refrfile, seedsize, delta=delta,
-                             refrseqs=seqs, logstream=logstream)
+                             maxdiff=maxdiff, refrseqs=seqs,
+                             logstream=logstream)
         targets = list(localizer)
         if len(targets) == 0:
             continue

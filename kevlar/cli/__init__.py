@@ -65,7 +65,7 @@ subparser_funcs = {
 
 
 def parser():
-    bubbletext = """
+    bubbletext = r'''
 ≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
 ┌ ┐            ┌ ┐
 | |            | |
@@ -74,7 +74,7 @@ def parser():
 |   <  __/\ V /| | (_| | |        reference-free variant discovery in
 |_|\_\___| \_/ |_|\__,_|_|                   large eukaryotic genomes
 ≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
-"""
+'''
     subcommandstr = '", "'.join(sorted(list(mains.keys())))
     parser = argparse.ArgumentParser(
         description=bubbletext,

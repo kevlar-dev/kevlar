@@ -41,8 +41,8 @@ class VariantMapping(object):
         self.cigar = self.tok._cigar
 
         self.vartype = None
-        snvpattern = '^((\d+)([DI]))?(\d+)M((\d+)[DI])?$'
-        indelpattern = '^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$'
+        snvpattern = r'^((\d+)([DI]))?(\d+)M((\d+)[DI])?$'
+        indelpattern = r'^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$'
         if re.search(snvpattern, self.cigar):
             self.vartype = 'snv'
         elif re.search(indelpattern, self.cigar):

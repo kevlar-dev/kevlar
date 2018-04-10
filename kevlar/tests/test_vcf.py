@@ -19,7 +19,7 @@ def test_snv_obj():
     assert snv.vcf == '\t'.join(vcfvalues)
     assert snv.cigar is None
 
-    snv2 = VariantSNV('chr5', 500, 'T', 'G', CG='10D200M10D')
+    snv2 = VariantSNV('chr5', 500, 'T', 'G', CIGAR='10D200M10D')
     assert snv2.cigar == '10D200M10D'
     assert snv2.window is None
 

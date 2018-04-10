@@ -29,7 +29,7 @@ class AlignmentTokenizer(object):
     def _tokenize(self):
         target = self._target
         query = self._query
-        blocks = re.finditer('(\d+)([DIM])', self._origcigar)
+        blocks = re.finditer(r'(\d+)([DIM])', self._origcigar)
         for block in blocks:
             length = int(block.group(1))
             blocktype = block.group(2)

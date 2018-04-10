@@ -103,7 +103,7 @@ class ReferenceCutout(object):
         return self._endpos - self._startpos
 
     def parse_defline(self, defline):
-        match = re.search('(\S+)_(\d+)-(\d+)', defline)
+        match = re.search(r'(\S+)_(\d+)-(\d+)', defline)
         if not match:
             raise KevlarInvalidCutoutDeflineError(defline)
         self._seqid = match.group(1)

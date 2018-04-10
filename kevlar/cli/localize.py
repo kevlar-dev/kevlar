@@ -19,10 +19,6 @@ def subparser(subparsers):
     """
 
     subparser = subparsers.add_parser('localize', description=desc)
-    subparser.add_argument('-x', '--max-diff', type=int, metavar='X',
-                           default=10000, help='span of all k-mer starting '
-                           'positions should not exceed X bp; default is '
-                           '10000 (10 kb)')
     subparser.add_argument('-d', '--delta', type=int, metavar='D',
                            default=50, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
@@ -31,5 +27,10 @@ def subparser(subparsers):
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('-z', '--seed-size', type=int, metavar='Z',
                            default=51, help='seed size; default is 51')
+    subparser.add_argument('-x', '--max-diff', type=int, metavar='X',
+                           default=None, help='split and report multiple '
+                           'reference targets if the distance between two '
+                           'seed matches is > X; by default, X is 3 times the '
+                           'length of the longest contig')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')
