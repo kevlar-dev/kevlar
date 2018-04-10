@@ -144,7 +144,7 @@ def test_pico_stream(capsys):
 
     kvcc_labels = set()
     for line in out.strip().split('\n'):
-        kvcc_match = re.search('(kvcc=\d+)', line)
+        kvcc_match = re.search(r'(kvcc=\d+)', line)
         if kvcc_match:
             kvcc_labels.add(kvcc_match.group(1))
     assert len(kvcc_labels) == 10

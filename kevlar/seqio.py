@@ -76,12 +76,12 @@ def parse_augmented_fastx(instream):
                                        ikmers=list(), mateseqs=list())
         elif line.endswith('#\n'):
             if line.startswith('#mateseq='):
-                mateseq = re.search('^#mateseq=(\S+)#\n$', line).group(1)
+                mateseq = re.search(r'^#mateseq=(\S+)#\n$', line).group(1)
                 record.mateseqs.append(mateseq)
                 continue
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
-            abundances = re.split('\s+', line)
+            abundances = re.split(r'\s+', line)
             kmer = abundances.pop(0)
             abundances = [int(a) for a in abundances]
             ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=offset,
@@ -111,7 +111,7 @@ def afxstream(filelist):
 
 
 def partition_id(readname):
-    partmatch = re.search('kvcc=(\d+)', readname)
+    partmatch = re.search(r'kvcc=(\d+)', readname)
     if not partmatch:
         return None
     return partmatch.group(1)
@@ -147,7 +147,7 @@ def parse_single_partition(readstream, partid):
     """
     for partition in parse_partitioned_reads(readstream):
         readname = partition[0].name
-        partmatch = re.search('kvcc=(\d+)', readname)
+        partmatch = re.search(r'kvcc=(\d+)', readname)
         if not partmatch:
             continue
         if partmatch.group(1) == partid:

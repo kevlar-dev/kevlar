@@ -96,7 +96,7 @@ def test_novel_single_mutation(case, ctrl, capsys):
     for line in out.split('\n'):
         if not line.endswith('#') or line.startswith('#mateseq'):
             continue
-        abundmatch = re.search('(\d+) (\d+) (\d+)#$', line)
+        abundmatch = re.search(r'(\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
         case = int(abundmatch.group(1))
         ctl1 = int(abundmatch.group(2))
@@ -134,7 +134,7 @@ def test_novel_two_cases(capsys):
     for line in out.split('\n'):
         if not line.endswith('#') or line.startswith('#mateseq'):
             continue
-        abundmatch = re.search('(\d+) (\d+) (\d+) (\d+)#$', line)
+        abundmatch = re.search(r'(\d+) (\d+) (\d+) (\d+)#$', line)
         assert abundmatch, line
         case1 = int(abundmatch.group(1))
         case2 = int(abundmatch.group(2))

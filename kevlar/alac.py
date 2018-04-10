@@ -21,7 +21,7 @@ def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
     assembler = assemble_greedy if greedy else assemble_fml_asm
     for partition in pstream:
         reads = list(partition)
-        ccmatch = re.search('kvcc=(\d+)', reads[0].name)
+        ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
