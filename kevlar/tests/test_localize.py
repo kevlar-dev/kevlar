@@ -160,6 +160,24 @@ def test_extract_regions_boundaries():
     assert cutouts[0].defline == 'simple_905-1000'
 
 
+@pytest.mark.parametrize('X,numtargets', [
+    (100000, 1),
+    (10000, 5),
+    (1000, 23),
+    (0, 1),
+    (None, 23),
+])
+def test_maxdiff(X, numtargets):
+    contigstream = kevlar.parse_augmented_fastx(
+        kevlar.open(data_file('maxdiff-contig.augfasta'), 'r')
+    )
+    refrfile = data_file('maxdiff-refr.fa.gz')
+    targeter = kevlar.localize.localize(contigstream, refrfile, seedsize=51,
+                                        delta=50, maxdiff=X)
+    targets = list(targeter)
+    assert len(targets) == numtargets
+
+
 def test_main(capsys):
     contig = data_file('localize-contig.fa')
     refr = data_file('localize-refr.fa')
