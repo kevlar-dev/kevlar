@@ -40,9 +40,12 @@ def subparser(subparsers):
                             'reference by extending beyond the span of all '
                             'k-mer starting positions by D bp')
     local_args.add_argument('-x', '--max-diff', type=int, metavar='X',
-                            default=10000, help='span of all k-mer starting '
-                            'positions should not exceed X bp; default is '
-                            '10000 (10 kb)')
+                            default=None, help='split seed matches into '
+                            'distinct bins if the distance between two seed '
+                            'matches is > X; by default, X is 3 times the '
+                            'length of the longest contig; each bin specifies '
+                            'a reference target sequence against which '
+                            'assembled contigs will be aligned')
 
     score_args = subparser.add_argument_group('Alignment scoring')
     score_args.add_argument('-A', '--match', type=int, default=1, metavar='A',

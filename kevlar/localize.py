@@ -33,7 +33,7 @@ class Localizer(object):
     def add_seed_match(self, seqid, pos):
         self._positions[seqid].append(pos)
 
-    def get_cutouts(self, refrseqs=None, clusterdist=10000):
+    def get_cutouts(self, refrseqs=None, clusterdist=1000):
         for seqid in sorted(self._positions):
             matchpos = sorted(self._positions[seqid])
             assert len(matchpos) > 0
@@ -113,7 +113,7 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
         yield seqid, pos
 
 
-def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=10000,
+def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
              refrseqs=None, logstream=sys.stderr):
     """Wrap the `kevlar localize` task as a generator.
 
@@ -122,8 +122,9 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=10000,
     genome sequence, and the desired seed size.
     """
     autoindex(refrfile, logstream)
+    contigs = list(contigstream)
     localizer = Localizer(seedsize, delta)
-    for seqid, pos in get_exact_matches(contigstream, refrfile, seedsize):
+    for seqid, pos in get_exact_matches(contigs, refrfile, seedsize):
         localizer.add_seed_match(seqid, pos)
     if len(localizer) == 0:
         message = 'WARNING: no reference matches'
@@ -134,6 +135,9 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=10000,
     else:
         refrstream = kevlar.open(refrfile, 'r')
         seqs = kevlar.seqio.parse_seq_dict(refrstream)
+    if maxdiff is None:
+        maxcontiglen = max([len(c.sequence) for c in contigs])
+        maxdiff = maxcontiglen * 3
     for cutout in localizer.get_cutouts(refrseqs=seqs, clusterdist=maxdiff):
         yield cutout
 
