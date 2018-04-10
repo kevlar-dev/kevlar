@@ -68,7 +68,7 @@ class Variant(object):
 
     @property
     def cigar(self):
-        return self.attribute('CG')
+        return self.attribute('CIGAR')
 
     @property
     def window(self):

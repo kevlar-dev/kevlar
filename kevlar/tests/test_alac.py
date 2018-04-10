@@ -176,3 +176,25 @@ def test_alac_no_mates():
     assert len(calls) in [3, 4, 5, 7]
     filtcalls = [c for c in calls if c.filterstr == 'PASS']
     assert len(filtcalls) == 2
+
+
+@pytest.mark.parametrize('vcfposition,X,cigar', [
+    (40692, 10000, '30595D96M6I91M15137D'),
+    (40692, 1000, '37D96M6I91M44D'),
+    (40692, 0, '30595D96M6I91M132906D'),
+    (40692, None, '37D96M6I91M44D'),
+])
+def test_alac_maxdiff(vcfposition, X, cigar):
+    pstream = kevlar.parse_partitioned_reads(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('maxdiff-reads.augfastq.gz'), 'r')
+        )
+    )
+    refrfile = data_file('maxdiff-refr.fa.gz')
+    caller = kevlar.alac.alac(
+        pstream, refrfile, ksize=31, delta=50, seedsize=51, maxdiff=X
+    )
+    calls = list(caller)
+    assert len(calls) == 1
+    assert calls[0].cigar == cigar
+    assert calls[0].position == vcfposition - 1
