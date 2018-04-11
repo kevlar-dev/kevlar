@@ -40,7 +40,8 @@ def mate_distance(mate_positions, gdna_position):
         if seqid != gdnaseq:
             continue
         d = pointdist(pos)
-        distances.append(d)
+        if d < 10000:
+            distances.append(d)
     if len(distances) == 0:
         return float('Inf')
     return sum(distances) / len(distances)
