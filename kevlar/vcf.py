@@ -106,6 +106,7 @@ class Variant(object):
         return self.attribute('REFRWINDOW')
 
     def annotate(self, key, value):
+        value = str(value)
         if key in self.info:
             if isinstance(self.info[key], set):
                 self.info[key].add(value)
