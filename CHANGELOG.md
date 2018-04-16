@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.2] 2018-04-16
+
+### Fixed
+- Much cleaner and more concise calling code from implementing "center aligned" gap alignment strategy, facilitated by new CIGAR tokenizer (see #242).
+- Improved default behavior for `maxdiff` and splitting seed hits into distinct bins (#246).
+
+
 ## [0.4.1] 2018-04-04
 
 ### Fixed
