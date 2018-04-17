@@ -13,7 +13,7 @@ import sys
 import kevlar
 from kevlar.alignment import align_both_strands
 from kevlar.cigar import AlignmentTokenizer
-from kevlar.vcf import Variant, VariantSNV, VariantIndel
+from kevlar.vcf import Variant
 from kevlar.vcf import VariantFilter as vf
 
 
@@ -215,7 +215,7 @@ class VariantMapping(object):
             localcoord = pos + offset
             globalcoord = self.cutout.local_to_global(localcoord)
             nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
-            snv = VariantSNV(
+            snv = Variant(
                 self.seqid, globalcoord, refr, alt, CONTIG=qseq,
                 CIGAR=self.cigar, KSW2=str(self.score), IKMERS=str(nikmers),
                 ALTWINDOW=altwindow, REFRWINDOW=refrwindow
@@ -243,7 +243,7 @@ class VariantMapping(object):
         localcoord = 0 if self.targetshort else self.offset
         localcoord += self.leftflank.length
         globalcoord = self.cutout.local_to_global(localcoord)
-        indel = VariantIndel(
+        indel = Variant(
             self.seqid, globalcoord - 1, refrallele, altallele,
             CONTIG=self.refrseq, CIGAR=self.cigar, KSW2=str(self.score),
             IKMERS=str(nikmers), ALTWINDOW=altwindow, REFRWINDOW=refrwindow

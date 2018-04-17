@@ -39,6 +39,19 @@ class Variant(object):
         for key, value in kwargs.items():
             self.annotate(key, value)
 
+    def __str__(self):
+        if len(self._refr) == 1 and len(self._alt) == 1:
+            return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
+                                                 self._refr, self._alt)
+        else:
+            pos = self._pos + 1
+            if len(self._refr) > len(self._alt):
+                dellength = len(self._refr) - len(self._alt)
+                return '{:s}:{:d}:{:d}D'.format(self._seqid, pos, dellength)
+            else:
+                insertion = self._alt[1:]
+                return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
+
     @property
     def seqid(self):
         return self._seqid
@@ -149,28 +162,3 @@ class Variant(object):
         if not gt:
             return None
         return tuple(gt.split(','))
-
-
-class VariantSNV(Variant):
-    def __str__(self):
-        return '{:s}:{:d}:{:s}->{:s}'.format(self._seqid, self._pos,
-                                             self._refr, self._alt)
-
-
-class VariantIndel(Variant):
-    def __str__(self):
-        """
-        Return a string representation of this variant.
-
-        The reason that 1 is added to the variant position is to offset the
-        nucleotide shared by the reference and alternate alleles. This position
-        is still 0-based (as opposed to VCF's 1-based coordinate system) but
-        does not include the shared nucleotide.
-        """
-        pos = self._pos + 1
-        if len(self._refr) > len(self._alt):
-            dellength = len(self._refr) - len(self._alt)
-            return '{:s}:{:d}:{:d}D'.format(self._seqid, pos, dellength)
-        else:
-            insertion = self._alt[1:]
-            return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
