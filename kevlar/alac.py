@@ -7,58 +7,97 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from itertools import chain
+from queue import Queue
 import re
 import sys
+from threading import Thread
+
 import kevlar
 from kevlar.assemble import assemble_greedy, assemble_fml_asm
 from kevlar.localize import localize
 from kevlar.call import call
 
 
-def alac(pstream, refrfile, ksize=31, bigpart=10000, delta=50, seedsize=31,
-         maxdiff=None, match=1, mismatch=2, gapopen=5, gapextend=0,
-         greedy=False, fallback=False, min_ikmers=None, logstream=sys.stderr):
-    assembler = assemble_greedy if greedy else assemble_fml_asm
+def make_call_from_reads(queue, calls, refrfile, ksize=31, delta=50,
+                         seedsize=31, maxdiff=None, match=1, mismatch=2,
+                         gapopen=5, gapextend=0, greedy=False, fallback=False,
+                         min_ikmers=None, logstream=sys.stderr):
+        while True:
+            reads = queue.get()
+            ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
+            # Assemble partitioned reads into contig(s)
+            assmblr = assemble_greedy if greedy else assemble_fml_asm
+            contigs = list(assmblr(reads, logstream=logstream))
+            if len(contigs) == 0 and assmblr == assemble_fml_asm and fallback:
+                message = 'WARNING: no contig assembled by fermi-lite'
+                if ccmatch:
+                    message += ' for CC={:s}'.format(ccmatch.group(1))
+                message += '; attempting again with homegrown greedy assembler'
+                print('[kevlar::alac]', message, file=logstream)
+                contigs = list(assemble_greedy(reads, logstream=logstream))
+            if min_ikmers is not None:
+                # Apply min ikmer filter if it's set
+                contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
+            if len(contigs) == 0:
+                queue.task_done()
+                continue
+
+            # Identify the genomic region(s) associated with each contig
+            refrstream = kevlar.open(refrfile, 'r')
+            seqs = kevlar.seqio.parse_seq_dict(refrstream)
+            localizer = localize(
+                contigs, refrfile, seedsize, delta=delta, maxdiff=maxdiff,
+                refrseqs=seqs, logstream=logstream
+            )
+            targets = list(localizer)
+            if len(targets) == 0:
+                queue.task_done()
+                continue
+
+            # Align contigs to genomic targets to make variant calls
+            caller = call(targets, contigs, match, mismatch, gapopen,
+                          gapextend, ksize, refrfile)
+            for varcall in caller:
+                if ccmatch:
+                    varcall.annotate('PART', ccmatch.group(1))
+                calls.append(varcall)
+            queue.task_done()
+
+
+def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
+         seedsize=31, maxdiff=None, match=1, mismatch=2, gapopen=5,
+         gapextend=0, greedy=False, fallback=False, min_ikmers=None,
+         logstream=sys.stderr):
+    part_queue = Queue(maxsize=max(12, 3 * threads))
+
+    call_lists = list()
+    for _ in range(threads):
+        thread_calls = list()
+        call_lists.append(thread_calls)
+        worker = Thread(
+            target=make_call_from_reads,
+            args=(
+                part_queue, thread_calls, refrfile, ksize, delta, seedsize,
+                maxdiff, match, mismatch, gapopen, gapextend, greedy, fallback,
+                min_ikmers, logstream,
+            )
+        )
+        worker.setDaemon(True)
+        worker.start()
+
     for partition in pstream:
         reads = list(partition)
-        ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
             continue
+        part_queue.put(reads)
 
-        # Assemble partitioned reads into contig(s)
-        contigs = list(assembler(reads, logstream=logstream))
-        if len(contigs) == 0 and assembler == assemble_fml_asm and fallback:
-            message = 'WARNING: no contig assembled by fermi-lite'
-            if ccmatch:
-                message += ' for CC={:s}'.format(ccmatch.group(1))
-            message += '; attempting again with home-grown greedy assembler'
-            print('[kevlar::alac]', message, file=logstream)
-            contigs = list(assemble_greedy(reads, logstream=logstream))
-        if min_ikmers is not None:
-            # Apply min ikmer filter if it's set
-            contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
-        if len(contigs) == 0:
-            continue
-
-        # Identify the genomic region(s) associated with each contig
-        refrstream = kevlar.open(refrfile, 'r')
-        seqs = kevlar.seqio.parse_seq_dict(refrstream)
-        localizer = localize(contigs, refrfile, seedsize, delta=delta,
-                             maxdiff=maxdiff, refrseqs=seqs,
-                             logstream=logstream)
-        targets = list(localizer)
-        if len(targets) == 0:
-            continue
-
-        # Align contigs to genomic targets to make variant calls
-        caller = call(targets, contigs, match, mismatch, gapopen, gapextend,
-                      ksize, refrfile)
-        for varcall in caller:
-            if ccmatch:
-                varcall.annotate('PART', ccmatch.group(1))
-            yield varcall
+    part_queue.join()
+    allcalls = sorted(chain(*call_lists), key=lambda c: (c.seqid, c.position))
+    for call in allcalls:
+        yield call
 
 
 def main(args):
@@ -69,11 +108,12 @@ def main(args):
         pstream = kevlar.parse_partitioned_reads(readstream)
     outstream = kevlar.open(args.out, 'w')
     workflow = alac(
-        pstream, args.refr, ksize=args.ksize, bigpart=args.bigpart,
-        delta=args.delta, seedsize=args.seed_size, maxdiff=args.max_diff,
-        match=args.match, mismatch=args.mismatch, gapopen=args.open,
-        gapextend=args.extend, greedy=args.greedy, fallback=args.fallback,
-        min_ikmers=args.min_ikmers, logstream=args.logfile
+        pstream, args.refr, threads=args.threads, ksize=args.ksize,
+        bigpart=args.bigpart, delta=args.delta, seedsize=args.seed_size,
+        maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
+        gapopen=args.open, gapextend=args.extend, greedy=args.greedy,
+        fallback=args.fallback, min_ikmers=args.min_ikmers,
+        logstream=args.logfile
     )
 
     for varcall in workflow:

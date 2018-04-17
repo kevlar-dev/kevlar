@@ -67,6 +67,9 @@ def subparser(subparsers):
                            'supported by fewer than `I` interesting k-mers')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+    misc_args.add_argument('-t', '--threads', type=int, default=1, metavar='T',
+                           help='process T partitions at a time using T '
+                           'threads')
     subparser.add_argument('infile', help='partitioned reads in augmented '
                            'Fastq format')
     subparser.add_argument('refr', help='reference genome in Fasta format '
