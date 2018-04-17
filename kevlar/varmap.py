@@ -198,7 +198,7 @@ class VariantMapping(object):
                 nocall = Variant(
                     self.seqid, self.cutout.local_to_global(offset), '.', '.',
                     CONTIG=qseq, CIGAR=self.cigar, KSW2=str(self.score),
-                    IKMERS=len(self.contig.ikmers)
+                    IKMERS=str(len(self.contig.ikmers))
                 )
                 nocall.filter(vf.PerfectMatch)
                 yield nocall
