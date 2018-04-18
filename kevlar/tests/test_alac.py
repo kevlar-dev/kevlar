@@ -80,19 +80,21 @@ def test_ikmer_filter_python():
     Smoke test for filtering based in number of supporting ikmers.
 
     Each partition in the data set has only 2 supporting interesting k-mers.
-    The supplied reference file doesn't exist, so if this test passes it's
-    because the filtering worked correctly and the `localize` code is never
-    invoked.
+    The supplied reference file doesn't actually correspond to the reads, so if
+    this test passes it's because the filtering worked correctly and the
+    `localize` code is never invoked.
     """
     readfile = data_file('min_ikmers_filt.augfastq.gz')
     reads = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     parts = kevlar.parse_partitioned_reads(reads)
-    calls = list(kevlar.alac.alac(parts, 'BOGUSREFR', ksize=31, min_ikmers=3))
+    refr = data_file('localize-refr.fa')
+    calls = list(kevlar.alac.alac(parts, refr, ksize=31, min_ikmers=3))
 
 
 def test_ikmer_filter_cli():
     reads = data_file('min_ikmers_filt.augfastq.gz')
-    arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, 'FAKEREFR']
+    refr = data_file('localize-refr.fa')
+    arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, refr]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
 

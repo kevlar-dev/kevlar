@@ -20,7 +20,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
             mask=None, filtermem=1e6, filterfpr=0.001,
             partminabund=2, partmaxabund=200, dedup=True,
             delta=50, seedsize=31, match=1, mismatch=2, gapopen=5, gapextend=0,
-            fallback=False, ksize=31, logstream=sys.stderr):
+            fallback=False, ksize=31, threads=1, logstream=sys.stderr):
     """
     Execute the simplex germline variant discovery workflow.
 
@@ -72,9 +72,9 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     )
 
     caller = alac(
-        partitioner, refrfile, ksize=ksize, delta=delta, seedsize=seedsize,
-        match=match, mismatch=mismatch, gapopen=gapopen, gapextend=gapextend,
-        fallback=fallback, logstream=logstream
+        partitioner, refrfile, threads=threads, ksize=ksize, delta=delta,
+        seedsize=seedsize, match=match, mismatch=mismatch, gapopen=gapopen,
+        gapextend=gapextend, fallback=fallback, logstream=logstream
     )
 
     for variant in caller:
@@ -110,7 +110,7 @@ def main(args):
         partminabund=args.part_min_abund, partmaxabund=args.part_max_abund,
         dedup=args.dedup, delta=args.delta, seedsize=args.seed_size,
         match=args.match, mismatch=args.mismatch, gapopen=args.open,
-        gapextend=args.extend, logstream=args.logfile
+        gapextend=args.extend, threads=args.threads, logstream=args.logfile
     )
     for variant in workflow:
         print(variant.vcf, file=outstream)

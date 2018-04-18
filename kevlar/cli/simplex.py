@@ -68,7 +68,8 @@ def subparser(subparsers):
     )
     novel_args.add_argument(
         '-t', '--threads', type=int, default=1, metavar='T', help='number of '
-        'threads to use for processing FASTA/FASTQ files; default is 1'
+        'threads to use for processing FASTA/FASTQ files, assembling reads, '
+        'and calling variants; default is 1'
     )
 
     filter_args = subparser.add_argument_group(
