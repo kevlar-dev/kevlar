@@ -12,6 +12,7 @@ from queue import Queue
 import re
 import sys
 from threading import Thread
+from time import sleep
 
 import kevlar
 from kevlar.assemble import assemble_greedy, assemble_fml_asm
@@ -24,6 +25,9 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          gapopen=5, gapextend=0, greedy=False, fallback=False,
                          min_ikmers=None, refrseqs=None, logstream=sys.stderr):
         while True:
+            if queue.empty():
+                sleep(1)
+                continue
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
             cc = ccmatch.group(1) if ccmatch else None
@@ -74,7 +78,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
          seedsize=31, maxdiff=None, match=1, mismatch=2, gapopen=5,
          gapextend=0, greedy=False, fallback=False, min_ikmers=None,
          logstream=sys.stderr):
-    part_queue = Queue(maxsize=max(12, 3 * threads))
+    part_queue = Queue(maxsize=max(32, 12 * threads))
 
     refrstream = kevlar.open(refrfile, 'r')
     refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
