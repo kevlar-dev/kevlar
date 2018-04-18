@@ -19,20 +19,26 @@ from kevlar.localize import localize
 from kevlar.call import call
 
 
-def make_call_from_reads(queue, calls, refrfile, ksize=31, delta=50,
+def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          seedsize=31, maxdiff=None, match=1, mismatch=2,
                          gapopen=5, gapextend=0, greedy=False, fallback=False,
-                         min_ikmers=None, logstream=sys.stderr):
+                         min_ikmers=None, refrseqs=None, logstream=sys.stderr):
         while True:
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
+            cc = ccmatch.group(1) if ccmatch else None
+            message = '[kevlar::alac::make_call_from_reads ({:d})]'.format(idx)
+            message += ' grabbed partition={} from queue,'.format(cc)
+            message += ' queue size now {:d}'.format(queue.qsize())
+            print(message, file=sys.stderr)
+
             # Assemble partitioned reads into contig(s)
             assmblr = assemble_greedy if greedy else assemble_fml_asm
             contigs = list(assmblr(reads, logstream=logstream))
             if len(contigs) == 0 and assmblr == assemble_fml_asm and fallback:
                 message = 'WARNING: no contig assembled by fermi-lite'
-                if ccmatch:
-                    message += ' for CC={:s}'.format(ccmatch.group(1))
+                if cc:
+                    message += ' for partition={:s}'.format(cc)
                 message += '; attempting again with homegrown greedy assembler'
                 print('[kevlar::alac]', message, file=logstream)
                 contigs = list(assemble_greedy(reads, logstream=logstream))
@@ -44,11 +50,9 @@ def make_call_from_reads(queue, calls, refrfile, ksize=31, delta=50,
                 continue
 
             # Identify the genomic region(s) associated with each contig
-            refrstream = kevlar.open(refrfile, 'r')
-            seqs = kevlar.seqio.parse_seq_dict(refrstream)
             localizer = localize(
                 contigs, refrfile, seedsize, delta=delta, maxdiff=maxdiff,
-                refrseqs=seqs, logstream=logstream
+                refrseqs=refrseqs, logstream=logstream
             )
             targets = list(localizer)
             if len(targets) == 0:
@@ -59,8 +63,8 @@ def make_call_from_reads(queue, calls, refrfile, ksize=31, delta=50,
             caller = call(targets, contigs, match, mismatch, gapopen,
                           gapextend, ksize, refrfile)
             for varcall in caller:
-                if ccmatch:
-                    varcall.annotate('PART', ccmatch.group(1))
+                if cc:
+                    varcall.annotate('PART', cc)
                 calls.append(varcall)
             queue.task_done()
 
@@ -71,16 +75,19 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
          logstream=sys.stderr):
     part_queue = Queue(maxsize=max(12, 3 * threads))
 
+    refrstream = kevlar.open(refrfile, 'r')
+    refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
+
     call_lists = list()
-    for _ in range(threads):
+    for idx in range(threads):
         thread_calls = list()
         call_lists.append(thread_calls)
         worker = Thread(
             target=make_call_from_reads,
             args=(
-                part_queue, thread_calls, refrfile, ksize, delta, seedsize,
-                maxdiff, match, mismatch, gapopen, gapextend, greedy, fallback,
-                min_ikmers, logstream,
+                part_queue, idx, thread_calls, refrfile, ksize, delta,
+                seedsize, maxdiff, match, mismatch, gapopen, gapextend, greedy,
+                fallback, min_ikmers, refrseqs, logstream,
             )
         )
         worker.setDaemon(True)
