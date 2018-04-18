@@ -26,7 +26,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          min_ikmers=None, refrseqs=None, logstream=sys.stderr):
         while True:
             if queue.empty():
-                sleep(1)
+                sleep(3)
                 continue
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
@@ -42,7 +42,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             contigs = list(assmblr(reads, logstream=logstream))
             if len(contigs) == 0 and assmblr == assemble_fml_asm and fallback:
                 message = 'WARNING: no contig assembled by fermi-lite'
-                if cc:
+                if cc:  # pragma: no cover
                     message += ' for partition={:s}'.format(cc)
                 message += '; attempting again with homegrown greedy assembler'
                 print('[kevlar::alac]', message, file=logstream)
