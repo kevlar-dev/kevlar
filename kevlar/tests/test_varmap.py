@@ -286,3 +286,23 @@ def test_no_margin(query, target, refr, alt):
     assert calls[0].filterstr == 'PASS'
     assert calls[0]._refr == refr
     assert calls[0]._alt == alt
+
+
+def test_varmap_str():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('wasp-pass.contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('wasp.gdna.fa'), 'r')
+        )
+    )
+    aln = VariantMapping(contig, cutout)
+    alignstr = kevlar.open(data_file('wasp-align.txt'), 'r').read().strip()
+
+    print(str(aln), file=sys.stderr)
+    print(alignstr, file=sys.stderr)
+
+    assert str(aln) == alignstr

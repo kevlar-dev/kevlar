@@ -48,6 +48,28 @@ class VariantMapping(object):
         elif re.search(indelpattern, self.cigar):
             self.vartype = 'indel'
 
+    def __str__(self):
+        fulltarget, fullquery = '', ''
+        for token in self.tok.blocks:
+            fulltarget += token.target if token.target else '-' * token.length
+            fullquery += token.query if token.query else '-' * token.length
+
+        fullmatch = list()
+        for t, q in zip(fulltarget, fullquery):
+            c = '|' if t == q else ' '
+            fullmatch.append(c)
+        fullmatch = ''.join(fullmatch)
+
+        outlines = list()
+        i = 0
+        while i < len(fulltarget):
+            outlines.append(fulltarget[i:i+80])
+            outlines.append(fullmatch[i:i+80])
+            outlines.append(fullquery[i:i+80])
+            outlines.append('')
+            i += 80
+        return '\n'.join(outlines).strip()
+
     @property
     def interval(self):
         return self.cutout.interval
