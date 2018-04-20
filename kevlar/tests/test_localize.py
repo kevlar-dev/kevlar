@@ -163,9 +163,9 @@ def test_extract_regions_boundaries():
 @pytest.mark.parametrize('X,numtargets', [
     (100000, 1),
     (10000, 5),
-    (1000, 23),
+    (1000, 33),
     (0, 1),
-    (None, 23),
+    (None, 33),
 ])
 def test_maxdiff(X, numtargets):
     contigstream = kevlar.parse_augmented_fastx(

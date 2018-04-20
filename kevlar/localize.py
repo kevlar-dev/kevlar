@@ -107,7 +107,9 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
     (seqid, startpos) for each exact match found.
     """
     kmers = unique_seed_string(contigstream, seedsize)
-    cmd = 'bwa mem -k {k} -T {k} {idx} -'.format(k=seedsize, idx=bwaindexfile)
+    cmd = 'bwa mem -k {k} -T {k} -a -c 5000 {idx} -'.format(
+        k=seedsize, idx=bwaindexfile
+    )
     cmdargs = cmd.split(' ')
     for seqid, pos in bwa_align(cmdargs, seqstring=kmers):
         yield seqid, pos
