@@ -147,11 +147,11 @@ def test_alac_bigpart():
     assert len(calls) == 3
 
 
-@pytest.mark.parametrize('cc,numrawcalls,numfiltcalls', [
-    ('26849', 4, 2),
-    ('138713', 14, 1),
+@pytest.mark.parametrize('cc,numcalls,numdist,numinf', [
+    ('26849', 4, 2, 0),
+    ('138713', 14, 14, 10),
 ])
-def test_alac_inf_mate_dist(cc, numrawcalls, numfiltcalls):
+def test_alac_inf_mate_dist(cc, numcalls, numdist, numinf):
     readfile = data_file('inf-mate-dist/cc{}.augfastq.gz'.format(cc))
     refrfile = data_file('inf-mate-dist/cc{}.genome.fa.gz'.format(cc))
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
@@ -159,10 +159,13 @@ def test_alac_inf_mate_dist(cc, numrawcalls, numfiltcalls):
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
                               seedsize=51, fallback=True)
     calls = list(caller)
-    print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) == numrawcalls
-    filtcalls = [c for c in calls if c.filterstr == 'PASS']
-    assert len(filtcalls) == numfiltcalls
+    withdist = [c for c in calls if c.attribute('MD') is not None]
+    infdist = [c for c in calls if c.attribute('MD') == 'inf']
+    print('DEBUG total withdist infdist', len(calls), len(withdist),
+          len(infdist), file=sys.stderr)
+    assert len(calls) == numcalls
+    assert len(withdist) == numdist
+    assert len(infdist) == numinf
 
 
 def test_alac_no_mates():
