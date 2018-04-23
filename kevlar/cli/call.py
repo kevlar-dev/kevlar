@@ -32,6 +32,8 @@ def subparser(subparsers):
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
                            help='show this help message and exit')
+    misc_args.add_argument('-d', '--debug', action='store_true',
+                           help='show debugging output')
     misc_args.add_argument('--refr', metavar='FILE',
                            help='reference genome indexed for BWA search; if '
                            'provided, mates of interesting reads will be used '
