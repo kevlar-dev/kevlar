@@ -147,11 +147,11 @@ def test_alac_bigpart():
     assert len(calls) == 3
 
 
-@pytest.mark.parametrize('cc,numrawcalls', [
-    ('26849', [3, 4, 5, 7]),  # Assembly deterministic on OS X, but not Linux
-    ('138713', [14]),
+@pytest.mark.parametrize('cc,numcalls,numdist,numinf', [
+    ('26849', 4, 2, 0),
+    ('138713', 14, 14, 10),
 ])
-def test_alac_inf_mate_dist(cc, numrawcalls):
+def test_alac_inf_mate_dist(cc, numcalls, numdist, numinf):
     readfile = data_file('inf-mate-dist/cc{}.augfastq.gz'.format(cc))
     refrfile = data_file('inf-mate-dist/cc{}.genome.fa.gz'.format(cc))
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
@@ -159,11 +159,13 @@ def test_alac_inf_mate_dist(cc, numrawcalls):
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
                               seedsize=51, fallback=True)
     calls = list(caller)
-    print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in numrawcalls
-    filtcalls = [c for c in calls if c.filterstr == 'PASS']
-    print(*[c.vcf for c in filtcalls], sep='\n', file=sys.stderr)
-    assert len(filtcalls) == 1
+    withdist = [c for c in calls if c.attribute('MD') is not None]
+    infdist = [c for c in calls if c.attribute('MD') == 'inf']
+    print('DEBUG total withdist infdist', len(calls), len(withdist),
+          len(infdist), file=sys.stderr)
+    assert len(calls) == numcalls
+    assert len(withdist) == numdist
+    assert len(infdist) == numinf
 
 
 def test_alac_no_mates():
@@ -175,16 +177,16 @@ def test_alac_no_mates():
                               seedsize=51, fallback=True)
     calls = list(caller)
     print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) in [3, 4, 5, 7]
+    assert len(calls) == 4
     filtcalls = [c for c in calls if c.filterstr == 'PASS']
-    assert len(filtcalls) == 2
+    assert len(filtcalls) == 3
 
 
 @pytest.mark.parametrize('vcfposition,X,cigar', [
-    (40692, 10000, '30595D96M6I91M15137D'),
-    (40692, 1000, '37D96M6I91M44D'),
-    (40692, 0, '30595D96M6I91M132906D'),
-    (40692, None, '37D96M6I91M44D'),
+    (40692, 10000, '32713D96M6I91M15142D'),
+    (40692, 1000, '50D96M6I91M50D'),
+    (40692, 0, '32713D96M6I91M140025D'),
+    (40692, None, '50D96M6I91M50D'),
 ])
 def test_alac_maxdiff(vcfposition, X, cigar):
     pstream = kevlar.parse_partitioned_reads(
