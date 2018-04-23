@@ -159,8 +159,8 @@ def test_alac_inf_mate_dist(cc, numcalls, numdist, numinf):
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
                               seedsize=51, fallback=True)
     calls = list(caller)
-    withdist = [c for c in calls if c.attribute('MD') is not None]
-    infdist = [c for c in calls if c.attribute('MD') == 'inf']
+    withdist = [c for c in calls if c.attribute('MATEDIST') is not None]
+    infdist = [c for c in calls if c.attribute('MATEDIST') == 'inf']
     print('DEBUG total withdist infdist', len(calls), len(withdist),
           len(infdist), file=sys.stderr)
     assert len(calls) == numcalls

@@ -83,27 +83,9 @@ def dedup(callstream):
 
 
 def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-                gapextend=0, ksize=31, refrfile=None, mindist=5,
+                gapextend=0, ksize=31, refrfile=None, debug=False, mindist=5,
                 logstream=sys.stderr):
-    """Implement the `kevlar call` procedure as a generator function.
-
-    Input is the following.
-    - an iterable containing one or more target sequences from the reference
-      genome, stored as khmer or screed sequence records
-    - an iterable containing one or more contigs assembled by kevlar, stored as
-      khmer or screed sequence records
-    - alignment match score (integer)
-    - alignment mismatch penalty (integer)
-    - alignment gap open penalty (integer)
-    - alignment gap extension penalty (integer)
-    - mates of interesting reads, in case these are needed to distinguish
-      between multiple best hist (filename)
-    - reference file to which mates of interesting reads, if any, will be
-      mapped to disambiguate multi-mapping contigs
-
-    The function yields tuples of target sequence name, query sequence name,
-    and alignment CIGAR string
-    """
+    """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
         for target in sorted(targetlist, key=lambda cutout: cutout.defline):
@@ -122,9 +104,14 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                     aligns2report.sort(key=lambda aln: aln.matedist)
 
         for n, alignment in enumerate(aligns2report):
+            if debug:
+                print('DEBUG ', alignment.cutout.defline, ' vs ',
+                      alignment.contig.name, '\n', str(alignment), sep='',
+                      end='\n\n', file=logstream)
             for varcall in alignment.call_variants(ksize, mindist, logstream):
                 if alignment.matedist:
-                    varcall.annotate('MD', '{:.2f}'.format(alignment.matedist))
+                    avgdistance = '{:.2f}'.format(alignment.matedist)
+                    varcall.annotate('MATEDIST', avgdistance)
                 yield varcall
 
 
@@ -146,7 +133,7 @@ def main(args):
     caller = call(
         targetseqs, queryseqs,
         args.match, args.mismatch, args.open, args.extend,
-        args.ksize, args.refr
+        args.ksize, args.refr, args.debug, 5, args.logfile
     )
     for varcall in caller:
         print(varcall.vcf, file=outstream)

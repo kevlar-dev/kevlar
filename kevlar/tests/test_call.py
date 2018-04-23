@@ -233,3 +233,15 @@ def test_snv_dedup():
     assert len(calls) == 1
     assert calls[0].seqid == 'linkagegroup5'
     assert calls[0].position == 8174 - 1
+
+
+def test_debug_mode(capsys):
+    contig = data_file('wasp-pass.contig.augfasta')
+    gdna = data_file('wasp.gdna.fa')
+    arglist = ['call', '--debug', contig, gdna]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.call.main(args)
+
+    out, err = capsys.readouterr()
+    alignstr = kevlar.open(data_file('wasp-align.txt'), 'r').read().strip()
+    assert alignstr in err
