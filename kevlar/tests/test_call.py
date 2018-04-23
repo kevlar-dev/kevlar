@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 
-from io import StringIO
 import sys
 import khmer
 import kevlar
@@ -245,5 +244,4 @@ def test_debug_mode(capsys):
 
     out, err = capsys.readouterr()
     alignstr = kevlar.open(data_file('wasp-align.txt'), 'r').read().strip()
-
     assert alignstr in err
