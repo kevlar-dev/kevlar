@@ -111,6 +111,8 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                 if alignment.matedist:
                     avgdistance = '{:.2f}'.format(alignment.matedist)
                     varcall.annotate('MATEDIST', avgdistance)
+                    if n > 0:
+                        varcall.filter(vf.MateFail)
                 yield varcall
 
 
