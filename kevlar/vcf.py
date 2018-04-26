@@ -17,6 +17,7 @@ class VariantFilter(Enum):
     InscrutableCigar = 2
     PassengerVariant = 3
     MateFail = 4
+    SpuriousMismatch = 5
 
 
 class Variant(object):
