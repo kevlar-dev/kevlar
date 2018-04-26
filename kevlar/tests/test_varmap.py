@@ -216,13 +216,13 @@ def test_call_indel_snv():
     calls = list(aln.call_variants(31))
     assert len(calls) == 2
 
-    assert calls[0]._refr == 'C'
-    assert calls[0]._alt == 'A'
-    assert calls[0]._pos == 474 - 1
+    assert calls[0]._refr == 'CA'
+    assert calls[0]._alt == 'C'
+    assert calls[0]._pos == 501 - 1
 
-    assert calls[1]._refr == 'CA'
-    assert calls[1]._alt == 'C'
-    assert calls[1]._pos == 501 - 1
+    assert calls[1]._refr == 'C'
+    assert calls[1]._alt == 'A'
+    assert calls[1]._pos == 474 - 1
 
     calls = list(aln.call_variants(31, mindist=None))
     assert len(calls) == 2
@@ -259,8 +259,8 @@ def test_passenger_screen():
     aln = VariantMapping(contig, cutout)
     calls = list(aln.call_variants(29))
     assert len(calls) == 2
-    assert calls[0].filterstr == 'PassengerVariant'
-    assert calls[1].filterstr == 'PASS'
+    assert calls[0].filterstr == 'PASS'
+    assert calls[1].filterstr == 'PassengerVariant'
 
 
 @pytest.mark.parametrize('query,target,refr,alt', [

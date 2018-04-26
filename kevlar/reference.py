@@ -65,12 +65,7 @@ def bwa_align(cmdargs, seqstring):
             if record.is_unmapped:
                 continue
             seqid = sam.get_reference_name(record.reference_id)
-            yield seqid, record.pos
-            if record.has_tag('XA'):
-                alts = record.get_tag('XA').strip(';').split(';')
-                for alt in alts:
-                    seqid, pos = re.search(r'^([^,]+),[+-](\d+)', alt).groups()
-                    yield seqid, int(pos)
+            yield seqid, record.reference_start, record.reference_end
 
 
 class ReferenceCutout(object):

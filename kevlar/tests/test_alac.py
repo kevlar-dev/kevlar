@@ -155,39 +155,33 @@ def test_alac_bigpart():
     assert len(calls) == 3
 
 
-@pytest.mark.parametrize('cc,numcalls,numdist,numinf', [
-    ('26849', 4, 2, 0),
-    ('138713', 14, 14, 10),
-])
-def test_alac_inf_mate_dist(cc, numcalls, numdist, numinf):
-    readfile = data_file('inf-mate-dist/cc{}.augfastq.gz'.format(cc))
-    refrfile = data_file('inf-mate-dist/cc{}.genome.fa.gz'.format(cc))
+def test_alac_matedist():
+    readfile = data_file('mate-dist/cc130.augfastq.gz')
+    refrfile = data_file('mate-dist/cc130.refr.fa.gz')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
-                              seedsize=51, fallback=True)
+                              seedsize=51)
     calls = list(caller)
-    withdist = [c for c in calls if c.attribute('MATEDIST') is not None]
-    infdist = [c for c in calls if c.attribute('MATEDIST') == 'inf']
-    print('DEBUG total withdist infdist', len(calls), len(withdist),
-          len(infdist), file=sys.stderr)
-    assert len(calls) == numcalls
-    assert len(withdist) == numdist
-    assert len(infdist) == numinf
+    assert len(calls) == 3
+    passed = [c for c in calls if c.filterstr == 'PASS']
+    assert len(passed) == 1
+    assert passed[0].position == 127541 - 1
 
 
-def test_alac_no_mates():
-    readfile = data_file('inf-mate-dist/cc26849-nomates.augfastq.gz')
-    refrfile = data_file('inf-mate-dist/cc26849.genome.fa.gz')
+def test_alac_nomates():
+    readfile = data_file('mate-dist/cc130.nomates.augfastq.gz')
+    refrfile = data_file('mate-dist/cc130.refr.fa.gz')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
-                              seedsize=51, fallback=True)
+                              seedsize=51)
     calls = list(caller)
-    print(*[c.vcf for c in calls], sep='\n', file=sys.stderr)
-    assert len(calls) == 4
-    filtcalls = [c for c in calls if c.filterstr == 'PASS']
-    assert len(filtcalls) == 3
+    assert len(calls) == 3
+    passed = [c for c in calls if c.filterstr == 'PASS']
+    assert len(passed) == 3
+    coords = set([c.position for c in passed])
+    assert coords == set([1476 - 1, 115378 - 1, 127541 - 1])
 
 
 @pytest.mark.parametrize('vcfposition,X,cigar', [

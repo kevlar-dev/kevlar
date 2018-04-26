@@ -111,8 +111,8 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
         k=seedsize, idx=bwaindexfile
     )
     cmdargs = cmd.split(' ')
-    for seqid, pos in bwa_align(cmdargs, seqstring=kmers):
-        yield seqid, pos
+    for seqid, start, end in bwa_align(cmdargs, seqstring=kmers):
+        yield seqid, start, end
 
 
 def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
@@ -126,8 +126,8 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
     autoindex(refrfile, logstream)
     contigs = list(contigstream)
     localizer = Localizer(seedsize, delta)
-    for seqid, pos in get_exact_matches(contigs, refrfile, seedsize):
-        localizer.add_seed_match(seqid, pos)
+    for seqid, start, end in get_exact_matches(contigs, refrfile, seedsize):
+        localizer.add_seed_match(seqid, start)
     if len(localizer) == 0:
         message = 'WARNING: no reference matches'
         print('[kevlar::localize]', message, file=logstream)

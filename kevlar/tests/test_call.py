@@ -197,25 +197,33 @@ def test_align_mates():
     refrfile = data_file('minitrio/refr.fa')
     kevlar.reference.autoindex(refrfile)
     positions = list(kevlar.call.align_mates(record, refrfile))
-    seqids = set([seqid for seqid, coord in positions])
-    coords = sorted([coord for seqid, coord in positions])
+    seqids = set([seqid for seqid, start, end in positions])
+    coords = sorted([(start, end) for seqid, start, end in positions])
+    print('DEBUG', coords, file=sys.stderr)
     assert seqids == set(['seq1'])
     assert coords == [
-        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
-        46131, 46146, 46148, 48025, 48035
+        (45332, 45432), (45377, 45477), (45393, 45493), (45428, 45528),
+        (45440, 45540), (45447, 45547), (46092, 46192), (46093, 46193),
+        (46099, 46199), (46127, 46227), (46131, 46231), (46146, 46246),
+        (46148, 46248), (48025, 48125), (48035, 48135),
     ]
 
 
 def test_mate_distance():
     coords = [
-        45332, 45377, 45393, 45428, 45440, 45447, 46092, 46093, 46099, 46127,
-        46131, 46146, 46148, 48025, 48035
+        (45332, 45432), (45377, 45477), (45393, 45493), (45428, 45528),
+        (45440, 45540), (45447, 45547), (46092, 46192), (46093, 46193),
+        (46099, 46199), (46127, 46227), (46131, 46231), (46146, 46246),
+        (46148, 46248), (48025, 48125), (48035, 48135),
     ]
-    positions = [('seq1', c) for c in coords]
+    positions = [('seq1', c[0], c[1]) for c in coords]
     gdna_pos = ('seq1', 45727, 45916)
-    assert kevlar.call.mate_distance(positions, gdna_pos) == 506.46666666666664
+    assert kevlar.call.mate_distance(positions, gdna_pos) == 466.46666666666664
 
-    positions = [('seq2', 4000), ('seq2', 3000), ('seq2', 5100), ('seq3', 1)]
+    positions = [
+        ('seq2', 3900, 4000), ('seq2', 2900, 3000), ('seq2', 5100, 5200),
+        ('seq3', 1, 100)
+    ]
     gdna_pos = ('seq2', 5000, 5500)
     assert kevlar.call.mate_distance(positions, gdna_pos) == 1000.0
 
