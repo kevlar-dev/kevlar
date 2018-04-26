@@ -195,9 +195,6 @@ class VariantMapping(object):
             for call in chain(leftflankcaller, rightflankcaller):
                 if self.is_passenger(call):
                     call.filter(vf.PassengerVariant)
-                if abs(call.position - indel.position) > ksize and \
-                        int(call.attribute('IKMERS')) < ksize / 4:
-                    call.filter(vf.SpuriousMismatch)
                 yield call
         else:
             nocall = Variant(
