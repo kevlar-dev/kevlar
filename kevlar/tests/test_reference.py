@@ -80,6 +80,16 @@ def test_autoindex():
         rmtree(tmpdir)
 
 
+def test_bwa_align_coords():
+    fasta = ('>seq1\nTGACGTGACCCCAAGAAAACACTGCACCCAACTTCTTTCTTTAAGCCTTCGTGTGTG'
+             'CAGGAGGAGGCCAGCCCTGGTTTCAAAATTGTTCCTCAGCATT\n')
+    args = ['bwa', 'mem', data_file('fiveparts-refr.fa.gz'), '-']
+    aligner = kevlar.reference.bwa_align(args, fasta)
+    mappings = list(aligner)
+    assert len(mappings) == 1
+    assert mappings[0] == ('seq1', 50, 150)
+
+
 def test_bwa_failure():
     args = ['bwa', 'mem', data_file('not-a-real-file.fa'), '-']
     with pytest.raises(KevlarBWAError) as e:

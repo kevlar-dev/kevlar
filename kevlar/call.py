@@ -10,6 +10,7 @@
 from collections import defaultdict
 import sys
 import kevlar
+from kevlar.reference import bwa_align
 from kevlar.varmap import VariantMapping
 from kevlar.vcf import VariantFilter as vf
 
@@ -20,26 +21,24 @@ def align_mates(record, refrfile):
         fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
     cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
-    for seqid, pos in kevlar.reference.bwa_align(cmdargs, seqstring=fasta):
-        yield seqid, pos
+    for seqid, start, end in bwa_align(cmdargs, seqstring=fasta):
+        yield seqid, start, end
 
 
 def mate_distance(mate_positions, gdna_position):
     gdnaseq, startpos, endpos = gdna_position
 
-    def pointdist(point):
-        if point < startpos:
-            return startpos - point
-        elif point > endpos:
-            return point - endpos
-        else:
-            return 0
+    def intvldist(istart, iend):
+        x, y = sorted(((startpos, endpos), (istart, iend)))
+        if x[0] <= x[1] < y[0]:
+            return y[0] - x[1]
+        return 0
 
     distances = list()
-    for seqid, pos in mate_positions:
+    for seqid, start, end in mate_positions:
         if seqid != gdnaseq:
             continue
-        d = pointdist(pos)
+        d = intvldist(start, end)
         if d < 10000:
             distances.append(d)
     if len(distances) == 0:
@@ -112,6 +111,8 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                 if alignment.matedist:
                     avgdistance = '{:.2f}'.format(alignment.matedist)
                     varcall.annotate('MATEDIST', avgdistance)
+                    if n > 0:
+                        varcall.filter(vf.MateFail)
                 yield varcall
 
 

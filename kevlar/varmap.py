@@ -176,6 +176,11 @@ class VariantMapping(object):
                 yield call
         elif self.vartype == 'indel':
             indelcaller = self.call_indel(ksize)
+            indel = next(indelcaller)
+            if self.is_passenger(indel):
+                indel.filter(vf.PassengerVariant)
+            yield indel
+
             leftflankcaller = self.call_snv(
                 self.leftflank.query, self.leftflank.target, offset, ksize,
                 mindist, donocall=False
@@ -187,7 +192,7 @@ class VariantMapping(object):
                 self.rightflank.query, self.rightflank.target, offset, ksize,
                 mindist, donocall=False
             )
-            for call in chain(leftflankcaller, indelcaller, rightflankcaller):
+            for call in chain(leftflankcaller, rightflankcaller):
                 if self.is_passenger(call):
                     call.filter(vf.PassengerVariant)
                 yield call
