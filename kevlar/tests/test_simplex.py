@@ -91,6 +91,9 @@ def test_simplex_trio1(capsys):
     kevlar.simplex.main(args)
 
     out, err = capsys.readouterr()
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+
     testvcf = '\t'.join([
         'bogus-genome-chr1', '3567', '.', 'A', 'C', '.', 'PASS',
         'ALTWINDOW=GAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAA;CIGAR=25D95M25D;'
@@ -119,6 +122,8 @@ def test_simplex_minitrio(capsys):
 
     out, err = capsys.readouterr()
     print('DEBUG', out)
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
     assert len(out.strip().split('\n')) == 1
 
 

@@ -7,9 +7,14 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from datetime import date
 from enum import Enum
 import sys
 import kevlar
+
+
+class VariantAnnotationError(ValueError):
+    pass
 
 
 class VariantFilter(Enum):
@@ -17,6 +22,7 @@ class VariantFilter(Enum):
     InscrutableCigar = 2
     PassengerVariant = 3
     MateFail = 4
+    PartitionScore = 5
 
 
 class Variant(object):
@@ -38,6 +44,7 @@ class Variant(object):
         self.info = dict()
         for key, value in kwargs.items():
             self.annotate(key, value)
+        self._sample_data = dict()
 
     def __str__(self):
         if len(self._refr) == 1 and len(self._alt) == 1:
@@ -51,6 +58,16 @@ class Variant(object):
             else:
                 insertion = self._alt[1:]
                 return '{:s}:{:d}:I->{:s}'.format(self._seqid, pos, insertion)
+
+    def format(self, sample, key, value_to_store=None):
+        if value_to_store is None:
+            if sample not in self._sample_data:
+                return None
+            if key not in self._sample_data[sample]:
+                return None
+            return self._sample_data[sample][key]
+        else:
+            self._sample_data[sample][key] = value_to_store
 
     @property
     def seqid(self):
@@ -162,3 +179,140 @@ class Variant(object):
         if not gt:
             return None
         return tuple(gt.split(','))
+
+
+class VCFWriter(object):
+    filter_desc = {
+        VariantFilter.PerfectMatch:
+            'No mismatches between contig with putatively novel content and '
+            'reference target',
+        VariantFilter.InscrutableCigar:
+            'Alignment path/structure cannot be interpreted as a variant',
+        VariantFilter.PassengerVariant:
+            'A mismatch between contig and reference that is not spanned by '
+            'any novel k-mers',
+        VariantFilter.MateFail:
+            'Aligning mate reads suggests a better location for this variant '
+            'call',
+        VariantFilter.PartitionScore:
+            'Expectation is 1 variant call per partition, so all call(s) with '
+            'suboptimal likelihood scores are filtered'
+    }
+
+    info_metadata = {
+        'ALTWINDOW': (
+            'String', '1', 'window containing all k-mers that span the '
+            'variant alternate allele',
+        ),
+        'CIGAR': (
+            'String', '1', 'alignment path',
+        ),
+        'IKMERS': (
+            'Integer', '1', 'number of "interesting" (novel) k-mers spanning '
+            'the variant alternate allele',
+        ),
+        'KSW2': (
+            'Float', '1', 'alignment score',
+        ),
+        'MATEDIST': (
+            'Float', '1', 'average distance of aligned mates of assembled '
+            'novel reads',
+        ),
+        'REFRWINDOW': (
+            'String', '1', 'window containing all k-mers that span the '
+            'variant reference allele',
+        ),
+        'CONTIG': (
+            'String', '1', 'contig assembled from reads containing novel '
+            'k-mers, aligned to reference to call variants',
+        ),
+        'LIKESCORE': (
+            'Float', '1', 'likelihood score of the variant, computed as '
+            '`LLDN - max(LLIH, LLFP)`',
+        ),
+        'LLDN': (
+            'Float', '1', 'log likelihood that the variant is a de novo '
+            'variant',
+        ),
+        'LLIH': (
+            'Float', '1', 'log likelihood that the variant is an inherited '
+            'variant',
+        ),
+        'LLFP': (
+            'Float', '1', 'log likelihood that the variant is a false call',
+        ),
+        'DROPPED': (
+            'Integer', '1', 'number of k-mers dropped from ALTWINDOW for '
+            'likelihood calculations because it is present elsewhere in the '
+            'genome (not novel)',
+        ),
+    }
+
+    format_metadata = {
+        'ALTABUND': (
+            'Integer', '.', 'abundance of alternate allele k-mers',
+        ),
+    }
+
+    def __init__(self, outstream, source='kevlar', refr=None):
+        self._out = outstream
+        self._sample_labels = list()
+        self._source = source
+        self._refr = refr
+
+    def register_sample(self, label):
+        self._sample_labels.append(label)
+
+    def write_header(self):
+        print('##fileformat=VCFv4.2', file=self._out)
+        print('##fileDate', date.today().isoformat(), sep='=', file=self._out)
+        print('##source', self._source, sep='=', file=self._out)
+        if self._refr:
+            print('##reference', self._refr, sep='=', file=self._out)
+        for filt in VariantFilter:
+            filtstr = '##FILTER=<ID={label},Description="{desc}">'.format(
+                label=filt.name, desc=self.filter_desc[filt]
+            )
+            print(filtstr, file=self._out)
+        for label, (itype, inumber, idesc) in self.info_metadata.items():
+            infostr = '##INFO=<ID={label},'.format(label=label)
+            infostr += 'Number={num},'.format(num=inumber)
+            infostr += 'Type={type},'.format(type=itype)
+            infostr += 'Description="{desc}">'.format(desc=idesc)
+            print(infostr, file=self._out)
+        for label, (itype, inumber, idesc) in self.format_metadata.items():
+            fmtstr = '##FORMAT=<ID={label},'.format(label=label)
+            fmtstr += 'Number={num},'.format(num=inumber)
+            fmtstr += 'Type={type},'.format(type=itype)
+            fmtstr += 'Description="{desc}">'.format(desc=idesc)
+            print(fmtstr, file=self._out)
+        print('#', end='', file=self._out)
+        fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+        if len(self._sample_labels) > 0:
+            fields += ['FORMAT'] + self._sample_labels
+        print(*fields, sep='\t', file=self._out)
+
+    def write(self, variant):
+        fmt_fields = list()
+        outfmt = None
+        for sample in self._sample_labels:
+            fmt = list()
+            values = list()
+            for field in ('ALTABUND'):
+                value = variant.format(sample, field)
+                if value:
+                    fmt.append(field)
+                    values.append(value)
+            fmtstr = ':'.join(fmt)
+            if outfmt is None:
+                outfmt = fmtstr
+            else:
+                if outfmt != fmtstr:
+                    msg = 'samples not annotated with the same FORMAT fields'
+                    msg += ' ({:s} vs {:s})'.format(outfmt, fmtstr)
+                    raise VariantAnnotationError(msg)
+            fmt_fields.append(':'.join(values))
+        print(variant.vcf, end='', file=self._out)
+        if len(fmt_fields) > 0:
+            print(outfmt, *format_fields, sep='\t', end='', file=self._out)
+        print('\n', end='', file=self._out)
