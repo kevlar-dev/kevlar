@@ -316,3 +316,50 @@ class VCFWriter(object):
         if len(fmt_fields) > 0:
             print(outfmt, *format_fields, sep='\t', end='', file=self._out)
         print('\n', end='', file=self._out)
+
+
+class VCFReader(object):
+    def __init__(self, instream):
+        self._in = instream
+        self._sample_labels = list()
+
+    def __iter__(self):
+        for line in self._in:
+            if not line.startswith('#CHROM\t'):
+                continue
+            self._save_samples(line)
+            break
+        for line in self._in:
+            if line.startswith('#'):
+                continue
+            fields = line.strip().split('\t')
+            seqid = fields[0]
+            pos = int(fields[1]) - 1
+            refr = fields[3]
+            alt = fields[4]
+            variant = Variant(seqid, pos, refr, alt)
+            for kvp in fields[7].split(';'):
+                for key, values in kvp.split('='):
+                    for value in values.split(','):
+                        variant.annotate(key, value)
+            if len(fields) > 9:
+                fmtkeys = fields[8].split(':')
+                sample_data = fields[9:]
+                if len(sample_data) != len(self._sample_labels):
+                    message = 'sample number mismatch: ' + line
+                    raise VariantAnnotationError(message)
+                for label, data in zip(self._sample_labels, sample_data):
+                    fmtvalues = data.split(':')
+                    if len(fmtkeys) != len(fmtvalues):
+                        message = 'format data mismatch: ' + line
+                        raise VariantAnnotationError(message)
+                    for datakey, datavalue in zip(fmtkeys, fmtvalues):
+                        variant.format(label, datakey, datavalue)
+            yield variant
+
+    def _save_samples(self, line):
+        fields = line.strip().split('\t')
+        assert len(fields) >= 8
+        if len(fields) == 8:
+            return
+        self._sample_labels = fields[9:]
