@@ -302,7 +302,7 @@ class VCFWriter(object):
         for sample in self._sample_labels:
             fmt = list()
             values = list()
-            for field in self.format_metadata.keys():
+            for field in sorted(self.format_metadata.keys()):
                 value = variant.format(sample, field)
                 if value:
                     fmt.append(field)
