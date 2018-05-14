@@ -10,6 +10,7 @@
 import sys
 import pytest
 import kevlar
+from kevlar.tests import data_file
 from kevlar.vcf import Variant
 from kevlar.vcf import VariantFilter as vf
 
@@ -159,3 +160,15 @@ def test_writer_bad_fmt(yrb_writer):
     with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
         yrb_writer.write(v)
     assert 'samples not annotated with the same FORMAT fields' in str(vae)
+
+
+def test_reader():
+    instream = kevlar.open(data_file('five-snvs-with-likelihood.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+    calls = list(reader)
+    assert len(calls) == 5
+    assert calls[1].attribute('PART') == '54'
+    assert calls[3].format('Kid', 'ALTABUND') == (
+        '21,20,20,19,17,19,20,19,18,17,17,17,17,17,17,17,18,19,19,19,18,18,18,'
+        '17,19,18,17,17,17,15,15'
+    )

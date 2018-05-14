@@ -343,9 +343,9 @@ class VCFReader(object):
             alt = fields[4]
             variant = Variant(seqid, pos, refr, alt)
             for kvp in fields[7].split(';'):
-                for key, values in kvp.split('='):
-                    for value in values.split(','):
-                        variant.annotate(key, value)
+                key, values = kvp.split('=')
+                for value in values.split(','):
+                    variant.annotate(key, value)
             if len(fields) > 9:
                 fmtkeys = fields[8].split(':')
                 sample_data = fields[9:]
