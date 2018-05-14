@@ -8,9 +8,20 @@
 # -----------------------------------------------------------------------------
 
 import sys
+import pytest
 import kevlar
 from kevlar.vcf import Variant
 from kevlar.vcf import VariantFilter as vf
+
+
+@pytest.fixture
+def yrb_writer():
+    writer = kevlar.vcf.VCFWriter(sys.stdout, source='py.test')
+    writer.register_sample('NA19238')
+    writer.register_sample('NA19239')
+    writer.register_sample('NA19240')
+    writer.describe_format('GT', 'String', '1', 'Genotype')
+    return writer
 
 
 def test_snv_obj():
@@ -100,13 +111,13 @@ def test_format():
     assert v.format('NA19239', 'GT') is None
 
 
-def test_writer(capsys):
-    writer = kevlar.vcf.VCFWriter(sys.stdout, source='py.test')
-    writer.register_sample('NA19238')
-    writer.register_sample('NA19239')
-    writer.register_sample('NA19240')
-    writer.describe_format('GT', 'String', '1', 'Genotype')
-    writer.write_header()
+def test_writer(yrb_writer, capsys):
+    yrb_writer = kevlar.vcf.VCFWriter(sys.stdout, source='py.test')
+    yrb_writer.register_sample('NA19238')
+    yrb_writer.register_sample('NA19239')
+    yrb_writer.register_sample('NA19240')
+    yrb_writer.describe_format('GT', 'String', '1', 'Genotype')
+    yrb_writer.write_header()
 
     v = Variant('1', 12345, 'G', 'C')
     v.annotate('PART', '42')
@@ -117,7 +128,7 @@ def test_writer(capsys):
     v.format('NA19238', 'ALTABUND', '12,9,8')
     v.format('NA19239', 'ALTABUND', '0,0,0')
     v.format('NA19240', 'ALTABUND', '0,0,0')
-    writer.write(v)
+    yrb_writer.write(v)
 
     out, err = capsys.readouterr()
     print(out)
@@ -135,3 +146,16 @@ def test_writer(capsys):
     assert values[8:12] == [
         'ALTABUND:GT', '12,9,8:0/0', '0,0,0:0/0', '0,0,0:0/1'
     ]
+
+
+def test_writer_bad_fmt(yrb_writer):
+    v = Variant('1', 12345, 'G', 'C')
+    v.annotate('PART', '42')
+    v.annotate('CONTIG', 'A' * 100)
+    v.format('NA19238', 'GT', '0/0')
+    v.format('NA19240', 'GT', '0/1')
+    v.format('NA19239', 'ALTABUND', '0,0,0')
+    v.format('NA19240', 'ALTABUND', '0,0,0')
+    with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
+        yrb_writer.write(v)
+    assert 'samples not annotated with the same FORMAT fields' in str(vae)
