@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import sys
 import kevlar
 from kevlar.vcf import Variant
 from kevlar.vcf import VariantFilter as vf
@@ -72,8 +73,7 @@ def test_filter_field():
 def test_info():
     """Test handling of "info" field attributes.
 
-    Note: this is testing the mechanics of the .annotate() and .attribute()
-    API. The `VW` attribute should not be handled in this way.
+    This tests the mechanics of the .annotate() and .attribute() API.
     """
     v = Variant('1', 12345, 'G', 'C')
     assert v.attribute('VW') is None
@@ -90,3 +90,48 @@ def test_info():
     v.annotate('VW', 'AAAAAAAAA')
     assert v.attribute('VW') == 'AAAAAAAAA,ATGCCCTAG,GATTACA'
     assert v.attribute('VW', pair=True) == 'VW=AAAAAAAAA,ATGCCCTAG,GATTACA'
+
+
+def test_format():
+    v = Variant('1', 12345, 'G', 'C')
+    v.format('NA19238', 'GT', '0/0')
+    assert v.format('NA19238', 'GT') == '0/0'
+    assert v.format('NA19238', 'XYZ') is None
+    assert v.format('NA19239', 'GT') is None
+
+
+def test_writer(capsys):
+    writer = kevlar.vcf.VCFWriter(sys.stdout, source='py.test')
+    writer.register_sample('NA19238')
+    writer.register_sample('NA19239')
+    writer.register_sample('NA19240')
+    writer.describe_format('GT', 'String', '1', 'Genotype')
+    writer.write_header()
+
+    v = Variant('1', 12345, 'G', 'C')
+    v.annotate('PART', '42')
+    v.annotate('CONTIG', 'A' * 100)
+    v.format('NA19238', 'GT', '0/0')
+    v.format('NA19239', 'GT', '0/0')
+    v.format('NA19240', 'GT', '0/1')
+    v.format('NA19238', 'ALTABUND', '12,9,8')
+    v.format('NA19239', 'ALTABUND', '0,0,0')
+    v.format('NA19240', 'ALTABUND', '0,0,0')
+    writer.write(v)
+
+    out, err = capsys.readouterr()
+    print(out)
+
+    outlines = out.strip().split('\n')
+    fmtlines = [l for l in outlines if l.startswith('##FORMAT')]
+    assert len(fmtlines) == 2
+    gtfmt = '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
+    assert gtfmt in fmtlines
+
+    varlines = [l for l in outlines if not l.startswith('#')]
+    assert len(varlines) == 1
+    values = varlines[0].split('\t')
+    assert len(values) == 12
+    assert values[8:12] == [
+        'ALTABUND:GT', '12,9,8:0/0', '0,0,0:0/0', '0,0,0:0/1'
+    ]

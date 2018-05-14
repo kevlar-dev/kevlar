@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import defaultdict
 from datetime import date
 from enum import Enum
 import sys
@@ -44,7 +45,7 @@ class Variant(object):
         self.info = dict()
         for key, value in kwargs.items():
             self.annotate(key, value)
-        self._sample_data = dict()
+        self._sample_data = defaultdict(dict)
 
     def __str__(self):
         if len(self._refr) == 1 and len(self._alt) == 1:
@@ -263,6 +264,9 @@ class VCFWriter(object):
     def register_sample(self, label):
         self._sample_labels.append(label)
 
+    def describe_format(self, label, datatype, datanumber, desc):
+        self.format_metadata[label] = (datatype, datanumber, desc)
+
     def write_header(self):
         print('##fileformat=VCFv4.2', file=self._out)
         print('##fileDate', date.today().isoformat(), sep='=', file=self._out)
@@ -298,7 +302,7 @@ class VCFWriter(object):
         for sample in self._sample_labels:
             fmt = list()
             values = list()
-            for field in ('ALTABUND'):
+            for field in self.format_metadata.keys():
                 value = variant.format(sample, field)
                 if value:
                     fmt.append(field)
@@ -314,7 +318,7 @@ class VCFWriter(object):
             fmt_fields.append(':'.join(values))
         print(variant.vcf, end='', file=self._out)
         if len(fmt_fields) > 0:
-            print(outfmt, *format_fields, sep='\t', end='', file=self._out)
+            print('', outfmt, *fmt_fields, sep='\t', end='', file=self._out)
         print('\n', end='', file=self._out)
 
 
