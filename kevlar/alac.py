@@ -130,5 +130,9 @@ def main(args):
         logstream=args.logfile
     )
 
+    writer = kevlar.vcf.VCFWriter(
+        outstream, source='kevlar::alac', refr=args.refr,
+    )
+    writer.write_header()
     for varcall in workflow:
-        print(varcall.vcf, file=outstream)
+        writer.write(varcall)

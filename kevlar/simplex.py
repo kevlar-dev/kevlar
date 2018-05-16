@@ -112,5 +112,9 @@ def main(args):
         match=args.match, mismatch=args.mismatch, gapopen=args.open,
         gapextend=args.extend, threads=args.threads, logstream=args.logfile
     )
-    for variant in workflow:
-        print(variant.vcf, file=outstream)
+    writer = kevlar.vcf.VCFWriter(
+        outstream, source='kevlar::simplex', refr=args.refr,
+    )
+    writer.write_header()
+    for varcall in workflow:
+        writer.write(varcall)

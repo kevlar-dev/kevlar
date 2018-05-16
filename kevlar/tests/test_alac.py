@@ -23,6 +23,9 @@ def test_pico_4(greedy, capsys):
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
 
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+
     vcf = '\t'.join([
         'seq1', '1175768', '.', 'T', 'C', '.', 'PASS',
         'ALTWINDOW=CCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTTACTTTT;'
@@ -70,6 +73,8 @@ def test_pico_partitioned(capsys):
 
     out, err = capsys.readouterr()
     lines = out.strip().split('\n')
+    assert len(lines) == 33
+    lines = [l for l in lines if not l.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
     assert numnocalls == 2
@@ -135,6 +140,9 @@ def test_alac_single_partition_badlabel(capsys):
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
+
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
     assert out == ''
 
 

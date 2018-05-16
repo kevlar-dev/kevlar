@@ -136,5 +136,9 @@ def main(args):
         args.match, args.mismatch, args.open, args.extend,
         args.ksize, args.refr, args.debug, 5, args.logfile
     )
+    writer = kevlar.vcf.VCFWriter(
+        outstream, source='kevlar::call', refr=args.refr,
+    )
+    writer.write_header()
     for varcall in caller:
-        print(varcall.vcf, file=outstream)
+        writer.write(varcall)
