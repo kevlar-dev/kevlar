@@ -92,3 +92,14 @@ def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001):
             logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
                                      error=error)
     return logsum
+
+
+def likelihood_false(abunds, refrabunds, mean=30.0, error=0.001):
+    assert len(abunds[1]) == len(refrabunds)
+    assert len(abunds[2]) == len(refrabunds)
+    logsum = 0.0
+    for altabunds in abunds:
+        for alt, refr in zip(altabunds, refrabunds):
+            logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
+                                     error=error)
+    return logsum

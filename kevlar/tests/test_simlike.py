@@ -10,7 +10,8 @@
 import khmer
 import kevlar
 from kevlar.tests import data_file
-from kevlar.simlike import get_abundances, abund_log_prob, likelihood_denovo
+from kevlar.simlike import get_abundances, abund_log_prob
+from kevlar.simlike import likelihood_denovo, likelihood_false
 import pytest
 
 
@@ -85,3 +86,14 @@ def test_likelihood_denovo(minitrio):
     )
     assert ndropped == 3
     assert likelihood_denovo(altabund, refrabund) == pytest.approx(-221.90817)
+
+
+def test_likelihood_false(minitrio):
+    kid, mom, dad, ref = minitrio
+    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    altabund, refrabund, ndropped = get_abundances(
+        altseq, refseq, kid, (mom, dad), ref
+    )
+    assert ndropped == 3
+    assert likelihood_false(altabund, refrabund) == pytest.approx(-785.71390)
