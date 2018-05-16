@@ -172,3 +172,15 @@ def test_reader():
         '21,20,20,19,17,19,20,19,18,17,17,17,17,17,17,17,18,19,19,19,18,18,18,'
         '17,19,18,17,17,17,15,15'
     )
+
+
+@pytest.mark.parametrize('filename,errormsg', [
+    ('five-snvs-fmt-mismatch.vcf', 'sample number mismatch'),
+    ('five-snvs-fmtstr-mismatch.vcf', 'format data mismatch'),
+])
+def test_reader_format_mismatch(filename, errormsg):
+    instream = kevlar.open(data_file(filename), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+    with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
+        calls = list(reader)
+    assert errormsg in str(vae)
