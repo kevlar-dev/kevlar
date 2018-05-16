@@ -104,3 +104,18 @@ def test_likelihood_false(miniabund):
 def test_likelihood_inherited(miniabund):
     altabund, refrabund = miniabund
     assert likelihood_inherited(altabund) == pytest.approx(-436.01119)
+
+
+def test_simlike_func(minitrio):
+    kid, mom, dad, ref = minitrio
+    instream = kevlar.open(data_file('minitrio/calls.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+    calculator = kevlar.simlike.simlike(
+        reader, kid, (mom, dad), ref, samplelabels=('Kid', 'Mom', 'Dad')
+    )
+    calls = list(calculator)
+    assert len(calls) == 1
+    call = calls[0]
+    assert float(call.attribute('LLDN')) == pytest.approx(-221.90817)
+    assert call.format('Kid', 'ALTABUND') == ('7,6,6,6,6,6,6,6,6,6,7,9,8,8,9,9'
+                                              ',9,7,7,8,8,8,7,7,7,7,7,7')

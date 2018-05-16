@@ -7,10 +7,12 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import defaultdict
+from math import log
 import sys
+
 import kevlar
 from kevlar.vcf import Variant
-from math import log
 import scipy.stats
 
 
@@ -135,3 +137,71 @@ def likelihood_inherited(abunds, mean=30.0, sd=8.0, error=0.001):
                 maxval = testsum
         logsum += maxval
     return log(15.0 / 11.0) + logsum  # 1 / (11/15)
+
+
+def joinlist(thelist):
+    if len(thelist) == 0:
+        return '.'
+    else:
+        return ','.join([str(v) for v in thelist])
+
+
+def calc_likescore(call, altabund, refrabund, mu, sigma, epsilon):
+    lldn = likelihood_denovo(altabund, refrabund, mean=mu, sd=sigma,
+                             error=epsilon)
+    llfp = likelihood_false(altabund, refrabund, mean=mu, error=epsilon)
+    llih = likelihood_inherited(altabund, mean=mu, sd=sigma, error=epsilon)
+    likescore = lldn - max(llfp, llih)
+    call.annotate('LLDN', '{:.3f}'.format(lldn))
+    call.annotate('LLFP', '{:.3f}'.format(llfp))
+    call.annotate('LLIH', '{:.3f}'.format(llih))
+    call.annotate('LIKESCORE', '{:.3f}'.format(likescore))
+
+
+def annotate_abundances(call, abundances, samplelabels=None):
+    if samplelabels is None:
+        samplelabels = list()
+        for i in range(len(abundances) - 1):
+            samplelabels.append('Control{:d}'.format(i))
+        samplelabels[0] = 'Case'
+
+    for sample, abundlist in zip(samplelabels, abundances):
+        abundstr = joinlist(abundlist)
+        call.format(sample, 'ALTABUND', abundstr)
+
+
+def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
+            casemin=5, samplelabels=None, logstream=sys.stderr):
+    calls_by_partition = defaultdict(list)
+    for call in variants:
+        if len(call.window) < case.ksize():
+            message = 'WARNING: stubbornly refusing to compute likelihood '
+            message += ' for variant-spanning window {:s}'.format(call.window)
+            message += ', shorter than k size {:s}'.format(case.ksize())
+            print(message, file=logstream)
+            call.annotate('LIKESCORE', '-inf')
+            calls_by_partition[call.attribute('PART')].append(call)
+            continue
+        altabund, refrabund, ndropped = get_abundances(
+            call.window, call.refrwindow, case, controls, refr
+        )
+        call.annotate('DROPPED', str(ndropped))
+        abovethresh = [a for a in altabund[0] if a > casemin]
+        if len(abovethresh) == 0:
+            call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
+        calc_likescore(call, altabund, refrabund, mu, sigma, epsilon)
+        annotate_abundances(call, altabund, samplelabels)
+        calls_by_partition[call.attribute('PART')].append(call)
+
+    allcalls = list()
+    for partition, calls in calls_by_partition.items():
+        scores = [float(c.attribute('LIKESCORE')) for c in calls]
+        maxscore = max(scores)
+        for call, score in zip(calls, scores):
+            if score < maxscore:
+                call.filter(kevlar.vcf.VariantFilter.PartitionScore)
+            allcalls.append(call)
+
+    allcalls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
+    for call in allcalls:
+        yield call
