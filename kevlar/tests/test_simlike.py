@@ -11,7 +11,9 @@ import khmer
 import kevlar
 from kevlar.tests import data_file
 from kevlar.simlike import get_abundances, abund_log_prob
-from kevlar.simlike import likelihood_denovo, likelihood_false
+from kevlar.simlike import likelihood_denovo
+from kevlar.simlike import likelihood_false
+from kevlar.simlike import likelihood_inherited
 import pytest
 
 
@@ -26,6 +28,18 @@ def minitrio():
     dad.consume_seqfile(data_file('minitrio/trio-father.fq.gz'))
     ref.consume_seqfile(data_file('minitrio/refr.fa'))
     return kid, mom, dad, ref
+
+
+@pytest.fixture
+def miniabund(minitrio):
+    kid, mom, dad, ref = minitrio
+    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    altabund, refrabund, ndropped = get_abundances(
+        altseq, refseq, kid, (mom, dad), ref
+    )
+    assert ndropped == 3
+    return altabund, refrabund
 
 
 def test_get_abundances(minitrio):
@@ -77,23 +91,16 @@ def test_abund_log_prob():
     assert abund_log_prob(2, 43, mean=47.0, sd=9.3) == pytest.approx(-3.241449)
 
 
-def test_likelihood_denovo(minitrio):
-    kid, mom, dad, ref = minitrio
-    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    altabund, refrabund, ndropped = get_abundances(
-        altseq, refseq, kid, (mom, dad), ref
-    )
-    assert ndropped == 3
+def test_likelihood_denovo(miniabund):
+    altabund, refrabund = miniabund
     assert likelihood_denovo(altabund, refrabund) == pytest.approx(-221.90817)
 
 
-def test_likelihood_false(minitrio):
-    kid, mom, dad, ref = minitrio
-    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    altabund, refrabund, ndropped = get_abundances(
-        altseq, refseq, kid, (mom, dad), ref
-    )
-    assert ndropped == 3
+def test_likelihood_false(miniabund):
+    altabund, refrabund = miniabund
     assert likelihood_false(altabund, refrabund) == pytest.approx(-785.71390)
+
+
+def test_likelihood_inherited(miniabund):
+    altabund, refrabund = miniabund
+    assert likelihood_inherited(altabund) == pytest.approx(-436.01119)

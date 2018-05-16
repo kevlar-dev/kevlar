@@ -103,3 +103,35 @@ def likelihood_false(abunds, refrabunds, mean=30.0, error=0.001):
             logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
                                      error=error)
     return logsum
+
+
+def likelihood_inherited(abunds, mean=30.0, sd=8.0, error=0.001):
+    """Compute the likelihood that a variant is inherited.
+
+    There are 15 valid inheritance scenarios, 11 of which (shown below) result
+    in the proband carrying at least one copy of the alternate allele. Select
+    the one with the highest likelihood.
+
+    The other likelihood calculations are implemented to handle an arbitrary
+    number of controls, but this can only handle trios.
+    """
+    scenarios = [
+        (1, 0, 1), (1, 0, 2),
+        (1, 1, 0), (1, 1, 1), (1, 1, 2),
+        (1, 2, 0), (1, 2, 1),
+        (2, 1, 1), (2, 1, 2),
+        (2, 2, 1), (2, 2, 2),
+    ]
+    logsum = 0.0
+    abundances = zip(abunds[0], abunds[1], abunds[2])
+    for a_c, a_m, a_f in abundances:
+        maxval = None
+        for g_c, g_m, g_f in scenarios:
+            p_c = abund_log_prob(g_c, a_c, mean=mean, sd=sd, error=error)
+            p_m = abund_log_prob(g_m, a_m, mean=mean, sd=sd, error=error)
+            p_f = abund_log_prob(g_f, a_f, mean=mean, sd=sd, error=error)
+            testsum = p_c + p_m + p_f + log(1.0 / 15.0)
+            if maxval is None or testsum > maxval:
+                maxval = testsum
+        logsum += maxval
+    return log(15.0 / 11.0) + logsum  # 1 / (11/15)
