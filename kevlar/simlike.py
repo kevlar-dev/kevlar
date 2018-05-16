@@ -14,29 +14,40 @@ from math import log
 import scipy.stats
 
 
-def get_abundances(sequence, case, controls, refr):
+def get_abundances(altseq, refrseq, case, controls, refr):
     """Create a nested list of k-mer abundances.
 
-    abunds = [
+    abundances = [
         [15, 14, 13, 16, 14, 15, 14, 14],  # k-mer abundances from case/proband
         [0, 0, 1, 0, 2, 10, 0, 0],  # k-mer abundances from parent/control 1
         [0, 1, 1, 0, 1, 0, 2, 0],  # k-mer abundances from parent/control 2
     ]
+    refr_abunds = [1, 1, 2, 1, 4, 2, 1, 1]  # genomic freq of refr allele kmers
     """
-    kmers = case.get_kmers(sequence)
-    valid_kmers = [k for k in kmers if refr.get(k) == 0]
-    ndropped = len(kmers) - len(valid_kmers)
+    altkmers = case.get_kmers(altseq)
+    refrkmers = case.get_kmers(refrseq)
+    if len(altseq) == len(refrseq):
+        valid_alt_kmers = list()
+        refr_abunds = list()
+        for altkmer, refrkmer in zip(altkmers, refrkmers):
+            if refr.get(altkmer) == 0:
+                valid_alt_kmers.append(altkmer)
+                refr_abunds.append(refr.get(refrkmer))
+    else:
+        valid_alt_kmers = [k for k in altkmers if refr.get(k) == 0]
+        refr_abunds = [None] * len(valid_alt_kmers)
+    ndropped = len(altkmers) - len(valid_alt_kmers)
 
     abundances = list()
     for _ in range(len(controls) + 1):
         abundances.append(list())
-    for kmer in valid_kmers:
+    for kmer in valid_alt_kmers:
         abund = case.get(kmer)
         abundances[0].append(abund)
         for control, abundlist in zip(controls, abundances[1:]):
             abund = control.get(kmer)
             abundlist.append(abund)
-    return abundances, ndropped
+    return abundances, refr_abunds, ndropped
 
 
 def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
@@ -65,3 +76,19 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
         return scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
     elif genotype == 2:
         return scipy.stats.norm.logpdf(abundance, mean, sd)
+
+
+def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001):
+    assert len(abunds[1]) == len(refrabunds)
+    assert len(abunds[2]) == len(refrabunds)
+    logsum = 0.0
+
+    # Case
+    for abund in abunds[0]:
+        logsum += abund_log_prob(1, abund, mean=mean, sd=sd)
+    # Controls
+    for altabunds in abunds[1:]:
+        for alt, refr in zip(altabunds, refrabunds):
+            logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
+                                     error=error)
+    return logsum

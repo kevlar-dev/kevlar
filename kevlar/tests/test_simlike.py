@@ -10,31 +10,48 @@
 import khmer
 import kevlar
 from kevlar.tests import data_file
-from kevlar.simlike import get_abundances, abund_log_prob
+from kevlar.simlike import get_abundances, abund_log_prob, likelihood_denovo
 import pytest
 
 
-def test_get_abundances():
+@pytest.fixture
+def minitrio():
     kid = khmer.Counttable(31, 1e6, 4)
     mom = khmer.Counttable(31, 1e6, 4)
     dad = khmer.Counttable(31, 1e6, 4)
-    ref = khmer.Counttable(31, 1e6, 4)
+    ref = khmer.SmallCounttable(31, 125000, 4)
     kid.consume_seqfile(data_file('minitrio/trio-proband.fq.gz'))
     mom.consume_seqfile(data_file('minitrio/trio-mother.fq.gz'))
     dad.consume_seqfile(data_file('minitrio/trio-father.fq.gz'))
     ref.consume_seqfile(data_file('minitrio/refr.fa'))
+    return kid, mom, dad, ref
 
-    window = 'ACTACCCTAACTTTGGAAGACTATCAAAAACCCATTTCTGGGGGTGGAGGGGAGGGAGACA'
-    abund, ndropped = get_abundances(window, kid, (mom, dad), ref)
-    assert ndropped == 0
-    assert abund == [
-        [7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 7, 7, 9, 9, 9, 9, 8, 8, 9, 7, 6, 6, 6,
-         6, 6, 6, 6, 6, 6, 6, 7],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
-         1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-         1, 0, 0, 0, 0, 0, 0, 0],
+
+def test_get_abundances(minitrio):
+    kid, mom, dad, ref = minitrio
+    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    altabund, refrabund, ndropped = get_abundances(
+        altseq, refseq, kid, (mom, dad), ref
+    )
+    assert ndropped == 3
+    assert altabund == [
+        [7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 9, 8, 8, 9, 9, 9, 7, 7, 8, 8, 8, 7,
+         7, 7, 7, 7, 7],
+        [1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0],
     ]
+    assert refrabund == [2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                         1, 1, 1, 1, 2, 1, 1, 1, 1, 1]
+
+    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGAAATTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    altabund, refrabund, ndropped = get_abundances(
+        altseq, refseq, kid, (mom, dad), ref
+    )
+    assert ndropped == 3
+    assert refrabund == [None] * len(altabund[0])
 
 
 def test_abund_log_prob():
@@ -57,3 +74,14 @@ def test_abund_log_prob():
     assert abund_log_prob(2, 29, mean=47.0, sd=9.3) == pytest.approx(-5.0220)
     assert abund_log_prob(2, 37, mean=47.0, sd=9.3) == pytest.approx(-3.727054)
     assert abund_log_prob(2, 43, mean=47.0, sd=9.3) == pytest.approx(-3.241449)
+
+
+def test_likelihood_denovo(minitrio):
+    kid, mom, dad, ref = minitrio
+    altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
+    altabund, refrabund, ndropped = get_abundances(
+        altseq, refseq, kid, (mom, dad), ref
+    )
+    assert ndropped == 3
+    assert likelihood_denovo(altabund, refrabund) == pytest.approx(-221.90817)

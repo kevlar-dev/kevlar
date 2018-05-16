@@ -331,8 +331,13 @@ class VCFReader(object):
         self._sample_labels = list()
 
     def __iter__(self):
+        linepos = self._in.tell()
         for line in self._in:
+            if not line.startswith('#'):
+                self._in.seek(linepos)
+                break
             if not line.startswith('#CHROM\t'):
+                linepos = self._in.tell()
                 continue
             self._save_samples(line)
             break
