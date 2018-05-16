@@ -184,3 +184,31 @@ def test_reader_format_mismatch(filename, errormsg):
     with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
         calls = list(reader)
     assert errormsg in str(vae)
+
+
+def test_vcf_roundtrip(capsys):
+    instream = kevlar.open(data_file('five-snvs-with-likelihood.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+
+    writer = kevlar.vcf.VCFWriter(
+        sys.stdout, source=None,
+        refr='GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz'
+    )
+    writer.register_sample('Kid')
+    writer.register_sample('Mom')
+    writer.register_sample('Dad')
+    writer.describe_format('GT', 'String', '1', 'Genotype')
+    writer.write_header(skipdate=True)
+    calls = list()
+    for call in reader:
+        calls.append(call)
+        writer.write(call)
+
+    out, err = capsys.readouterr()
+    outlines = out.strip().split('\n')
+    reader2 = kevlar.vcf.VCFReader(outlines)
+    calls2 = list(reader2)
+    assert len(calls) == len(calls2)
+    assert [c.position for c in calls] == [c.position for c in calls2]
+    assert [str(c) for c in calls] == [str(c) for c in calls2]
+    assert [c.window for c in calls] == [c.window for c in calls2]

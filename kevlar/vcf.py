@@ -267,10 +267,13 @@ class VCFWriter(object):
     def describe_format(self, label, datatype, datanumber, desc):
         self.format_metadata[label] = (datatype, datanumber, desc)
 
-    def write_header(self):
+    def write_header(self, skipdate=False):
         print('##fileformat=VCFv4.2', file=self._out)
-        print('##fileDate', date.today().isoformat(), sep='=', file=self._out)
-        print('##source', self._source, sep='=', file=self._out)
+        if not skipdate:
+            print('##fileDate', date.today().isoformat(), sep='=',
+                  file=self._out)
+        if self._source:
+            print('##source', self._source, sep='=', file=self._out)
         if self._refr:
             print('##reference', self._refr, sep='=', file=self._out)
         for filt in VariantFilter:

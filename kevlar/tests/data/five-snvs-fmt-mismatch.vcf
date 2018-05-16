@@ -1,5 +1,4 @@
 ##fileformat=VCFv4.2
-##fileDate=2018-05-14
 ##reference=GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
 ##FILTER=<ID=PerfectMatch,Description="No mismatches between contig with putatively novel content and reference target">
 ##FILTER=<ID=InscrutableCigar,Description="Alignment path/structure cannot be interpreted as a variant">
