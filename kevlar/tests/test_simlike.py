@@ -107,6 +107,11 @@ def test_likelihood_inherited(miniabund):
     assert likelihood_inherited(altabund) == pytest.approx(-436.01119)
 
 
+def test_joinlist():
+    assert kevlar.simlike.joinlist([1, 2, 3, 4, 5]) == '1,2,3,4,5'
+    assert kevlar.simlike.joinlist([]) == '.'
+
+
 def test_simlike_main(minitrio):
     kid, mom, dad, ref = minitrio
     instream = kevlar.open(data_file('minitrio/calls.vcf'), 'r')
