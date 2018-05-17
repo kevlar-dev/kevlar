@@ -134,8 +134,8 @@ def test_simlike_main_no_labels(minitrio):
     calculator = kevlar.simlike.simlike(reader, kid, (mom, dad), ref)
     calls = list(calculator)
     assert len(calls) == 1
-    labels = list(calls[0]._sample_data.keys())
-    assert labels == ['Case', 'Control1', 'Control2']
+    labels = set(calls[0]._sample_data.keys())
+    assert labels == set(('Case', 'Control1', 'Control2'))
 
 
 def test_simlike_cli(minitrio, capsys):
