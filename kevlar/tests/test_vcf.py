@@ -166,6 +166,7 @@ def test_reader():
     instream = kevlar.open(data_file('five-snvs-with-likelihood.vcf'), 'r')
     reader = kevlar.vcf.VCFReader(instream)
     calls = list(reader)
+    print(calls)
     assert len(calls) == 5
     assert calls[1].attribute('PART') == '54'
     assert calls[3].format('Kid', 'ALTABUND') == (

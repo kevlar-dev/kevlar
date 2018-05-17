@@ -330,44 +330,49 @@ class VCFReader(object):
         self._in = instream
         self._sample_labels = list()
 
+    def _variant_from_vcf_string(self, vcfstr):
+        fields = vcfstr.strip().split('\t')
+        seqid = fields[0]
+        pos = int(fields[1]) - 1
+        refr = fields[3]
+        alt = fields[4]
+        variant = Variant(seqid, pos, refr, alt)
+        for kvp in fields[7].split(';'):
+            key, values = kvp.split('=')
+            for value in values.split(','):
+                variant.annotate(key, value)
+        if len(fields) > 9:
+            fmtkeys = fields[8].split(':')
+            sample_data = fields[9:]
+            n_ann_samples = len(self._sample_labels)
+            if n_ann_samples > 0 and len(sample_data) != n_ann_samples:
+                message = 'sample number mismatch: ' + vcfstr
+                raise VariantAnnotationError(message)
+            for label, data in zip(self._sample_labels, sample_data):
+                fmtvalues = data.split(':')
+                if len(fmtkeys) != len(fmtvalues):
+                    message = 'format data mismatch: ' + vcfstr
+                    raise VariantAnnotationError(message)
+                for datakey, datavalue in zip(fmtkeys, fmtvalues):
+                    variant.format(label, datakey, datavalue)
+        return variant
+
     def __iter__(self):
-        linepos = self._in.tell()
         for line in self._in:
             if not line.startswith('#'):
-                self._in.seek(linepos)
+                message = 'WARNING: VCF file has no samples annotated'
+                message += ', certain sanity checks disabled'
+                print('[kevlar::vcf]', message, file=sys.stderr)
+                yield self._variant_from_vcf_string(line)
                 break
             if not line.startswith('#CHROM\t'):
-                linepos = self._in.tell()
                 continue
             self._save_samples(line)
             break
         for line in self._in:
             if line.startswith('#'):
                 continue
-            fields = line.strip().split('\t')
-            seqid = fields[0]
-            pos = int(fields[1]) - 1
-            refr = fields[3]
-            alt = fields[4]
-            variant = Variant(seqid, pos, refr, alt)
-            for kvp in fields[7].split(';'):
-                key, values = kvp.split('=')
-                for value in values.split(','):
-                    variant.annotate(key, value)
-            if len(fields) > 9:
-                fmtkeys = fields[8].split(':')
-                sample_data = fields[9:]
-                if len(sample_data) != len(self._sample_labels):
-                    message = 'sample number mismatch: ' + line
-                    raise VariantAnnotationError(message)
-                for label, data in zip(self._sample_labels, sample_data):
-                    fmtvalues = data.split(':')
-                    if len(fmtkeys) != len(fmtvalues):
-                        message = 'format data mismatch: ' + line
-                        raise VariantAnnotationError(message)
-                    for datakey, datavalue in zip(fmtkeys, fmtvalues):
-                        variant.format(label, datakey, datavalue)
-            yield variant
+            yield self._variant_from_vcf_string(line)
 
     def _save_samples(self, line):
         fields = line.strip().split('\t')
