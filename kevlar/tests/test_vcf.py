@@ -95,13 +95,27 @@ def test_info():
     assert v.attribute('VW', pair=True) == 'VW=GATTACA'
 
     v.annotate('VW', 'ATGCCCTAG')
-    assert v.info['VW'] == set(['GATTACA', 'ATGCCCTAG'])
-    assert v.attribute('VW') == 'ATGCCCTAG,GATTACA'
-    assert v.attribute('VW', pair=True) == 'VW=ATGCCCTAG,GATTACA'
+    assert v.info['VW'] == ['GATTACA', 'ATGCCCTAG']
+    assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG']
+    assert v.attribute('VW', string=True) == 'GATTACA,ATGCCCTAG'
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG'
 
     v.annotate('VW', 'AAAAAAAAA')
-    assert v.attribute('VW') == 'AAAAAAAAA,ATGCCCTAG,GATTACA'
-    assert v.attribute('VW', pair=True) == 'VW=AAAAAAAAA,ATGCCCTAG,GATTACA'
+    assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG', 'AAAAAAAAA']
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG,AAAAAAAAA'
+
+    v.annotate('DROPPED', 3)
+    assert v.attribute('DROPPED') == 3
+    assert v.attribute('DROPPED', string=True) == '3'
+
+    v.annotate('DROPPED', 31)
+    assert v.attribute('DROPPED') == [3, 31]
+    assert v.attribute('DROPPED', string=True) == '3,31'
+    assert v.attribute('DROPPED', pair=True) == 'DROPPED=3,31'
+
+    v.annotate('MATEDIST', 432.1234)
+    v.annotate('MATEDIST', 8765.4321)
+    assert v.attribute('MATEDIST', string=True) == '432.123,8765.432'
 
 
 def test_format():

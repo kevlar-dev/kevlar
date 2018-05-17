@@ -18,12 +18,40 @@ class VariantAnnotationError(ValueError):
     pass
 
 
+class KevlarMixedDataTypeError(ValueError):
+    pass
+
+
 class VariantFilter(Enum):
     PerfectMatch = 1
     InscrutableCigar = 2
     PassengerVariant = 3
     MateFail = 4
     PartitionScore = 5
+
+
+class FormattedList(list):
+    """Convenience class for printing lists of various types.
+
+    With VCF we need to store free-form data with various different types. This
+    class helps us project lists of diverse data types to a string
+    representation, even if they are stored in memory as a list of ints or
+    floats.
+    """
+    def __str__(self):
+        types = set([type(v) for v in self])
+        if len(types) == 0:
+            return '.'
+        elif len(types) > 1:
+            message = 'mixed data type: ' + ','.join(sorted(types))
+            raise KevlarMixedDataTypeError(message)
+        else:
+            listtype = next(iter(types))
+            if listtype == float:
+                strlist = ['{:.3f}'.format(v) for v in self]
+            else:
+                strlist = [str(v) for v in self]
+            return ','.join(strlist)
 
 
 class Variant(object):
@@ -42,7 +70,7 @@ class Variant(object):
         self._refr = refr
         self._alt = alt
         self._filters = set()
-        self.info = dict()
+        self.info = defaultdict(FormattedList)
         for key, value in kwargs.items():
             self.annotate(key, value)
         self._sample_data = defaultdict(dict)
@@ -137,28 +165,34 @@ class Variant(object):
         return self.attribute('REFRWINDOW')
 
     def annotate(self, key, value):
-        value = str(value)
-        if key in self.info:
-            if isinstance(self.info[key], set):
-                self.info[key].add(value)
-            else:
-                oldvalue = self.info[key]
-                self.info[key] = set((oldvalue, value))
-        else:
-            self.info[key] = value
+        self.info[key].append(value)
 
-    def attribute(self, key, pair=False):
+    def attribute(self, key, pair=False, string=False):
+        """Query annotated INFO data.
+
+        By default, returns the value in its native type (str, int, float). If
+        there are multiple values annotated for the given key, they are
+        returned as a `FormattedList`.
+
+        Set `string=True` to coerce the value(s) to a string representation.
+
+        Set `pair=True` to retrieve data as a key/value pair string, such as
+        `DROPPED=2` or `SCORES=10,12,18`.
+        """
         if key not in self.info:
             return None
-        value = self.info[key]
-        if isinstance(value, set):
-            value = ','.join(sorted(value))
-        value = value.replace(';', ':')
+        values = self.info[key]
         if pair:
-            keyvaluepair = '{:s}={:s}'.format(key, value)
+            keyvaluepair = '{:s}={:s}'.format(key, str(values))
             return keyvaluepair
         else:
-            return value
+            if string:
+                return str(values)
+            else:
+                if len(values) == 1:
+                    return values[0]
+                else:
+                    return values
 
     def filter(self, filtertype):
         if not isinstance(filtertype, VariantFilter):

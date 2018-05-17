@@ -130,7 +130,7 @@ def test_funky_cigar(part, coord, window):
     print('DEBUG', calls[0].vcf, file=sys.stderr)
     assert calls[0].seqid == '17'
     assert calls[0].position == coord - 1
-    assert calls[0].info['ALTWINDOW'] == window
+    assert calls[0].attribute('ALTWINDOW') == window
 
 
 def test_funky_cigar_deletion():
