@@ -25,6 +25,7 @@ from . import localize
 from . import call
 from . import alac
 from . import simplex
+from . import simlike
 from . import split
 
 mains = {
@@ -42,6 +43,7 @@ mains = {
     'call': kevlar.call.main,
     'alac': kevlar.alac.main,
     'simplex': kevlar.simplex.main,
+    'simlike': kevlar.simlike.main,
     'split': kevlar.split.main,
 }
 
@@ -60,6 +62,7 @@ subparser_funcs = {
     'call': call.subparser,
     'alac': alac.subparser,
     'simplex': simplex.subparser,
+    'simlike': simlike.subparser,
     'split': split.subparser,
 }
 
