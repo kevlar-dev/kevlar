@@ -17,6 +17,10 @@ import khmer
 import scipy.stats
 
 
+class KevlarSampleLabelingError(ValueError):
+    pass
+
+
 def get_abundances(altseq, refrseq, case, controls, refr):
     """Create a nested list of k-mer abundances.
 
@@ -159,13 +163,15 @@ def calc_likescore(call, altabund, refrabund, mu, sigma, epsilon):
     call.annotate('LIKESCORE', '{:.3f}'.format(likescore))
 
 
-def annotate_abundances(call, abundances, samplelabels=None):
-    if samplelabels is None:
-        samplelabels = list()
-        for i in range(len(abundances) - 1):
-            samplelabels.append('Control{:d}'.format(i))
-        samplelabels[0] = 'Case'
+def default_sample_labels(nsamples):
+    samples = list()
+    for i in range(nsamples):
+        samples.append('Control{:d}'.format(i))
+    samples[0] = 'Case'
+    return samples
 
+
+def annotate_abundances(call, abundances, samplelabels):
     for sample, abundlist in zip(samplelabels, abundances):
         abundstr = joinlist(abundlist)
         call.format(sample, 'ALTABUND', abundstr)
@@ -174,6 +180,8 @@ def annotate_abundances(call, abundances, samplelabels=None):
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             casemin=5, samplelabels=None, logstream=sys.stderr):
     calls_by_partition = defaultdict(list)
+    if samplelabels is None:
+        samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
         if len(call.window) < case.ksize():
             message = 'WARNING: stubbornly refusing to compute likelihood '
@@ -209,13 +217,15 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
 
 def main(args):
-    nlabels = len(args.sample_labels) if args.sample_labels else None
     nsamples = len(args.controls) + 1
-    if nlabels and nlabels != nsamples:
-        message = 'ERROR: provided {:d} labels'.format(nlabels)
-        message += ' but {:d} samples'.format(nsamples)
-        print('[kevlar::simlike]', message, file=args.logfile)
-        exit(1)
+    if args.sample_labels:
+        nlabels = len(args.sample_labels)
+        if nlabels and nlabels != nsamples:
+            message = 'provided {:d} labels'.format(nlabels)
+            message += ' but {:d} samples'.format(nsamples)
+            raise KevlarSampleLabelingError(message)
+    else:
+        args.sample_labels = default_sample_labels(nsamples)
 
     case = khmer.Counttable.load(args.case)
     controls = [khmer.Counttable.load(c) for c in args.controls]
@@ -225,9 +235,11 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     reader = kevlar.vcf.VCFReader(instream)
     writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::simlike')
-    if args.sample_labels:
-        for label in args.sample_labels:
-            writer.register_sample(label)
+
+    if not args.sample_labels:
+        args.sample_labels = default_sample_labels(nsamples)
+    for label in args.sample_labels:
+        writer.register_sample(label)
     writer.write_header()
 
     calculator = simlike(

@@ -127,6 +127,17 @@ def test_simlike_main(minitrio):
                                               ',9,7,7,8,8,8,7,7,7,7,7,7')
 
 
+def test_simlike_main_no_labels(minitrio):
+    kid, mom, dad, ref = minitrio
+    instream = kevlar.open(data_file('minitrio/calls.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+    calculator = kevlar.simlike.simlike(reader, kid, (mom, dad), ref)
+    calls = list(calculator)
+    assert len(calls) == 1
+    labels = list(calls[0]._sample_data.keys())
+    assert labels == ['Case', 'Control1', 'Control2']
+
+
 def test_simlike_cli(minitrio, capsys):
     kid, mom, dad, ref = minitrio
     with NamedTemporaryFile(suffix='.ct') as kidct, \
@@ -152,3 +163,16 @@ def test_simlike_cli(minitrio, capsys):
     assert 'FORMAT\tProband\tMother\tFather\n' in out
     assert 'LIKESCORE=214.103' in out
     assert 'LLDN=-221.908;LLFP=-785.714;LLIH=-436.011' in out
+
+
+def test_simlike_cli_bad_labels():
+    arglist = [
+        'simlike', '--case', 'kid.ct',
+        '--controls', 'mom.ct', 'dad.ct',
+        '--sample-labels', 'Proband', 'Mother', 'Father', 'Sibling',
+        '--refr', 'refr.sct', data_file('minitrio/calls.vcf')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    with pytest.raises(kevlar.simlike.KevlarSampleLabelingError) as sle:
+        kevlar.simlike.main(args)
+    assert 'provided 4 labels but 3 samples' in str(sle)
