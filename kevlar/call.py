@@ -109,8 +109,7 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                       end='\n\n', file=logstream)
             for varcall in alignment.call_variants(ksize, mindist, logstream):
                 if alignment.matedist:
-                    avgdistance = '{:.2f}'.format(alignment.matedist)
-                    varcall.annotate('MATEDIST', avgdistance)
+                    varcall.annotate('MATEDIST', alignment.matedist)
                     if n > 0:
                         varcall.filter(vf.MateFail)
                 yield varcall

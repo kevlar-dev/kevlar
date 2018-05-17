@@ -117,6 +117,9 @@ def test_info():
     v.annotate('MATEDIST', 8765.4321)
     assert v.attribute('MATEDIST', string=True) == '432.123,8765.432'
 
+    v.annotate('LLIH', -436.0111857750478)
+    assert v.attribute('LLIH', pair=True) == 'LLIH=-436.011'
+
 
 def test_format():
     v = Variant('1', 12345, 'G', 'C')

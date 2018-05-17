@@ -12,6 +12,7 @@ from datetime import date
 from enum import Enum
 import sys
 import kevlar
+from numpy import float64
 
 
 class VariantAnnotationError(ValueError):
@@ -47,7 +48,7 @@ class FormattedList(list):
             raise KevlarMixedDataTypeError(message)
         else:
             listtype = next(iter(types))
-            if listtype == float:
+            if listtype in (float, float64):
                 strlist = ['{:.3f}'.format(v) for v in self]
             else:
                 strlist = [str(v) for v in self]
