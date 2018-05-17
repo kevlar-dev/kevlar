@@ -236,8 +236,6 @@ def main(args):
     reader = kevlar.vcf.VCFReader(instream)
     writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::simlike')
 
-    if not args.sample_labels:
-        args.sample_labels = default_sample_labels(nsamples)
     for label in args.sample_labels:
         writer.register_sample(label)
     writer.write_header()

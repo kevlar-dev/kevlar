@@ -138,7 +138,17 @@ def test_simlike_main_no_labels(minitrio):
     assert labels == set(('Case', 'Control1', 'Control2'))
 
 
-def test_simlike_cli(minitrio, capsys):
+@pytest.mark.parametrize('fmtstr,sampleargs', [
+    (
+        'FORMAT\tProband\tMother\tFather\n',
+        ['--sample-labels', 'Proband', 'Mother', 'Father'],
+    ),
+    (
+        'FORMAT\tCase\tControl1\tControl2\n',
+        [],
+    ),
+])
+def test_simlike_cli(fmtstr, sampleargs, minitrio, capsys):
     kid, mom, dad, ref = minitrio
     with NamedTemporaryFile(suffix='.ct') as kidct, \
             NamedTemporaryFile(suffix='.ct') as momct, \
@@ -151,8 +161,7 @@ def test_simlike_cli(minitrio, capsys):
 
         arglist = [
             'simlike', '--case', kidct.name,
-            '--controls', momct.name, dadct.name,
-            '--sample-labels', 'Proband', 'Mother', 'Father',
+            '--controls', momct.name, dadct.name, *sampleargs,
             '--refr', refrsct.name, data_file('minitrio/calls.vcf')
         ]
         print(arglist)
@@ -160,7 +169,7 @@ def test_simlike_cli(minitrio, capsys):
         kevlar.simlike.main(args)
 
     out, err = capsys.readouterr()
-    assert 'FORMAT\tProband\tMother\tFather\n' in out
+    assert fmtstr in out
     assert 'LIKESCORE=214.103' in out
     assert 'LLDN=-221.908;LLFP=-785.714;LLIH=-436.011' in out
 
