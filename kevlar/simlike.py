@@ -13,6 +13,7 @@ import sys
 
 import kevlar
 from kevlar.vcf import Variant
+import khmer
 import scipy.stats
 
 
@@ -205,3 +206,34 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
     allcalls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
     for call in allcalls:
         yield call
+
+
+def main(args):
+    nlabels = len(args.sample_labels) if args.sample_labels else None
+    nsamples = len(args.controls) + 1
+    if nlabels and nlabels != nsamples:
+        message = 'ERROR: provided {:d} labels'.format(nlabels)
+        message += ' but {:d} samples'.format(nsamples)
+        print('[kevlar::simlike]', message, file=args.logfile)
+        exit(1)
+
+    case = khmer.Counttable.load(args.case)
+    controls = [khmer.Counttable.load(c) for c in args.controls]
+    refr = khmer.SmallCounttable.load(args.refr)
+
+    instream = kevlar.open(args.vcf, 'r')
+    outstream = kevlar.open(args.out, 'w')
+    reader = kevlar.vcf.VCFReader(instream)
+    writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::simlike')
+    if args.sample_labels:
+        for label in args.sample_labels:
+            writer.register_sample(label)
+    writer.write_header()
+
+    calculator = simlike(
+        reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
+        epsilon=args.epsilon, casemin=args.case_min,
+        samplelabels=args.sample_labels, logstream=args.logfile,
+    )
+    for call in calculator:
+        writer.write(call)
