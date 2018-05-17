@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from tempfile import NamedTemporaryFile
 import khmer
 import kevlar
 from kevlar.tests import data_file
@@ -119,3 +120,30 @@ def test_simlike_main(minitrio):
     assert float(call.attribute('LLDN')) == pytest.approx(-221.90817)
     assert call.format('Kid', 'ALTABUND') == ('7,6,6,6,6,6,6,6,6,6,7,9,8,8,9,9'
                                               ',9,7,7,8,8,8,7,7,7,7,7,7')
+
+
+def test_simlike_cli(minitrio, capsys):
+    kid, mom, dad, ref = minitrio
+    with NamedTemporaryFile(suffix='.ct') as kidct, \
+            NamedTemporaryFile(suffix='.ct') as momct, \
+            NamedTemporaryFile(suffix='.ct') as dadct, \
+            NamedTemporaryFile(suffix='.sct') as refrsct:
+        kid.save(kidct.name)
+        mom.save(momct.name)
+        dad.save(dadct.name)
+        ref.save(refrsct.name)
+
+        arglist = [
+            'simlike', '--case', kidct.name,
+            '--controls', momct.name, dadct.name,
+            '--sample-labels', 'Proband', 'Mother', 'Father',
+            '--refr', refrsct.name, data_file('minitrio/calls.vcf')
+        ]
+        print(arglist)
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.simlike.main(args)
+
+    out, err = capsys.readouterr()
+    assert 'FORMAT\tProband\tMother\tFather\n' in out
+    assert 'LIKESCORE=214.103' in out
+    assert 'LLDN=-221.908;LLFP=-785.714;LLIH=-436.011' in out

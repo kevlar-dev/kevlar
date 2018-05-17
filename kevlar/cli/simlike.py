@@ -27,7 +27,7 @@ def subparser(subparsers):
                            'default is 8.0')
     subparser.add_argument('--epsilon', metavar='ε', type=float, default=0.001,
                            help='Error rate; default is 0.001')
-    subparser.add_argument('-o', '--out', metavar='OUT', default=sys.stdout,
+    subparser.add_argument('-o', '--out', metavar='OUT', default='-',
                            help='output file; default is terminal (standard '
                            'output)')
     subparser.add_argument('--case-min', metavar='Y', type=int, default=5,
