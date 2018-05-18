@@ -44,7 +44,8 @@ class FormattedList(list):
         if len(types) == 0:
             return '.'
         elif len(types) > 1:
-            message = 'mixed data type: ' + ','.join(sorted(types))
+            typelist = sorted([str(t) for t in types])
+            message = 'mixed data type: ' + ','.join(typelist)
             raise KevlarMixedDataTypeError(message)
         else:
             listtype = next(iter(types))

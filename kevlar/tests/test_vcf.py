@@ -11,7 +11,7 @@ import sys
 import pytest
 import kevlar
 from kevlar.tests import data_file
-from kevlar.vcf import Variant
+from kevlar.vcf import Variant, FormattedList
 from kevlar.vcf import VariantFilter as vf
 
 
@@ -85,8 +85,19 @@ def test_filter_field():
 def test_info():
     """Test handling of "info" field attributes.
 
-    This tests the mechanics of the .annotate() and .attribute() API.
+    This tests the mechanics of the .annotate() and .attribute() API, and the
+    FormattedList class underpinning it.
     """
+    values = FormattedList()
+    assert str(values) == '.'
+    values.append(42)
+    assert str(values) == '42'
+    values.append(1776)
+    assert str(values) == '42,1776'
+    values.append('B0gU$')
+    with pytest.raises(kevlar.vcf.KevlarMixedDataTypeError):
+        str(values)
+
     v = Variant('1', 12345, 'G', 'C')
     assert v.attribute('VW') is None
 
