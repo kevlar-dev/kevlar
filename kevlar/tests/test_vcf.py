@@ -11,7 +11,7 @@ import sys
 import pytest
 import kevlar
 from kevlar.tests import data_file
-from kevlar.vcf import Variant
+from kevlar.vcf import Variant, FormattedList
 from kevlar.vcf import VariantFilter as vf
 
 
@@ -85,8 +85,19 @@ def test_filter_field():
 def test_info():
     """Test handling of "info" field attributes.
 
-    This tests the mechanics of the .annotate() and .attribute() API.
+    This tests the mechanics of the .annotate() and .attribute() API, and the
+    FormattedList class underpinning it.
     """
+    values = FormattedList()
+    assert str(values) == '.'
+    values.append(42)
+    assert str(values) == '42'
+    values.append(1776)
+    assert str(values) == '42,1776'
+    values.append('B0gU$')
+    with pytest.raises(kevlar.vcf.KevlarMixedDataTypeError):
+        str(values)
+
     v = Variant('1', 12345, 'G', 'C')
     assert v.attribute('VW') is None
 
@@ -95,13 +106,30 @@ def test_info():
     assert v.attribute('VW', pair=True) == 'VW=GATTACA'
 
     v.annotate('VW', 'ATGCCCTAG')
-    assert v.info['VW'] == set(['GATTACA', 'ATGCCCTAG'])
-    assert v.attribute('VW') == 'ATGCCCTAG,GATTACA'
-    assert v.attribute('VW', pair=True) == 'VW=ATGCCCTAG,GATTACA'
+    assert v.info['VW'] == ['GATTACA', 'ATGCCCTAG']
+    assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG']
+    assert v.attribute('VW', string=True) == 'GATTACA,ATGCCCTAG'
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG'
 
     v.annotate('VW', 'AAAAAAAAA')
-    assert v.attribute('VW') == 'AAAAAAAAA,ATGCCCTAG,GATTACA'
-    assert v.attribute('VW', pair=True) == 'VW=AAAAAAAAA,ATGCCCTAG,GATTACA'
+    assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG', 'AAAAAAAAA']
+    assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG,AAAAAAAAA'
+
+    v.annotate('DROPPED', 3)
+    assert v.attribute('DROPPED') == 3
+    assert v.attribute('DROPPED', string=True) == '3'
+
+    v.annotate('DROPPED', 31)
+    assert v.attribute('DROPPED') == [3, 31]
+    assert v.attribute('DROPPED', string=True) == '3,31'
+    assert v.attribute('DROPPED', pair=True) == 'DROPPED=3,31'
+
+    v.annotate('MATEDIST', 432.1234)
+    v.annotate('MATEDIST', 8765.4321)
+    assert v.attribute('MATEDIST', string=True) == '432.123,8765.432'
+
+    v.annotate('LLIH', -436.0111857750478)
+    assert v.attribute('LLIH', pair=True) == 'LLIH=-436.011'
 
 
 def test_format():

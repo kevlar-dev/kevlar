@@ -157,10 +157,10 @@ def calc_likescore(call, altabund, refrabund, mu, sigma, epsilon):
     llfp = likelihood_false(altabund, refrabund, mean=mu, error=epsilon)
     llih = likelihood_inherited(altabund, mean=mu, sd=sigma, error=epsilon)
     likescore = lldn - max(llfp, llih)
-    call.annotate('LLDN', '{:.3f}'.format(lldn))
-    call.annotate('LLFP', '{:.3f}'.format(llfp))
-    call.annotate('LLIH', '{:.3f}'.format(llih))
-    call.annotate('LIKESCORE', '{:.3f}'.format(likescore))
+    call.annotate('LLDN', lldn)
+    call.annotate('LLFP', llfp)
+    call.annotate('LLIH', llih)
+    call.annotate('LIKESCORE', likescore)
 
 
 def default_sample_labels(nsamples):
@@ -188,13 +188,13 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             message += ' for variant-spanning window {:s}'.format(call.window)
             message += ', shorter than k size {:s}'.format(case.ksize())
             print(message, file=logstream)
-            call.annotate('LIKESCORE', '-inf')
+            call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
         altabund, refrabund, ndropped = get_abundances(
             call.window, call.refrwindow, case, controls, refr
         )
-        call.annotate('DROPPED', str(ndropped))
+        call.annotate('DROPPED', ndropped)
         abovethresh = [a for a in altabund[0] if a > casemin]
         if len(abovethresh) == 0:
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
@@ -204,14 +204,14 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
     allcalls = list()
     for partition, calls in calls_by_partition.items():
-        scores = [float(c.attribute('LIKESCORE')) for c in calls]
+        scores = [c.attribute('LIKESCORE') for c in calls]
         maxscore = max(scores)
         for call, score in zip(calls, scores):
             if score < maxscore:
                 call.filter(kevlar.vcf.VariantFilter.PartitionScore)
             allcalls.append(call)
 
-    allcalls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
+    allcalls.sort(key=lambda c: c.attribute('LIKESCORE'), reverse=True)
     for call in allcalls:
         yield call
 
