@@ -1,77 +1,89 @@
 #!/usr/bin/env python
 #
 # -----------------------------------------------------------------------------
-# Copyright (c) 2016 The Regents of the University of California
+# Copyright (c) 2018 The Regents of the University of California
 #
 # This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from collections import defaultdict
+import math
 import sys
-import pysam
-import screed
+import threading
+
 import kevlar
-from khmer.utils import write_record
+import khmer
+import numpy
 
 
-def perfectmatch(record, bam, refrseqs):
-    """
-    Determine if the alignment record is a perfect match against the reference.
-
-    The `record` is a pysam alignment object, `bam` is a pysam BAM parser
-    object, and `refrseqs` is a dictionary of sequences indexed by their
-    sequence IDs.
-    """
-    matchcigar = '{:d}M'.format(record.rlen)
-    if record.cigarstring == matchcigar:
-        seq = refrseqs[bam.get_reference_name(record.tid)]
-        refrsubseq = str(seq[record.pos:record.pos+record.rlen])
-        if refrsubseq.upper() == record.seq.upper():
-            return True
-    return False
+class KevlarZeroAbundanceDistError(ValueError):
+    pass
 
 
-def readname(record):
-    """Create a Fastq read name, using suffixes for paired reads as needed."""
-    name = record.qname
-    if record.flag & 1:
-        # Logical XOR: if the read is paired, it should be first in pair
-        # or second in pair, not both.
-        assert (record.flag & 64) != (record.flag & 128)
-        suffix = '/1' if record.flag & 64 else '/2'
-        if not name.endswith(suffix):
-            name += suffix
-    return name
+def weighted_mean_std_dev(values, weights):
+    mu = numpy.average(values, weights=weights)
+    sigma = math.sqrt(numpy.average((values-mu)**2, weights=weights))
+    return mu, sigma
 
 
-def dump(bamstream, refrseqs=None, upint=50000, logstream=sys.stderr):
-    """
-    Parse read alignments in BAM/SAM format.
+def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
+    message = 'Allocating memory for k-mer counts...'
+    print('[kevlar::dist]', message, end='', file=logstream)
+    counts = khmer.Counttable(ksize, memory / 4, 4)
+    tracking = khmer.Nodetable(ksize, 1, 1, primes=counttable.hashsizes())
+    print('done!', file=logstream)
 
-    - bamstream: open file handle to the BAM/SAM file input
-    - refrseqs: dictionary of reference sequences, indexed by sequence ID; if
-      provided, perfect matches to the reference sequence will be discarded
-    - upint: update interval for progress indicator
-    - logstream: file handle do which progress indicator will write output
-    """
-    bam = pysam.AlignmentFile(bamstream, 'rb')
-    for i, record in enumerate(bam, 1):
-        if i % upint == 0:  # pragma: no cover
-            print('...processed', i, 'records', file=logstream)
-        if record.is_secondary or record.is_supplementary:
-            continue
-        if refrseqs and perfectmatch(record, bam, refrseqs):
-            continue
-        rn = readname(record)
-        yield screed.Record(name=rn, sequence=record.seq, quality=record.qual)
+    message = 'Processing input with {:d} threads'.format(threads)
+    print('[kevlar::dist]', message, file=logstream)
+    for filename in infiles:
+        print('    -', filename, file=logstream)
+        parser = khmer.ReadParser(filename)
+        threads = list()
+        for _ in range(threads):
+            thread = threading.Thread(
+                target=counts.consume_seqfile_with_mask,
+                args=(parser, mask,),
+                kwargs={'threshold': 1, 'complement': True},
+            )
+            threads.append(thread)
+            thread.start()
+        for thread in threads:
+            thread.join()
+    print('[kevlar::dist] Done processing input!', file=logstream)
 
+    print('[kevlar::dist] Second pass over the data', file=logstream)
+    abund_lists = list()
 
-def main(args):
-    fastq = kevlar.open(args.out, 'w')
-    refr = None
-    if args.refr:
-        print('[kevlar::dump] Loading reference sequence', file=args.logfile)
-        refrstream = kevlar.open(args.refr, 'r')
-        refr = kevlar.seqio.parse_seq_dict(refrstream)
-    for read in dump(args.reads, refr, logstream=args.logfile):
-        write_record(read, fastq)
+    def __do_abund_dist(parser):
+        abund = counts.abundance_distribution(parser, tracking)
+        abund_lists.append(abund)
+    for filename in infiles:
+        print('    -', filename, file=logstream)
+        parser = khmer.ReadParser(filename)
+        threads = list()
+        for _ in range(threads):
+            thread = threading.Thread(
+                target=__do_abund_dist,
+                args=(parser,)
+            )
+            threads.append(thread)
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+    assert len(abund_lists) == len(infiles) * threads
+    abundance = defaultdict(int)
+    for abund in abund_lists:
+        for i, count in enumerate(abund):
+            abundance[i] += count
+
+    message = 'ignoring {:d} k-mers as not in mask'.format(abundance[0])
+    print('[kevlar::dist]', message, file=logstream)
+    del(abundance[0])
+    total = sum(abundance.values())
+    if total == 0:
+        message = 'all k-mer abundances are 0, please check input files'
+        raise KevlarZeroAbundanceDistError(message)
+    mu, sigma = weighted_mean_std_dev(abundance.keys(), abundance.values())
+    return mu, sigma
