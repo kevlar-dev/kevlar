@@ -27,6 +27,7 @@ from . import alac
 from . import simplex
 from . import simlike
 from . import split
+from . import dist
 
 mains = {
     'dump': kevlar.dump.main,
@@ -45,6 +46,7 @@ mains = {
     'simplex': kevlar.simplex.main,
     'simlike': kevlar.simlike.main,
     'split': kevlar.split.main,
+    'dist': kevlar.dist.main,
 }
 
 subparser_funcs = {
@@ -64,6 +66,7 @@ subparser_funcs = {
     'simplex': simplex.subparser,
     'simlike': simlike.subparser,
     'split': split.subparser,
+    'dist': dist.subparser,
 }
 
 

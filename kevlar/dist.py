@@ -21,12 +21,6 @@ class KevlarZeroAbundanceDistError(ValueError):
     pass
 
 
-def weighted_mean_std_dev(values, weights):
-    mu = numpy.average(values, weights=weights)
-    sigma = math.sqrt(numpy.average((values-mu)**2, weights=weights))
-    return mu, sigma
-
-
 def count_first_pass(infiles, counts, mask, threads=1, logstream=sys.stderr):
     message = 'Processing input with {:d} threads'.format(threads)
     print('[kevlar::dist]', message, file=logstream)
@@ -49,7 +43,7 @@ def count_first_pass(infiles, counts, mask, threads=1, logstream=sys.stderr):
     print('[kevlar::dist] Done processing input!', file=logstream)
 
 
-def count_second_pass(infiles, counts, threads=1, logstream=logstream):
+def count_second_pass(infiles, counts, threads=1, logstream=sys.stderr):
     print('[kevlar::dist] Second pass over the data', file=logstream)
     tracking = khmer.Nodetable(ksize, 1, 1, primes=counttable.hashsizes())
     abund_lists = list()
@@ -81,6 +75,12 @@ def count_second_pass(infiles, counts, threads=1, logstream=logstream):
     print('[kevlar::dist] Done second pass over input!', file=logstream)
 
     return abundance
+
+
+def weighted_mean_std_dev(values, weights):
+    mu = numpy.average(values, weights=weights)
+    sigma = math.sqrt(numpy.average((values-mu)**2, weights=weights))
+    return mu, sigma
 
 
 def calc_mu_sigma(abundance):
@@ -124,3 +124,7 @@ def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
     mu, sigma = calc_mu_sigma(abundance)
     data = compute_dist(abundance)
     return mu, sigma, data
+
+
+def main(args):
+    pass
