@@ -27,15 +27,10 @@ def weighted_mean_std_dev(values, weights):
     return mu, sigma
 
 
-def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
-    message = 'Allocating memory for k-mer counts...'
-    print('[kevlar::dist]', message, end='', file=logstream)
-    counts = khmer.Counttable(ksize, memory / 4, 4)
-    tracking = khmer.Nodetable(ksize, 1, 1, primes=counttable.hashsizes())
-    print('done!', file=logstream)
-
+def count_first_pass(infiles, counts, mask, threads=1, logstream=sys.stderr):
     message = 'Processing input with {:d} threads'.format(threads)
     print('[kevlar::dist]', message, file=logstream)
+
     for filename in infiles:
         print('    -', filename, file=logstream)
         parser = khmer.ReadParser(filename)
@@ -50,14 +45,19 @@ def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
             thread.start()
         for thread in threads:
             thread.join()
+
     print('[kevlar::dist] Done processing input!', file=logstream)
 
+
+def count_second_pass(infiles, counts, threads=1, logstream=logstream):
     print('[kevlar::dist] Second pass over the data', file=logstream)
+    tracking = khmer.Nodetable(ksize, 1, 1, primes=counttable.hashsizes())
     abund_lists = list()
 
     def __do_abund_dist(parser):
         abund = counts.abundance_distribution(parser, tracking)
         abund_lists.append(abund)
+
     for filename in infiles:
         print('    -', filename, file=logstream)
         parser = khmer.ReadParser(filename)
@@ -78,6 +78,12 @@ def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
         for i, count in enumerate(abund):
             abundance[i] += count
 
+    print('[kevlar::dist] Done second pass over input!', file=logstream)
+
+    return abundance
+
+
+def calc_mu_sigma(abundance):
     message = 'ignoring {:d} k-mers as not in mask'.format(abundance[0])
     print('[kevlar::dist]', message, file=logstream)
     del(abundance[0])
@@ -86,4 +92,35 @@ def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
         message = 'all k-mer abundances are 0, please check input files'
         raise KevlarZeroAbundanceDistError(message)
     mu, sigma = weighted_mean_std_dev(abundance.keys(), abundance.values())
-    return mu, sigma
+    return mu_sigma
+
+
+def compute_dist(abundance):
+    total = sum(abundance.values())
+    fields = ['Abundance', 'Count', 'CumulativeCount', 'CumulativeFraction']
+    data = pandas.DataFrame(columns=fields)
+    cuml = 0
+    for abund, count in sorted(abundance.items()):
+        if count == 0:
+            continue
+        cuml += count
+        frac = cuml / total
+        row = {
+            'Abundance': abund,
+            'Count': count,
+            'CumulativeCount': cuml,
+            'CumulativeFraction': frac,
+        }
+        data = data.append(row, ignore_index=True)
+    return abund
+
+
+def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
+    counts = khmer.Counttable(ksize, memory / 4, 4)
+    count_first_pass(infiles, counts, mask, threads=threads,
+                     logstream=logstream)
+    abundance = count_second_pass(infiles, counts, threads=threads,
+                                  logstream=logstream)
+    mu, sigma = calc_mu_sigma(abundance)
+    data = compute_dist(abundance)
+    return mu, sigma, data
