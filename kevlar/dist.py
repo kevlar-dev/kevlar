@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 from collections import defaultdict
+import json
 import math
 import sys
 import threading
@@ -129,4 +130,13 @@ def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
 
 
 def main(args):
-    pass
+    mask = khmer.Nodetable.load(args.mask)
+    mu, sigma, data = dist(
+        args.infiles, mask, ksize=args.ksize, memory=args.memory,
+        threads=args.threads, logstream=args.logfile
+    )
+    out = {'mu': mu, 'sigma': sigma}
+    print(json.dumps(out))
+
+    if args.plot:
+        raise NotImplementedError('please wait')

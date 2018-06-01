@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import filecmp
+import json
 import sys
 from tempfile import NamedTemporaryFile
 
@@ -63,3 +64,18 @@ def test_dist():
     assert pytest.approx(15.32558, mu)
     assert pytest.approx(3.280581, sigma)
     assert list(data['Count'][-5:]) == [11.0, 8.0, 9.0, 7.0, 3.0]
+
+
+def test_main(capsys):
+    arglist = [
+        'dist', data_file('minitrio/mask.nt'),
+        data_file('minitrio/trio-proband.fq.gz')
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.dist.main(args)
+
+    out, err = capsys.readouterr()
+    print(out)
+    js = json.loads(out)
+    assert pytest.approx(15.32558, js['mu'])
+    assert pytest.approx(3.280581, js['sigma'])

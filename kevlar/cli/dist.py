@@ -19,7 +19,8 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('dist', description=desc)
     subparser.add_argument('-o', '--out', metavar='FILE', help='output file; '
                            'default is terminal (stdout)')
-    subparser.add_argument('-k', '--ksize', metavar='K', help='k-mer size')
+    subparser.add_argument('-k', '--ksize', metavar='K', type=int, default=31,
+                           help='k-mer size; default is 31')
     subparser.add_argument('-M', '--memory', type=khmer_args.memory_setting,
                            default=1e6, metavar='MEM',
                            help='memory to allocate for k-mer counting')
