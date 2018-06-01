@@ -43,9 +43,9 @@ def count_first_pass(infiles, counts, mask, nthreads=1, logstream=sys.stderr):
     print('[kevlar::dist] Done processing input!', file=logstream)
 
 
-def count_second_pass(infiles, counts, threads=1, logstream=sys.stderr):
+def count_second_pass(infiles, counts, nthreads=1, logstream=sys.stderr):
     print('[kevlar::dist] Second pass over the data', file=logstream)
-    tracking = khmer.Nodetable(ksize, 1, 1, primes=counttable.hashsizes())
+    tracking = khmer.Nodetable(counts.ksize(), 1, 1, primes=counts.hashsizes())
     abund_lists = list()
 
     def __do_abund_dist(parser):
@@ -56,7 +56,7 @@ def count_second_pass(infiles, counts, threads=1, logstream=sys.stderr):
         print('    -', filename, file=logstream)
         parser = khmer.ReadParser(filename)
         threads = list()
-        for _ in range(threads):
+        for _ in range(nthreads):
             thread = threading.Thread(
                 target=__do_abund_dist,
                 args=(parser,)
@@ -66,11 +66,12 @@ def count_second_pass(infiles, counts, threads=1, logstream=sys.stderr):
         for thread in threads:
             thread.join()
 
-    assert len(abund_lists) == len(infiles) * threads
+    assert len(abund_lists) == len(infiles) * nthreads
     abundance = defaultdict(int)
     for abund in abund_lists:
         for i, count in enumerate(abund):
-            abundance[i] += count
+            if i > 0 and count > 0:
+                abundance[i] += count
 
     print('[kevlar::dist] Done second pass over input!', file=logstream)
 
@@ -117,9 +118,9 @@ def compute_dist(abundance):
 
 def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
     counts = khmer.Counttable(ksize, memory / 4, 4)
-    count_first_pass(infiles, counts, mask, threads=threads,
+    count_first_pass(infiles, counts, mask, nthreads=threads,
                      logstream=logstream)
-    abundance = count_second_pass(infiles, counts, threads=threads,
+    abundance = count_second_pass(infiles, counts, nthreads=threads,
                                   logstream=logstream)
     mu, sigma = calc_mu_sigma(abundance)
     data = compute_dist(abundance)

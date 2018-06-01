@@ -27,3 +27,12 @@ def test_count_first_pass():
         counts.save(countfile.name)
         testcountfile = data_file('minitrio/trio-proband-mask-counts.ct')
         assert filecmp.cmp(testcountfile, countfile.name) is True
+
+
+def test_count_second_pass():
+    mask = Nodetable.load(data_file('minitrio/mask.nt'))
+    counts = Counttable.load(data_file('minitrio/trio-proband-mask-counts.ct'))
+    seqfile = data_file('minitrio/trio-proband.fq.gz')
+    abund = kevlar.dist.count_second_pass([seqfile], counts)
+    assert abund == {10: 6, 11: 10, 12: 12, 13: 18, 14: 16, 15: 11, 16: 9,
+                     17: 9, 18: 11, 19: 8, 20: 9, 21: 7, 22: 3}
