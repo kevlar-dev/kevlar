@@ -139,4 +139,24 @@ def main(args):
     print(json.dumps(out))
 
     if args.plot:
-        raise NotImplementedError('please wait')
+        try:
+            import matplotlib
+            from matplotlib import pyplot as plt
+        except RuntimeError as rerr:
+            if 'Python is not installed as a framework' not in str(rerr):
+                raise rerr
+            message = 'There was a problem loading matplotlib. '
+            message += 'Try https://stackoverflow.com/q/21784641/459780 '
+            message += 'for troubleshooting ideas.'
+            raise RuntimeError(message)
+        matplotlib.rcParams["figure.figsize"] = [12, 6]
+        matplotlib.rcParams['axes.labelsize'] = 16
+        matplotlib.rcParams['xtick.labelsize'] = 16
+        plt.plot(data['Abundance'], data['Count'], color='blue')
+        plt.axvline(x=mu, color='blue', linestyle='--')
+        plt.axvline(x=mu - sigma, color='red', linestyle=':')
+        plt.axvline(x=mu + sigma, color='red', linestyle=':')
+        plt.xlim(args.plot_xlim)
+        plt.xlabel('K-mer abundance')
+        plt.ylabel('Frequency')
+        plt.savefig(args.plot, dpi=300)

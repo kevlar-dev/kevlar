@@ -29,6 +29,10 @@ def subparser(subparsers):
                            'default is 1')
     subparser.add_argument('-p', '--plot', metavar='PNG', help='plot k-mer '
                            'abundance distribution to file `PNG`')
+    subparser.add_argument('--plot-xlim', metavar=('MIN', 'MAX'), type=int,
+                           nargs=2, default=(0, 100), help='define the '
+                           'minimum and maximum x values (k-mer abundance) '
+                           'for the plot; default is `0 100`')
     subparser.add_argument('mask', help='nodetable containing target k-mers '
                            'to count (such as single-copy exonic k-mers)')
     subparser.add_argument('infiles', nargs='+', help='input files in '

@@ -79,3 +79,14 @@ def test_main(capsys):
     js = json.loads(out)
     assert pytest.approx(15.32558, js['mu'])
     assert pytest.approx(3.280581, js['sigma'])
+
+
+def test_main_plot(capsys):
+    with NamedTemporaryFile(suffix='.png') as plotfile:
+        arglist = [
+            'dist', '--plot', plotfile.name, '--plot-xlim', '0', '50',
+            data_file('minitrio/mask.nt'),
+            data_file('minitrio/trio-proband.fq.gz')
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.dist.main(args)
