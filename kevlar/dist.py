@@ -21,19 +21,19 @@ class KevlarZeroAbundanceDistError(ValueError):
     pass
 
 
-def count_first_pass(infiles, counts, mask, threads=1, logstream=sys.stderr):
-    message = 'Processing input with {:d} threads'.format(threads)
+def count_first_pass(infiles, counts, mask, nthreads=1, logstream=sys.stderr):
+    message = 'Processing input with {:d} threads'.format(nthreads)
     print('[kevlar::dist]', message, file=logstream)
 
     for filename in infiles:
         print('    -', filename, file=logstream)
         parser = khmer.ReadParser(filename)
         threads = list()
-        for _ in range(threads):
+        for _ in range(nthreads):
             thread = threading.Thread(
                 target=counts.consume_seqfile_with_mask,
                 args=(parser, mask,),
-                kwargs={'threshold': 1, 'complement': True},
+                kwargs={'threshold': 1, 'consume_masked': True},
             )
             threads.append(thread)
             thread.start()
