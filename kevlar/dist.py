@@ -15,6 +15,7 @@ import threading
 import kevlar
 import khmer
 import numpy
+import pandas
 
 
 class KevlarZeroAbundanceDistError(ValueError):
@@ -85,15 +86,15 @@ def weighted_mean_std_dev(values, weights):
 
 
 def calc_mu_sigma(abundance):
-    message = 'ignoring {:d} k-mers as not in mask'.format(abundance[0])
-    print('[kevlar::dist]', message, file=logstream)
-    del(abundance[0])
     total = sum(abundance.values())
     if total == 0:
         message = 'all k-mer abundances are 0, please check input files'
         raise KevlarZeroAbundanceDistError(message)
-    mu, sigma = weighted_mean_std_dev(abundance.keys(), abundance.values())
-    return mu_sigma
+    mu, sigma = weighted_mean_std_dev(
+        list(abundance.keys()),
+        list(abundance.values()),
+    )
+    return mu, sigma
 
 
 def compute_dist(abundance):
@@ -113,7 +114,7 @@ def compute_dist(abundance):
             'CumulativeFraction': frac,
         }
         data = data.append(row, ignore_index=True)
-    return abund
+    return data
 
 
 def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
