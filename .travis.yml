@@ -5,6 +5,7 @@ addons:
         packages:
             - cloc
             - git
+            - python3-tk
 branches:
   only:  # don't build "pushes" except on the master branch
     - master

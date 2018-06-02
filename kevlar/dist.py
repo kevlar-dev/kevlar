@@ -138,8 +138,11 @@ def main(args):
     print(json.dumps(out))
 
     if args.plot:
+        import os
         try:
             import matplotlib
+            if os.environ.get('DISPLAY', '') == '':
+                matplotlib.use('Agg')
             from matplotlib import pyplot as plt
         except RuntimeError as rerr:
             if 'Python is not installed as a framework' not in str(rerr):
