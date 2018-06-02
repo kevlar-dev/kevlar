@@ -12,6 +12,7 @@ import json
 import sys
 from tempfile import NamedTemporaryFile
 
+import pandas
 import pytest
 import kevlar
 from kevlar.dist import count_first_pass, count_second_pass
@@ -97,7 +98,7 @@ def test_main(capsys):
     assert pytest.approx(3.280581, js['sigma'])
 
 
-def test_main_plot(capsys):
+def test_main_plot():
     with NamedTemporaryFile(suffix='.png') as plotfile:
         arglist = [
             'dist', '--plot', plotfile.name, '--plot-xlim', '0', '50',
@@ -106,3 +107,20 @@ def test_main_plot(capsys):
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.dist.main(args)
+
+
+def test_tsv():
+    with NamedTemporaryFile(suffix='.tsv') as distfile:
+        arglist = [
+            'dist', '--tsv', distfile.name, data_file('minitrio/mask.nt'),
+            data_file('minitrio/trio-proband.fq.gz')
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.dist.main(args)
+        data = pandas.read_table(distfile.name, sep='\t')
+        print(data)
+        cuml_test = [
+            15.0, 18.0, 24.0, 44.0, 78.0, 153.0, 222.0, 325.0, 423.0, 515.0,
+            585.0, 666.0, 756.0, 814.0, 861.0, 888.0, 902.0, 903.0
+        ]
+        assert list(data['CumulativeCount']) == cuml_test

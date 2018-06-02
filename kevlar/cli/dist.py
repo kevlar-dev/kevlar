@@ -29,6 +29,9 @@ def subparser(subparsers):
                            'default is 1')
     subparser.add_argument('-p', '--plot', metavar='PNG', help='plot k-mer '
                            'abundance distribution to file `PNG`')
+    subparser.add_argument('--tsv', metavar='TSV', help='write k-mer '
+                           'abundance distribution out to file formatted as '
+                           'tab-separated values`')
     subparser.add_argument('--plot-xlim', metavar=('MIN', 'MAX'), type=int,
                            nargs=2, default=(0, 100), help='define the '
                            'minimum and maximum x values (k-mer abundance) '
