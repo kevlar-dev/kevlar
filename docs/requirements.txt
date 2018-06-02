@@ -1,5 +1,6 @@
 sphinx-argparse
 pandas
+matplotlib
 pysam>=0.11.2
 networkx>=2.0
 scipy>=1.0

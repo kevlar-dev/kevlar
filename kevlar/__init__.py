@@ -53,6 +53,7 @@ from kevlar import call
 from kevlar import alac
 from kevlar import simplex
 from kevlar import simlike
+from kevlar import dist
 from kevlar import split
 from kevlar import gentrio
 from kevlar import cli
