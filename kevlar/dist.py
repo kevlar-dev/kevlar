@@ -137,6 +137,9 @@ def main(args):
     out = {'mu': mu, 'sigma': sigma}
     print(json.dumps(out))
 
+    if args.tsv:
+        data.to_csv(args.tsv, sep='\t', index=False)
+
     if args.plot:
         import os
         try:  # pragma: no cover
