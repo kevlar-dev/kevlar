@@ -139,12 +139,12 @@ def main(args):
 
     if args.plot:
         import os
-        try:
+        try:  # pragma: no cover
             import matplotlib
             if os.environ.get('DISPLAY', '') == '':
                 matplotlib.use('Agg')
             from matplotlib import pyplot as plt
-        except RuntimeError as rerr:
+        except RuntimeError as rerr:  # pragma: no cover
             if 'Python is not installed as a framework' not in str(rerr):
                 raise rerr
             message = 'There was a problem loading matplotlib. '
