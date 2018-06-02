@@ -16,6 +16,7 @@ import pytest
 import kevlar
 from kevlar.dist import count_first_pass, count_second_pass
 from kevlar.dist import calc_mu_sigma, compute_dist
+from kevlar.dist import KevlarZeroAbundanceDistError
 from kevlar.tests import data_file
 from khmer import Counttable, Nodetable
 
@@ -48,6 +49,12 @@ def test_calc_mu_sigma():
     assert pytest.approx(3.280581, sigma)
 
 
+def test_musigma_empty_dist():
+    with pytest.raises(KevlarZeroAbundanceDistError):
+        empty = dict()
+        calc_mu_sigma(empty)
+
+
 def test_compute_dist():
     abund = {10: 6, 11: 10, 12: 12, 13: 18, 14: 16, 15: 11, 16: 9,
              17: 9, 18: 11, 19: 8, 20: 9, 21: 7, 22: 3}
@@ -64,6 +71,15 @@ def test_dist():
     assert pytest.approx(15.32558, mu)
     assert pytest.approx(3.280581, sigma)
     assert list(data['Count'][-5:]) == [11.0, 8.0, 9.0, 7.0, 3.0]
+
+
+def test_dist_empty():
+    mask = Nodetable(31, 1e4, 4)
+    mask.consume('GATTACA' * 10)
+    mask.consume('A' * 50)
+    filenames = [data_file('minitrio/trio-proband.fq.gz')]
+    with pytest.raises(KevlarZeroAbundanceDistError):
+        kevlar.dist.dist(filenames, mask, memory=4e4)
 
 
 def test_main(capsys):

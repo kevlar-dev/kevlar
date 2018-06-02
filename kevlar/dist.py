@@ -104,8 +104,7 @@ def compute_dist(abundance):
     data = pandas.DataFrame(columns=fields)
     cuml = 0
     for abund, count in sorted(abundance.items()):
-        if count == 0:
-            continue
+        assert count > 0, (abund, count)
         cuml += count
         frac = cuml / total
         row = {
