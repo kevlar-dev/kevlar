@@ -64,7 +64,7 @@ class IntervalForest(object):
 
 def populate_index_from_simulation(filename, chrlabel):
     index = IntervalForest()
-    with open(filename, 'r') as instream:
+    with kevlar.open(filename, 'r') as instream:
         for line in instream:
             if line.strip() == '':
                 continue
