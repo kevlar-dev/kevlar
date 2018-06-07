@@ -83,6 +83,7 @@ def assess_variants(variants, index, delta=10):
     false = set()
     missing = set()
     found = set()
+    mapping = defaultdict(list)
 
     for varcall in variants:
         if varcall.filterstr != 'PASS':
@@ -97,6 +98,8 @@ def assess_variants(variants, index, delta=10):
         else:
             correct.add(varcall)
             found.update(hits)
+            for hit in hits:
+                mapping[hit].append(varcall)
 
     for callclass, calllist in variants_by_class.items():
         nmatches = 0
@@ -119,12 +122,14 @@ def assess_variants(variants, index, delta=10):
                       callclass, file=sys.stderr)
             correct.add(varcall)
             found.update(localfound)
+            for hit in localfound:
+                mapping[hit].append(varcall)
 
     for label, interval in index:
         if interval not in found:
             missing.add(interval)
 
-    return correct, false, missing
+    return correct, false, missing, mapping
 
 
 def parse_mvf(instream, skip=1):
@@ -137,13 +142,13 @@ def parse_mvf(instream, skip=1):
         yield seqid, position, line
 
 
-
 def assess_variants_mvf(variants, index, delta=10):
     variants_by_class = defaultdict(list)
     correct = set()
     false = set()
     missing = set()
     found = set()
+    mapping = defaultdict(list)
 
     for seqid, position, line in variants:
         hits = index.query(seqid, position, delta=delta)
@@ -152,12 +157,14 @@ def assess_variants_mvf(variants, index, delta=10):
         else:
             correct.add(line)
             found.update(hits)
+            for hit in hits:
+                mapping[hit].append(line)
 
     for label, interval in index:
         if interval not in found:
             missing.add(interval)
 
-    return correct, false, missing
+    return correct, false, missing, mapping
 
 
 if __name__ == '__main__':
@@ -171,6 +178,8 @@ if __name__ == '__main__':
     parser.add_argument('--correct', help='print correct variants to file')
     parser.add_argument('--missing', help='print missing variants to file')
     parser.add_argument('--false', help='print false variants to file')
+    parser.add_argument('--collisions', help='print calls that match the same '
+                        'variant')
     parser.add_argument('simvar', help='simulated variants (in custome 3-4 '
                         'column tabular format)')
     parser.add_argument('varcalls', help='VCF file of variant calls')
@@ -183,7 +192,27 @@ if __name__ == '__main__':
     else:
         reader = VCFReader(kevlar.open(args.varcalls, 'r'))
         assess_func = assess_variants
-    correct, false, missing = assess_func(reader, index, delta=args.tolerance)
+    correct, false, missing, mapping = assess_func(
+        reader, index, delta=args.tolerance
+    )
+
+    numcollisions = 0
+    for variant, calllist in mapping.items():
+        if len(calllist) > 1:
+            numcollisions += 1
+    if numcollisions > 0:
+        print('WARNING:', numcollisions, 'variants matched by multiple calls',
+              file=sys.stderr)
+        if args.collisions:
+            with open(args.collisions, 'w') as outstream:
+                for variant, calllist in mapping.items():
+                    if len(calllist) > 1:
+                        print('\n#VARIANT:', variant, file=outstream)
+                        for varcall in calllist:
+                            if args.mvf:
+                                print('    -', varcall, end='', file=outstream)
+                            else:
+                                print('    -', varcall.vcf, file=outstream)
 
     if args.missing:
         with open(args.missing, 'w') as outstream:
@@ -195,22 +224,22 @@ if __name__ == '__main__':
         outstream = kevlar.open(args.correct, 'w')
         if args.mvf:
             for varcall in correct:
-                print(varcall, file=outstream)
+                print(varcall, end='', file=outstream)
         else:
             writer = kevlar.vcf.VCFWriter(outstream)
             for varcall in correct:
                 writer.write(varcall)
 
     if args.false:
-        outstream = kevlar.open(args.correct, 'w')
+        outstream = kevlar.open(args.false, 'w')
         if args.mvf:
             for varcall in false:
-                print(varcall, file=outstream)
+                print(varcall, end='', file=outstream)
         else:
             writer = kevlar.vcf.VCFWriter(outstream)
             for varcall in false:
                 writer.write(varcall)
 
-    print('Correct:', len(correct))
+    print('Correct:', len(mapping))
     print('False:', len(false))
     print('Missing:', len(missing))
