@@ -21,4 +21,7 @@ def subparser(subparsers):
                            'default is terminal (stdout)')
     subparser.add_argument('-r', '--refr', metavar='REFR', help='reference '
                            'sequence in Fasta format')
+    subparser.add_argument('-s', '--strict', action='store_true',
+                           help='do not keep read pair unless it also has no '
+                           'perfect match in the reference genome')
     subparser.add_argument('reads', help='read alignments in BAM format')

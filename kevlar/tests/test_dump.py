@@ -52,11 +52,16 @@ def test_indels(capsys):
     assert len(outputlines) == 4 * 4  # 4 records, 4 lines per record
 
 
-def test_suffix():
+@pytest.mark.parametrize('strict,nrecords', [
+    (True, 1),
+    (False, 2)
+])
+def test_suffix(strict, nrecords):
     bamstream = kevlar.open(data_file('nopair.sam'), 'r')
     refrstream = kevlar.open(data_file('bogus-genome/refr.fa'), 'r')
     refr = kevlar.seqio.parse_seq_dict(refrstream)
 
-    records = [r for r in kevlar.dump.dump(bamstream, refr)]
-    assert len(records) == 1
-    assert records[0].name.endswith('/1') or records[0].name.endswith('/2')
+    records = [r for r in kevlar.dump.dump(bamstream, refr, strict=strict)]
+    assert len(records) == nrecords
+    for record in records:
+        assert record.name.endswith('/1') or record.name.endswith('/2')
