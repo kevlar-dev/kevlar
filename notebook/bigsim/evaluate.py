@@ -16,6 +16,7 @@ from intervaltree import IntervalTree
 import pandas
 from evalutils import IntervalForest, populate_index_from_simulation, compact
 from evalutils import assess_variants, assess_variants_mvf
+from evalutils import subset_variants, subset_vcf, subset_mvf
 import kevlar
 from kevlar.vcf import VCFReader
 
@@ -31,20 +32,38 @@ parser.add_argument('--missing', help='print missing variants to file')
 parser.add_argument('--false', help='print false variants to file')
 parser.add_argument('--collisions', help='print calls that match the same '
                     'variant')
+parser.add_argument('--vartype', choices=('SNV', 'INDEL'), default=None)
+parser.add_argument('--minlength', type=int, default=None)
+parser.add_argument('--maxlength', type=int, default=None)
 parser.add_argument('simvar', help='simulated variants (in custom 3-4 column '
                     'tabular format)')
 parser.add_argument('varcalls', help='VCF file of variant calls')
 args = parser.parse_args()
 
-
-index = populate_index_from_simulation(args.simvar, 'chr17')
+with kevlar.open(args.simvar, 'r') as instream:
+    if args.vartype:
+        instream = subset_variants(
+            instream, args.vartype, minlength=args.minlength,
+            maxlength=args.maxlength
+        )
+    index = populate_index_from_simulation(instream, 'chr17')
 if args.mvf:
     table = pandas.read_table(args.varcalls, sep='\t')
+    if args.vartype:
+        table = subset_mvf(
+            table, args.vartype, minlength=args.minlength,
+            maxlength=args.maxlength
+        )
     variants = table.sort_values('CHILD_DP', ascending=False)
     assess_func = assess_variants_mvf
 else:
     reader = VCFReader(kevlar.open(args.varcalls, 'r'))
     variants = compact(reader, index, delta=args.tolerance)
+    if args.vartype:
+        variants = list(subset_vcf(
+            variants, args.vartype, minlength=args.minlength,
+            maxlength=args.maxlength
+        ))
     assess_func = assess_variants
 correct, false, missing, mapping = assess_func(
     variants, index, delta=args.tolerance

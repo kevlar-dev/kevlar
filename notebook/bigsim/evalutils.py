@@ -12,7 +12,7 @@
 This code was written to facilitate evaluations for a scientific paper and is
 not intended to be general purpose. It is shared in the spirit of transparency,
 not as exemplary code. For more thoughts on this, see the post and comments at
-http://ivory.idyll.org/blog/2015-how-should-we-think-about-research-software.html.
+ivory.idyll.org/blog/2015-how-should-we-think-about-research-software.html.
 """
 
 import argparse
@@ -74,7 +74,7 @@ class IntervalForest(object):
             return self.trees[label][start:end]
 
 
-def populate_index_from_simulation(filename, chrlabel):
+def populate_index_from_simulation(instream, chrlabel):
     """Index loading function
 
     The file containing simulated variants is a tab-separated file with 3 or 4
@@ -96,16 +96,15 @@ def populate_index_from_simulation(filename, chrlabel):
     comment "compute first nucleotide".
     """
     index = IntervalForest()
-    with kevlar.open(filename, 'r') as instream:
-        for line in instream:
-            if line.strip() == '':
-                continue
-            values = line.strip().split()
-            position = int(values[0])
-            if values[1] == 'Del':  # compute first nucleotide
-                position -= int(values[2])
-            strrepr = '{}<-{}'.format(values[1], values[2])
-            index.insert(chrlabel, position, position + 1, strrepr)
+    for line in instream:
+        if line.strip() == '':
+            continue
+        values = line.strip().split()
+        position = int(values[0])
+        if values[1] == 'Del':  # compute first nucleotide
+            position -= int(values[2])
+        strrepr = '{}<-{}'.format(values[1], values[2])
+        index.insert(chrlabel, position, position + 1, strrepr)
     return index
 
 
@@ -160,7 +159,6 @@ def compact(reader, index, delta=10):
     return calls
 
 
-
 def assess_variants(variants, index, delta=10):
     """Assess kevlar calls in .vcf format."""
     variants_by_class = defaultdict(list)
@@ -200,7 +198,9 @@ def assess_variants_mvf(variants, index, delta=10):
 
     for rowindex, row in variants.iterrows():
         hits = index.query(row['CHROM'], row['POS'], delta=delta)
-        varstr = '{:s}:{:d}({:s})'.format(row['CHROM'], row['POS'], row['CHILD_GT'])
+        varstr = '{:s}:{:d}({:s})'.format(
+            row['CHROM'], row['POS'], row['CHILD_GT']
+        )
         if hits == set():
             false.add(varstr)
         else:
@@ -215,3 +215,73 @@ def assess_variants_mvf(variants, index, delta=10):
             missing.add(interval)
 
     return correct, false, missing, mapping
+
+
+def subset_variants(variants, vartype, minlength=None, maxlength=None):
+    assert vartype in ('SNV', 'INDEL')
+    for line in variants:
+        if line.strip() == '':
+            continue
+        values = line.strip().split()
+        vtype = 'SNV' if values[-1] == 'SNV' else 'INDEL'
+        if vtype != vartype:
+            continue
+
+        if vartype == 'SNV':
+            yield line
+            continue
+
+        indellength = int(values[2])
+        if minlength and indellength < minlength:
+            continue
+        if maxlength and indellength > maxlength:
+            continue
+        yield line
+
+
+def subset_vcf(varcalls, vartype, minlength=None, maxlength=None):
+    assert vartype in ('SNV', 'INDEL')
+    for call in varcalls:
+        refrlen = len(call._refr)
+        altlen = len(call._alt)
+        calltype = 'SNV'
+        if refrlen > 1 or altlen > 1:
+            calltype = 'INDEL'
+        if calltype != vartype:
+            continue
+
+        if vartype == 'SNV':
+            yield call
+            continue
+
+        indellength = abs(refrlen - altlen)
+        if minlength and indellength < minlength:
+            continue
+        if maxlength and indellength > maxlength:
+            continue
+        yield call
+
+
+def subset_mvf(varcalls, vartype, minlength=None, maxlength=None):
+    assert vartype in ('SNV', 'INDEL')
+    def determine_type(genotype):
+        g1, g2 = genotype.replace('|', '/').split('/')
+        if len(g1) == 1 and len(g2) == 1:
+            return 'SNV'
+        return 'INDEL'
+
+    def determine_length(genotype):
+        g1, g2 = genotype.replace('|', '/').split('/')
+        if len(g1) == 1 and len(g2) == 1:
+            return 0
+        return abs(len(g1) - len(g2))
+
+    varcalls['VARTYPE'] = varcalls['CHILD_GT'].apply(determine_type)
+    varcalls['VARLENGTH'] = varcalls['CHILD_GT'].apply(determine_length)
+
+    varcalls = varcalls[varcalls['VARTYPE'] == vartype]
+    if minlength:
+        varcalls = varcalls[varcalls['VARLENGTH'] >= minlength]
+    if maxlength:
+        varcalls = varcalls[varcalls['VARLENGTH'] <= maxlength]
+    return varcalls
