@@ -156,6 +156,7 @@ def compact(reader, index, delta=10):
             calls.append(match)
 
     calls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
+    calls = [c for c in calls if float(c.attribute('LIKESCORE')) > 0.0]
     return calls
 
 
