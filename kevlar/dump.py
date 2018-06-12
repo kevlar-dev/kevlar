@@ -69,6 +69,7 @@ def bam_paired_reader(bam):
                 yield prev, record
             else:
                 yield record, prev
+            prev = None
         else:
             yield prev, None
             if record.is_paired:
@@ -95,10 +96,13 @@ def keepers(record1, record2, bam, refrseqs=None, strict=False):
             return [record1]
         elif r2keep:
             return [record2]
+        else:
+            return []
     else:
         if r1keep or r2keep:
             return [record1, record2]
-    return []
+        else:
+            return []
 
 
 def dump(bamstream, refrseqs=None, strict=False, upint=50000,
