@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-import kevlar
-# NOTE: this script is intended for use in 'developer' mode. See setup.py
-# entrypoints for what end-users use.
-from kevlar.__main__ import main
-main()

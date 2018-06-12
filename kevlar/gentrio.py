@@ -12,7 +12,7 @@ import random
 import sys
 import kevlar
 from kevlar import MutableString
-from kevlar.call import Variant
+from kevlar.vcf import Variant
 
 
 # Mappings for SNVs
@@ -148,8 +148,8 @@ def generate_mutations(sequences, n=10, ksize=31, weights=DWEIGHTS, rng=None):
             )
         else:
             raise ValueError('unknown mutation type {}'.format(muttype))
-        yield Variant(seqid, position, refrseq, altseq, VW=altwindow,
-                      RW=refrwindow)
+        yield Variant(seqid, position, refrseq, altseq, ALTWINDOW=altwindow,
+                      REFRWINDOW=refrwindow)
 
 
 def pick_inheritance_genotypes(rng):
@@ -179,14 +179,14 @@ def simulate_variant_genotypes(sequences, ninh=20, ndenovo=10,
     for variant in mutator:
         genotypes = pick_inheritance_genotypes(rng)
         gtstring = ','.join(genotypes)
-        variant.info['GT'] = gtstring
+        variant.annotate('GT', gtstring)
         yield variant
 
     mut8r = generate_mutations(sequences, n=ndenovo, weights=weights, rng=rng)
     for variant in mut8r:
         genotypes = (rng.choice(['0/1', '1/0']), '0/0', '0/0')
         gtstring = ','.join(genotypes)
-        variant.info['GT'] = gtstring
+        variant.annotate('GT', gtstring)
         yield variant
 
 

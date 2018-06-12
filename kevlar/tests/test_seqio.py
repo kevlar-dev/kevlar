@@ -7,8 +7,10 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from io import StringIO
 import pytest
 import kevlar
+from kevlar.tests import data_file
 from kevlar import KmerOfInterest
 from kevlar.seqio import AnnotatedReadSet as ReadSet
 from kevlar.seqio import KevlarPartitionLabelError
@@ -41,8 +43,8 @@ def test_seq_dict(bogusseqs):
     }
 
 
-def test_aug_fastq_reader():
-    infilename = kevlar.tests.data_file('collect.beta.1.txt')
+def test_augfastx_reader():
+    infilename = data_file('collect.beta.1.txt')
     infile = open(infilename, 'r')
     for n, record in enumerate(kevlar.parse_augmented_fastx(infile)):
         assert record.name.startswith('good')
@@ -55,8 +57,8 @@ def test_aug_fastq_reader():
     assert n == 7
 
 
-def test_aug_fastq_reader_e1():
-    infilename = kevlar.tests.data_file('example1.augfastq')
+def test_augfastx_reader_e1():
+    infilename = data_file('example1.augfastq')
     infile = open(infilename, 'r')
     record = next(kevlar.parse_augmented_fastx(infile))
 
@@ -75,8 +77,8 @@ def test_aug_fastq_reader_e1():
     assert record.ikmers[1].abund == [20, 28, 0, 1]
 
 
-def test_aug_fastq_reader_e2():
-    infilename = kevlar.tests.data_file('example2.augfastq')
+def test_augfastx_reader_e2():
+    infilename = data_file('example2.augfastq')
     infile = open(infilename, 'r')
     record = next(kevlar.parse_augmented_fastx(infile))
 
@@ -96,8 +98,95 @@ def test_aug_fastq_reader_e2():
     assert record.ikmers[1].abund == [23, 0, 0]
 
 
+def test_augfastx_reader_withmates():
+    instream = kevlar.open(data_file('seqs-mates.augfastq'), 'r')
+    reader = kevlar.parse_augmented_fastx(instream)
+
+    record = next(reader)
+    assert len(record.ikmers) == 5
+    assert hasattr(record, 'mateseqs')
+    assert len(record.mateseqs) == 1
+    assert record.mateseqs[0].startswith('CTGATAAGCAACTTCAGCAAA')
+
+    record = next(reader)
+    assert len(record.ikmers) == 4
+    assert hasattr(record, 'mateseqs')
+    assert len(record.mateseqs) == 1
+    assert record.mateseqs[0].startswith('ATTAGAAAAAAAAAGTGCATT')
+
+    record = next(reader)
+    assert len(record.ikmers) == 21
+    assert not hasattr(record, 'mateseqs') or len(record.mateseqs) == 0
+
+    record = next(reader)
+    assert len(record.ikmers) == 2
+    assert hasattr(record, 'mateseqs')
+    assert record.mateseqs[0].startswith('CAGATGTGTCTTGTGGGCAGT')
+
+    with pytest.raises(StopIteration):
+        next(reader)
+
+
+def test_augfastx_writer():
+    output = StringIO()
+    record = screed.Record(
+        name='BasiliscusVulgarisRead84467/1',
+        sequence='TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT',
+        quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+        ikmers=[
+            KmerOfInterest(
+                sequence='AGGGGCGTGACTTAATAAG', offset=13, abund=[12, 1, 1]
+            ),
+            KmerOfInterest(
+                sequence='GGGCGTGACTTAATAAGGT', offset=15, abund=[20, 0, 1]
+            ),
+        ],
+    )
+    kevlar.print_augmented_fastx(record, output)
+    record = screed.Record(
+        name='BasiliscusVulgarisRead90577/2',
+        sequence='CTGTAATCCCAGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAG',
+        quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+        ikmers=[
+            KmerOfInterest(
+                sequence='TGTAATCCCAGCACTTTGG', offset=1, abund=[5, 7, 9]
+            ),
+            KmerOfInterest(
+                sequence='GTAATCCCAGCACTTTGGG', offset=2, abund=[7, 10, 9]
+            ),
+        ],
+        mateseqs=['CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG']
+    )
+    kevlar.print_augmented_fastx(record, output)
+    record = screed.Record(
+        name='BasiliscusVulgarisRead99037/1',
+        sequence='AGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAGGATTACAGAT',
+        quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
+    )
+    kevlar.print_augmented_fastx(record, output)
+
+    assert output.getvalue() == """@BasiliscusVulgarisRead84467/1
+TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT
++
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+             AGGGGCGTGACTTAATAAG          12 1 1#
+               GGGCGTGACTTAATAAGGT          20 0 1#
+@BasiliscusVulgarisRead90577/2
+CTGTAATCCCAGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAG
++
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+ TGTAATCCCAGCACTTTGG          5 7 9#
+  GTAATCCCAGCACTTTGGG          7 10 9#
+#mateseq=CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG#
+@BasiliscusVulgarisRead99037/1
+AGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAGGATTACAGAT
++
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+"""
+
+
 def test_partition_reader_simple():
-    infile = kevlar.tests.data_file('part-reads-simple.fa')
+    infile = data_file('part-reads-simple.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_partitioned_reads(readstream))
     assert len(partitions) == 2
@@ -106,7 +195,7 @@ def test_partition_reader_simple():
 
 
 def test_partition_reader_mixed():
-    infile = kevlar.tests.data_file('part-reads-mixed.fa')
+    infile = data_file('part-reads-mixed.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     with pytest.raises(KevlarPartitionLabelError) as ple:
         partitions = list(kevlar.parse_partitioned_reads(readstream))
@@ -114,7 +203,7 @@ def test_partition_reader_mixed():
 
 
 def test_parse_single_partition():
-    infile = kevlar.tests.data_file('part-reads-simple.fa')
+    infile = data_file('part-reads-simple.fa')
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_single_partition(readstream, '1'))
@@ -132,7 +221,7 @@ def test_parse_single_partition():
 
 
 def test_parse_single_partition_nonpartitioned_reads():
-    infile = kevlar.tests.data_file('dup.augfastq')
+    infile = data_file('dup.augfastq')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_single_partition(readstream, '42'))
     assert partitions == []
@@ -143,7 +232,7 @@ def test_parse_single_partition_nonpartitioned_reads():
     ('example2.augfastq.gz'),
 ])
 def test_kevlar_open(basename):
-    infilename = kevlar.tests.data_file(basename)
+    infilename = data_file(basename)
     infile = kevlar.open(infilename, 'r')
     record = next(kevlar.parse_augmented_fastx(infile))
 
@@ -156,8 +245,7 @@ def test_kevlar_open(basename):
 
 
 def test_ikmer_abund_after_recalc():
-    """
-    Ensure interesting k-mer abundances are correct after recalculation.
+    """Ensure interesting k-mer abundances are correct after recalculation.
 
     The interesting k-mer has an advertised abundance of 28, but a true
     abundance (in `counts`) of 10. The readset "validate" function should check
@@ -177,6 +265,6 @@ def test_ikmer_abund_after_recalc():
 
     assert read.ikmers[0].abund[0] == 28
 
-    rs.validate(minabund=8)
+    rs.validate(casemin=8)
     assert rs.valid == (1, 1)
     assert read.ikmers[0].abund[0] == 10

@@ -14,21 +14,28 @@ from gzip import open as gzopen
 from os import makedirs
 from os.path import dirname
 import re
+from subprocess import Popen, PIPE, check_call
 import sys
+from tempfile import TemporaryFile
 
 # Third-party libraries
 import khmer
+from khmer.utils import broken_paired_reader
+import pysam
 import screed
 
 # Internal modules
 from kevlar import seqio
 from kevlar import overlap
 from kevlar import sketch
+from kevlar import reference
+from kevlar import cigar
+from kevlar import varmap
+from kevlar import vcf
 from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
-from kevlar.variantset import VariantSet
 from kevlar.timer import Timer
 
 # Subcommands and command-line interface
@@ -45,6 +52,8 @@ from kevlar import localize
 from kevlar import call
 from kevlar import alac
 from kevlar import simplex
+from kevlar import simlike
+from kevlar import dist
 from kevlar import split
 from kevlar import gentrio
 from kevlar import cli
@@ -59,7 +68,7 @@ del get_versions
 
 
 def open(filename, mode):
-    if mode not in ['r', 'w']:
+    if mode not in ('r', 'w'):
         raise ValueError('invalid mode "{}"'.format(mode))
     if filename in ['-', None]:
         filehandle = sys.stdin if mode == 'r' else sys.stdout
@@ -115,14 +124,18 @@ def multi_file_iter_khmer(filenames):
             yield record
 
 
-def clean_subseqs(sequence, ksize):
-    for subseq in re.split('[^ACGT]', sequence):
-        if len(subseq) >= ksize:
-            yield subseq
+def paired_reader(readstream):
+    i = 0
+    for n, ispaired, read1, read2 in broken_paired_reader(readstream):
+        i += 1
+        yield i, read1, read2
+        if ispaired:
+            i += 1
+            yield i, read2, read1
 
 
 def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
-    print('##fileFormat=VCFv', version, sep='', file=outstream)
+    print('##fileformat=VCFv', version, sep='', file=outstream)
     print('##source=', source, sep='', file=outstream)
     if infoheader:
         print('##INFO=<GT,Number=3,Type=String,Description="Genotypes of each '

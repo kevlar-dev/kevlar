@@ -25,7 +25,9 @@ from . import localize
 from . import call
 from . import alac
 from . import simplex
+from . import simlike
 from . import split
+from . import dist
 
 mains = {
     'dump': kevlar.dump.main,
@@ -42,7 +44,9 @@ mains = {
     'call': kevlar.call.main,
     'alac': kevlar.alac.main,
     'simplex': kevlar.simplex.main,
+    'simlike': kevlar.simlike.main,
     'split': kevlar.split.main,
+    'dist': kevlar.dist.main,
 }
 
 subparser_funcs = {
@@ -60,12 +64,14 @@ subparser_funcs = {
     'call': call.subparser,
     'alac': alac.subparser,
     'simplex': simplex.subparser,
+    'simlike': simlike.subparser,
     'split': split.subparser,
+    'dist': dist.subparser,
 }
 
 
 def parser():
-    bubbletext = """
+    bubbletext = r'''
 ≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
 ┌ ┐            ┌ ┐
 | |            | |
@@ -74,7 +80,7 @@ def parser():
 |   <  __/\ V /| | (_| | |        reference-free variant discovery in
 |_|\_\___| \_/ |_|\__,_|_|                   large eukaryotic genomes
 ≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠≠
-"""
+'''
     subcommandstr = '", "'.join(sorted(list(mains.keys())))
     parser = argparse.ArgumentParser(
         description=bubbletext,

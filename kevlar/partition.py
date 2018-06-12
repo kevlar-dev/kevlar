@@ -36,7 +36,7 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
     print('[kevlar::partition]', 'Graph built in {:.2f} sec'.format(elapsed),
           file=logstream)
 
-    if gmlfile:
+    if gmlfile:  # pragma: no cover
         kevlar.to_gml(graph, gmlfile, logstream)
 
     timer.start('partition')
@@ -74,7 +74,7 @@ def main(args):
                     kevlar.print_augmented_fastx(read, outfile)
         else:
             for read in part:
-                read.name += '{:s} kvcc={:d}'.format(read.name, partnum)
+                read.name += ' kvcc={:d}'.format(partnum)
                 kevlar.print_augmented_fastx(read, outstream)
     message = '[kevlar::partition] grouped {:d} reads'.format(numreads)
     message += ' into {:d} connected components'.format(partnum)

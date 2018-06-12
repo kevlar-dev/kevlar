@@ -1,4 +1,4 @@
-|kevlar build status| |Test coverage| |kevlar documentation| |Docker build status| |MIT licensed|
+|kevlar build status| |PyPI version| |Test coverage| |kevlar documentation| |Docker build status| |MIT licensed|
 
 kevlar
 ======
@@ -25,8 +25,8 @@ How do I use kevlar?
 - Quick start guide: http://kevlar.readthedocs.io/en/latest/quick-start.html
 - Tutorial: http://kevlar.readthedocs.io/en/latest/tutorial.html
 
-**Note**: kevlar is currently focused almost entirely on finding novel germline variants in simplex pedigrees.
-We hope to support a wider range of experimental designs soon.
+**Note**: kevlar is currently focused almost entirely on finding novel germline variants in related individuals.
+We hope to benchmark kevlar a wider range of experimental designs soon.
 
 Contributing
 ------------
@@ -39,6 +39,9 @@ The kevlar software is a project of the `Lab for Data Intensive Biology <http://
 .. |kevlar build status| image:: https://img.shields.io/travis/dib-lab/kevlar.svg
    :target: https://travis-ci.org/dib-lab/kevlar
    :alt: Status of the continuous integration build
+.. |PyPI version| image:: https://img.shields.io/pypi/v/biokevlar.svg
+   :target: https://pypi.python.org/pypi/genhub
+   :alt: PyPI version
 .. |Test coverage| image:: https://img.shields.io/codecov/c/github/dib-lab/kevlar.svg
    :target: https://codecov.io/github/dib-lab/kevlar
    :alt: Current code coverage from automated tests

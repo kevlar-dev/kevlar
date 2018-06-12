@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+nuclmm simulate --order 6 --numseqs 1 --seqlen 20000 --seed 2468 --out kevlar/tests/data/microtrios/refr-li.fa notebook/human-sim-pico/human.order6.mm
+nuclmm simulate --order 6 --numseqs 1 --seqlen 20000 --seed 1357 --out kevlar/tests/data/microtrios/refr-na.fa notebook/human-sim-pico/human.order6.mm
+nuclmm simulate --order 6 --numseqs 1 --seqlen 20000 --seed 1235 --out kevlar/tests/data/microtrios/refr-k.fa notebook/human-sim-pico/human.order6.mm
+
+kevlar gentrio --inherited 2 --de-novo 1 --vcf kevlar/tests/data/microtrios/variants-li.vcf --prefix kevlar/tests/data/microtrios/trio-li --weights snv=1.0 --seed 102938 kevlar/tests/data/microtrios/refr-li.fa
+kevlar gentrio --inherited 2 --de-novo 1 --vcf kevlar/tests/data/microtrios/variants-na.vcf --prefix kevlar/tests/data/microtrios/trio-na --weights snv=1.0 --seed 475656 kevlar/tests/data/microtrios/refr-na.fa
+kevlar gentrio --inherited 2 --de-novo 1 --vcf kevlar/tests/data/microtrios/variants-k.vcf --prefix kevlar/tests/data/microtrios/trio-k --weights snv=1.0 --seed 928374 kevlar/tests/data/microtrios/refr-k.fa
+
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 111111 kevlar/tests/data/microtrios/trio-li-father.fasta kevlar/tests/data/microtrios/trio-li-father-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 222222 kevlar/tests/data/microtrios/trio-li-mother.fasta kevlar/tests/data/microtrios/trio-li-mother-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 333333 kevlar/tests/data/microtrios/trio-li-proband.fasta kevlar/tests/data/microtrios/trio-li-proband-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 444444 kevlar/tests/data/microtrios/trio-na-father.fasta kevlar/tests/data/microtrios/trio-na-father-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 555555 kevlar/tests/data/microtrios/trio-na-mother.fasta kevlar/tests/data/microtrios/trio-na-mother-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 666666 kevlar/tests/data/microtrios/trio-na-proband.fasta kevlar/tests/data/microtrios/trio-na-proband-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 777777 kevlar/tests/data/microtrios/trio-k-father.fasta kevlar/tests/data/microtrios/trio-k-father-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 888888 kevlar/tests/data/microtrios/trio-k-mother.fasta kevlar/tests/data/microtrios/trio-k-mother-{1,2}.fastq
+wgsim -e 0.005 -r 0.0 -d 450 -s 50 -N 3000 -1 100 -2 100 -S 999999 kevlar/tests/data/microtrios/trio-k-proband.fasta kevlar/tests/data/microtrios/trio-k-proband-{1,2}.fastq
+
+for trio in li na k
+do
+    for ind in father mother proband
+    do
+        interleave-reads.py kevlar/tests/data/microtrios/trio-${trio}-${ind}-{1,2}.fastq | gzip -c > kevlar/tests/data/microtrios/trio-${trio}-${ind}.fq.gz
+    done
+done

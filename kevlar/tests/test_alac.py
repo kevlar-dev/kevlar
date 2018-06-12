@@ -23,10 +23,17 @@ def test_pico_4(greedy, capsys):
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
 
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+
     vcf = '\t'.join([
         'seq1', '1175768', '.', 'T', 'C', '.', 'PASS',
-        'IK=25;RW=CCCTGCCATTATAGATGCTAGATTTACATCTTCATTTATTTTTACTTTT;'
-        'VW=CCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTTACTTTT'
+        'ALTWINDOW=CCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTTACTTTT;'
+        'CIGAR=50D192M50D;IKMERS=25;KSW2=179;'
+        'REFRWINDOW=CCCTGCCATTATAGATGCTAGATTTACATCTTCATTTATTTTTACTTTT;'
+        'CONTIG=ACCTGATTTTGAAGAAGAAAATCAGTTTAAGTCAAAAGGTTACTTTCCTTGTCCTGAACTGG'
+        'AGAACTGGGGCCCTGCCATTATAGATGCTAGATTCACATCTTCATTTATTTTTACTTTTTGTCTTGACA'
+        'GAGTGGGCGCTGGTTTTTTTAATTATTTTTGGCCAATCAAAAAATACTCTCCTTCGTGGGT'
     ])
     assert vcf.strip() == out.strip()
 
@@ -40,13 +47,7 @@ def test_pico_4(greedy, capsys):
                    'ACCCGCAAGCACACCGCTTTCAGTGTGTCACATGCACA'),
     (5, 1175767, 'T', 'C'),
     (6, 185751, 'TCAAACTCTGGCATTATACATAGGGTTCCCG', 'T'),
-    (7, 2265794, 'GCAGGGTACATAAGAGTCCATTGTGCCTGTATTATTTTGAGCAATGGCTAAAGTACCTTC'
-                 'ACCCTTGCTC', 'G'),
     (8, 636698, 'C', 'A'),
-    (9, 226610, 'TTCAACTCTACAGGGTCTGATGCTTACAGGAGTTCCCTTTTCCTACATTTGGTTCAAGATG'
-                'GCAACAAATACATTTTAGATTCACATAGCTCATCCTTCTAGGTTAACAGTAAACTTAAGAA'
-                'CTAAGACCAGAACCAGGAGGGTCAGGAAATTCTCCTGTGTGGTTGCTGGGACCACTGCAAA'
-                'GCAGTGGC', 'T'),
     (10, 1527138, 'C', 'CTCCTGGTCTGCCACGGTTGACTTGCCTACATAT'),
 ])
 def test_pico_calls(cc, pos, ref, alt):
@@ -72,6 +73,8 @@ def test_pico_partitioned(capsys):
 
     out, err = capsys.readouterr()
     lines = out.strip().split('\n')
+    assert len(lines) == 33
+    lines = [l for l in lines if not l.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
     assert numnocalls == 2
@@ -82,19 +85,21 @@ def test_ikmer_filter_python():
     Smoke test for filtering based in number of supporting ikmers.
 
     Each partition in the data set has only 2 supporting interesting k-mers.
-    The supplied reference file doesn't exist, so if this test passes it's
-    because the filtering worked correctly and the `localize` code is never
-    invoked.
+    The supplied reference file doesn't actually correspond to the reads, so if
+    this test passes it's because the filtering worked correctly and the
+    `localize` code is never invoked.
     """
     readfile = data_file('min_ikmers_filt.augfastq.gz')
     reads = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     parts = kevlar.parse_partitioned_reads(reads)
-    calls = list(kevlar.alac.alac(parts, 'BOGUSREFR', ksize=31, min_ikmers=3))
+    refr = data_file('localize-refr.fa')
+    calls = list(kevlar.alac.alac(parts, refr, ksize=31, min_ikmers=3))
 
 
 def test_ikmer_filter_cli():
     reads = data_file('min_ikmers_filt.augfastq.gz')
-    arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, 'FAKEREFR']
+    refr = data_file('localize-refr.fa')
+    arglist = ['alac', '--ksize', '31', '--min-ikmers', '3', reads, refr]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
 
@@ -125,6 +130,7 @@ def test_alac_single_partition(label, position):
     calls = list(kevlar.alac.alac(partstream, refrfile))
     assert len(calls) == 1
     assert calls[0].position == position - 1
+    assert calls[0].attribute('PART') == label
 
 
 def test_alac_single_partition_badlabel(capsys):
@@ -134,6 +140,9 @@ def test_alac_single_partition_badlabel(capsys):
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
+
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
     assert out == ''
 
 
@@ -144,3 +153,54 @@ def test_alac_bigpart():
     partstream = kevlar.parse_partitioned_reads(readstream)
     calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
     assert len(calls) == 3
+
+
+def test_alac_matedist():
+    readfile = data_file('mate-dist/cc130.augfastq.gz')
+    refrfile = data_file('mate-dist/cc130.refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
+                              seedsize=51)
+    calls = list(caller)
+    assert len(calls) == 3
+    passed = [c for c in calls if c.filterstr == 'PASS']
+    assert len(passed) == 3
+    assert sorted([c.position for c in passed]) == [1475, 115377, 127540]
+
+
+def test_alac_nomates():
+    readfile = data_file('mate-dist/cc130.nomates.augfastq.gz')
+    refrfile = data_file('mate-dist/cc130.refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    caller = kevlar.alac.alac(partstream, refrfile, ksize=31, delta=50,
+                              seedsize=51)
+    calls = list(caller)
+    assert len(calls) == 3
+    passed = [c for c in calls if c.filterstr == 'PASS']
+    assert len(passed) == 3
+    coords = set([c.position for c in passed])
+    assert coords == set([1476 - 1, 115378 - 1, 127541 - 1])
+
+
+@pytest.mark.parametrize('vcfposition,X,cigar', [
+    (40692, 10000, '32713D96M6I91M15142D'),
+    (40692, 1000, '50D96M6I91M50D'),
+    (40692, 0, '32713D96M6I91M140025D'),
+    (40692, None, '50D96M6I91M50D'),
+])
+def test_alac_maxdiff(vcfposition, X, cigar):
+    pstream = kevlar.parse_partitioned_reads(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('maxdiff-reads.augfastq.gz'), 'r')
+        )
+    )
+    refrfile = data_file('maxdiff-refr.fa.gz')
+    caller = kevlar.alac.alac(
+        pstream, refrfile, ksize=31, delta=50, seedsize=51, maxdiff=X
+    )
+    calls = list(caller)
+    assert len(calls) == 1
+    assert calls[0].cigar == cigar
+    assert calls[0].position == vcfposition - 1

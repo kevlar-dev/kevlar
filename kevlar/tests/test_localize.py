@@ -11,27 +11,30 @@ from io import StringIO
 import pytest
 import screed
 import kevlar
-from kevlar.localize import SeedMatchSet
-from kevlar.localize import KevlarRefrSeqNotFoundError
-from kevlar.localize import (extract_regions, get_unique_seeds,
-                             unique_seed_string)
+from kevlar.localize import Localizer, KevlarRefrSeqNotFoundError
+from kevlar.localize import get_unique_seeds, unique_seed_string
+from kevlar.reference import ReferenceCutout
 from kevlar.tests import data_file
 
 
-def test_seed_match_set_simple():
-    intervals = SeedMatchSet(seedsize=25)
-    assert intervals.get_spans('chr1') is None
+def test_localizer_simple():
+    intervals = Localizer(seedsize=25)
+    assert list(intervals.get_cutouts()) == []
 
-    intervals.add('chr1', 100)
-    intervals.add('chr1', 115)
-    assert intervals.get_spans('chr1') == [(100, 140)]
-
-    intervals.add('chr2', 200)
-    intervals.add('chr2', 205)
-    intervals.add('chr2', 207)
-    intervals.add('chr2', 235008)
-    intervals.add('chr2', 235075)
-    assert intervals.get_spans('chr2') == [(200, 232), (235008, 235100)]
+    intervals.add_seed_match('chr1', 100)
+    intervals.add_seed_match('chr1', 115)
+    intervals.add_seed_match('chr2', 200)
+    intervals.add_seed_match('chr2', 205)
+    intervals.add_seed_match('chr2', 207)
+    intervals.add_seed_match('chr2', 235008)
+    intervals.add_seed_match('chr2', 235075)
+    testint = [c.interval for c in intervals.get_cutouts()]
+    print('DEBUG', testint)
+    assert testint == [
+        ('chr1', 100, 140),
+        ('chr2', 200, 232),
+        ('chr2', 235008, 235100)
+    ]
 
 
 @pytest.mark.parametrize('infile', [
@@ -67,70 +70,112 @@ def test_unique_seed_string():
     assert seeds == testseeds
 
 
-def test_extract_regions_basic():
-    intervals = SeedMatchSet(seedsize=10)
-    intervals.add('bogus-genome-chr2', 10)
-    instream = open(data_file('bogus-genome/refr.fa'), 'r')
-    regions = [r for r in extract_regions(instream, intervals, delta=0)]
-    assert len(regions) == 1
-    assert regions[0] == ('bogus-genome-chr2_10-20', 'GTTACATTAC')
+def test_get_cutouts_basic():
+    intervals = Localizer(seedsize=10)
+    intervals.add_seed_match('bogus-genome-chr2', 10)
+    refrstream = open(data_file('bogus-genome/refr.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
+    cutouts = list(intervals.get_cutouts(refrseqs=seqs))
+    assert len(cutouts) == 1
+    assert cutouts[0].defline == 'bogus-genome-chr2_10-20'
+    assert cutouts[0].sequence == 'GTTACATTAC'
 
 
-def test_extract_regions_basic_2():
-    intervals = SeedMatchSet(seedsize=21)
-    intervals.add('simple', 49)
-    intervals.add('simple', 52)
-    intervals.add('simple', 59)
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    regions = [r for r in extract_regions(instream, intervals, delta=5)]
-    assert len(regions) == 1
-    assert regions[0] == ('simple_44-85',
-                          'AATACTATGCCGATTTATTCTTACACAATTAAATTGCTAGT')
+def test_get_cutouts_basic_2():
+    intervals = Localizer(seedsize=21, delta=5)
+    intervals.add_seed_match('simple', 49)
+    intervals.add_seed_match('simple', 52)
+    intervals.add_seed_match('simple', 59)
+    refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
+    cutouts = list(intervals.get_cutouts(refrseqs=seqs))
+    assert len(cutouts) == 1
+    assert cutouts[0].defline == 'simple_44-85'
+    assert cutouts[0].sequence == 'AATACTATGCCGATTTATTCTTACACAATTAAATTGCTAGT'
 
 
-def test_extract_regions_large_span():
-    intervals = SeedMatchSet(seedsize=21)
-    intervals.add('simple', 100)
-    intervals.add('simple', 200)
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    seqids = [r[0] for r in extract_regions(instream, intervals, maxdiff=50)]
-    assert seqids == ['simple_75-146', 'simple_175-246']
+def test_get_cutouts_basic_3():
+    intervals = Localizer(seedsize=21, delta=10)
+    intervals.add_seed_match('simple', 40)
+    intervals.add_seed_match('simple', 80)
+    intervals.add_seed_match('simple', 120)
+    intervals.add_seed_match('simple', 500)
+    refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
+    cutouts = list(intervals.get_cutouts(refrseqs=seqs, clusterdist=None))
+    assert len(cutouts) == 1
+    assert cutouts[0].defline == 'simple_30-531'
+    assert len(cutouts[0].sequence) == 501
 
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    regions = [r for r in extract_regions(instream, intervals, delta=50)]
-    assert len(regions) == 1
-    assert regions[0][0] == 'simple_50-271'
+
+def test_get_cutouts_large_span():
+    refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
+
+    intervals = Localizer(seedsize=21, delta=25)
+    intervals.add_seed_match('simple', 100)
+    intervals.add_seed_match('simple', 200)
+    cutouts = intervals.get_cutouts(refrseqs=seqs, clusterdist=50)
+    deflines = [c.defline for c in cutouts]
+    assert deflines == ['simple_75-146', 'simple_175-246']
+
+    intervals = Localizer(seedsize=21, delta=50)
+    intervals.add_seed_match('simple', 100)
+    intervals.add_seed_match('simple', 200)
+    cutouts = intervals.get_cutouts(refrseqs=seqs, clusterdist=100)
+    deflines = [c.defline for c in cutouts]
+    assert deflines == ['simple_50-271']
 
 
-def test_extract_regions_missing_seq():
-    intervals = SeedMatchSet(seedsize=21)
-    intervals.add('simple', 100)
-    intervals.add('simple', 200)
-    intervals.add('TheCakeIsALie', 42)
-    intervals.add('TheCakeIsALie', 100)
-    intervals.add('TheCakeIsALie', 77)
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+def test_get_cutouts_missing_seq():
+    intervals = Localizer(seedsize=21)
+    intervals.add_seed_match('simple', 100)
+    intervals.add_seed_match('simple', 200)
+    intervals.add_seed_match('TheCakeIsALie', 42)
+    intervals.add_seed_match('TheCakeIsALie', 100)
+    intervals.add_seed_match('TheCakeIsALie', 77)
+    refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
     with pytest.raises(KevlarRefrSeqNotFoundError) as rnf:
-        _ = [r for r in extract_regions(instream, intervals)]
+        list(intervals.get_cutouts(refrseqs=seqs))
     assert 'TheCakeIsALie' in str(rnf)
 
 
 def test_extract_regions_boundaries():
-    intervals = SeedMatchSet(seedsize=31)
-    intervals.add('simple', 15)
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    regions = [r for r in extract_regions(instream, intervals, delta=20)]
-    assert len(regions) == 1
-    assert regions[0][0] == 'simple_0-66'
+    refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
+    seqs = kevlar.seqio.parse_seq_dict(refrstream)
 
-    intervals = SeedMatchSet(seedsize=31)
-    intervals.add('simple', 925)
-    intervals.add('simple', 955)
-    intervals.add('simple', 978)
-    instream = open(data_file('simple-genome-ctrl1.fa'), 'r')
-    regions = [r for r in extract_regions(instream, intervals, delta=20)]
-    assert len(regions) == 1
-    assert regions[0][0] == 'simple_905-1000'
+    intervals = Localizer(seedsize=31, delta=20)
+    intervals.add_seed_match('simple', 15)
+    cutouts = list(intervals.get_cutouts(refrseqs=seqs))
+    assert len(cutouts) == 1
+    assert cutouts[0].defline == 'simple_0-66'
+
+    intervals = Localizer(seedsize=31, delta=20)
+    intervals.add_seed_match('simple', 925)
+    intervals.add_seed_match('simple', 955)
+    intervals.add_seed_match('simple', 978)
+    cutouts = list(intervals.get_cutouts(refrseqs=seqs))
+    assert len(cutouts) == 1
+    assert cutouts[0].defline == 'simple_905-1000'
+
+
+@pytest.mark.parametrize('X,numtargets', [
+    (100000, 1),
+    (10000, 5),
+    (1000, 33),
+    (0, 1),
+    (None, 33),
+])
+def test_maxdiff(X, numtargets):
+    contigstream = kevlar.parse_augmented_fastx(
+        kevlar.open(data_file('maxdiff-contig.augfasta'), 'r')
+    )
+    refrfile = data_file('maxdiff-refr.fa.gz')
+    targeter = kevlar.localize.localize(contigstream, refrfile, seedsize=51,
+                                        delta=50, maxdiff=X)
+    targets = list(targeter)
+    assert len(targets) == numtargets
 
 
 def test_main(capsys):

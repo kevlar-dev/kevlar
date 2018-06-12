@@ -23,8 +23,7 @@ class KevlarPartitionLabelError(ValueError):
 
 
 def parse_fasta(data):
-    """
-    Load sequences in Fasta format.
+    """Load sequences in Fasta format.
 
     This generator function yields a tuple containing a defline and a sequence
     for each record in the Fasta data. Stolen shamelessly from
@@ -39,7 +38,7 @@ def parse_fasta(data):
             name, seq = line, []
         else:
             seq.append(line)
-    if name:
+    if name:  # pragma: no cover
         yield (name, ''.join(seq))
 
 
@@ -54,8 +53,7 @@ def parse_seq_dict(data):
 
 
 def parse_augmented_fastx(instream):
-    """
-    Read augmented Fast[q|a] records into memory.
+    """Read augmented Fast[q|a] records into memory.
 
     The parsed records will have .name, .sequence, and .quality defined (unless
     it's augmented Fasta), as well as a list of interesting k-mers. See
@@ -73,30 +71,37 @@ def parse_augmented_fastx(instream):
                 _ = next(instream)
                 qual = next(instream).strip()
                 record = screed.Record(name=readid, sequence=seq, quality=qual,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
             else:
                 record = screed.Record(name=readid, sequence=seq,
-                                       ikmers=list())
+                                       ikmers=list(), mateseqs=list())
         elif line.endswith('#\n'):
+            if line.startswith('#mateseq='):
+                mateseq = re.search(r'^#mateseq=(\S+)#\n$', line).group(1)
+                record.mateseqs.append(mateseq)
+                continue
             offset = len(line) - len(line.lstrip())
             line = line.strip()[:-1]
-            abundances = re.split('\s+', line)
+            abundances = re.split(r'\s+', line)
             kmer = abundances.pop(0)
             abundances = [int(a) for a in abundances]
             ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=offset,
                                           abund=abundances)
             record.ikmers.append(ikmer)
-    if record is not None:
-        yield record
+    yield record
 
 
 def print_augmented_fastx(record, outstream=stdout):
     """Write augmented records out to an .augfast[q|a] file."""
     khmer.utils.write_record(record, outstream)
-    for kmer in sorted(record.ikmers, key=lambda k: k.offset):
-        abundstr = ' '.join([str(a) for a in kmer.abund])
-        print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
-              sep='', file=outstream)
+    if hasattr(record, 'ikmers'):
+        for kmer in sorted(record.ikmers, key=lambda k: k.offset):
+            abundstr = ' '.join([str(a) for a in kmer.abund])
+            print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
+                  sep='', file=outstream)
+    if hasattr(record, 'mateseqs'):
+        for mateseq in record.mateseqs:
+            print('#mateseq={:s}#'.format(mateseq), file=outstream)
 
 
 def afxstream(filelist):
@@ -106,12 +111,19 @@ def afxstream(filelist):
             yield record
 
 
+def partition_id(readname):
+    partmatch = re.search(r'kvcc=(\d+)', readname)
+    if not partmatch:
+        return None
+    return partmatch.group(1)
+
+
 def parse_partitioned_reads(readstream):
     current_part = None
     reads = list()
     for read in readstream:
-        partmatch = re.search('kvcc=(\d+)', read.name)
-        if not partmatch:
+        part = partition_id(read.name)
+        if part is None:
             reads.append(read)
             current_part = False
             continue
@@ -120,7 +132,6 @@ def parse_partitioned_reads(readstream):
             message = 'reads with and without partition labels (kvcc=#)'
             raise KevlarPartitionLabelError(message)
 
-        part = partmatch.group(1)
         if part != current_part:
             if current_part:
                 yield reads
@@ -128,8 +139,7 @@ def parse_partitioned_reads(readstream):
             current_part = part
         reads.append(read)
 
-    if len(reads) > 0:
-        yield reads
+    yield reads
 
 
 def parse_single_partition(readstream, partid):
@@ -138,7 +148,7 @@ def parse_single_partition(readstream, partid):
     """
     for partition in parse_partitioned_reads(readstream):
         readname = partition[0].name
-        partmatch = re.search('kvcc=(\d+)', readname)
+        partmatch = re.search(r'kvcc=(\d+)', readname)
         if not partmatch:
             continue
         if partmatch.group(1) == partid:
@@ -146,8 +156,7 @@ def parse_single_partition(readstream, partid):
 
 
 def load_reads_and_kmers(instream, logstream=None):
-    """
-    Load reads into lookup tables for convenient access.
+    """Load reads into lookup tables for convenient access.
 
     The first table is a dictionary of reads indexed by read name, and the
     second table is a dictionary of read sets indexed by an interesting k-mer.
@@ -166,8 +175,7 @@ def load_reads_and_kmers(instream, logstream=None):
 
 
 class AnnotatedReadSet(object):
-    """
-    Data structure for de-duplicating reads and combining annotated k-mers.
+    """Data structure for de-duplicating reads and combining annotated k-mers.
 
     The `kevlar novel` command produces output in an "augmented Fastq" format,
     with "interesting" (potentially novel) k-mers annotated like so.
@@ -187,14 +195,15 @@ class AnnotatedReadSet(object):
     multiple augmented Fastq files and combining their annotated k-mers.
     """
 
-    def __init__(self, ksize, abundmem):
+    def __init__(self, ksize, abundmem, mask=None):
         self._reads = dict()
         self._counts = Counttable(ksize, abundmem / 4, 4)
+        self._mask = mask
         self._readcounts = defaultdict(int)
         self._ikmercounts = defaultdict(int)
 
         self._masked = defaultdict(int)
-        self._lowabund = defaultdict(int)
+        self._abundfilt = defaultdict(int)
         self._valid = defaultdict(int)
 
         self._novalidkmers_count = 0
@@ -214,8 +223,8 @@ class AnnotatedReadSet(object):
         return len(self._masked), sum(self._masked.values())
 
     @property
-    def lowabund(self):
-        return len(self._lowabund), sum(self._lowabund.values())
+    def abundfilt(self):
+        return len(self._abundfilt), sum(self._abundfilt.values())
 
     @property
     def valid(self):
@@ -242,34 +251,37 @@ class AnnotatedReadSet(object):
         return sum(self._ikmercounts.values())
 
     def add(self, newrecord):
+        self._readcounts[newrecord.name] += 1
         if newrecord.name in self._reads:
             record = self._reads[newrecord.name]
             assert record.sequence == newrecord.sequence
             record.ikmers.extend(newrecord.ikmers)
         else:
             self._reads[newrecord.name] = newrecord
-            self._counts.consume(newrecord.sequence)
 
-        self._readcounts[newrecord.name] += 1
         for kmer in newrecord.ikmers:
-            minkmer = kevlar.revcommin(kmer.sequence)
-            self._ikmercounts[minkmer] += 1
+            kmerhash = self._counts.hash(kmer.sequence)
+            self._ikmercounts[kmerhash] += 1
+            if self._mask and self._mask.get(kmerhash) > 0:
+                self._masked[kmerhash] += 1
+            else:
+                self._counts.add(kmerhash)
 
-    def validate(self, mask=None, minabund=5):
+    def validate(self, casemin=6, ctrlmax=1):
         for readid in self._reads:
             record = self._reads[readid]
-
             validated_kmers = list()
             for kmer in record.ikmers:
-                kmerseq = kevlar.revcommin(kmer.sequence)
-                if mask and mask.get(kmerseq) > 0:
-                    self._masked[kmerseq] += 1
-                elif self._counts.get(kmerseq) < minabund:
-                    self._lowabund[kmerseq] += 1
+                kmerhash = self._counts.hash(kmer.sequence)
+                kmercount = self._counts.get(kmerhash)
+                if kmercount < casemin:
+                    self._abundfilt[kmerhash] += 1
+                elif sum([1 for a in kmer.abund[1:] if a > ctrlmax]):
+                    self._abundfilt[kmerhash] += 1
                 else:
-                    kmer.abund[0] = self._counts.get(kmerseq)
+                    kmer.abund[0] = kmercount
                     validated_kmers.append(kmer)
-                    self._valid[kmerseq] += 1
+                    self._valid[kmerhash] += 1
             record.ikmers = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1

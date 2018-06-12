@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from argparse import SUPPRESS
 from khmer import khmer_args
 
 
@@ -50,9 +51,9 @@ def subparser(subparsers):
         'default is X=1'
     )
     novel_args.add_argument(
-        '-y', '--case-min', metavar='Y', type=int, default=5, help='k-mers '
+        '-y', '--case-min', metavar='Y', type=int, default=6, help='k-mers '
         'with abund < Y in the case sample are uninteresting or unreliable; '
-        'default is Y=5'
+        'default is Y=6'
     )
     novel_args.add_argument(
         '--novel-memory', default='1e6', type=khmer_args.memory_setting,
@@ -67,7 +68,8 @@ def subparser(subparsers):
     )
     novel_args.add_argument(
         '-t', '--threads', type=int, default=1, metavar='T', help='number of '
-        'threads to use for processing FASTA/FASTQ files; default is 1'
+        'threads to use for processing FASTA/FASTQ files, assembling reads, '
+        'and calling variants; default is 1'
     )
 
     filter_args = subparser.add_argument_group(
@@ -128,8 +130,10 @@ def subparser(subparsers):
         'contig is aligned to a cutout of the reference genome, and the '
         'variant is called from the alignment.'
     )
-    alac_args.add_argument('-z', '--seed-size', type=int, default=31,
-                           metavar='Z', help='seed size; default is 31')
+    alac_args.add_argument(
+        '-z', '--seed-size', type=int, default=51, metavar='Z',
+        help='seed size; default is 51'
+    )
     alac_args.add_argument(
         '-d', '--delta', type=int, default=50, metavar='D', help='extend the '
         'genomic cutout by D bp; default is 50'
@@ -163,3 +167,5 @@ def subparser(subparsers):
         '-k', '--ksize', type=int, default=31, metavar='K', help='k-mer size; '
         'default is 31'
     )
+    misc_args.add_argument('--save-case-counts', nargs='+', help=SUPPRESS)
+    misc_args.add_argument('--save-ctrl-counts', nargs='+', help=SUPPRESS)

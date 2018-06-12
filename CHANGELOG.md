@@ -2,23 +2,55 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.4.2] 2018-04-16
+
+### Fixed
+- Much cleaner and more concise calling code from implementing "center aligned" gap alignment strategy, facilitated by new CIGAR tokenizer (see #242).
+- Improved default behavior for `maxdiff` and splitting seed hits into distinct bins (#246).
+
+
+## [0.4.1] 2018-04-04
+
+### Fixed
+- Incorrect handling of VCF `FILTER` field resolved (see #235).
+- A bug causing some calls to be erroneously filtered (see #237).
+- A minor bug with banded mode in `kevlar novel`, various other minor fixes, and code that should have been removed previously (#239).
+
+
+
+## [0.4.0] 2018-03-29
 
 ### Added
 - New `kevlar gentrio` command for a more realistic similation of trios for testing and evaluation (#171).
 - New filter for `kevlar alac` for discarding partitions with a small number of interesting k-mers (#189).
+- New `kevlar split` subcommand for splitting a partitioned augfastq file into N chunks (see #206).
+- New `-p/--part-id` flag in `kevlar alac` for processing a single partition in a partitioned augfastq file (see #206).
+- New reader/parser for parititioned augfastx files (see #206).
+- New strategy for discriminating between variants and off-target calls using pairing information (see #210).
+- New optional "fallback" assembly strategy: if fermi-lite fails, try our homegrown greedy assembly algorithm (see #214 and #219).
+- New parameter for excluding SNV calls too near to the end of a contig (see #222).
 
 ### Changed
 - Replaced `pep8` with `pycodestyle` for enforcing code style in development (see #167).
 - The `--refr` argument of the `kevlar dump` command is now optional, and when no reference is explicitly specified `kevlar dump` acts primarily as a BAM to Fastq converter (see #170).
 - Split the functionality of the `count` subcommand: simple single-sample k-mer counting was kept in `count` with a much simplified interface, while the memory efficient multi-sample "masked counting" strategy was split out to a new subcommand `effcount` (see #185).
 - Replaced `kevlar reaugment` with a more generalizable `kevlar augment` subcommand (see #188).
+- Replaced `--ksize` with `--seed-size` in `kevlar localize` so that `kevlar alac` can now support different values for k-mers and localizing seeds/anchors (see #198).
+- Improved variant sorting, scoring, and reporting strategy (see #199).
+- The augmented Fastx format now permits annotation of 1 or more mate sequences (see #210).
+- Split `vcf.py` and `varmap.py` modules off from the `call.py` module (see #229).
 
 ### Fixed
 - Incorrect file names in the quick start documentation page (see 9f6bec06d4).
 - The `kevlar alac` procedure now accepts a stream of read partitions (instead of a stream of reads) at the Python API level, and correctly handles a single partition-labeled sequence file at the CLI level (see #165).
 - CIGARs that begin with I blocks (alternate allele contig is longer than reference locus) are now handled properly (see #191).
 - Bug with how `kevlar alac` handles "no reference match" scenarios resolved (see #192).
+- Bug with `kevlar count` when reading from multiple input files (see #202).
+- Can now call SNVs near INDELs (see #229).
+
+### Removed
+- The JCA assembly mode is no longer supported (see #231).
+
 
 ## [0.3.0] - 2017-11-03
 

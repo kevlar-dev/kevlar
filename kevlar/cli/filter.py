@@ -58,20 +58,30 @@ def subparser(subparsers):
         '"interesting" k-mers whose abundances were incorrectly reported '
         'previously.'
     )
-    filter_args.add_argument('--abund-memory', metavar='MEM', default='1e6',
-                             type=khmer_args.memory_setting,
-                             help='memory to allocate for re-calculating '
-                             'abundance of interesting k-mers; default is 1M')
-    filter_args.add_argument('--abund-max-fpr', type=float, metavar='FPR',
-                             default=0.001, help='terminate if the expected '
-                             'false positive rate is higher than the specified'
-                             ' FPR; default is 0.001')
-    filter_args.add_argument('--min-abund', type=int, default=5, metavar='Y',
-                             help='minimum abundance required to call a '
-                             'k-mer novel; should be the same value used for '
-                             '--case_min in `kevlar novel`; default is 5')
-    filter_args.add_argument('--ignore', metavar='KM', nargs='+',
-                             help='ignore the specified k-mer(s)')
+    filter_args.add_argument(
+        '--abund-memory', metavar='MEM', default='1e6',
+        type=khmer_args.memory_setting, help='memory to allocate for re-'
+        'calculating abundance of interesting k-mers; default is 1M'
+    )
+    filter_args.add_argument(
+        '--abund-max-fpr', type=float, metavar='FPR', default=0.001,
+        help='terminate if the expected false positive rate is higher than '
+        'the specified FPR; default is 0.001'
+    )
+    filter_args.add_argument(
+        '-x', '--ctrl-max', metavar='X', type=int, default=1,
+        help='k-mers with abund > X in any control sample are uninteresting; '
+        'default is X=1'
+    )
+    filter_args.add_argument(
+        '-y', '--case-min', metavar='Y', type=int, default=6,
+        help='k-mers with abund < Y in any case sample are uninteresting; '
+        'default is Y=6'
+    )
+    filter_args.add_argument(
+        '--ignore', metavar='KM', nargs='+',
+        help='ignore the specified k-mer(s)'
+    )
 
     misc_args = subparser.add_argument_group(
         'Miscellaneous settings'

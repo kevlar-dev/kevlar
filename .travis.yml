@@ -3,8 +3,9 @@ language: python
 addons:
     apt:
         packages:
-            - bwa
             - cloc
+            - git
+            - python3-tk
 branches:
   only:  # don't build "pushes" except on the master branch
     - master
@@ -12,13 +13,15 @@ cache: pip
 python:
     - 3.5
     - 3.6
+before_install:
+    - git clone https://github.com/lh3/bwa.git && cd bwa && make -j 2 && sudo cp bwa /usr/local/bin && cd -
 install:
     - make devenv
     - pip install wheel
     - pip install -r requirements.txt
     - pip install .
 script:
-    - make testall
+    - make testmore
     - make style
     - make doc
 after_success:
