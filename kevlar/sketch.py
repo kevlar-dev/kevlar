@@ -17,10 +17,12 @@ sketch_loader_by_filename_extension = {
     '.ct':  khmer.Counttable.load,
     '.cg':  khmer.Countgraph.load,
     '.sct': khmer.SmallCounttable.load,
+    '.cct': khmer.CyclicCounttable.load,
     '.scg': khmer.SmallCountgraph.load,
     '.nodetable':       khmer.Nodetable.load,
     '.nodegraph':       khmer.Nodegraph.load,
     '.counttable':      khmer.Counttable.load,
+    '.cycliccounttable':      khmer.CyclicCounttable.load,
     '.countgraph':      khmer.Countgraph.load,
     '.smallcounttable': khmer.SmallCounttable.load,
     '.smallcountgraph': khmer.SmallCountgraph.load,
@@ -103,6 +105,7 @@ def autoload(infile, count=True, graph=False, ksize=31, table_size=1e4,
 
     - `.ct` or `.counttable`: `Counttable`
     - `.sct` or `.smallcounttable`: `SmallCounttable`
+    - `.cct` or `.cycliccounttable`: `CyclicCounttable`
     - `.nt` or `.nodetable`: `Nodetable`
     - `.cg` or `.countgraph`: `Countgraph`
     - `.scg` or `.smallcountgraph`: `SmallCountgraph`

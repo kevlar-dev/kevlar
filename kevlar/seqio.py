@@ -13,6 +13,7 @@ from networkx import Graph, connected_components
 from sys import stdout, stderr, exit
 import re
 import khmer
+from khmer import CyclicCounttable as Counttable
 import screed
 import kevlar
 
@@ -196,7 +197,7 @@ class AnnotatedReadSet(object):
 
     def __init__(self, ksize, abundmem, mask=None):
         self._reads = dict()
-        self._counts = khmer.Counttable(ksize, abundmem / 4, 4)
+        self._counts = Counttable(ksize, abundmem / 4, 4)
         self._mask = mask
         self._readcounts = defaultdict(int)
         self._ikmercounts = defaultdict(int)
