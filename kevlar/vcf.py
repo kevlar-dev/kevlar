@@ -29,6 +29,7 @@ class VariantFilter(Enum):
     PassengerVariant = 3
     MateFail = 4
     PartitionScore = 5
+    LikelihoodFail = 6
 
 
 class FormattedList(list):
@@ -233,7 +234,10 @@ class VCFWriter(object):
             'call',
         VariantFilter.PartitionScore:
             'Expectation is 1 variant call per partition, so all call(s) with '
-            'suboptimal likelihood scores are filtered'
+            'suboptimal likelihood scores are filtered',
+        VariantFilter.LikelihoodFail:
+            'Variant calls with a likelihood score < 0.0 are unlikely to be'
+            'real',
     }
 
     info_metadata = {
