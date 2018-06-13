@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y ${PACKAGES} && apt-get clean
 
 RUN pip3 install --upgrade pip setuptools>=32.0.0
 RUN pip3 install pysam==0.14.1 networkx==2.1 pandas==0.23.1 scipy==1.1.0 matplotlib==2.2.0
-RUN pip3 install git+https://github.com/dib-lab/khmer.git@6a1f3ec994299ceda4367d75e6aa441ebad12909
+RUN pip3 install git+https://github.com/dib-lab/khmer.git@6c893074ea005589c230fb7cb3712f0b258f42fc
 RUN pip3 install .
 
 CMD bash
