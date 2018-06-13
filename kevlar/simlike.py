@@ -229,6 +229,8 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
     allcalls.sort(key=lambda c: c.attribute('LIKESCORE'), reverse=True)
     for call in allcalls:
+        if call.attribute('LIKESCORE') < 0.0:
+            call.filter(kevlar.vcf.VariantFilter.LikelihoodFail)
         yield call
 
 
