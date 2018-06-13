@@ -45,8 +45,8 @@ def readname(record):
     return name
 
 
-def keepers(record1, record2, bam, refrseqs=None, strict=False):
-    if record2 is None:  # single end mode
+def keepers(record1, record2, bam, refrseqs=None, pairmode='split'):
+    if record2 is None:  # single end behavior
         keep = not refrseqs or not perfectmatch(record1, bam, refrseqs)
         if keep:
             return [record1]
@@ -55,19 +55,22 @@ def keepers(record1, record2, bam, refrseqs=None, strict=False):
 
     r1keep = not refrseqs or not perfectmatch(record1, bam, refrseqs)
     r2keep = not refrseqs or not perfectmatch(record2, bam, refrseqs)
-    if strict:
+    if r1keep == r2keep:
         if r1keep and r2keep:
             return [record1, record2]
-        elif r1keep:
-            return [record1]
-        elif r2keep:
-            return [record2]
         else:
             return []
     else:
-        if r1keep or r2keep:
+        if pairmode == 'split':
+            if r1keep:
+                return [record1]
+            else:
+                assert r2keep
+                return [record2]
+        elif pairmode == 'keep':
             return [record1, record2]
         else:
+            assert pairmode == 'drop'
             return []
 
 

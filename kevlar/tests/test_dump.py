@@ -7,10 +7,11 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import pytest
-import sys
 import kevlar
 from kevlar.tests import data_file
+import pysam
+import pytest
+import sys
 
 
 def test_basic(capsys):
@@ -65,3 +66,23 @@ def test_suffix(strict, nrecords):
     assert len(records) == nrecords
     for record in records:
         assert record.name.endswith('/1') or record.name.endswith('/2')
+
+
+def test_keepers():
+    refrstream = kevlar.open(data_file('chr1-20kb.fa.gz'), 'r')
+    refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
+
+    bam = pysam.AlignmentFile(data_file('ssc-10reads.bam'))
+    reader = kevlar.seqio.bam_paired_reader(bam)
+
+    r1, r2 = next(reader)
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs)
+    assert len(keepers) == 2
+
+    r1, r2 = next(reader)
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs, pairmode='split')
+    assert len(keepers) == 1
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs, pairmode='keep')
+    assert len(keepers) == 2
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs, pairmode='drop')
+    assert len(keepers) == 0
