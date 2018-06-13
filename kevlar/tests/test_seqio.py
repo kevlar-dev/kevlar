@@ -15,6 +15,7 @@ from kevlar import KmerOfInterest
 from kevlar.seqio import AnnotatedReadSet as ReadSet
 from kevlar.seqio import KevlarPartitionLabelError
 import khmer
+import pysam
 import screed
 import shutil
 
@@ -268,3 +269,24 @@ def test_ikmer_abund_after_recalc():
     rs.validate(casemin=8)
     assert rs.valid == (1, 1)
     assert read.ikmers[0].abund[0] == 10
+
+
+def test_bam_paired_reader_5pairs():
+    bam = pysam.AlignmentFile(data_file('ssc-10reads.bam'))
+    reader = kevlar.dump.bam_paired_reader(bam)
+    for n, (read1, read2) in enumerate(reader, 1):
+        assert read1.query_name == read2.query_name
+    assert n == 5
+
+
+def test_bam_paired_reader_mixed():
+    bam = pysam.AlignmentFile(data_file('ssc-8reads-mixed.bam'))
+    reader = kevlar.dump.bam_paired_reader(bam)
+    pairs = list(reader)
+    assert len(pairs) == 5
+
+    assert pairs[0][0].query_name == pairs[0][1].query_name
+    assert pairs[1][0] is not None and pairs[1][1] is None
+    assert pairs[2][0].query_name == pairs[2][1].query_name
+    assert pairs[3][0] is not None and pairs[3][1] is None
+    assert pairs[4][0].query_name == pairs[4][1].query_name
