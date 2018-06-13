@@ -11,6 +11,7 @@ import sys
 import pysam
 import screed
 import kevlar
+from kevlar.seqio import bam_paired_reader
 from khmer.utils import write_record
 
 
@@ -33,7 +34,7 @@ def perfectmatch(record, bam, refrseqs):
 
 def readname(record):
     """Create a Fastq read name, using suffixes for paired reads as needed."""
-    name = record.qname
+    name = record.query_name
     if record.flag & 1:
         # Logical XOR: if the read is paired, it should be first in pair
         # or second in pair, not both.
@@ -44,26 +45,58 @@ def readname(record):
     return name
 
 
-def dump(bamstream, refrseqs=None, upint=50000, logstream=sys.stderr):
+def keepers(record1, record2, bam, refrseqs=None, pairmode='split'):
+    assert pairmode in ('split', 'keep', 'drop'), pairmode
+    if record2 is None:  # single end behavior
+        keep = not refrseqs or not perfectmatch(record1, bam, refrseqs)
+        if keep:
+            return [record1]
+        else:
+            return []
+
+    r1keep = not refrseqs or not perfectmatch(record1, bam, refrseqs)
+    r2keep = not refrseqs or not perfectmatch(record2, bam, refrseqs)
+    if r1keep == r2keep:
+        if r1keep and r2keep:
+            return [record1, record2]
+        else:
+            return []
+    else:
+        if pairmode == 'split':
+            if r1keep:
+                return [record1]
+            else:
+                assert r2keep
+                return [record2]
+        elif pairmode == 'keep':
+            return [record1, record2]
+        else:
+            assert pairmode == 'drop', pairmode
+            return []
+
+
+def dump(bamstream, refrseqs=None, pairmode='split', upint=50000,
+         logstream=sys.stderr):
     """
     Parse read alignments in BAM/SAM format.
 
     - bamstream: open file handle to the BAM/SAM file input
     - refrseqs: dictionary of reference sequences, indexed by sequence ID; if
       provided, perfect matches to the reference sequence will be discarded
+    - strict: only keep paired end if it also lacks a perfect match to the
+      reference genome
     - upint: update interval for progress indicator
     - logstream: file handle do which progress indicator will write output
     """
     bam = pysam.AlignmentFile(bamstream, 'rb')
-    for i, record in enumerate(bam, 1):
+    reader = bam_paired_reader(bam)
+    for i, (record1, record2) in enumerate(reader, 1):
         if i % upint == 0:  # pragma: no cover
-            print('...processed', i, 'records', file=logstream)
-        if record.is_secondary or record.is_supplementary:
-            continue
-        if refrseqs and perfectmatch(record, bam, refrseqs):
-            continue
-        rn = readname(record)
-        yield screed.Record(name=rn, sequence=record.seq, quality=record.qual)
+            print('...processed', i, 'pairs of records', file=logstream)
+        for record in keepers(record1, record2, bam, refrseqs, pairmode):
+            yield screed.Record(
+                name=readname(record), sequence=record.seq, quality=record.qual
+            )
 
 
 def main(args):
@@ -73,5 +106,5 @@ def main(args):
         print('[kevlar::dump] Loading reference sequence', file=args.logfile)
         refrstream = kevlar.open(args.refr, 'r')
         refr = kevlar.seqio.parse_seq_dict(refrstream)
-    for read in dump(args.reads, refr, logstream=args.logfile):
+    for read in dump(args.reads, refr, args.pair_mode, logstream=args.logfile):
         write_record(read, fastq)
