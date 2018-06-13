@@ -53,16 +53,17 @@ def test_indels(capsys):
     assert len(outputlines) == 4 * 4  # 4 records, 4 lines per record
 
 
-@pytest.mark.parametrize('strict,nrecords', [
-    (True, 1),
-    (False, 2)
+@pytest.mark.parametrize('mode,nrecords', [
+    ('split', 1),
+    ('keep', 2),
+    ('drop', 0),
 ])
-def test_suffix(strict, nrecords):
+def test_suffix(mode, nrecords):
     bamstream = kevlar.open(data_file('nopair.sam'), 'r')
     refrstream = kevlar.open(data_file('bogus-genome/refr.fa'), 'r')
     refr = kevlar.seqio.parse_seq_dict(refrstream)
 
-    records = [r for r in kevlar.dump.dump(bamstream, refr, strict=strict)]
+    records = [r for r in kevlar.dump.dump(bamstream, refr, pairmode=mode)]
     assert len(records) == nrecords
     for record in records:
         assert record.name.endswith('/1') or record.name.endswith('/2')
@@ -86,3 +87,20 @@ def test_keepers():
     assert len(keepers) == 2
     keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs, pairmode='drop')
     assert len(keepers) == 0
+
+
+def test_keepers_mixed():
+    refrstream = kevlar.open(data_file('chr1-20kb.fa.gz'), 'r')
+    refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
+
+    bam = pysam.AlignmentFile(data_file('ssc-8reads-mixed.bam'))
+    reader = kevlar.seqio.bam_paired_reader(bam)
+
+    r1, r2 = next(reader)
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs)
+    assert len(keepers) == 2
+
+    r1, r2 = next(reader)
+    assert r2 is None
+    keepers = kevlar.dump.keepers(r1, r2, bam, refrseqs)
+    assert len(keepers) == 1

@@ -46,6 +46,7 @@ def readname(record):
 
 
 def keepers(record1, record2, bam, refrseqs=None, pairmode='split'):
+    assert pairmode in ('split', 'keep', 'drop'), pairmode
     if record2 is None:  # single end behavior
         keep = not refrseqs or not perfectmatch(record1, bam, refrseqs)
         if keep:
@@ -70,11 +71,11 @@ def keepers(record1, record2, bam, refrseqs=None, pairmode='split'):
         elif pairmode == 'keep':
             return [record1, record2]
         else:
-            assert pairmode == 'drop'
+            assert pairmode == 'drop', pairmode
             return []
 
 
-def dump(bamstream, refrseqs=None, strict=False, upint=50000,
+def dump(bamstream, refrseqs=None, pairmode='split', upint=50000,
          logstream=sys.stderr):
     """
     Parse read alignments in BAM/SAM format.
@@ -92,7 +93,7 @@ def dump(bamstream, refrseqs=None, strict=False, upint=50000,
     for i, (record1, record2) in enumerate(reader, 1):
         if i % upint == 0:  # pragma: no cover
             print('...processed', i, 'pairs of records', file=logstream)
-        for record in keepers(record1, record2, bam, refrseqs, strict):
+        for record in keepers(record1, record2, bam, refrseqs, pairmode):
             yield screed.Record(
                 name=readname(record), sequence=record.seq, quality=record.qual
             )
@@ -105,5 +106,5 @@ def main(args):
         print('[kevlar::dump] Loading reference sequence', file=args.logfile)
         refrstream = kevlar.open(args.refr, 'r')
         refr = kevlar.seqio.parse_seq_dict(refrstream)
-    for read in dump(args.reads, refr, args.strict, logstream=args.logfile):
+    for read in dump(args.reads, refr, args.pair_mode, logstream=args.logfile):
         write_record(read, fastq)
