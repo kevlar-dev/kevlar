@@ -1,22 +1,33 @@
 |kevlar build status| |PyPI version| |Test coverage| |kevlar documentation| |Docker build status| |MIT licensed|
 
+.. figure:: docs/_static/morpheus-kevlar.jpg
+   :alt: What if I told you we don't need alignments to find variants?
+   :scale: 75%
+
 kevlar
 ======
 
-.. figure:: docs/_static/morpheus-kevlar.jpg
-   :alt: What if I told you we don't need alignments to find variants?
+Daniel Standage, 2016
+https://kevlar.readthedocs.io
 
-Welcome to **kevlar**, software for variant discovery independent of a reference genome!
+Welcome to **kevlar**, software for predicting *de novo* genetic variants without mapping reads to a reference genome!
+kevlar's k-mer abundance based method calls single nucleotide variants (SNVs) as well as short, medium and long insertion/deletion variants (indels) simultaneously.
+This software is free for use under the MIT license.
 
-Where can I find kevlar online?
--------------------------------
+.. raw:: html
 
-- Source repository: https://github.com/dib-lab/kevlar
-- Documentation: https://kevlar.readthedocs.io
-- Stable releases: https://github.com/dib-lab/kevlar/releases
-- Issue tracker: https://github.com/dib-lab/kevlar/issues
+    <details>
+        <summary>Where can I find kevlar online?</summary>
+        <ul>
+            <li>Source repository: https://github.com/dib-lab/kevlar</li>
+            <li>Documentation: https://kevlar.readthedocs.io</li>
+            <li>Stable releases: https://github.com/dib-lab/kevlar/releases</li>
+            <li>Issue tracker: https://github.com/dib-lab/kevlar/issues</li>
+        <ul>
+        If you have questions or need help with kevlar, the <a href="https://github.com/dib-lab/kevlar">GitHub issue tracker</a> should be your first point of contact.
+    </details>
 
-If you have questions or need help with kevlar, the `GitHub issue tracker <https://github.com/dib-lab/kevlar>`__ should be your first point of contact.
+
 
 How do I use kevlar?
 --------------------
