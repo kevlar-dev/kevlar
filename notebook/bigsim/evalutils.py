@@ -23,6 +23,7 @@ import intervaltree
 from intervaltree import IntervalTree
 import kevlar
 from kevlar.vcf import VCFReader
+import pandas
 
 
 class IntervalForest(object):
@@ -157,6 +158,30 @@ def compact(reader, index, delta=10):
 
     calls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
     calls = [c for c in calls if float(c.attribute('LIKESCORE')) > 0.0]
+    return calls
+
+
+def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, maxlength=None):
+    reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    calls = compact(reader, index, delta=delta)
+    if vartype:
+        calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
+    return calls
+
+
+def load_triodenovo_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
+    reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    calls = list(reader)
+    calls.sort(key=lambda c: float(c._sample_data['Kid_'+ cov +'x']['DQ']), reverse=True)
+    if vartype:
+        calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
+    return calls
+
+
+def load_gatk_mvf(filename, vartype=None, minlength=None, maxlength=None):
+    calls = pandas.read_table(filename, sep='\t').sort_values('CHILD_DP', ascending=False)
+    if vartype:
+        calls = subset_mvf(calls, vartype, minlength=minlength, maxlength=maxlength)
     return calls
 
 
