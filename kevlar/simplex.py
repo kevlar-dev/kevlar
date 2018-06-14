@@ -141,6 +141,8 @@ def main(args):
         logstream=args.logfile
     )
 
+    if not args.labels:
+        args.labels = kevlar.simlike.default_sample_labels(len(controls) + 1)
     outstream = kevlar.open(args.out, 'w')
     caserecords = kevlar.multi_file_iter_screed(args.case)
     workflow = simplex(
@@ -157,10 +159,6 @@ def main(args):
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::simplex', refr=args.refr,
     )
-    if not args.labels:
-        args.labels = ['Case']
-        for i in range(len(controls)):
-            args.labels.append('Control{:d}'.format(i))
     for label in args.labels:
         writer.register_sample(label)
     writer.write_header()
