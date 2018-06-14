@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import sys
+import khmer
 import kevlar
 from kevlar.novel import novel, load_samples
 from kevlar.filter import filter as kfilter
@@ -156,6 +157,9 @@ def main(args):
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::simplex', refr=args.refr,
     )
+    if args.labels:
+        for label in args.labels:
+            writer.register_sample(label)
     writer.write_header()
     for varcall in workflow:
         writer.write(varcall)
