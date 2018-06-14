@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.5.0] 2018-06-14
 
 ### Fixed
 - Refined handling of mate read alignments (see #247, #250, #251, #255, and #263).
