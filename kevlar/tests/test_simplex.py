@@ -65,7 +65,7 @@ def test_simplex_pico(pico_trio, capsys):
         workflow = kevlar.simplex.simplex(
             caserecords, cases[0], controls, refr, ksize=25, ctrlmax=0,
             casemin=6, mask=mask, filtermem=1e7, filterfpr=0.005,
-            logstream=sys.stderr
+            refrsctmem=1e8, logstream=sys.stderr
         )
         variants = [v for v in workflow]
     variants = sorted(variants, key=lambda v: v._pos)
@@ -85,7 +85,8 @@ def test_simplex_trio1(capsys):
         controls[1], '--case-min', '6', '--ctrl-max', '0', '--novel-memory',
         '1M', '--novel-fpr', '0.2', '--filter-memory', '50K', '--mask-files',
         refr, '--mask-memory', '1M', '--filter-fpr', '0.005', '--ksize', '21',
-        '--seed-size', '31', '--delta', '25', refr
+        '--seed-size', '31', '--delta', '25',
+        '--labels', 'Case', 'Ctrl1', 'Ctrl2', '--refr-sct-mem', '500M', refr
     ]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.simplex.main(args)
@@ -96,12 +97,17 @@ def test_simplex_trio1(capsys):
 
     testvcf = '\t'.join([
         'bogus-genome-chr1', '3567', '.', 'A', 'C', '.', 'PASS',
-        'ALTWINDOW=GAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAA;CIGAR=25D95M25D;'
-        'IKMERS=21;KSW2=82;'
-        'REFRWINDOW=GAAGGGCACACCTAACCGCAACATTTGCCGTGGAAGCATAA;'
-        'CONTIG=TTGGTGCCACGATCCGGCTATGGCGGAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGC'
-        'ATAAAGGTCATCATTGAGGTGGTTCGTTCCGAT'
+        'ALTWINDOW=GAAGGGCACACCTAACCGCACCATTTGCCGTGGAAGCATAA;CALLCLASS=None;'
+        'CIGAR=25D95M25D;DROPPED=0;IKMERS=21;KSW2=82;LIKESCORE=252.625;'
+        'LLDN=-62.504;LLFP=-778.456;LLIH=-315.129;REFRWINDOW=GAAGGGCACACCTAACC'
+        'GCAACATTTGCCGTGGAAGCATAA;CONTIG=TTGGTGCCACGATCCGGCTATGGCGGAAGGGCACACC'
+        'TAACCGCACCATTTGCCGTGGAAGCATAAAGGTCATCATTGAGGTGGTTCGTTCCGAT',
+        'ALTABUND',
+        '9,9,10,10,10,8,10,10,10,10,10,10,10,10,11,12,13,13,13,12,12',
+        '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0',
+        '0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
     ])
+    print(out.strip())
     assert out.strip() == testvcf
 
 

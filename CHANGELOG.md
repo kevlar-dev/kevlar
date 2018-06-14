@@ -2,11 +2,25 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.0] 2018-06-14
+
+### Fixed
+- Refined handling of mate read alignments (see #247, #250, #251, #255, and #263).
+
+### Added
+- Multithreading is now supported natively in `kevlar alac` (see #249 and unmerged `feed-thread` branch).
+- A limited-scope VCF reader (see #256).
+- Script for computing likelihood scores is now a first-class kevlar citizen as `kevlar simlike` (see #259).
+- New `kevlar dist` subcommand for computing average and standard deviation of k-mer abundances for likelihood calculations (see #264).
+- Paired-end awareness for `kevlar dump` (see #265).
+- New `LikelihoodFail` filter for variant calls with a negative likelihood score (see #266).
+
+
 ## [0.4.2] 2018-04-16
 
 ### Fixed
 - Much cleaner and more concise calling code from implementing "center aligned" gap alignment strategy, facilitated by new CIGAR tokenizer (see #242).
-- Improved default behavior for `maxdiff` and splitting seed hits into distinct bins (#246).
+- Improved default behavior for `maxdiff` and splitting seed hits into distinct bins (see #246).
 
 
 ## [0.4.1] 2018-04-04
@@ -15,7 +29,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Incorrect handling of VCF `FILTER` field resolved (see #235).
 - A bug causing some calls to be erroneously filtered (see #237).
 - A minor bug with banded mode in `kevlar novel`, various other minor fixes, and code that should have been removed previously (#239).
-
 
 
 ## [0.4.0] 2018-03-29
