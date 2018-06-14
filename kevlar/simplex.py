@@ -18,7 +18,7 @@ from kevlar.alac import alac
 from kevlar.simlike import simlike
 
 
-def populate_refrsct(refrseqfile, refrsctfile=None, refrsctmem=8e9, ksize=31,
+def populate_refrsct(refrseqfile, refrsctfile=None, refrsctmem=1e9, ksize=31,
                      logstream=sys.stderr):
     if refrsctfile:
         return khmer.SmallCounttable.load(refrsctfile)
@@ -39,7 +39,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
             mask=None, filtermem=1e6, filterfpr=0.001,
             partminabund=2, partmaxabund=200, dedup=True,
             delta=50, seedsize=31, match=1, mismatch=2, gapopen=5, gapextend=0,
-            fallback=False, refrsctfile=None, refrsctmem=8e9, mu=30.0,
+            fallback=False, refrsctfile=None, refrsctmem=1e9, mu=30.0,
             sigma=8.0, epsilon=0.001, labels=None, ksize=31, threads=1,
             logstream=sys.stderr):
     """
@@ -157,9 +157,12 @@ def main(args):
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::simplex', refr=args.refr,
     )
-    if args.labels:
-        for label in args.labels:
-            writer.register_sample(label)
+    if not args.labels:
+        args.labels = ['Case']
+        for i in range(len(controls)):
+            args.labels.append('Control{:d}'.format(i))
+    for label in args.labels:
+        writer.register_sample(label)
     writer.write_header()
     for varcall in workflow:
         writer.write(varcall)

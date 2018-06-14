@@ -166,7 +166,7 @@ def subparser(subparsers):
         'populated from scratch from the `refr` argument.'
     )
     like_args.add_argument(
-        '--refr-sct-mem', default='8e9', type=khmer_args.memory_setting,
+        '--refr-sct-mem', default='1e9', type=khmer_args.memory_setting,
         metavar='MEM', help='memory allocated to storing reference genome '
         'k-mer abundances; only used if `--refr-sct` is not provided'
     )
