@@ -20,6 +20,20 @@ from kevlar.localize import localize
 from kevlar.call import call
 
 
+def populate_queue(queue, idx, pstream, bigpart=10000, logstream=sys.stderr):
+    for partition in pstream:
+        reads = list(partition)
+        if len(reads) > bigpart:
+            message = '[kevlar::alac::populate_queue] WARNING: '
+            message += 'skipping partition with {:d} reads'.format(len(reads))
+            print(message, file=sys.stderr)
+            continue
+        message = '[kevlar::alac::populate_queue (thread={})] '.format(idx)
+        message += 'adding partition with {} reads to queue'.format(len(reads))
+        print(message, file=sys.stderr)
+        queue.put(reads)
+
+
 def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          seedsize=31, maxdiff=None, match=1, mismatch=2,
                          gapopen=5, gapextend=0, greedy=False, fallback=False,
@@ -84,7 +98,14 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
     refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
 
     call_lists = list()
-    for idx in range(threads):
+    for idx in range(threads + 1):
+        if idx == 0:
+            worker = Thread(
+                target=populate_queue,
+                args=(part_queue, idx, pstream, bigpart, logstream,),
+            )
+            worker.start()
+            continue
         thread_calls = list()
         call_lists.append(thread_calls)
         worker = Thread(
@@ -97,16 +118,6 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
         )
         worker.setDaemon(True)
         worker.start()
-
-    for partition in pstream:
-        reads = list(partition)
-        if len(reads) > bigpart:
-            message = 'skipping partition with {:d} reads'.format(len(reads))
-            print('[kevlar::alac] WARNING:', message, file=logstream)
-            continue
-        message = 'adding partition with {} reads to queue'.format(len(reads))
-        print('[kevlar::alac]', message, file=logstream)
-        part_queue.put(reads)
 
     part_queue.join()
     allcalls = sorted(chain(*call_lists), key=lambda c: (c.seqid, c.position))
