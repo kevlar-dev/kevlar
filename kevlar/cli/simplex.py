@@ -155,6 +155,38 @@ def subparser(subparsers):
         'gap extension penalty; default is 0'
     )
 
+    like_args = subparser.add_argument_group(
+        'Likelihood calculations',
+        'The abundance of each k-mer in each sample and in the reference '
+        'genome is used to compute a likelihood score for each variant.'
+    )
+    like_args.add_argument(
+        '--refr-sct', metavar='SCT', help='SmallCounttable of k-mer '
+        'abundances in the reference genome; if not provided, this will be '
+        'populated from scratch from the `refr` argument.'
+    )
+    like_args.add_argument(
+        '--refr-sct-mem', default='8e9', type=khmer_args.memory_setting,
+        metavar='MEM', help='memory allocated to storing reference genome '
+        'k-mer abundances; only used if `--refr-sct` is not provided'
+    )
+    like_args.add_argument(
+        '--mu', metavar='μ', type=float, default=30.0,
+        help='mean k-mer abundance; default is 30.0'
+    )
+    like_args.add_argument(
+        '--sigma', metavar='σ', type=float, default=8.0,
+        help='standard deviation of k-mer abundance; default is 8.0'
+    )
+    like_args.add_argument(
+        '--epsilon', metavar='ε', type=float, default=0.001,
+        help='error rate; default is 0.001'
+    )
+    like_args.add_argument(
+        '--labels', metavar='LB', nargs='+',
+        help='list of labels for each sample, case/proband first'
+    )
+
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument(
         '-h', '--help', action='help', help='show this help message and exit'

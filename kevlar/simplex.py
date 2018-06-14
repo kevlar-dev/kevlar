@@ -14,13 +14,33 @@ from kevlar.filter import filter as kfilter
 from kevlar.filter import load_mask
 from kevlar.partition import partition
 from kevlar.alac import alac
+from kevlar.simlike import simlike
+
+
+def populate_refrsct(refrseqfile, refrsctfile=None, refrsctmem=8e9, ksize=31,
+                     logstream=sys.stderr):
+    if refrsctfile:
+        return khmer.SmallCounttable.load(refrsctfile)
+    else:
+        sct = khmer.SmallCounttable(ksize, int(refrsctmem) / 4, 4)
+        sct.consume_seqfile(refrseqfile)
+        fpr = kevlar.sketch.estimate_fpr(sct)
+        if fpr > 0.05:
+            message = 'WARNING: false positive rate of {:.4f}'.format(fpr)
+            message += ' may be problematic for likelihood calculations.'
+            message += ' Consider increasing memory for reference '
+            message += ' k-mer counts.'
+            print('[kevlar::simplex]', warning, file=logstream)
+        return sct
 
 
 def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
             mask=None, filtermem=1e6, filterfpr=0.001,
             partminabund=2, partmaxabund=200, dedup=True,
             delta=50, seedsize=31, match=1, mismatch=2, gapopen=5, gapextend=0,
-            fallback=False, ksize=31, threads=1, logstream=sys.stderr):
+            fallback=False, refrsctfile=None, refrsctmem=8e9, mu=30.0,
+            sigma=8.0, epsilon=0.001, labels=None, ksize=31, threads=1,
+            logstream=sys.stderr):
     """
     Execute the simplex germline variant discovery workflow.
 
@@ -57,6 +77,17 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     - gapextend: alignment gap extension penalty
     - fallback: try assembly with home-grown greedy assembly algorithm if
                 assembly with fermi-lite fails for a partition
+
+    Parameters for computing likelihood scores
+    - refrsctfile: smallcounttable of k-mer abundances in the reference genome;
+                   if not provided, will be populated from the refrfile
+                   parameter
+    - refrsctmem: memory to allocate for reference smallcounttable (if it needs
+                  to be populated from scratch)
+    - mu: observed/expected average k-mer coverage
+    - sigma: observed/expected standard deviation for k-mer coverage
+    - epsilon: base error rate
+    - labels: human-readable lables for each sample, case/proband first
     """
     discoverer = novel(
         case, [casecounts], controlcounts, ksize=ksize, casemin=casemin,
@@ -77,7 +108,15 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
         gapextend=gapextend, fallback=fallback, logstream=logstream
     )
 
-    for variant in caller:
+    refrsct = populate_refrsct(refrfile, refrsctfile, refrsctmem=refrsctmem,
+                               ksize=ksize, logstream=logstream)
+    scorer = simlike(
+        caller, casecounts, controlcounts, refrsct, mu=mu, sigma=sigma,
+        epsilon=epsilon, casemin=casemin, samplelabels=labels,
+        logstream=logstream
+    )
+
+    for variant in scorer:
         yield variant
 
 
@@ -110,7 +149,9 @@ def main(args):
         partminabund=args.part_min_abund, partmaxabund=args.part_max_abund,
         dedup=args.dedup, delta=args.delta, seedsize=args.seed_size,
         match=args.match, mismatch=args.mismatch, gapopen=args.open,
-        gapextend=args.extend, threads=args.threads, logstream=args.logfile
+        gapextend=args.extend, threads=args.threads, refrsctfile=args.refr_sct,
+        refrsctmem=args.refr_sct_mem, mu=args.mu, sigma=args.sigma,
+        epsilon=args.epsilon, labels=args.labels, logstream=args.logfile
     )
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::simplex', refr=args.refr,
