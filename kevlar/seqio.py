@@ -284,3 +284,38 @@ class AnnotatedReadSet(object):
             record.ikmers = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
+
+
+def bam_filter_suppl(bam):
+    for record in bam:
+        if record.is_secondary or record.is_supplementary:
+            continue
+        yield record
+
+
+def bam_paired_reader(bam):
+    prev = None
+    for record in bam_filter_suppl(bam):
+        if not record.is_paired:
+            assert prev is None
+            yield record, None
+            continue
+        if prev is None:
+            prev = record
+            continue
+        if prev.query_name == record.query_name:
+            pr = prev.is_read1 and record.is_read2
+            rp = prev.is_read2 and record.is_read1
+            assert pr or rp
+            if pr:
+                yield prev, record
+            else:
+                yield record, prev
+            prev = None
+        else:
+            yield prev, None
+            if record.is_paired:
+                prev = record
+            else:
+                yield record
+                prev = None

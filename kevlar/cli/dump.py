@@ -21,4 +21,11 @@ def subparser(subparsers):
                            'default is terminal (stdout)')
     subparser.add_argument('-r', '--refr', metavar='REFR', help='reference '
                            'sequence in Fasta format')
+    subparser.add_argument('--pair-mode', choices=('split', 'keep', 'drop'),
+                           default='split', metavar='PM',
+                           help='how to handle situations where only one read '
+                           'in a pair qualifies to be discarded; in "split" '
+                           'mode, discard one read and keep the other; in '
+                           '"keep" mode, keep the entire pair; in "drop" '
+                           'mode, discard the entire pair; default is "split"')
     subparser.add_argument('reads', help='read alignments in BAM format')

@@ -73,7 +73,7 @@ def test_pico_partitioned(capsys):
 
     out, err = capsys.readouterr()
     lines = out.strip().split('\n')
-    assert len(lines) == 33
+    assert len(lines) == 34
     lines = [l for l in lines if not l.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
@@ -165,8 +165,8 @@ def test_alac_matedist():
     calls = list(caller)
     assert len(calls) == 3
     passed = [c for c in calls if c.filterstr == 'PASS']
-    assert len(passed) == 1
-    assert passed[0].position == 127541 - 1
+    assert len(passed) == 3
+    assert sorted([c.position for c in passed]) == [1475, 115377, 127540]
 
 
 def test_alac_nomates():

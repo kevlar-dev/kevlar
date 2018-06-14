@@ -177,16 +177,36 @@ def annotate_abundances(call, abundances, samplelabels):
         call.format(sample, 'ALTABUND', abundstr)
 
 
+def process_partition(partitionid, calls):
+    maxscore = max([c.attribute('LIKESCORE') for c in calls])
+    maxcalls = list()
+    for call in calls:
+        if call.attribute('LIKESCORE') == maxscore:
+            maxcalls.append(call)
+        else:
+            call.filter(kevlar.vcf.VariantFilter.PartitionScore)
+    for call in maxcalls:
+        call.annotate('CALLCLASS', partitionid)
+    if calls[0].attribute('MATEDIST') is not None:
+        matedists = set([c.attribute('MATEDIST') for c in calls])
+        if matedists == set([float('inf')]):
+            for call in calls:
+                call.filter(kevlar.vcf.VariantFilter.MateFail)
+
+
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             casemin=5, samplelabels=None, logstream=sys.stderr):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
-        if len(call.window) < case.ksize():
-            message = 'WARNING: stubbornly refusing to compute likelihood '
-            message += ' for variant-spanning window {:s}'.format(call.window)
-            message += ', shorter than k size {:s}'.format(case.ksize())
+        if call.window is None or len(call.window) < case.ksize():
+            message = 'WARNING: stubbornly refusing to compute likelihood for '
+            if call.window is None:
+                message += 'variant with no spanning window'
+            else:
+                message += 'variant-spanning window {:s}'.format(call.window)
+                message += ', shorter than k size {:d}'.format(case.ksize())
             print(message, file=logstream)
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
@@ -204,15 +224,13 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
     allcalls = list()
     for partition, calls in calls_by_partition.items():
-        scores = [c.attribute('LIKESCORE') for c in calls]
-        maxscore = max(scores)
-        for call, score in zip(calls, scores):
-            if score < maxscore:
-                call.filter(kevlar.vcf.VariantFilter.PartitionScore)
-            allcalls.append(call)
+        process_partition(partition, calls)
+        allcalls.extend(calls)
 
     allcalls.sort(key=lambda c: c.attribute('LIKESCORE'), reverse=True)
     for call in allcalls:
+        if call.attribute('LIKESCORE') < 0.0:
+            call.filter(kevlar.vcf.VariantFilter.LikelihoodFail)
         yield call
 
 

@@ -29,6 +29,10 @@ fermilite = Extension(
     language='c',
 )
 
+dependencies = [
+    'pysam>=0.14', 'networkx>=2.0', 'pandas>=0.23', 'scipy>=1.1',
+    'matplotlib>=2.2'
+]
 
 setup(name='biokevlar',
       version=versioneer.get_version(),
@@ -45,8 +49,8 @@ setup(name='biokevlar',
       },
       include_package_data=True,
       ext_modules=[ksw2, fermilite],
-      setup_requires=['pysam', 'networkx>=2.0', 'pandas'],
-      install_requires=['pysam', 'networkx>=2.0', 'pandas'],
+      setup_requires=dependencies,
+      install_requires=dependencies,
       entry_points={
           'console_scripts': ['kevlar = kevlar.__main__:main']
       },
