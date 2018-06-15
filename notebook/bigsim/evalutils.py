@@ -185,7 +185,7 @@ def load_gatk_mvf(filename, vartype=None, minlength=None, maxlength=None):
     return calls
 
 
-def assess_variants(variants, index, delta=10):
+def assess_variants_vcf(variants, index, delta=10):
     """Assess kevlar calls in .vcf format."""
     variants_by_class = defaultdict(list)
     correct = set()
