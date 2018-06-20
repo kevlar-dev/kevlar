@@ -121,6 +121,9 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
         message += ' (`numbands` - 1), inclusive'
         raise ValueError(message)
 
+    casecounts = tuple(casecounts)
+    controlcounts = tuple(controlcounts)
+
     timer = kevlar.Timer()
     timer.start()
     nkmers = 0
