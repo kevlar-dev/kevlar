@@ -7,6 +7,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+from functools import lru_cache
 import re
 import sys
 
@@ -19,6 +20,7 @@ class KevlarCaseSampleMismatchError(ValueError):
     pass
 
 
+@lru_cache(maxsize=16384)
 def kmer_is_interesting(kmer, casecounts, controlcounts, case_min=5,
                         ctrl_max=1, screen_thresh=None):
     """
