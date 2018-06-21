@@ -21,6 +21,15 @@ class KevlarSampleLabelingError(ValueError):
     pass
 
 
+def track_spanning_kmers(variants, ksize=31, memory=1e7):
+    rowsize = memory * khmer._buckets_per_byte['Nodegraph'] / 4
+    mask = khmer.Nodetable(ksize, rowsize, 4)
+    for varcall in variants:
+        if call.window and len(call.window) >= case.ksize():
+            mask.consume(call.window)
+    return mask
+
+
 def get_abundances(altseq, refrseq, case, controls, refr):
     """Create a nested list of k-mer abundances.
 
