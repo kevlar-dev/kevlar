@@ -16,13 +16,14 @@ from kevlar.tests import data_file
 def test_augment_contigs():
     augfh = kevlar.open(data_file('snorkel.augfastq'), 'r')
     augreads = kevlar.parse_augmented_fastx(augfh)
-    nakedseq = screed.open(data_file('snorkel-contig.fasta'))
+    nakedfh = kevlar.open(data_file('snorkel-contig.fasta'), 'r')
+    nakedseq = kevlar.parse_augmented_fastx(nakedfh)
     augmentor = kevlar.augment.augment(augreads, nakedseq)
     augseqs = list(augmentor)
     assert len(augseqs) == 1
-    assert len(augseqs[0].ikmers) == 3
+    assert len(augseqs[0].annotations) == 3
 
-    offsets = [k.offset for k in augseqs[0].ikmers]
+    offsets = [k.offset for k in augseqs[0].annotations]
     assert offsets == [17, 20, 22]
 
 
@@ -37,6 +38,8 @@ def test_augment_reads(capsys):
 
     out, err = capsys.readouterr()
     testout = open(data_file('reaugment.out'), 'r').read()
+    print(out)
+    print(testout)
     assert out == testout
 
 

@@ -11,9 +11,9 @@ from io import StringIO
 import pytest
 import kevlar
 from kevlar.tests import data_file
-from kevlar import KmerOfInterest
 from kevlar.seqio import AnnotatedReadSet as ReadSet
 from kevlar.seqio import KevlarPartitionLabelError
+from kevlar.sequence import KmerOfInterest, Record
 import khmer
 import pysam
 import screed
@@ -52,9 +52,9 @@ def test_augfastx_reader():
         assert record.sequence == (
             'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
         )
-        assert len(record.ikmers) == 2
-        for kmer in record.ikmers:
-            assert kmer.abund == [8, 0, 0]
+        assert len(record.annotations) == 2
+        for kmer in record.annotations:
+            assert kmer.abund == (8, 0, 0)
     assert n == 7
 
 
@@ -67,15 +67,19 @@ def test_augfastx_reader_e1():
     assert record.sequence == (
         'TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT'
     )
-    assert len(record.ikmers) == 2
+    assert len(record.annotations) == 2
 
-    assert record.ikmers[0].sequence == 'AGGGGCGTGACTTAATAAG'
-    assert record.ikmers[0].offset == 13
-    assert record.ikmers[0].abund == [12, 15, 1, 1]
+    ikmer = record.annotations[0]
+    assert record.ikmerseq(ikmer) == 'AGGGGCGTGACTTAATAAG'
+    assert ikmer.ksize == 19
+    assert ikmer.offset == 13
+    assert ikmer.abund == (12, 15, 1, 1)
 
-    assert record.ikmers[1].sequence == 'GGGCGTGACTTAATAAGGT'
-    assert record.ikmers[1].offset == 15
-    assert record.ikmers[1].abund == [20, 28, 0, 1]
+    ikmer = record.annotations[1]
+    assert record.ikmerseq(ikmer) == 'GGGCGTGACTTAATAAGGT'
+    assert ikmer.ksize == 19
+    assert ikmer.offset == 15
+    assert ikmer.abund == (20, 28, 0, 1)
 
 
 def test_augfastx_reader_e2():
@@ -88,15 +92,19 @@ def test_augfastx_reader_e2():
         'TAGCCAGTTTGGGTAATTTTAATTGTAAAACTTTTTTTTCTTTTTTTTTGATTTTTTTTTTTCAAGCAG'
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
-    assert len(record.ikmers) == 2
+    assert len(record.annotations) == 2
 
-    assert record.ikmers[0].sequence == 'GGCATACGAGCTCTTTTCACGTGACTGGAGT'
-    assert record.ikmers[0].offset == 74
-    assert record.ikmers[0].abund == [23, 0, 0]
+    ikmer = record.annotations[0]
+    assert record.ikmerseq(ikmer) == 'GGCATACGAGCTCTTTTCACGTGACTGGAGT'
+    assert ikmer.ksize == 31
+    assert ikmer.offset == 74
+    assert ikmer.abund == (23, 0, 0)
 
-    assert record.ikmers[1].sequence == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
-    assert record.ikmers[1].offset == 83
-    assert record.ikmers[1].abund == [23, 0, 0]
+    ikmer = record.annotations[1]
+    assert record.ikmerseq(ikmer) == 'GCTCTTTTCACGTGACTGGAGTTCAGACGTG'
+    assert ikmer.ksize == 31
+    assert ikmer.offset == 83
+    assert ikmer.abund == (23, 0, 0)
 
 
 def test_augfastx_reader_withmates():
@@ -104,25 +112,22 @@ def test_augfastx_reader_withmates():
     reader = kevlar.parse_augmented_fastx(instream)
 
     record = next(reader)
-    assert len(record.ikmers) == 5
-    assert hasattr(record, 'mateseqs')
-    assert len(record.mateseqs) == 1
-    assert record.mateseqs[0].startswith('CTGATAAGCAACTTCAGCAAA')
+    assert len(record.annotations) == 5
+    assert len(record.mates) == 1
+    assert record.mates[0].startswith('CTGATAAGCAACTTCAGCAAA')
 
     record = next(reader)
-    assert len(record.ikmers) == 4
-    assert hasattr(record, 'mateseqs')
-    assert len(record.mateseqs) == 1
-    assert record.mateseqs[0].startswith('ATTAGAAAAAAAAAGTGCATT')
+    assert len(record.annotations) == 4
+    assert len(record.mates) == 1
+    assert record.mates[0].startswith('ATTAGAAAAAAAAAGTGCATT')
 
     record = next(reader)
-    assert len(record.ikmers) == 21
-    assert not hasattr(record, 'mateseqs') or len(record.mateseqs) == 0
+    assert len(record.annotations) == 21
+    assert len(record.mates) == 0
 
     record = next(reader)
-    assert len(record.ikmers) == 2
-    assert hasattr(record, 'mateseqs')
-    assert record.mateseqs[0].startswith('CAGATGTGTCTTGTGGGCAGT')
+    assert len(record.annotations) == 2
+    assert record.mates[0].startswith('CAGATGTGTCTTGTGGGCAGT')
 
     with pytest.raises(StopIteration):
         next(reader)
@@ -130,36 +135,28 @@ def test_augfastx_reader_withmates():
 
 def test_augfastx_writer():
     output = StringIO()
-    record = screed.Record(
+    record = Record(
         name='BasiliscusVulgarisRead84467/1',
         sequence='TTAACTCTAGATTAGGGGCGTGACTTAATAAGGTGTGGGCCTAAGCGTCT',
         quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
-        ikmers=[
-            KmerOfInterest(
-                sequence='AGGGGCGTGACTTAATAAG', offset=13, abund=[12, 1, 1]
-            ),
-            KmerOfInterest(
-                sequence='GGGCGTGACTTAATAAGGT', offset=15, abund=[20, 0, 1]
-            ),
+        annotations=[
+            KmerOfInterest(ksize=19, offset=13, abund=(12, 1, 1)),
+            KmerOfInterest(ksize=19, offset=15, abund=(20, 0, 1)),
         ],
     )
     kevlar.print_augmented_fastx(record, output)
-    record = screed.Record(
+    record = Record(
         name='BasiliscusVulgarisRead90577/2',
         sequence='CTGTAATCCCAGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAG',
         quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
-        ikmers=[
-            KmerOfInterest(
-                sequence='TGTAATCCCAGCACTTTGG', offset=1, abund=[5, 7, 9]
-            ),
-            KmerOfInterest(
-                sequence='GTAATCCCAGCACTTTGGG', offset=2, abund=[7, 10, 9]
-            ),
+        annotations=[
+            KmerOfInterest(ksize=19, offset=1, abund=(5, 7, 9)),
+            KmerOfInterest(ksize=19, offset=2, abund=(7, 10, 9)),
         ],
-        mateseqs=['CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG']
+        mates=['CAGATGTGTCTTGTGGGCAGTGCAGCGGAGAGGTGCAAATATGGGTTTGG']
     )
     kevlar.print_augmented_fastx(record, output)
-    record = screed.Record(
+    record = Record(
         name='BasiliscusVulgarisRead99037/1',
         sequence='AGCACTTTGGGAGGCCGAGGCAAGCAGATGATGCGGTCAGGATTACAGAT',
         quality='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
@@ -242,7 +239,7 @@ def test_kevlar_open(basename):
         'TAGCCAGTTTGGGTAATTTTAATTGTAAAACTTTTTTTTCTTTTTTTTTGATTTTTTTTTTTCAAGCAG'
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
-    assert len(record.ikmers) == 2
+    assert len(record.annotations) == 2
 
 
 def test_ikmer_abund_after_recalc():
@@ -252,10 +249,10 @@ def test_ikmer_abund_after_recalc():
     abundance (in `counts`) of 10. The readset "validate" function should check
     and correct this.
     """
-    read = screed.Record(
+    read = Record(
         name='read1',
         sequence='AAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGT',
-        ikmers=[KmerOfInterest('CATTGTCCTCGGGACTC', 13, [28, 0, 0])],
+        annotations=[KmerOfInterest(17, 13, (28, 0, 0))],
     )
     rs = ReadSet(17, 4e5)
     rs.add(read)
@@ -264,11 +261,11 @@ def test_ikmer_abund_after_recalc():
     for _ in range(9):
         rs._counts.consume(seq)
 
-    assert read.ikmers[0].abund[0] == 28
+    assert read.annotations[0].abund[0] == 28
 
     rs.validate(casemin=8)
     assert rs.valid == (1, 1)
-    assert read.ikmers[0].abund[0] == 10
+    assert read.annotations[0].abund[0] == 10
 
 
 def test_bam_paired_reader_5pairs():
@@ -290,3 +287,11 @@ def test_bam_paired_reader_mixed():
     assert pairs[2][0].query_name == pairs[2][1].query_name
     assert pairs[3][0] is not None and pairs[3][1] is None
     assert pairs[4][0].query_name == pairs[4][1].query_name
+
+
+def test_ikmer_out_of_bounds():
+    fh = kevlar.open(data_file('out-of-bounds.augfastq.gz'), 'r')
+    reader = kevlar.parse_augmented_fastx(fh)
+    with pytest.raises(AssertionError) as ae:
+        list(reader)
+    assert "('TACGACAGAC', 'TACGACAGACA')" in str(ae)

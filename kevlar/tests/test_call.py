@@ -12,9 +12,9 @@ import sys
 import khmer
 import kevlar
 from kevlar.call import call
+from kevlar.sequence import Record
 from kevlar.tests import data_file
 import pytest
-import screed
 
 
 def test_align():
@@ -189,10 +189,10 @@ def test_multibest_revcom():
 
 def test_align_mates():
     mate_seqs = kevlar.open(data_file('minitrio/novel-mates.fastq.gz'), 'r')
-    record = screed.Record(
+    record = Record(
         name='bogusread',
         sequence='NNNNN',
-        mateseqs=[r.sequence for r in kevlar.parse_augmented_fastx(mate_seqs)]
+        mates=[r.sequence for r in kevlar.parse_augmented_fastx(mate_seqs)]
     )
     refrfile = data_file('minitrio/refr.fa')
     kevlar.reference.autoindex(refrfile)

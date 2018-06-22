@@ -29,6 +29,12 @@ fermilite = Extension(
     language='c',
 )
 
+sequencemod = Extension(
+    'kevlar.sequence',
+    sources=['kevlar/sequence.c'],
+    language='c'
+)
+
 dependencies = [
     'pysam>=0.14', 'networkx>=2.0', 'pandas>=0.23', 'scipy>=1.1',
     'matplotlib>=2.2'
@@ -48,7 +54,7 @@ setup(name='biokevlar',
           'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
       },
       include_package_data=True,
-      ext_modules=[ksw2, fermilite],
+      ext_modules=[ksw2, fermilite, sequencemod],
       setup_requires=dependencies,
       install_requires=dependencies,
       entry_points={

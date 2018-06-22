@@ -9,7 +9,6 @@
 
 # Core libraries
 import builtins
-from collections import namedtuple
 from gzip import open as gzopen
 from os import makedirs
 from os.path import dirname
@@ -26,14 +25,13 @@ import screed
 
 # Internal modules
 from kevlar import seqio
-from kevlar import overlap
 from kevlar import sketch
 from kevlar import reference
 from kevlar import cigar
 from kevlar import varmap
 from kevlar import vcf
-from kevlar.mutablestring import MutableString
 from kevlar.readgraph import ReadGraph
+from kevlar.mutablestring import MutableString
 from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
 from kevlar.timer import Timer
@@ -61,6 +59,7 @@ from kevlar import cli
 # C extensions
 from kevlar.alignment import contig_align as align
 import kevlar.assembly
+import kevlar.sequence
 
 from kevlar._version import get_versions
 __version__ = get_versions()['version']
@@ -149,6 +148,3 @@ def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):
           file=outstream)
     print('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO',
           sep='\t', file=outstream)
-
-
-KmerOfInterest = namedtuple('KmerOfInterest', 'sequence offset abund')
