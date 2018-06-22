@@ -11,7 +11,7 @@ import kevlar
 import sys
 
 
-def augment(augseqstream, nakedseqstream):
+def augment(augseqstream, nakedseqstream, collapsemates=False):
     """
     Augment an unannotated stream of sequences.
 
@@ -21,22 +21,34 @@ def augment(augseqstream, nakedseqstream):
     """
     ksize = None
     ikmers = dict()
-    mateseqs = set()
-    for record in augseqstream:
+    mateseqs = dict()
+    for n, record in enumerate(augseqstream):
+        if n > 0 and n % 10000 == 0:
+            print('[kevlar::augment] processed', n, 'input reads',
+                  file=sys.stderr)
         for ikmer in record.annotations:
             seq = record.ikmerseq(ikmer)
             ikmers[seq] = ikmer.abund
             ikmers[kevlar.revcom(seq)] = ikmer.abund
             ksize = ikmer.ksize
-        mateseqs.update(record.mates)
-    mateseqs = sorted(mateseqs)
+        assert len(record.mates) in (0, 1)
+        if len(record.mates) == 1:
+            mateseqs[record.name] = record.mates[0]
+    print('[kevlar::augment] done loading input', file=sys.stderr)
 
     for record in nakedseqstream:
         qual = None
         if hasattr(record, 'quality') and record.quality is not None:
             qual = record.quality
+        mates = list()
+        if collapsemates:
+            mates = sorted(mateseqs)
+        else:
+            if record.name in mateseqs:
+                mates.append(mateseqs[record.name])
         newrecord = kevlar.sequence.Record(
-            name=record.name, sequence=record.sequence, quality=qual
+            name=record.name, sequence=record.sequence, quality=qual,
+            mates=mates,
         )
         numkmers = len(record.sequence) - ksize + 1
         for offset in range(numkmers):
