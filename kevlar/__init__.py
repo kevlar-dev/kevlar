@@ -32,7 +32,7 @@ from kevlar import varmap
 from kevlar import vcf
 from kevlar.readgraph import ReadGraph
 from kevlar.mutablestring import MutableString
-from kevlar.seqio import parse_augmented_fastx, print_augmented_fastx
+from kevlar.sequence import parse_augmented_fastx, print_augmented_fastx
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
 from kevlar.timer import Timer
 

@@ -8,6 +8,7 @@
 # cython: c_string_type=str, c_string_encoding=ascii
 
 from collections import namedtuple
+import re
 import kevlar
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'ksize offset abund')
@@ -62,7 +63,7 @@ def copy_record(record):
     return Record(record.name, record.sequence, qual)
 
 
-def write_record(Record record, outstream):
+def print_augmented_fastx(Record record, outstream):
     if record.quality is not None:
         recstr = '@{name}\n{sequence}\n+\n{quality}\n'.format(
             name=record.name,
@@ -96,3 +97,55 @@ def write_record(Record record, outstream):
         outstream.write(bytes(recstr, 'ascii'))
     except TypeError:
         outstream.write(recstr)
+
+
+cpdef write_record(Record record, outstream):
+    print_augmented_fastx(record, outstream)
+
+
+def parse_augmented_fastx(instream):
+    """Read augmented Fast[q|a] records into memory.
+
+    The parsed records will have .name, .sequence, and .quality defined (unless
+    it's augmented Fasta), as well as a list of interesting k-mers. See
+    http://kevlar.readthedocs.io/en/latest/formats.html#augmented-sequences for
+    more information.
+    """
+    cdef Record record = None
+    cdef str readname
+    cdef str seq
+    cdef str qual
+    cdef str mateseq
+    cdef str firstchar
+    cdef int offset
+    cdef str kmer
+
+    for line in instream:
+        if line.strip() == '':
+            continue
+        firstchar = line[0]
+        if firstchar in ('@', '>'):
+            if record is not None:
+                yield record
+            readname = line[1:].strip()
+            seq = next(instream).strip()
+            if firstchar == '@':
+                _ = next(instream)
+                qual = next(instream).strip()
+            else:
+                qual = None
+            record = Record(name=readname, sequence=seq, quality=qual)
+        elif line.endswith('#\n'):
+            if line.startswith('#mateseq='):
+                mateseq = re.search(r'^#mateseq=(\S+)#\n$', line).group(1)
+                record.add_mate(mateseq)
+                continue
+            offset = len(line) - len(line.lstrip())
+            line = line.strip()[:-1]
+            abundlist = re.split(r'\s+', line)
+            kmer = abundlist.pop(0)
+            abundances = tuple([int(a) for a in abundlist])
+            record.annotate(kmer, offset, abundances)
+        else:
+            raise Exception(line)
+    yield record

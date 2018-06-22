@@ -15,7 +15,8 @@ import re
 import khmer
 import screed
 import kevlar
-from kevlar.sequence import Record, write_record, KmerOfInterest
+from kevlar.sequence import Record, KmerOfInterest
+from kevlar.sequence import write_record, parse_augmented_fastx
 
 
 class KevlarPartitionLabelError(ValueError):
@@ -50,49 +51,6 @@ def parse_seq_dict(data):
         assert seqid not in seqs, seqid
         seqs[seqid] = sequence
     return seqs
-
-
-def parse_augmented_fastx(instream):
-    """Read augmented Fast[q|a] records into memory.
-
-    The parsed records will have .name, .sequence, and .quality defined (unless
-    it's augmented Fasta), as well as a list of interesting k-mers. See
-    http://kevlar.readthedocs.io/en/latest/formats.html#augmented-sequences for
-    more information.
-    """
-    record = None
-    for line in instream:
-        firstchar = line[0]
-        if firstchar in ('@', '>'):
-            if record is not None:
-                yield record
-            readname = line[1:].strip()
-            seq = next(instream).strip()
-            if firstchar == '@':
-                _ = next(instream)
-                qual = next(instream).strip()
-            else:
-                qual = None
-            record = Record(name=readname, sequence=seq, quality=qual)
-        elif line.endswith('#\n'):
-            if line.startswith('#mateseq='):
-                mateseq = re.search(r'^#mateseq=(\S+)#\n$', line).group(1)
-                record.add_mate(mateseq)
-                continue
-            offset = len(line) - len(line.lstrip())
-            line = line.strip()[:-1]
-            abundances = re.split(r'\s+', line)
-            kmer = abundances.pop(0)
-            abundances = tuple([int(a) for a in abundances])
-            record.annotate(kmer, offset, abundances)
-        else:
-            raise Exception(line)
-    yield record
-
-
-def print_augmented_fastx(record, outstream=stdout):
-    """Write augmented records out to an .augfast[q|a] file."""
-    write_record(record, outstream)
 
 
 def afxstream(filelist):

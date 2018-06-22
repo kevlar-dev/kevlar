@@ -9,10 +9,9 @@
 
 import sys
 import pysam
-import screed
 import kevlar
 from kevlar.seqio import bam_paired_reader
-from khmer.utils import write_record
+from kevlar.sequence import Record, write_record
 
 
 def perfectmatch(record, bam, refrseqs):
@@ -94,7 +93,7 @@ def dump(bamstream, refrseqs=None, pairmode='split', upint=50000,
         if i % upint == 0:  # pragma: no cover
             print('...processed', i, 'pairs of records', file=logstream)
         for record in keepers(record1, record2, bam, refrseqs, pairmode):
-            yield screed.Record(
+            yield Record(
                 name=readname(record), sequence=record.seq, quality=record.qual
             )
 
