@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import glob
+import os
 import pytest
 import re
 from tempfile import NamedTemporaryFile
@@ -140,3 +141,31 @@ def test_effcount_problematic():
     with pytest.raises(ValueError) as ve:
         kevlar.effcount.main(args)
     assert 'Must specify --num-bands and --band together' in str(ve)
+
+
+@pytest.mark.parametrize('count,smallcount,extension,shortext', [
+    (True, True, '.smallcounttable', '.sct'),
+    (True, False, '.counttable', '.ct'),
+    (False, True, '.nodetable', '.nt'),
+    (False, False, '.nodetable', '.nt'),
+])
+def test_load_sample_seqfile(count, smallcount, extension, shortext):
+    infile = data_file('bogus-genome/refr.fa')
+    with NamedTemporaryFile() as outfile:
+        sketch = kevlar.count.load_sample_seqfile(
+            [infile], 21, 1e6, count=count, smallcount=smallcount,
+            outfile=outfile.name
+        )
+        assert sketch.get('GAATCGGTGGCTGGTTGCCGT') > 0
+        assert sketch.get('GATTACAGATTACAGATTACA') == 0
+        assert os.path.exists(outfile.name + extension)
+
+    with NamedTemporaryFile(suffix=shortext) as outfile:
+        sketch = kevlar.count.load_sample_seqfile(
+            [infile], 21, 1e6, count=count, smallcount=smallcount,
+            outfile=outfile.name
+        )
+        assert sketch.get('GAATCGGTGGCTGGTTGCCGT') > 0
+        assert sketch.get('GATTACAGATTACAGATTACA') == 0
+        assert not os.path.exists(outfile.name + extension)
+        assert os.path.exists(outfile.name)
