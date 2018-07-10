@@ -21,6 +21,7 @@ from tempfile import TemporaryFile
 # Third-party libraries
 import khmer
 from khmer.utils import broken_paired_reader
+import networkx
 import pysam
 import screed
 
@@ -107,8 +108,8 @@ def to_gml(graph, outfilename, logfile=sys.stderr):
     if not outfilename.endswith('.gml'):
         print('[kevlar] WARNING: GML files usually need extension .gml',
               file=logfile)
-    networkx.write_gml(graph, outfilename)
-    message = '[kevlar] graph written to {}'.format(args.gml)
+    networkx.write_gml(graph, outfilename, stringizer=str)
+    message = '[kevlar] graph written to {}'.format(outfilename)
     print(message, file=logfile)
 
 
