@@ -12,20 +12,21 @@ import threading
 import sys
 import khmer
 import kevlar
+from kevlar.sketch import allocate, get_extension
 
 
-def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
-                        mask=None, maskmaxabund=1, numbands=None, band=None,
-                        outfile=None, numthreads=1, logfile=sys.stderr):
-    """
-    Compute k-mer abundances for the specified sequence input.
+def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
+                        smallcount=False, mask=None, maskmaxabund=1,
+                        numbands=None, band=None, outfile=None, numthreads=1,
+                        logfile=sys.stderr):
+    """Compute k-mer abundances for the specified sequence input.
 
     Expected input is a list of one or more FASTA/FASTQ files corresponding
-    to a single sample. A counttable is created and populated with abundances
+    to a single sample. A sketch is created and populated with abundances
     of all k-mers observed in the input. If `mask` is provided, only k-mers not
     present in the mask will be loaded.
     """
-    sketch = khmer.Counttable(ksize, memory / 4, 4)
+    sketch = allocate(ksize, memory / 4, count=count, smallcount=smallcount)
     numreads = 0
     for seqfile in seqfiles:
         print('[kevlar::count]      loading from', seqfile, file=logfile)
@@ -74,8 +75,9 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2,
         raise kevlar.sketch.KevlarUnsuitableFPRError(message)
 
     if outfile:
-        if not outfile.endswith(('.ct', '.counttable')):
-            outfile += '.counttable'
+        extensions = get_extension(count=count, smallcount=smallcount)
+        if not outfile.endswith(extensions):
+            outfile += extensions[1]
         sketch.save(outfile)
         message += ';\n    saved to "{:s}"'.format(outfile)
     print('[kevlar::count]    ', message, file=logfile)
@@ -91,10 +93,12 @@ def main(args):
     timer = kevlar.Timer()
     timer.start()
 
+    docount = args.counter_size > 1
+    dosmallcount = args.counter_size == 4
     sketch = load_sample_seqfile(
-        args.seqfile, args.ksize, args.memory, args.max_fpr,
-        numbands=args.num_bands, band=myband, numthreads=args.threads,
-        outfile=args.counttable, logfile=args.logfile
+        args.seqfile, args.ksize, args.memory, args.max_fpr, count=docount,
+        smallcount=dosmallcount, numbands=args.num_bands, band=myband,
+        numthreads=args.threads, outfile=args.counttable, logfile=args.logfile
     )
 
     total = timer.stop()

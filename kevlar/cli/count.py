@@ -41,6 +41,11 @@ def subparser(subparsers):
 
     subparser.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+    subparser.add_argument('-c', '--counter-size', type=int, choices=(1, 4, 8),
+                           metavar='C', default=8, help='number of bits to '
+                           'allocate for counting each k-mer; options are 1 '
+                           '(max count: 1), 4 (max count: 15), and 8 (max '
+                           'count: 255); default is 8)')
     subparser.add_argument('-M', '--memory', type=khmer_args.memory_setting,
                            default=1e6, metavar='MEM',
                            help='memory to allocate for the count table')
