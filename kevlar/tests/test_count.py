@@ -13,6 +13,7 @@ import pytest
 import re
 from tempfile import NamedTemporaryFile
 import screed
+import time
 import kevlar
 from khmer import Nodetable
 from kevlar.tests import data_file, data_glob
@@ -194,3 +195,19 @@ def test_load_sample_seqfile_withmask(count, smallcount, count_masked,
     assert sketch.get(kpresent) > 0
     assert sketch.get(kabsent) == 0
     assert sketch.get('GATTACAGATTACAGATTACA') == 0
+
+
+def test_count_cli_with_mask(capsys):
+    mask = Nodetable(21, 1e4, 4)
+    mask.consume('CACCAATCCGTACGGAGAGCCGTATATATAGACTGCTATACTATTGGATCGTACGGGGC')
+    with NamedTemporaryFile(suffix='.nt') as maskfile, \
+            NamedTemporaryFile(suffix='.sct') as countfile:
+        mask.save(maskfile.name)
+        arglist = [
+            'count', '--ksize', '21', '--mask', maskfile.name,
+            '--memory', '1M', countfile.name, data_file('bogus-genome/refr.fa')
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.count.main(args)
+    out, err = capsys.readouterr()
+    assert '36898 distinct k-mers stored' in err
