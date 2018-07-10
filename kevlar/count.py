@@ -16,9 +16,9 @@ from kevlar.sketch import allocate, get_extension
 
 
 def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
-                        smallcount=False, mask=None, maskmaxabund=1,
-                        numbands=None, band=None, outfile=None, numthreads=1,
-                        logfile=sys.stderr):
+                        smallcount=False, mask=None, maskmaxabund=0,
+                        consume_masked=False, numbands=None, band=None,
+                        outfile=None, numthreads=1, logfile=sys.stderr):
     """Compute k-mer abundances for the specified sequence input.
 
     Expected input is a list of one or more FASTA/FASTQ files corresponding
@@ -34,15 +34,22 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
         threads = list()
         for _ in range(numthreads):
             if mask:
+                threshold = 1 if consume_masked else maskmaxabund
+                kwargs = {
+                    'consume_masked': consume_masked,
+                    'threshold': threshold
+                }
                 if numbands:
                     thread = threading.Thread(
                         target=sketch.consume_seqfile_banding_with_mask,
                         args=(parser, numbands, band, mask, ),
+                        kwargs=kwargs,
                     )
                 else:
                     thread = threading.Thread(
                         target=sketch.consume_seqfile_with_mask,
                         args=(parser, mask, ),
+                        kwargs=kwargs,
                     )
             else:
                 if numbands:
@@ -89,6 +96,8 @@ def main(args):
     if (args.num_bands is None) is not (args.band is None):
         raise ValueError('Must specify --num-bands and --band together')
     myband = args.band - 1 if args.band else None
+    if args.mask:
+        args.mask = kevlar.sketch.load(args.mask)
 
     timer = kevlar.Timer()
     timer.start()
@@ -97,7 +106,8 @@ def main(args):
     dosmallcount = args.counter_size == 4
     sketch = load_sample_seqfile(
         args.seqfile, args.ksize, args.memory, args.max_fpr, count=docount,
-        smallcount=dosmallcount, numbands=args.num_bands, band=myband,
+        smallcount=dosmallcount, mask=args.mask,
+        consume_masked=args.count_masked, numbands=args.num_bands, band=myband,
         numthreads=args.threads, outfile=args.counttable, logfile=args.logfile
     )
 

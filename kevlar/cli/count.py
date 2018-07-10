@@ -53,6 +53,14 @@ def subparser(subparsers):
                            metavar='FPR', help='terminate if the estimated '
                            'false positive rate for any sample is higher than '
                            '"FPR"; default is 0.2')
+    subparser.add_argument('--mask', metavar='MSK', help='counttable or '
+                           'nodetable of k-mers to ignore when counting '
+                           'k-mers')
+    subparser.add_argument('--count-masked', action='store_true',
+                           help='by default, when a mask is provided k-mers '
+                           'in the mask are ignored; this setting inverts the '
+                           'behavior so that only k-mers in the mask are '
+                           'counted')
     subparser.add_argument('--num-bands', type=int, metavar='N', default=None,
                            help='number of bands into which to divide the '
                            'hashed k-mer space')

@@ -14,6 +14,7 @@ import re
 from tempfile import NamedTemporaryFile
 import screed
 import kevlar
+from khmer import Nodetable
 from kevlar.tests import data_file, data_glob
 
 
@@ -107,7 +108,8 @@ def test_effcount_smoketest():
             '--sample', data_file('trio1/ctrl2.fq'),
             '--sample', data_file('trio1/case2.fq'),
             '--ksize', '21', '--memory', '200K', '--memfrac', '0.005',
-            '--max-fpr', '0.1', '--threads', '2', o1.name, o2.name, o3.name
+            '--max-fpr', '0.1', '--max-abund', '0', '--threads', '2',
+            o1.name, o2.name, o3.name
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.effcount.main(args)
@@ -169,3 +171,26 @@ def test_load_sample_seqfile(count, smallcount, extension, shortext):
         assert sketch.get('GATTACAGATTACAGATTACA') == 0
         assert not os.path.exists(outfile.name + extension)
         assert os.path.exists(outfile.name)
+
+
+@pytest.mark.parametrize('count,smallcount,count_masked,kpresent,kabsent', [
+    (True, True, True, 'CACCAATCCGTACGGAGAGCC', 'GAATCGGTGGCTGGTTGCCGT'),
+    (True, False, True, 'CACCAATCCGTACGGAGAGCC', 'GAATCGGTGGCTGGTTGCCGT'),
+    (False, True, True, 'CACCAATCCGTACGGAGAGCC', 'GAATCGGTGGCTGGTTGCCGT'),
+    (False, False, True, 'CACCAATCCGTACGGAGAGCC', 'GAATCGGTGGCTGGTTGCCGT'),
+    (True, True, False, 'GAATCGGTGGCTGGTTGCCGT', 'CACCAATCCGTACGGAGAGCC'),
+    (True, False, False, 'GAATCGGTGGCTGGTTGCCGT', 'CACCAATCCGTACGGAGAGCC'),
+    (False, True, False, 'GAATCGGTGGCTGGTTGCCGT', 'CACCAATCCGTACGGAGAGCC'),
+    (False, False, False, 'GAATCGGTGGCTGGTTGCCGT', 'CACCAATCCGTACGGAGAGCC'),
+])
+def test_load_sample_seqfile_withmask(count, smallcount, count_masked,
+                                      kpresent, kabsent):
+    mask = Nodetable(21, 1e4, 4)
+    mask.consume('CACCAATCCGTACGGAGAGCCGTATATATAGACTGCTATACTATTGGATCGTACGGGGC')
+    sketch = kevlar.count.load_sample_seqfile(
+        [data_file('bogus-genome/refr.fa')], 21, 1e6, mask=mask,
+        consume_masked=count_masked, count=count, smallcount=smallcount,
+    )
+    assert sketch.get(kpresent) > 0
+    assert sketch.get(kabsent) == 0
+    assert sketch.get('GATTACAGATTACAGATTACA') == 0
