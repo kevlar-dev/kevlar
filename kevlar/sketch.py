@@ -26,6 +26,30 @@ sketch_loader_by_filename_extension = {
     '.smallcountgraph': khmer.SmallCountgraph.load,
 }
 
+# count(?)->graph(?)->small(?)
+sketch_extensions_by_trait = {
+    True: {
+        True: {
+            True: ('.scg', '.smallcountgraph'),
+            False: ('.cg', '.countgraph'),
+        },
+        False: {
+            True: ('.sct', '.smallcounttable'),
+            False: ('.ct', '.counttable'),
+        },
+    },
+    False: {
+        True: {
+            True: ('.ng', '.nodegraph'),
+            False: ('.ng', '.nodegraph'),
+        },
+        False: {
+            True: ('.nt', '.nodetable'),
+            False: ('.nt', '.nodetable'),
+        },
+    },
+}
+
 
 class KevlarSketchTypeError(ValueError):
     pass
@@ -66,6 +90,10 @@ def load(filename):
     ext = '.' + filename.split('.')[-1]
     loadfunc = sketch_loader_by_filename_extension[ext]
     return loadfunc(filename)
+
+
+def get_extension(count=False, graph=False, smallcount=False):
+    return sketch_extensions_by_trait[count][graph][smallcount]
 
 
 def allocate(ksize, target_tablesize, num_tables=4, count=False, graph=False,
