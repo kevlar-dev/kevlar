@@ -13,13 +13,11 @@ import kevlar
 from kevlar.tests import data_file
 
 
-@pytest.mark.parametrize('greedy', [True, False])
-def test_pico_4(greedy, capsys):
+def test_pico_4(capsys):
     reads = data_file('pico-4.augfastq.gz')
     refr = data_file('human-random-pico.fa.gz')
     arglist = ['alac', '--ksize', '25', reads, refr]
     args = kevlar.cli.parser().parse_args(arglist)
-    args.greedy = greedy
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
 

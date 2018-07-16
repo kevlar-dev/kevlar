@@ -148,19 +148,9 @@ def test_kmer_rep_in_read(capsys):
     from sys import stdout
     read = ('AGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGATGAGGAT'
             'GAGGATGAGGATGAGGAT')
-    record = screed.Record(name='reqseq', sequence=read, ikmers=list())
-
-    k1 = kevlar.KmerOfInterest(
-        sequence='GATGAGGATGAGGATGAGGATGAGG',
-        offset=2,
-        abund=[11, 1, 0]
-    )
-    k2 = kevlar.KmerOfInterest(
-        sequence='GATGAGGATGAGGATGAGGATGAGG',
-        offset=8,
-        abund=[11, 1, 0]
-    )
-    record.ikmers.extend([k1, k2])
+    record = kevlar.sequence.Record(name='reqseq', sequence=read)
+    record.annotate('GATGAGGATGAGGATGAGGATGAGG', 2, (11, 1, 0))
+    record.annotate('GATGAGGATGAGGATGAGGATGAGG', 8, (11, 1, 0))
 
     kevlar.print_augmented_fastx(record, stdout)
     out, err = capsys.readouterr()
@@ -233,14 +223,14 @@ def test_novel_output_has_mates():
         stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile.name, 'r'))
         for read in stream:
             intread_ids.add(read.name)
-            mate_seqs.update(read.mateseqs)
+            mate_seqs.update(read.mates)
 
         stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
         test_ids = set([r.name for r in stream])
         assert intread_ids == test_ids
 
         stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
-        test_mate_seqs = set([m for r in stream for m in r.mateseqs])
+        test_mate_seqs = set([m for r in stream for m in r.mates])
         assert mate_seqs == test_mate_seqs
 
 

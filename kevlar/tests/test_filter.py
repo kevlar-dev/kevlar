@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 import khmer
 import kevlar
 from kevlar.seqio import AnnotatedReadSet as ReadSet
+from kevlar.sequence import parse_augmented_fastx
 
 
 @pytest.fixture
@@ -108,11 +109,10 @@ def test_validate():
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
     ]
     for record in readset:
-        for kmer in record.ikmers:
-            assert kmer.sequence not in badkmers and \
-                kevlar.revcom(kmer.sequence) not in badkmers
-            assert kmer.sequence in goodkmers or \
-                kevlar.revcom(kmer.sequence) in goodkmers
+        for kmer in record.annotations:
+            seq = record.ikmerseq(kmer)
+            assert seq not in badkmers and kevlar.revcom(seq) not in badkmers
+            assert seq in goodkmers or kevlar.revcom(seq) in goodkmers
 
 
 def test_validate_minabund():
@@ -142,15 +142,16 @@ def test_validate_with_mask():
     readset.validate()
     assert readset.valid == (3, 24)
     for record in readset:
-        for ikmer in record.ikmers:
-            assert ikmer.sequence != kmer
-            assert kevlar.revcom(ikmer.sequence) != kmer
+        for ikmer in record.annotations:
+            seq = record.ikmerseq(ikmer)
+            assert seq != kmer
+            assert kevlar.revcom(seq) != kmer
 
 
 def test_ctrl3():
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
     readset = ReadSet(13, 1e7)
-    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+    for record in parse_augmented_fastx(kevlar.open(augfastq, 'r')):
         readset.add(record)
     readset.validate(casemin=6)
     assert readset.valid == (424, 5782)
@@ -159,7 +160,7 @@ def test_ctrl3():
 def test_ctrl3_refr(bogusrefr):
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
     readset = ReadSet(13, 1e7, mask=bogusrefr)
-    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+    for record in parse_augmented_fastx(kevlar.open(augfastq, 'r')):
         readset.add(record)
     readset.validate()
     assert readset.valid == (424, 5782)
@@ -168,7 +169,7 @@ def test_ctrl3_refr(bogusrefr):
 def test_ctrl3_refr_contam(bogusrefrcontam):
     augfastq = kevlar.tests.data_file('trio1/novel_3_1,2.txt')
     readset = ReadSet(13, 1e7, mask=bogusrefrcontam)
-    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+    for record in parse_augmented_fastx(kevlar.open(augfastq, 'r')):
         readset.add(record)
     readset.validate()
     assert readset.valid == (13, 171)
@@ -177,7 +178,7 @@ def test_ctrl3_refr_contam(bogusrefrcontam):
 def test_filter_abundfilt():
     readset = ReadSet(31, 1000)
     augfastq = kevlar.tests.data_file('worm.augfasta')
-    for record in kevlar.parse_augmented_fastx(kevlar.open(augfastq, 'r')):
+    for record in parse_augmented_fastx(kevlar.open(augfastq, 'r')):
         readset.add(record)
     readset.validate(casemin=5, ctrlmax=0)
     assert readset.valid == (1, 5)

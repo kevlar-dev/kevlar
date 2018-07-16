@@ -15,15 +15,15 @@ from threading import Thread
 from time import sleep
 
 import kevlar
-from kevlar.assemble import assemble_greedy, assemble_fml_asm
+from kevlar.assemble import assemble_fml_asm
 from kevlar.localize import localize
 from kevlar.call import call
 
 
 def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          seedsize=31, maxdiff=None, match=1, mismatch=2,
-                         gapopen=5, gapextend=0, greedy=False, fallback=False,
-                         min_ikmers=None, refrseqs=None, logstream=sys.stderr):
+                         gapopen=5, gapextend=0, min_ikmers=None,
+                         refrseqs=None, logstream=sys.stderr):
         while True:
             if queue.empty():
                 sleep(3)
@@ -38,18 +38,12 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             print(message, file=sys.stderr)
 
             # Assemble partitioned reads into contig(s)
-            assmblr = assemble_greedy if greedy else assemble_fml_asm
-            contigs = list(assmblr(reads, logstream=logstream))
-            if len(contigs) == 0 and assmblr == assemble_fml_asm and fallback:
-                message = 'WARNING: no contig assembled by fermi-lite'
-                if cc:  # pragma: no cover
-                    message += ' for partition={:s}'.format(cc)
-                message += '; attempting again with homegrown greedy assembler'
-                print('[kevlar::alac]', message, file=logstream)
-                contigs = list(assemble_greedy(reads, logstream=logstream))
+            contigs = list(assemble_fml_asm(reads, logstream=logstream))
             if min_ikmers is not None:
                 # Apply min ikmer filter if it's set
-                contigs = [c for c in contigs if len(c.ikmers) >= min_ikmers]
+                contigs = [
+                    c for c in contigs if len(c.annotations) >= min_ikmers
+                ]
             if len(contigs) == 0:
                 queue.task_done()
                 continue
@@ -76,8 +70,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
 
 def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
          seedsize=31, maxdiff=None, match=1, mismatch=2, gapopen=5,
-         gapextend=0, greedy=False, fallback=False, min_ikmers=None,
-         logstream=sys.stderr):
+         gapextend=0, min_ikmers=None, logstream=sys.stderr):
     part_queue = Queue(maxsize=max(32, 12 * threads))
 
     refrstream = kevlar.open(refrfile, 'r')
@@ -91,8 +84,8 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
             target=make_call_from_reads,
             args=(
                 part_queue, idx, thread_calls, refrfile, ksize, delta,
-                seedsize, maxdiff, match, mismatch, gapopen, gapextend, greedy,
-                fallback, min_ikmers, refrseqs, logstream,
+                seedsize, maxdiff, match, mismatch, gapopen, gapextend,
+                min_ikmers, refrseqs, logstream,
             )
         )
         worker.setDaemon(True)
@@ -125,8 +118,7 @@ def main(args):
         pstream, args.refr, threads=args.threads, ksize=args.ksize,
         bigpart=args.bigpart, delta=args.delta, seedsize=args.seed_size,
         maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
-        gapopen=args.open, gapextend=args.extend, greedy=args.greedy,
-        fallback=args.fallback, min_ikmers=args.min_ikmers,
+        gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
         logstream=args.logfile
     )
 

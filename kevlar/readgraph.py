@@ -68,8 +68,8 @@ class ReadGraph(networkx.Graph):
 
             self.add_node(record.name, record=record)
             self.readnames.add(record.name)
-            for kmer in record.ikmers:
-                kmerseq = kevlar.revcommin(kmer.sequence)
+            for kmer in record.annotations:
+                kmerseq = kevlar.revcommin(record.ikmerseq(kmer))
                 temp_ikmers[kmerseq].add(record.name)
 
         if minabund is None and maxabund is None:

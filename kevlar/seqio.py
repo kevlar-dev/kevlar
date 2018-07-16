@@ -15,6 +15,8 @@ import re
 import khmer
 import screed
 import kevlar
+from kevlar.sequence import Record, KmerOfInterest
+from kevlar.sequence import write_record, parse_augmented_fastx
 
 
 class KevlarPartitionLabelError(ValueError):
@@ -49,58 +51,6 @@ def parse_seq_dict(data):
         assert seqid not in seqs, seqid
         seqs[seqid] = sequence
     return seqs
-
-
-def parse_augmented_fastx(instream):
-    """Read augmented Fast[q|a] records into memory.
-
-    The parsed records will have .name, .sequence, and .quality defined (unless
-    it's augmented Fasta), as well as a list of interesting k-mers. See
-    http://kevlar.readthedocs.io/en/latest/formats.html#augmented-sequences for
-    more information.
-    """
-    record = None
-    for line in instream:
-        if line.startswith(('@', '>')):
-            if record is not None:
-                yield record
-            readid = line[1:].strip()
-            seq = next(instream).strip()
-            if line.startswith('@'):
-                _ = next(instream)
-                qual = next(instream).strip()
-                record = screed.Record(name=readid, sequence=seq, quality=qual,
-                                       ikmers=list(), mateseqs=list())
-            else:
-                record = screed.Record(name=readid, sequence=seq,
-                                       ikmers=list(), mateseqs=list())
-        elif line.endswith('#\n'):
-            if line.startswith('#mateseq='):
-                mateseq = re.search(r'^#mateseq=(\S+)#\n$', line).group(1)
-                record.mateseqs.append(mateseq)
-                continue
-            offset = len(line) - len(line.lstrip())
-            line = line.strip()[:-1]
-            abundances = re.split(r'\s+', line)
-            kmer = abundances.pop(0)
-            abundances = [int(a) for a in abundances]
-            ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=offset,
-                                          abund=abundances)
-            record.ikmers.append(ikmer)
-    yield record
-
-
-def print_augmented_fastx(record, outstream=stdout):
-    """Write augmented records out to an .augfast[q|a] file."""
-    khmer.utils.write_record(record, outstream)
-    if hasattr(record, 'ikmers'):
-        for kmer in sorted(record.ikmers, key=lambda k: k.offset):
-            abundstr = ' '.join([str(a) for a in kmer.abund])
-            print(' ' * kmer.offset, kmer.sequence, ' ' * 10, abundstr, '#',
-                  sep='', file=outstream)
-    if hasattr(record, 'mateseqs'):
-        for mateseq in record.mateseqs:
-            print('#mateseq={:s}#'.format(mateseq), file=outstream)
 
 
 def afxstream(filelist):
@@ -154,25 +104,6 @@ def parse_single_partition(readstream, partid):
             yield partition
 
 
-def load_reads_and_kmers(instream, logstream=None):
-    """Load reads into lookup tables for convenient access.
-
-    The first table is a dictionary of reads indexed by read name, and the
-    second table is a dictionary of read sets indexed by an interesting k-mer.
-    """
-    reads = dict()
-    kmers = defaultdict(set)
-    for n, record in enumerate(kevlar.parse_augmented_fastx(instream), 1):
-        if logstream and n % 10000 == 0:  # pragma: no cover
-            print('[kevlar::seqio]    loaded {:d} reads'.format(n),
-                  file=logstream)
-        reads[record.name] = record
-        for kmer in record.ikmers:
-            kmerseq = kevlar.revcommin(kmer.sequence)
-            kmers[kmerseq].add(record.name)
-    return reads, kmers
-
-
 class AnnotatedReadSet(object):
     """Data structure for de-duplicating reads and combining annotated k-mers.
 
@@ -213,7 +144,7 @@ class AnnotatedReadSet(object):
     def __iter__(self):
         for readid in self._reads:
             record = self._reads[readid]
-            if len(record.ikmers) == 0:
+            if len(record.annotations) == 0:
                 continue
             yield record
 
@@ -254,12 +185,12 @@ class AnnotatedReadSet(object):
         if newrecord.name in self._reads:
             record = self._reads[newrecord.name]
             assert record.sequence == newrecord.sequence
-            record.ikmers.extend(newrecord.ikmers)
+            record.annotations.extend(newrecord.annotations)
         else:
             self._reads[newrecord.name] = newrecord
 
-        for kmer in newrecord.ikmers:
-            kmerhash = self._counts.hash(kmer.sequence)
+        for kmer in newrecord.annotations:
+            kmerhash = self._counts.hash(newrecord.ikmerseq(kmer))
             self._ikmercounts[kmerhash] += 1
             if self._mask and self._mask.get(kmerhash) > 0:
                 self._masked[kmerhash] += 1
@@ -270,18 +201,19 @@ class AnnotatedReadSet(object):
         for readid in self._reads:
             record = self._reads[readid]
             validated_kmers = list()
-            for kmer in record.ikmers:
-                kmerhash = self._counts.hash(kmer.sequence)
+            for kmer in record.annotations:
+                kmerhash = self._counts.hash(record.ikmerseq(kmer))
                 kmercount = self._counts.get(kmerhash)
                 if kmercount < casemin:
                     self._abundfilt[kmerhash] += 1
                 elif sum([1 for a in kmer.abund[1:] if a > ctrlmax]):
                     self._abundfilt[kmerhash] += 1
                 else:
-                    kmer.abund[0] = kmercount
-                    validated_kmers.append(kmer)
+                    newabund = tuple([kmercount] + list(kmer.abund[1:]))
+                    newkmer = KmerOfInterest(kmer.ksize, kmer.offset, newabund)
+                    validated_kmers.append(newkmer)
                     self._valid[kmerhash] += 1
-            record.ikmers = validated_kmers
+            record.annotations = validated_kmers
             if len(validated_kmers) == 0:
                 self._novalidkmers_count += 1
 

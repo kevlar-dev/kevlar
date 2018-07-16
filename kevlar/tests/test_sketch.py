@@ -10,6 +10,7 @@
 import pytest
 import khmer
 import kevlar
+from kevlar.sketch import get_extension
 from kevlar.tests import data_file, data_glob
 
 
@@ -97,3 +98,10 @@ def test_load_sketches_fpr_fail():
     with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError) as e:
         sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.001)
     assert 'FPR too high, bailing out!!!' in str(e)
+
+
+def test_get_extensions():
+    assert get_extension() == ('.nt', '.nodetable')
+    assert get_extension(count=True) == ('.ct', '.counttable')
+    assert get_extension(count=True, smallcount=True) == ('.sct',
+                                                          '.smallcounttable')
