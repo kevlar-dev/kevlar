@@ -24,13 +24,6 @@ def subparser(subparsers):
     asmbl_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
                             help='do not attempt to assembly any partitions '
                             'with more than N reads (default: 10000)')
-    asmbl_args.add_argument('--greedy', action='store_true', help='Use a home-'
-                            'grown greedy assembly algorithm instead of the '
-                            'default fermi-lite algorithm')
-    asmbl_args.add_argument('--fallback', action='store_true', dest='fallback',
-                            help='attempt to assemble reads with a home-grown '
-                            'greedy assembly algorithm if fermi-lite fails to '
-                            'assemble a contig for a partition')
 
     local_args = subparser.add_argument_group('Target extraction')
     local_args.add_argument('-z', '--seed-size', type=int, default=51,

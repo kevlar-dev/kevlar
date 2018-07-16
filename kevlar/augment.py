@@ -7,13 +7,11 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from collections import defaultdict
-import sys
-import screed
 import kevlar
+import sys
 
 
-def augment(augseqstream, nakedseqstream):
+def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
     """
     Augment an unannotated stream of sequences.
 
@@ -23,40 +21,48 @@ def augment(augseqstream, nakedseqstream):
     """
     ksize = None
     ikmers = dict()
-    mateseqs = set()
-    for record in augseqstream:
-        for ikmer in record.ikmers:
-            ikmers[ikmer.sequence] = ikmer.abund
-            ikmers[kevlar.revcom(ikmer.sequence)] = ikmer.abund
-            ksize = len(ikmer.sequence)
-        mateseqs.update(record.mateseqs)
-    mateseqs = sorted(mateseqs)
+    mateseqs = dict()
+    for n, record in enumerate(augseqstream):
+        if n > 0 and n % upint == 0:
+            print('[kevlar::augment] processed', n, 'input reads',
+                  file=sys.stderr)
+        for ikmer in record.annotations:
+            seq = record.ikmerseq(ikmer)
+            ikmers[seq] = ikmer.abund
+            ikmers[kevlar.revcom(seq)] = ikmer.abund
+            ksize = ikmer.ksize
+        assert len(record.mates) in (0, 1)
+        if len(record.mates) == 1:
+            mateseqs[record.name] = record.mates[0]
+    print('[kevlar::augment] done loading input', file=sys.stderr)
 
     for record in nakedseqstream:
-        newikmers = list()
+        qual = None
+        if hasattr(record, 'quality') and record.quality is not None:
+            qual = record.quality
+        mates = list()
+        if collapsemates:
+            mates = sorted(mateseqs.values())
+        else:
+            if record.name in mateseqs:
+                mates.append(mateseqs[record.name])
+        newrecord = kevlar.sequence.Record(
+            name=record.name, sequence=record.sequence, quality=qual,
+            mates=mates,
+        )
         numkmers = len(record.sequence) - ksize + 1
         for offset in range(numkmers):
             kmer = record.sequence[offset:offset+ksize]
             if kmer in ikmers:
-                ikmer = kevlar.KmerOfInterest(kmer, offset, ikmers[kmer])
-                newikmers.append(ikmer)
-        if hasattr(record, 'quality'):
-            newrecord = screed.Record(
-                name=record.name, sequence=record.sequence, ikmers=newikmers,
-                quality=record.quality, mateseqs=mateseqs
-            )
-        else:
-            newrecord = screed.Record(
-                name=record.name, sequence=record.sequence, ikmers=newikmers,
-                mateseqs=mateseqs
-            )
+                abund = ikmers[kmer]
+                newrecord.annotate(kmer, offset, abund)
         yield newrecord
 
 
 def main(args):
-    augfh = kevlar.open(args.augseqs, 'r')
-    augseqs = kevlar.parse_augmented_fastx(augfh)
-    nakedseqs = screed.open(args.seqs)
+    augseqs = kevlar.parse_augmented_fastx(kevlar.open(args.augseqs, 'r'))
+    nakedseqs = kevlar.parse_augmented_fastx(kevlar.open(args.seqs, 'r'))
     outstream = kevlar.open(args.out, 'w')
-    for record in augment(augseqs, nakedseqs):
+    docollapse = args.collapse_mates
+    for record in augment(augseqs, nakedseqs, collapsemates=docollapse):
         kevlar.print_augmented_fastx(record, outstream)

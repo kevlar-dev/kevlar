@@ -39,7 +39,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
             mask=None, filtermem=1e6, filterfpr=0.001,
             partminabund=2, partmaxabund=200, dedup=True,
             delta=50, seedsize=31, match=1, mismatch=2, gapopen=5, gapextend=0,
-            fallback=False, refrsctfile=None, refrsctmem=1e9, mu=30.0,
+            refrsctfile=None, refrsctmem=1e9, mu=30.0,
             sigma=8.0, epsilon=0.001, labels=None, ksize=31, threads=1,
             logstream=sys.stderr):
     """
@@ -76,8 +76,6 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     - mismatch: alignment mismatch penalty
     - gapopen: alignment gap open penalty
     - gapextend: alignment gap extension penalty
-    - fallback: try assembly with home-grown greedy assembly algorithm if
-                assembly with fermi-lite fails for a partition
 
     Parameters for computing likelihood scores
     - refrsctfile: smallcounttable of k-mer abundances in the reference genome;
@@ -106,7 +104,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     caller = alac(
         partitioner, refrfile, threads=threads, ksize=ksize, delta=delta,
         seedsize=seedsize, match=match, mismatch=mismatch, gapopen=gapopen,
-        gapextend=gapextend, fallback=fallback, logstream=logstream
+        gapextend=gapextend, logstream=logstream
     )
 
     refrsct = populate_refrsct(refrfile, refrsctfile, refrsctmem=refrsctmem,

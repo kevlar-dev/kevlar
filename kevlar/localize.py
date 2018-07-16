@@ -13,7 +13,8 @@ import sys
 
 import kevlar
 from kevlar.reference import bwa_align, autoindex, ReferenceCutout
-import khmer
+from kevlar.sequence import Record
+from khmer import Counttable
 
 
 class KevlarRefrSeqNotFoundError(ValueError):
@@ -70,12 +71,8 @@ class Localizer(object):
 
 
 def get_unique_seeds(recordstream, seedsize):
-    """Grab all unique seeds from the specified sequence file.
-
-    Input is expected to be an iterable containing screed or khmer sequence
-    records.
-    """
-    ct = khmer.Counttable(seedsize, 1, 1)
+    """Grab all unique seeds from the specified sequence file."""
+    ct = Counttable(seedsize, 1, 1)
     kmers = set()
     for record in recordstream:
         for kmer in ct.get_kmers(record.sequence):
@@ -86,11 +83,7 @@ def get_unique_seeds(recordstream, seedsize):
 
 
 def unique_seed_string(records, seedsize):
-    """Convert contigs to Fasta records of seed sequences for BWA input.
-
-    Input is expected to be an iterable containing screed or khmer sequence
-    records.
-    """
+    """Convert contigs to Fasta records of seed sequences for BWA input."""
     output = ''
     for n, kmer in enumerate(get_unique_seeds(records, seedsize)):
         output += '>kmer{:d}\n{:s}\n'.format(n, kmer)
@@ -119,9 +112,8 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
              refrseqs=None, logstream=sys.stderr):
     """Wrap the `kevlar localize` task as a generator.
 
-    Input is an iterable containing contigs (assembled by `kevlar assemble`)
-    stored as khmer or screed sequence records, the filename of the reference
-    genome sequence, and the desired seed size.
+    Input is an iterable containing contigs (assembled by `kevlar assemble`),
+    the filename of the reference genome sequence, and the desired seed size.
     """
     autoindex(refrfile, logstream)
     contigs = list(contigstream)
@@ -152,5 +144,5 @@ def main(args):
         maxdiff=args.max_diff, logstream=args.logfile
     )
     for cutout in localizer:
-        record = khmer.Read(name=cutout.defline, sequence=cutout.sequence)
-        khmer.utils.write_record(record, outstream)
+        record = Record(name=cutout.defline, sequence=cutout.sequence)
+        kevlar.sequence.write_record(record, outstream)

@@ -147,7 +147,7 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
             continue
 
         discard_read = False
-        record.ikmers = list()
+        irecord = None
         for i, kmer in enumerate(casecounts[0].get_kmers(record.sequence)):
             if numbands:
                 khash = casecounts[0].hash(kmer)
@@ -162,21 +162,21 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
                 break
             if not interesting:
                 continue
-            abund = caseabund + ctrlabund
-            ikmer = kevlar.KmerOfInterest(sequence=kmer, offset=i, abund=abund)
-            record.ikmers.append(ikmer)
+            if irecord is None:
+                irecord = kevlar.sequence.copy_record(record)
+            abund = tuple(caseabund + ctrlabund)
+            irecord.annotate(kmer, i, abund)
             minkmer = kevlar.revcommin(kmer)
             unique_kmers.add(minkmer)
 
-        read_kmers = len(record.ikmers)
-        if discard_read or read_kmers == 0:
+        if discard_read or irecord is None:
             continue
 
         nreads += 1
-        nkmers += read_kmers
+        nkmers += len(irecord.annotations)
         if mate:
-            record.mateseqs = [mate.sequence]
-        yield record
+            irecord.add_mate(mate.sequence)
+        yield irecord
 
     elapsed = timer.stop()
     message = 'Found {:d} instances'.format(nkmers)

@@ -9,8 +9,7 @@
 
 from collections import defaultdict, namedtuple
 import sys
-import khmer
-from khmer.utils import write_record
+from kevlar.sequence import Record, write_record, parse_augmented_fastx
 import kevlar
 
 
@@ -80,14 +79,14 @@ def mutate_sequence(sequence, mutlist):
 
 
 def mutate_genome(infile, mutations):
-    parser = khmer.ReadParser(infile)
+    parser = parse_augmented_fastx(kevlar.open(infile, 'r'))
     for record in parser:
         sequence = record.sequence
         if record.name in mutations:
             mutlist = sorted(mutations[record.name], key=lambda m: m.pos,
                              reverse=True)
             sequence = mutate_sequence(sequence, mutlist)
-        yield khmer.Read(name=record.name, sequence=sequence)
+        yield Record(name=record.name, sequence=sequence)
 
 
 mutation_functions = {
