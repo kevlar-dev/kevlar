@@ -11,7 +11,7 @@ import kevlar
 import sys
 
 
-def augment(augseqstream, nakedseqstream, collapsemates=False):
+def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
     """
     Augment an unannotated stream of sequences.
 
@@ -23,7 +23,7 @@ def augment(augseqstream, nakedseqstream, collapsemates=False):
     ikmers = dict()
     mateseqs = dict()
     for n, record in enumerate(augseqstream):
-        if n > 0 and n % 10000 == 0:
+        if n > 0 and n % upint == 0:
             print('[kevlar::augment] processed', n, 'input reads',
                   file=sys.stderr)
         for ikmer in record.annotations:
@@ -42,7 +42,7 @@ def augment(augseqstream, nakedseqstream, collapsemates=False):
             qual = record.quality
         mates = list()
         if collapsemates:
-            mates = sorted(mateseqs)
+            mates = sorted(mateseqs.values())
         else:
             if record.name in mateseqs:
                 mates.append(mateseqs[record.name])
@@ -63,5 +63,6 @@ def main(args):
     augseqs = kevlar.parse_augmented_fastx(kevlar.open(args.augseqs, 'r'))
     nakedseqs = kevlar.parse_augmented_fastx(kevlar.open(args.seqs, 'r'))
     outstream = kevlar.open(args.out, 'w')
-    for record in augment(augseqs, nakedseqs):
+    docollapse = args.collapse_mates
+    for record in augment(augseqs, nakedseqs, collapsemates=docollapse):
         kevlar.print_augmented_fastx(record, outstream)
