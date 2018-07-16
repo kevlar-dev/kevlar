@@ -29,7 +29,7 @@ def get_parser():
                         'querying for overlap with variant calls; default is '
                         '10')
     parser.add_argument('--mode', choices=('Kevlar', 'GATK', 'TrioDenovo'),
-                        default='Kevlar', help='Gevlar|GATK|TrioDenovo')
+                        default='Kevlar', help='Kevlar|GATK|TrioDenovo')
     parser.add_argument('--cov', default='30', help='coverage')
     parser.add_argument('--correct', help='print correct variants to file')
     parser.add_argument('--missing', help='print missing variants to file')
@@ -122,12 +122,12 @@ def evaluate(simvarfile, varcalls, mode, vartype=None, minlength=None,
     correct, false, missing, mapping = assess_func(
         variants, index, delta=tolerance
     )
-    
+
     handle_collisions(mapping, collisionsfile)
     handle_missing(missing, missingfile)
     handle_calls(correct, correctfile, mvf=(mode == 'GATK'))
     handle_calls(false, falsefile, mvf=(mode == 'GATK'))
-    
+
     return len(mapping), len(false), len(missing)
 
 
@@ -150,7 +150,7 @@ def main(args):
         collisionsfile=args.collisions
     )
     vartype = vartypestr(args.vartype, args.minlength, args.maxlength)
-    
+
     colnames = ['Caller', 'Coverage', 'VarType', 'Correct', 'False', 'Missing']
     data = [args.mode, args.cov, vartype, correct, false, missing]
     row = {c: v for c, v in zip(colnames, data)}
@@ -198,5 +198,3 @@ if __name__ == '__main__':
         do_all()
     else:
         main(args)
-
-
