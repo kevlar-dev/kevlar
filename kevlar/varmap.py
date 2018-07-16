@@ -76,9 +76,10 @@ class VariantMapping(object):
 
     @property
     def ikmers(self):
-        for kmer in self.contig.ikmers:
-            yield kmer.sequence
-            yield kevlar.revcom(kmer.sequence)
+        for kmer in self.contig.annotations:
+            seq = self.contig.ikmerseq(kmer)
+            yield seq
+            yield kevlar.revcom(seq)
 
     @property
     def varseq(self):
@@ -225,7 +226,7 @@ class VariantMapping(object):
                 nocall = Variant(
                     self.seqid, self.cutout.local_to_global(offset), '.', '.',
                     CONTIG=qseq, CIGAR=self.cigar, KSW2=str(self.score),
-                    IKMERS=str(len(self.contig.ikmers))
+                    IKMERS=str(len(self.contig.annotations))
                 )
                 nocall.filter(vf.PerfectMatch)
                 yield nocall
@@ -241,7 +242,7 @@ class VariantMapping(object):
             alt = qseq[pos].upper()
             localcoord = pos + offset
             globalcoord = self.cutout.local_to_global(localcoord)
-            nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
+            nikmers = n_ikmers_present(self.contig, altwindow)
             snv = Variant(
                 self.seqid, globalcoord, refr, alt, CONTIG=qseq,
                 CIGAR=self.cigar, KSW2=str(self.score), IKMERS=str(nikmers),
@@ -266,7 +267,7 @@ class VariantMapping(object):
                 + self.indel.query \
                 + self.rightflank.query[:(ksize-1)]
             altallele = self.leftflank.query[-1] + self.indel.query
-        nikmers = n_ikmers_present(self.contig.ikmers, altwindow)
+        nikmers = n_ikmers_present(self.contig, altwindow)
         localcoord = 0 if self.targetshort else self.offset
         localcoord += self.leftflank.length
         globalcoord = self.cutout.local_to_global(localcoord)
@@ -278,12 +279,13 @@ class VariantMapping(object):
         yield indel
 
 
-def n_ikmers_present(ikmers, window):
+def n_ikmers_present(record, window):
     n = 0
-    for ikmer in ikmers:
-        if ikmer.sequence in window:
+    for ikmer in record.annotations:
+        seq = record.ikmerseq(ikmer)
+        if seq in window:
             n += 1
-        elif kevlar.revcom(ikmer.sequence) in window:
+        elif kevlar.revcom(seq) in window:
             n += 1
     return n
 

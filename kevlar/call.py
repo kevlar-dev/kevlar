@@ -17,7 +17,7 @@ from kevlar.vcf import VariantFilter as vf
 
 def align_mates(record, refrfile):
     fasta = ''
-    for n, mateseq in enumerate(record.mateseqs, 1):
+    for n, mateseq in enumerate(record.mates, 1):
         fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
     cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
@@ -95,7 +95,7 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
             alignments.append(mapping)
         aligns2report = alignments_to_report(alignments)
         if len(aligns2report) > 1:
-            if refrfile and len(query.mateseqs) > 0:
+            if refrfile and len(query.mates) > 0:
                 mate_pos = list(align_mates(query, refrfile))
                 if len(mate_pos) > 0:
                     for aln in aligns2report:
