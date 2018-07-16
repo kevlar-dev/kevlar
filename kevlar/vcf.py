@@ -376,11 +376,15 @@ class VCFReader(object):
         pos = int(fields[1]) - 1
         refr = fields[3]
         alt = fields[4]
+        filterstr = fields[6]
         variant = Variant(seqid, pos, refr, alt)
         for kvp in fields[7].split(';'):
             key, values = kvp.split('=')
             for value in values.split(','):
                 variant.annotate(key, value)
+        if filterstr not in ('.', 'PASS'):
+            for filterlabel in filterstr.split(';'):
+                variant.filter(VariantFilter[filterlabel])
         if len(fields) > 9:
             fmtkeys = fields[8].split(':')
             sample_data = fields[9:]
@@ -389,6 +393,8 @@ class VCFReader(object):
                 message = 'sample number mismatch: ' + vcfstr
                 raise VariantAnnotationError(message)
             for label, data in zip(self._sample_labels, sample_data):
+                if data in ('.', './.'):
+                    continue
                 fmtvalues = data.split(':')
                 if len(fmtkeys) != len(fmtvalues):
                     message = 'format data mismatch: ' + vcfstr
