@@ -63,7 +63,7 @@ def test_augment_reads_mates():
     augreads = list(kevlar.parse_augmented_fastx(augfh))
     nakedfh = kevlar.open(data_file('deadbeef.fq.gz'), 'r')
     nakedseq = kevlar.parse_augmented_fastx(nakedfh)
-    newreads = list(augment(augreads, nakedseq))
+    newreads = list(augment(augreads, nakedseq, upint=5))
     for oldread, newread in zip(augreads, newreads):
         assert oldread.sequence == newread.sequence
         assert oldread.mates == newread.mates
