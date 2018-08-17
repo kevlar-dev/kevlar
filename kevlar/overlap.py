@@ -85,12 +85,15 @@ def determine_relative_orientation(read1, read2, kmer1, kmer2):
     if kmer1seq != kmer2seq:
         assert kmer1seq == kevlar.revcom(kmer2seq)
         sameorient = False
-        pos2 = len(read2.sequence) - (kmer2.offset + ksize)
+        if len(read1) > len(read2):
+            pos1 = len(read1.sequence) - (kmer1.offset + ksize)
+        else:
+            pos2 = len(read2.sequence) - (kmer2.offset + ksize)
 
     tail, head = read1, read2
     tailpos, headpos = pos1, pos2
     read1contained = pos1 == pos2 and len(read2.sequence) > len(read1.sequence)
-    if pos2 > pos1 or read1contained:
+    if len(read1) > len(read2) or pos2 > pos1 or read1contained:
         tail, head = read2, read1
         tailpos, headpos = headpos, tailpos
     offset = tailpos - headpos

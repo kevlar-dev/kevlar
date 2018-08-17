@@ -12,6 +12,7 @@ import sys
 import kevlar
 from kevlar.sequence import KmerOfInterest, Record
 from kevlar.overlap import print_read_pair, calc_offset, merge_pair
+from kevlar.overlap import determine_relative_orientation
 from kevlar.overlap import OverlappingReadPair, INCOMPATIBLE_PAIR
 
 
@@ -268,3 +269,21 @@ def test_pico_offset(picorecord1, picorecord2, picorecord3):
     newcontig = merge_pair(pair)
     print(newcontig)
     assert kevlar.same_seq(contig, newcontig)
+
+
+def test_orientation_difflength():
+    infile = kevlar.open(kevlar.tests.data_file('two-reads.augfastq'), 'r')
+    reader = kevlar.parse_augmented_fastx(infile)
+    reads = list(reader)
+    assert len(reads) == 2
+
+    read1, read2 = reads
+    kmer1 = read1.annotations[-2]
+    kmer2 = read2.annotations[2]
+
+    result1 = determine_relative_orientation(read1, read2, kmer1, kmer2)
+    result2 = determine_relative_orientation(read2, read1, kmer2, kmer1)
+
+    assert result1[0].name == result2[0].name
+    assert result1[1].name == result2[1].name
+    assert result1[2] == result2[2]
