@@ -13,189 +13,132 @@ import sys
 import kevlar
 
 
-OverlappingReadPair = namedtuple('OverlappingReadPair',
-                                 'tail head offset overlap sameorient swapped')
-INCOMPATIBLE_PAIR = OverlappingReadPair(None, None, None, None, None, None)
+def ReadPair(object):
+    def __init__(self, read1, read2, sharedkmer):
+        self._r1 = read1
+        self._r2 = read2
+        self._seedkmer = sharedkmer
+        self._k1 = None
+        self._k2 = None
+        self._merged = None
 
+        self.head = None
+        self.tail = None
+        self.headkmer = None
+        self.tailkmer = None
+        self.overlap = None
+        self.sameorient = None
 
-def print_read_pair(pair, position, outstream=sys.stderr):
-    """Convenience print function for debugging."""
-    seq2 = pair.head.sequence
-    if not pair.sameorient:
-        seq2 = kevlar.revcom(pair.head.sequence)
-    ksize = pair.head.annotations[0].ksize
+        self.validate()
 
-    details = '--(overlap={:d}, offset={:d}, sameorient={})-->'.format(
-        pair.overlap, pair.offset, pair.sameorient
-    )
-    info = '[kevlar::overlap] DEBUG: shared interesting k-mer '
-    info += '{:s} {:s} {:s}'.format(pair.tail.name, details, pair.head.name)
-
-    print('≠' * 80, '\n', info, '\n', '-' * 80, '\n',
-          pair.tail.sequence, '\n',
-          ' ' * position, '|' * ksize, '\n',
-          ' ' * pair.offset, seq2, '\n', '≠' * 80, '\n',
-          sep='', file=outstream)
-
-
-def check_kmer_freq_in_read_pair(read1, read2, minkmer, debugstream=None):
-    """
-    Check interesting k-mer frequence in each read.
-
-    When calculating offset between a pair of reads, do not use any interesting
-    k-mers that occur multiple times in either read.
-    """
-    maxkmer = kevlar.revcom(minkmer)
-    matches1 = [k for k in read1.annotations
-                if kevlar.same_seq(read1.ikmerseq(k), minkmer, maxkmer)]
-    matches2 = [k for k in read2.annotations
-                if kevlar.same_seq(read2.ikmerseq(k), minkmer, maxkmer)]
-    nmatches1 = len(matches1)
-    nmatches2 = len(matches2)
-    assert nmatches1 > 0 and nmatches1 > 0, (nmatches1, nmatches2)
-    if nmatches1 > 1 or nmatches2 > 1:
-        if debugstream:
-            message = (
-                'stubbornly refusing to calculate offset bewteen {:s} and '
-                '{:s}; interesting k-mer {:s} occurs multiple times'.format(
-                    read1.name, read2.name, minkmer
-                )
-            )
-            print('[kevlar::overlap] INFO', message, file=debugstream)
-        return None, None
-
-    kmer1 = matches1[0]
-    kmer2 = matches2[0]
-    return kmer1, kmer2
-
-
-def determine_relative_orientation(read1, read2, kmer1, kmer2):
-    """
-    Determine the relative orientation of a pair of overlapping reads.
-
-    Use the sequence and position of the shared interesting k-mers to determine
-    the read's relative orientation.
-    """
-    ksize = kmer1.ksize
-    pos1 = kmer1.offset
-    pos2 = kmer2.offset
-    kmer1seq = read1.ikmerseq(kmer1)
-    kmer2seq = read2.ikmerseq(kmer2)
-    sameorient = True
-    if kmer1seq != kmer2seq:
-        assert kmer1seq == kevlar.revcom(kmer2seq)
-        sameorient = False
-        if len(read1) > len(read2):
-            pos1 = len(read1.sequence) - (kmer1.offset + ksize)
+    @property
+    def headseq(self):
+        if self.sameorient:
+            return self.head.sequence
         else:
-            pos2 = len(read2.sequence) - (kmer2.offset + ksize)
+            return kevlar.revcom(self.head.sequence)
 
-    tail, head = read1, read2
-    tailpos, headpos = pos1, pos2
-    read1contained = pos1 == pos2 and len(read2.sequence) > len(read1.sequence)
-    if len(read1) > len(read2) or pos2 > pos1 or read1contained:
-        tail, head = read2, read1
-        tailpos, headpos = headpos, tailpos
-    offset = tailpos - headpos
-
-    return tail, head, offset, sameorient, tailpos
-
-
-def validate_read_overlap(tail, head, offset, sameorient, minkmer, swapped):
-    """Verify that the overlap between two reads is identical."""
-    headseq = head.sequence if sameorient else kevlar.revcom(head.sequence)
-    seg2offset = len(head.sequence) - len(tail.sequence) + offset
-    if offset + len(headseq) <= len(tail.sequence):
-        segment1 = tail.sequence[offset:offset+len(headseq)]
-        segment2 = headseq
-        seg2offset = None
-    elif swapped:
-        segment1 = tail.sequence[:-offset]
-        segment2 = headseq[seg2offset:]
-    else:
-        segment1 = tail.sequence[offset:]
-        segment2 = headseq[:-seg2offset]
-
-    overlap1 = len(segment1)
-    overlap2 = len(segment2)
-    if overlap1 != overlap2:  # pragma: no cover
-        maxkmer = kevlar.revcom(minkmer)
-        print(
-            '[kevlar::overlap] ERROR '
-            'tail="{tail}" head="{head}" offset={offset} altoffset={altoffset}'
-            ' tailoverlap={overlap} headoverlap={headover} tailolvp={tailseq}'
-            ' headolvp={headseq} kmer={minkmer},{maxkmer} tailseq={tailread}'
-            ' headseq={headread}'.format(
-                tail=tail.name, head=tail.name,
-                offset=offset,
-                altoffset=seg2offset,
-                overlap=overlap1, headover=len(segment2),
-                tailseq=segment1, headseq=segment2,
-                minkmer=minkmer, maxkmer=maxkmer,
-                tailread=tail.sequence, headread=head.sequence,
-            ), file=sys.stderr
+    def __str__(self):
+        return '{tailseq}\n{offset}{headseq}'.format(
+            tailseq=self.tail.sequence, offset=' ' * self.offset,
+            headseq=self.headseq
         )
-    assert overlap1 == overlap2
-    if segment1 != segment2:
-        return None
-    return overlap1
 
+    def incompatible(self):
+        return self._k1 is None or self.overlap is None
 
-def calc_offset(read1, read2, minkmer, debugstream=None):
-    """
-    Calculate offset between reads that share an interesting k-mer.
+    def check_kmer_freq(self):
+        """Ignore any k-mers that occur multiple times in either read."""
+        rckmer = kevlar.revcom(self._seedkmer)
+        matches1 = [
+            k for k in self._r1.annotations
+            if kevlar.same_seq(self._r1.ikmerseq(k), self._seedkmer, rckmer)
+        ]
+        matches2 = [
+            k for k in self._r2.annotations
+            if kevlar.same_seq(self._r2.ikmerseq(k), self._seedkmer, rckmer)
+        ]
+        nmatches1 = len(matches1)
+        nmatches2 = len(matches2)
+        assert nmatches1 > 0 and nmatches1 > 0, (nmatches1, nmatches2)
+        if nmatches1 == 1 and nmatches2 == 1:
+            self._k1 = matches1[0]
+            self._k2 = matches2[0]
+            k1seq = self._r1.ikmerseq(self._k1)
+            k2seq = self._r2.ikmerseq(self._k2)
+            assert kevlar.same_seq(k1seq, k2seq)
 
-    Each read is annotated with its associated interesting k-mers. These are
-    used to bait pairs of reads sharing interesting k-mers to build a graph of
-    shared interesting k-mers. Given a pair of reads sharing an interesting,
-    k-mer calculate the offset between them and determine whether they are in
-    the same orientation. Any mismatches between the aligned reads (outside the
-    shared k-mer) will render the offset invalid.
-    """
-    kmer1, kmer2 = check_kmer_freq_in_read_pair(read1, read2, minkmer,
-                                                debugstream)
-    if kmer1 is None or kmer2 is None:
-        return INCOMPATIBLE_PAIR
+    def set_head_and_tail(self):
+        """Determine which read is `head` and which is `tail`.
 
-    tail, head, offset, sameorient, tailpos = determine_relative_orientation(
-        read1, read2, kmer1, kmer2
-    )
+        The `tail` read is situated to the left and always retains its
+        orientation. The `head` read is situated to the right and will be
+        reverse complemented if needed to match the `tail` read's orientation.
 
-    swapped = read1.name != tail.name and sameorient is False
-    overlap = validate_read_overlap(tail, head, offset, sameorient, minkmer,
-                                    swapped)
-    if overlap is None:
-        return INCOMPATIBLE_PAIR
+        The criteria for determining heads and tails is as follows.
+        - the longer read is the tail
+        - if the reads are of equal length, the read with the higher ikmer
+          offset is the tail
+        - if the reads are of equal length and have the same ikmer offset, the
+          read whose name/ID is lexicographically larger is the tail
+        """
+        if len(self._r1) - len(self._r2) != 0:  # read length
+            if len(self._r1) > len(self._r2):
+                self.tail = self._r1
+                self.head = self._r2
+            else:
+                self.tail = self._r2
+                self.head = self._r1
+        elif self._k1.offset != self._k2.offset:  # k-mer position
+            if self._k1.offset > self._k2.offset:
+                self.tail = self._r1
+                self.head = self._r2
+            else:
+                self.tail = self._r2
+                self.head = self._r1
+        else:  # read names
+            if self._r1.name > self._r2.name:
+                self.tail = self._r1
+                self.head = self._r2
+            else:
+                self.tail = self._r2
+                self.head = self._r1
+        if self.tail == self._r1:
+            self.tailkmer = self._k1
+            self.headkmer = self._k2
+        else:
+            self.tailkmer = self._k2
+            self.headkmer = self._k1
 
-    pair = OverlappingReadPair(tail=tail, head=head, offset=offset,
-                               overlap=overlap, sameorient=sameorient,
-                               swapped=swapped)
-    if debugstream:
-        print_read_pair(pair, tailpos, debugstream)
+    def calc_orientation_and_offset(self):
+        tailkseq = self.tail.ikmerseq(self.tailkmer)
+        headkseq = self.head.ikmerseq(self.headkmer)
+        self.sameorient = tailkseq == headkseq
+        tailpos = self.tailkmer.offset
+        headpos = self.headkmer.offset
+        ksize = self.headkmer.ksize
+        if not self.sameorient:
+            headpos = len(self.head) - (self.headkmer.offset + ksize)
+        self.offset = headpos - tailpos
 
-    return pair
+    @property
+    def mergedseq(self):
+        return self._merged
 
+    def _merge(self):
+        if self.headseq in self.tail.sequence:
+            self._merged = pair.tail.sequence
+        headindex = len(tailseq) - offset
+        headsuffix = headseq[headindex:]
+        tailprefix = tailseq[offset:offset+pair.overlap]
+        assert tailprefix == headseq[:headindex], \
+            'error: attempted to assemble incompatible reads'
+        self._merged = pair.tail.sequennce + headsuffix
 
-def merge_pair(pair):
-    """Assemble a pair of overlapping reads.
-
-    Given a pair of compatible overlapping reads, collapse and merge them into
-    a single sequence.
-    """
-    tailseq = pair.tail.sequence
-    headseq = pair.head.sequence
-    offset = pair.offset
-    if pair.sameorient is False:
-        headseq = kevlar.revcom(pair.head.sequence)
-    if headseq in pair.tail.sequence:
-        return pair.tail.sequence
-    if pair.swapped:
-        tailseq, headseq = headseq, tailseq
-        offset += len(tailseq) - len(headseq)
-
-    headindex = len(tailseq) - offset
-    headsuffix = headseq[headindex:]
-    tailprefix = tailseq[offset:offset+pair.overlap]
-    assert tailprefix == headseq[:headindex], \
-        'error: attempted to assemble incompatible reads'
-    return tailseq + headsuffix
+    def validate(self):
+        self.check_kmer_freq()
+        if self.incompatible:
+            return
+        self.set_head_and_tail()
+        self.calc_orientation_and_offset()
+        self._merge()
