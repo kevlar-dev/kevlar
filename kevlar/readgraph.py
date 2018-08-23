@@ -99,8 +99,7 @@ class ReadGraph(networkx.Graph):
         else:
             self.add_edge(tailname, headname, offset=pair.offset,
                           overlap=pair.overlap, ikmers=set([minkmer]),
-                          orient=pair.sameorient, tail=tailname,
-                          swapped=pair.swapped)
+                          orient=pair.sameorient, tail=tailname)
 
     def populate_edges(self, strict=False):
         """
@@ -113,10 +112,12 @@ class ReadGraph(networkx.Graph):
             readset = self.ikmers[kmer]
             for read1, read2 in itertools.combinations(readset, 2):
                 if strict:
+                    if read1 in self and read2 in self[read1]:
+                        continue
                     record1 = self.get_record(read1)
                     record2 = self.get_record(read2)
-                    pair = kevlar.overlap.calc_offset(record1, record2, kmer)
-                    if pair is kevlar.overlap.INCOMPATIBLE_PAIR:
+                    pair = kevlar.ReadPair(record1, record2, kmer)
+                    if pair.incompatible:
                         # Shared k-mer but bad overlap
                         continue
                     self.check_edge(pair, kmer)

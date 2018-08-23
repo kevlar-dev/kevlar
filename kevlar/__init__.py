@@ -26,12 +26,12 @@ import screed
 
 # Internal modules
 from kevlar import seqio
-from kevlar import overlap
 from kevlar import sketch
 from kevlar import reference
 from kevlar import cigar
 from kevlar import varmap
 from kevlar import vcf
+from kevlar.readpair import ReadPair
 from kevlar.readgraph import ReadGraph
 from kevlar.mutablestring import MutableString
 from kevlar.sequence import parse_augmented_fastx, print_augmented_fastx

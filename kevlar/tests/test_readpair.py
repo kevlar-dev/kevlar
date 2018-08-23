@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # -----------------------------------------------------------------------------
-# Copyright (c) 2017 The Regents of the University of California
+# Copyright (c) 2018 The Regents of the University of California
 #
 # This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
@@ -11,9 +11,7 @@ import pytest
 import sys
 import kevlar
 from kevlar.sequence import KmerOfInterest, Record
-from kevlar.overlap import print_read_pair, calc_offset, merge_pair
-from kevlar.overlap import determine_relative_orientation
-from kevlar.overlap import OverlappingReadPair, INCOMPATIBLE_PAIR
+from kevlar.readpair import ReadPair
 
 
 @pytest.fixture
@@ -147,47 +145,40 @@ def picorecord3():
     )
 
 
-def test_print_read_pair_same_orient(record1, record2, capsys):
-    pair = kevlar.overlap.calc_offset(record1, record2, 'CGCAA')
-    print_read_pair(pair, 14, sys.stderr)
-    out, err = capsys.readouterr()
-
-    assert 'read1 --(overlap=7, offset=13, sameorient=True)--> read2' in err
-    assert ('GCTGCACCGATGTACGCAAA\n'
-            '              |||||\n'
-            '             ACGCAAAGCTATTTAAAACC') in err
-
-
-def test_print_read_pair_diff_orient(record1, record3, capsys):
-    pair = kevlar.overlap.calc_offset(record1, record3, 'CGCAA')
-    print_read_pair(pair, 14, sys.stderr)
-    out, err = capsys.readouterr()
-
-    assert 'read1 --(overlap=7, offset=13, sameorient=False)--> read3' in err
-    assert ('GCTGCACCGATGTACGCAAA\n'
-            '              |||||\n'
-            '             ACGCAAAGCTATTTAAAACC') in err
-
-
-def test_calc_offset_same_orientation(record1, record2):
-    """
-    Compute offset of reads sharing an interesting k-mer, same orientation.
+@pytest.mark.parametrize('read1,read2,sameorientation', [
+    (record1(), record2(), True),
+    (record2(), record1(), True),
+    (record1(), record3(), False),
+    (record3(), record1(), False),
+])
+def test_basic(read1, read2, sameorientation):
+    """Pair of reads sharing an interesting k-mer.
 
     GCTGCACCGATGTACGCAAA
                   |||||
                  ACGCAAAGCTATTTAAAACC
+
+    We should get the same answer regardless of the order in which the reads
+    are given or their orientation.
     """
-    pair = kevlar.overlap.calc_offset(record1, record2, 'CGCAA')
-    assert pair.tail == record1
-    assert pair.head == record2
-    assert pair.offset == 13
+    pair = ReadPair(read1, read2, 'CGCAA')
+    print(str(pair), file=sys.stderr)
     assert pair.overlap == 7
-    assert pair.sameorient is True
+    assert pair.offset == 13
+    assert pair.sameorient is sameorientation
+    str_reprs = [
+        ('GCTGCACCGATGTACGCAAA\n'
+         '              |||||\n'
+         '             ACGCAAAGCTATTTAAAACC'),
+        ('GGTTTTAAATAGCTTTGCGT\n'
+         '              |||||\n'
+         '             TTTGCGTACATCGGTGCAGC'),
+    ]
+    assert str(pair) in str_reprs
 
 
-def test_calc_offset_kmer_multi_freq(record1, record2a):
-    """
-    Read contains multiple copies of the same k-mer.
+def test_kmer_multi_copy(record1, record2a):
+    """Read contains multiple copies of the same k-mer.
 
     Make sure kevlar doesn't try to compute offset of reads when one of them
     contains more than one copy of the interesting k-mer.
@@ -196,48 +187,28 @@ def test_calc_offset_kmer_multi_freq(record1, record2a):
                   |||||         |||||
                  ACGCAAAGCTATTTACGCAA
     """
-    pair = kevlar.overlap.calc_offset(record1, record2a, 'CGCAA')
-    assert pair == INCOMPATIBLE_PAIR
+    pair = ReadPair(record1, record2a, 'CGCAA')
+    assert pair.incompatible
 
 
-def test_calc_offset_opposite_orientation(record1, record3, capsys):
-    """
-    Compute offset of reads sharing an interesting k-mer, opposite orientation.
-
-    GCTGCACCGATGTACGCAAA
-                  |||||
-                 ACGCAAAGCTATTTAAAACC <-- reverse complement
-    """
-    pair = kevlar.overlap.calc_offset(record1, record3, 'CGCAA', sys.stderr)
-    out, err = capsys.readouterr()
-    assert pair.tail == record1
-    assert pair.head == record3
-    assert pair.offset == 13
-    assert pair.overlap == 7
-    assert pair.sameorient is False
-    assert '--(overlap=7, offset=13, sameorient=False)-->' in err
-
-
-def test_calc_offset_mismatch(record1, record4):
-    """
-    Compute offset of reads sharing an interesting k-mer, but with mismatch.
+def test_mismatch(record1, record4):
+    """Pair of reads sharing an interesting k-mer, but with mismatch.
 
     GCTGCACCGATGTACGCAAA
                   |||||X
                  ACGCAATGCTATTTAAAACC
 
-    The interesting k-mer is simply a seed. The assembler requires that the
+    The interesting k-mer is simply a seed. Assembly requires that the
     entire overlap between the two reads matches exactly, so the mismatch here
     should return a null offset indicating that the pair of reads is
     incompatible despite sharing an interesting k-mer.
     """
-    pair = kevlar.overlap.calc_offset(record1, record4, 'CGCAA')
-    assert pair == INCOMPATIBLE_PAIR
+    pair = ReadPair(record1, record4, 'CGCAA')
+    assert pair.incompatible
 
 
-def test_calc_offset_weirdness(record5, record6):
-    """
-    Compute offset of reads sharing an interesting k-mer, but with mismatches.
+def test_big_mismatch(record5, record6):
+    """Pair of reads sharing an interesting k-mer, but with mismatches.
 
     CTCTTCCGGCAGTCACTGTCAAGAGAGGGTGAACT
                    |||||||
@@ -248,42 +219,28 @@ def test_calc_offset_weirdness(record5, record6):
     incompatible for assembly.
     """
     for ikmer in ['CTGTCAA', 'TGTCAAG']:
-        pair = kevlar.overlap.calc_offset(record5, record6, ikmer)
-        assert pair == INCOMPATIBLE_PAIR
+        pair = ReadPair(record5, record6, ikmer)
+        assert pair.incompatible
 
 
-def test_pico_offset(picorecord1, picorecord2, picorecord3):
-    pair = kevlar.overlap.calc_offset(picorecord1, picorecord2,
-                                      'TTTTTTGTTTCCCAAAGTAAGGCTG')
-    assert pair.offset == 59
-    assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
-    assert pair.swapped is False
-    contig = merge_pair(pair)
-    print(contig)
-
-    pair = kevlar.overlap.calc_offset(picorecord1, picorecord3,
-                                      'TTTTTTGTTTCCCAAAGTAAGGCTG')
-    assert pair.offset == 59
-    assert pair.head.name == 'seq1_901350_901788_1:0:0_0:0:0_21ca1/2'
-    assert pair.swapped is True
-    newcontig = merge_pair(pair)
-    print(newcontig)
-    assert kevlar.same_seq(contig, newcontig)
+def test_record_rc(record2, record3):
+    record2rc = record2.revcom()
+    assert record2rc.sequence == record3.sequence
+    for k2, k3 in zip(record2rc.annotations, record3.annotations):
+        assert k2.offset == k3.offset
+        assert k2.ksize == k3.ksize
+        assert k2.abund == k3.abund
 
 
-def test_orientation_difflength():
-    infile = kevlar.open(kevlar.tests.data_file('two-reads.augfastq'), 'r')
-    reader = kevlar.parse_augmented_fastx(infile)
-    reads = list(reader)
-    assert len(reads) == 2
+def test_pico(picorecord1, picorecord2, picorecord3):
+    pair1 = ReadPair(picorecord1, picorecord2, 'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert pair1.offset == 59
+    assert pair1.head.read.name == 'seq1_901428_901847_3:0:0_0:0:0_87d/1'
+    print(pair1.mergedseq)
 
-    read1, read2 = reads
-    kmer1 = read1.annotations[-2]
-    kmer2 = read2.annotations[2]
+    pair2 = ReadPair(picorecord1, picorecord3, 'TTTTTTGTTTCCCAAAGTAAGGCTG')
+    assert pair2.offset == 59
+    assert pair2.head.read.name == 'seq1_901428_901847_3:0:0_0:0:0_87d/1'
+    print(pair2.mergedseq)
 
-    result1 = determine_relative_orientation(read1, read2, kmer1, kmer2)
-    result2 = determine_relative_orientation(read2, read1, kmer2, kmer1)
-
-    assert result1[0].name == result2[0].name
-    assert result1[1].name == result2[1].name
-    assert result1[2] == result2[2]
+    assert kevlar.same_seq(pair1.mergedseq, pair2.mergedseq)

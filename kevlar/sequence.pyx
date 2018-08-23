@@ -55,6 +55,16 @@ cdef class Record:
     def ikmerseq(self, ikmer):
         return self.sequence[ikmer.offset:ikmer.offset+ikmer.ksize]
 
+    def revcom(self):
+        newannot = list()
+        for ikmer in self.annotations:
+            newoffset = len(self) - ikmer.offset - ikmer.ksize
+            newkmer = KmerOfInterest(ikmer.ksize, newoffset, ikmer.abund)
+            newannot.insert(0, newkmer)
+        rcseq = kevlar.revcom(self.sequence)
+        revqual = self.quality[::-1] if self.quality else None
+        return Record(self.name, rcseq, revqual, newannot, self.mates)
+
 
 def copy_record(record):
     qual = None
