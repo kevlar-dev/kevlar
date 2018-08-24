@@ -35,6 +35,7 @@ from kevlar.readpair import ReadPair
 from kevlar.readgraph import ReadGraph
 from kevlar.mutablestring import MutableString
 from kevlar.sequence import parse_augmented_fastx, print_augmented_fastx
+from kevlar.sequence import revcom
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
 from kevlar.timer import Timer
 
@@ -85,10 +86,6 @@ def mkdirp(path, trim=False):
     outdir = dirname(path) if trim else path
     makedirs(outdir, exist_ok=True)
     return outdir
-
-
-def revcom(seq):
-    return screed.dna.reverse_complement(str(seq))
 
 
 def revcommin(seq):

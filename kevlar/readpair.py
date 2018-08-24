@@ -10,30 +10,21 @@
 from collections import namedtuple
 import sys
 import kevlar
+from kevlar.sequence import Record, KmerOfInterest
 
 
 class ReadWithKmer(object):
     def __init__(self, read, kmerseq):
         self.read = read
-        self.kmerocc = list()
-        kmerseqrc = kevlar.revcom(kmerseq)
-        for ikmer in read.annotations:
-            if kevlar.same_seq(self.read.ikmerseq(ikmer), kmerseq, kmerseqrc):
-                self.kmerocc.append(ikmer)
-        self.kmer = self.kmerocc[0] if len(self.kmerocc) == 1 else None
+        self.kmer = read.ikmers[kmerseq]
+        self.kmerseq = self.read.ikmerseq(self.kmer) if self.kmer else None
+        self.num_occurrences = (
+            self.read.sequence.count(kmerseq) +
+            self.read.sequence.count(kevlar.revcom(kmerseq))
+        )
 
     def __len__(self):
         return len(self.read)
-
-    @property
-    def num_occurrences(self):
-        return len(self.kmerocc)
-
-    @property
-    def kmerseq(self):
-        if self.kmer is None:
-            return None
-        return self.read.ikmerseq(self.kmer)
 
     @property
     def offset(self):
@@ -47,6 +38,15 @@ class ReadWithKmer(object):
     def sequence(self):
         return self.read.sequence
 
+    def revcom(self):
+        seq = kevlar.revcom(self.read.sequence)
+        kmerseqrc = kevlar.revcom(self.kmerseq)
+        newoffset = len(seq) - self.kmer.offset - self.kmer.ksize
+        kmer = KmerOfInterest(self.kmer.ksize, newoffset, self.kmer.abund)
+        kdict = {self.kmerseq: kmer, kmerseqrc: kmer}
+        newread = Record(self.read.name, seq, annotations=[kmer], ikmers=kdict)
+        return ReadWithKmer(newread, self.kmerseq)
+
 
 class ReadPair(object):
     """Class for handling overlapping pairs of reads.
@@ -58,8 +58,8 @@ class ReadPair(object):
     def __init__(self, read1, read2, sharedkmer):
         self._r1 = ReadWithKmer(read1, sharedkmer)
         self._r2 = ReadWithKmer(read2, sharedkmer)
-        self._r1rc = ReadWithKmer(read1.revcom(), sharedkmer)
-        self._r2rc = ReadWithKmer(read2.revcom(), sharedkmer)
+        self._r1rc = self._r1.revcom()
+        self._r2rc = self._r2.revcom()
         self._seedkmer = sharedkmer
         self._merged = None
 
@@ -94,7 +94,9 @@ class ReadPair(object):
 
         # If both arrangements have the same largest k-mer offset, no assigment
         # can be made.
-        offsets = [read.kmer.offset for arr in arrangements for read in arr]
+        offsets = [
+            max([read.kmer.offset for read in arr]) for arr in arrangements
+        ]
         if len(set(offsets)) == 1:
             return
 
@@ -117,7 +119,7 @@ class ReadPair(object):
             self.head = self._r1
 
     def assign_by_read_name(self):
-        if len(self._r1.read.name) < len(self._r2.read.name):
+        if self._r1.read.name < self._r2.read.name:
             self.tail = self._r1
             self.head = self._r2 if self.sameorient else self._r2rc
         else:
@@ -147,6 +149,8 @@ class ReadPair(object):
         assert self.tail is not None
 
     def calc_offset(self):
+        if self.tail.offset < self.head.offset:
+            self.head, self.tail = self.tail, self.head
         self.offset = self.tail.offset - self.head.offset
         self.overlap = len(self.tail) - self.offset
 

@@ -162,6 +162,7 @@ def test_basic(read1, read2, sameorientation):
     are given or their orientation.
     """
     pair = ReadPair(read1, read2, 'CGCAA')
+    print(pair.head.name, pair.tail.name, file=sys.stderr)
     print(str(pair), file=sys.stderr)
     assert pair.overlap == 7
     assert pair.offset == 13
@@ -221,15 +222,6 @@ def test_big_mismatch(record5, record6):
     for ikmer in ['CTGTCAA', 'TGTCAAG']:
         pair = ReadPair(record5, record6, ikmer)
         assert pair.incompatible
-
-
-def test_record_rc(record2, record3):
-    record2rc = record2.revcom()
-    assert record2rc.sequence == record3.sequence
-    for k2, k3 in zip(record2rc.annotations, record3.annotations):
-        assert k2.offset == k3.offset
-        assert k2.ksize == k3.ksize
-        assert k2.abund == k3.abund
 
 
 def test_pico(picorecord1, picorecord2, picorecord3):
