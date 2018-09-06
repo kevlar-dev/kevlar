@@ -147,10 +147,11 @@ class ReadGraph(networkx.Graph):
                 if abundfilt:
                     if minabund and partition.number_of_nodes() < minabund:
                         continue  # Skip partitions that are too small
-                partition.populate_edges(strict=True)
-                nedges = partition.number_of_edges()
-                if minabund and nedges < minabund:
-                    continue  # Skip partitions with poor connectivity
+                if partition.number_of_nodes() < 10:
+                    partition.populate_edges(strict=True)
+                    nedges = partition.number_of_edges()
+                    if minabund and nedges < minabund:
+                        continue  # Skip partitions with poor connectivity
                 yield partition
             else:
                 yield cc
