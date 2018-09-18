@@ -75,7 +75,7 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
     """
     if genotype == 0:
         if refrabund:  # SNV
-            erate = error * mean * refrabund
+            erate = error * mean
         else:  # INDEL
             erate = error * mean * 0.1
         return abundance * log(erate)
