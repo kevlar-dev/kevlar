@@ -7,6 +7,8 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import re
+
 
 def subparser(subparsers):
     """Define the `kevlar localize` command-line interface."""
@@ -32,5 +34,12 @@ def subparser(subparsers):
                            'reference targets if the distance between two '
                            'seed matches is > X; by default, X is 3 times the '
                            'length of the longest contig')
+    subparser.add_argument('--include', metavar='REGEX', type=re.escape,
+                           help='discard alignments to any chromosomes whose '
+                           'sequence IDs do not match the given pattern')
+    subparser.add_argument('--exclude', metavar='REGEX', type=re.escape,
+                           help='discard alignments to any chromosomes whose '
+                           'sequence IDs match the given pattern')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')
+

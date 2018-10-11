@@ -21,9 +21,10 @@ from kevlar.call import call
 
 
 def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
-                         seedsize=31, maxdiff=None, match=1, mismatch=2,
-                         gapopen=5, gapextend=0, min_ikmers=None,
-                         refrseqs=None, logstream=sys.stderr):
+                         seedsize=31, maxdiff=None, exclpattern=None,
+                         inclpattern=None, match=1, mismatch=2, gapopen=5,
+                         gapextend=0, min_ikmers=None, refrseqs=None,
+                         logstream=sys.stderr):
         while True:
             if queue.empty():
                 sleep(3)
@@ -51,6 +52,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             # Identify the genomic region(s) associated with each contig
             localizer = localize(
                 contigs, refrfile, seedsize, delta=delta, maxdiff=maxdiff,
+                inclpattern=inclpattern, exclpattern=exclpattern,
                 refrseqs=refrseqs, logstream=logstream
             )
             targets = list(localizer)
@@ -69,8 +71,9 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
 
 
 def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
-         seedsize=31, maxdiff=None, match=1, mismatch=2, gapopen=5,
-         gapextend=0, min_ikmers=None, logstream=sys.stderr):
+         seedsize=31, maxdiff=None, inclpattern=None, exclpattern=None,
+         match=1, mismatch=2, gapopen=5, gapextend=0, min_ikmers=None,
+         logstream=sys.stderr):
     part_queue = Queue(maxsize=max(32, 12 * threads))
 
     refrstream = kevlar.open(refrfile, 'r')
@@ -84,8 +87,8 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
             target=make_call_from_reads,
             args=(
                 part_queue, idx, thread_calls, refrfile, ksize, delta,
-                seedsize, maxdiff, match, mismatch, gapopen, gapextend,
-                min_ikmers, refrseqs, logstream,
+                seedsize, maxdiff, inclpattern, exclpattern, match, mismatch,
+                gapopen, gapextend, min_ikmers, refrseqs, logstream,
             )
         )
         worker.setDaemon(True)
@@ -117,7 +120,8 @@ def main(args):
     workflow = alac(
         pstream, args.refr, threads=args.threads, ksize=args.ksize,
         bigpart=args.bigpart, delta=args.delta, seedsize=args.seed_size,
-        maxdiff=args.max_diff, match=args.match, mismatch=args.mismatch,
+        maxdiff=args.max_diff, inclpattern=args.include,
+        exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
         logstream=args.logfile
     )
