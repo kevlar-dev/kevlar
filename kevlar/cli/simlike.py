@@ -43,6 +43,10 @@ def subparser(subparsers):
                           'default is 8.0')
     cov_args.add_argument('--epsilon', metavar='ε', type=float, default=0.001,
                           help='error rate; default is 0.001')
+    cov_args.add_argument('--static', dest='dynamic', action='store_false',
+                          help='when computing likelihood scores for SNVs, '
+                          'disable dynamic error rate (scaled by abundance of '
+                          'reference allele k-mer in the reference genome)')
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',

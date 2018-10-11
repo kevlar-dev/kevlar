@@ -272,7 +272,7 @@ def main(args):
 
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
-        epsilon=args.epsilon, casemin=args.case_min,
+        epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
         samplelabels=args.sample_labels, logstream=args.logfile,
     )
     for call in calculator:
