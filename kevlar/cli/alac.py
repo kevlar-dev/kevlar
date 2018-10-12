@@ -7,6 +7,8 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import re
+
 
 def subparser(subparsers):
 
@@ -39,6 +41,12 @@ def subparser(subparsers):
                             'length of the longest contig; each bin specifies '
                             'a reference target sequence against which '
                             'assembled contigs will be aligned')
+    local_args.add_argument('--include', metavar='REGEX', type=re.escape,
+                            help='discard alignments to any chromosomes whose '
+                            'sequence IDs do not match the given pattern')
+    local_args.add_argument('--exclude', metavar='REGEX', type=re.escape,
+                            help='discard alignments to any chromosomes whose '
+                            'sequence IDs match the given pattern')
 
     score_args = subparser.add_argument_group('Alignment scoring')
     score_args.add_argument('-A', '--match', type=int, default=1, metavar='A',
