@@ -57,7 +57,6 @@ def test_localizer_incl_excl():
         ('X', 1234, 1270),
     ]
 
-
     intervals.exclpattern = 'Un'
     testint = [c.interval for c in intervals.get_cutouts()]
     assert sorted(testint) == [
@@ -66,7 +65,7 @@ def test_localizer_incl_excl():
         ('X', 1234, 1270),
     ]
 
-    intervals.inclpattern = '^\d+$'
+    intervals.inclpattern = r'^\d+$'
     testint = [c.interval for c in intervals.get_cutouts()]
     assert sorted(testint) == [
         ('1', 100, 145),

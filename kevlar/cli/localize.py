@@ -42,4 +42,3 @@ def subparser(subparsers):
                            'sequence IDs match the given pattern')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')
-
