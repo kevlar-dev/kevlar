@@ -16,3 +16,5 @@ kevlar/*.cpython-*.so
 dist/
 *.egg-info
 .ipynb_checkpoints/
+.eggs/
+.pytest_cache/
