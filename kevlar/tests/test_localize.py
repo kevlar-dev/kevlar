@@ -37,6 +37,42 @@ def test_localizer_simple():
     ]
 
 
+def test_localizer_incl_excl():
+    intervals = Localizer(seedsize=25)
+    intervals.add_seed_match('1', 100)
+    intervals.add_seed_match('1', 120)
+    intervals.add_seed_match('12', 200)
+    intervals.add_seed_match('12', 209)
+    intervals.add_seed_match('12', 213)
+    intervals.add_seed_match('X', 1234)
+    intervals.add_seed_match('X', 1245)
+    intervals.add_seed_match('Un', 13579)
+    intervals.add_seed_match('Un', 13597)
+
+    testint = [c.interval for c in intervals.get_cutouts()]
+    assert sorted(testint) == [
+        ('1', 100, 145),
+        ('12', 200, 238),
+        ('Un', 13579, 13622),
+        ('X', 1234, 1270),
+    ]
+
+    intervals.exclpattern = 'Un'
+    testint = [c.interval for c in intervals.get_cutouts()]
+    assert sorted(testint) == [
+        ('1', 100, 145),
+        ('12', 200, 238),
+        ('X', 1234, 1270),
+    ]
+
+    intervals.inclpattern = r'^\d+$'
+    testint = [c.interval for c in intervals.get_cutouts()]
+    assert sorted(testint) == [
+        ('1', 100, 145),
+        ('12', 200, 238),
+    ]
+
+
 @pytest.mark.parametrize('infile', [
     ('smallseq.fa.gz'),
     ('smallseq.augfasta'),
@@ -178,14 +214,23 @@ def test_maxdiff(X, numtargets):
     assert len(targets) == numtargets
 
 
-def test_main(capsys):
+@pytest.mark.parametrize('incl,excl,output', [
+    (None, None, '>seq1_10-191'),
+    (r'seq1', None, '>seq1_10-191'),
+    (None, 'seq1', 'WARNING: no reference matches'),
+    (r'chr[XY]', None, 'WARNING: no reference matches'),
+    (None, r'b0Gu$', '>seq1_10-191'),
+])
+def test_main(incl, excl, output, capsys):
     contig = data_file('localize-contig.fa')
     refr = data_file('localize-refr.fa')
     arglist = ['localize', '--seed-size', '23', '--delta', '50', contig, refr]
     args = kevlar.cli.parser().parse_args(arglist)
+    args.include = incl
+    args.exclude = excl
     kevlar.localize.main(args)
     out, err = capsys.readouterr()
-    assert '>seq1_10-191' in out
+    assert output in out or output in err
 
 
 def test_main_no_matches(capsys):

@@ -144,6 +144,19 @@ def test_alac_single_partition_badlabel(capsys):
     assert out == ''
 
 
+def test_alac_exclude(capsys):
+    readfile = data_file('fiveparts.augfastq.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    arglist = ['alac', '--exclude', '"^seq"', readfile, refrfile]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.alac.main(args)
+    out, err = capsys.readouterr()
+
+    # grep -v ^'#' out
+    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+    assert out == ''
+
+
 def test_alac_bigpart():
     readfile = data_file('fiveparts.augfastq.gz')
     refrfile = data_file('fiveparts-refr.fa.gz')
