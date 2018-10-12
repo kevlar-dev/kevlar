@@ -58,7 +58,7 @@ def get_abundances(altseq, refrseq, case, controls, refr):
 
 
 def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
-                   error=0.001):
+                   error=0.001, dynamic=True):
     """Calculate probability of k-mer abundance conditioned on genotype.
 
     The `genotype` variable represents the number of assumed allele copies and
@@ -75,7 +75,9 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
     """
     if genotype == 0:
         if refrabund:  # SNV
-            erate = error * mean * refrabund
+            erate = error * mean
+            if dynamic:
+                erate *= refrabund
         else:  # INDEL
             erate = error * mean * 0.1
         return abundance * log(erate)
@@ -85,34 +87,37 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
         return scipy.stats.norm.logpdf(abundance, mean, sd)
 
 
-def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001):
+def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001,
+                      dynamic=True):
     assert len(abunds[1]) == len(refrabunds)
     assert len(abunds[2]) == len(refrabunds)
     logsum = 0.0
 
     # Case
     for abund in abunds[0]:
-        logsum += abund_log_prob(1, abund, mean=mean, sd=sd)
+        logsum += abund_log_prob(1, abund, mean=mean, sd=sd, dynamic=dynamic)
     # Controls
     for altabunds in abunds[1:]:
         for alt, refr in zip(altabunds, refrabunds):
             logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
-                                     error=error)
+                                     error=error, dynamic=dynamic)
     return logsum
 
 
-def likelihood_false(abunds, refrabunds, mean=30.0, error=0.001):
+def likelihood_false(abunds, refrabunds, mean=30.0, error=0.001,
+                     dynamic=True):
     assert len(abunds[1]) == len(refrabunds)
     assert len(abunds[2]) == len(refrabunds)
     logsum = 0.0
     for altabunds in abunds:
         for alt, refr in zip(altabunds, refrabunds):
             logsum += abund_log_prob(0, alt, refrabund=refr, mean=mean,
-                                     error=error)
+                                     error=error, dynamic=dynamic)
     return logsum
 
 
-def likelihood_inherited(abunds, mean=30.0, sd=8.0, error=0.001):
+def likelihood_inherited(abunds, mean=30.0, sd=8.0, error=0.001,
+                         dynamic=True):
     """Compute the likelihood that a variant is inherited.
 
     There are 15 valid inheritance scenarios, 11 of which (shown below) result
@@ -134,9 +139,12 @@ def likelihood_inherited(abunds, mean=30.0, sd=8.0, error=0.001):
     for a_c, a_m, a_f in abundances:
         maxval = None
         for g_c, g_m, g_f in scenarios:
-            p_c = abund_log_prob(g_c, a_c, mean=mean, sd=sd, error=error)
-            p_m = abund_log_prob(g_m, a_m, mean=mean, sd=sd, error=error)
-            p_f = abund_log_prob(g_f, a_f, mean=mean, sd=sd, error=error)
+            p_c = abund_log_prob(g_c, a_c, mean=mean, sd=sd, error=error,
+                                 dynamic=dynamic)
+            p_m = abund_log_prob(g_m, a_m, mean=mean, sd=sd, error=error,
+                                 dynamic=dynamic)
+            p_f = abund_log_prob(g_f, a_f, mean=mean, sd=sd, error=error,
+                                 dynamic=dynamic)
             testsum = p_c + p_m + p_f + log(1.0 / 15.0)
             if maxval is None or testsum > maxval:
                 maxval = testsum
@@ -151,11 +159,14 @@ def joinlist(thelist):
         return ','.join([str(v) for v in thelist])
 
 
-def calc_likescore(call, altabund, refrabund, mu, sigma, epsilon):
+def calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
+                   dynamic=True):
     lldn = likelihood_denovo(altabund, refrabund, mean=mu, sd=sigma,
-                             error=epsilon)
-    llfp = likelihood_false(altabund, refrabund, mean=mu, error=epsilon)
-    llih = likelihood_inherited(altabund, mean=mu, sd=sigma, error=epsilon)
+                             error=epsilon, dynamic=dynamic)
+    llfp = likelihood_false(altabund, refrabund, mean=mu, error=epsilon,
+                            dynamic=dynamic)
+    llih = likelihood_inherited(altabund, mean=mu, sd=sigma, error=epsilon,
+                                dynamic=dynamic)
     likescore = lldn - max(llfp, llih)
     call.annotate('LLDN', lldn)
     call.annotate('LLFP', llfp)
@@ -195,7 +206,7 @@ def process_partition(partitionid, calls):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            casemin=5, samplelabels=None, logstream=sys.stderr):
+            dynamic=True, casemin=5, samplelabels=None, logstream=sys.stderr):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -218,7 +229,8 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         abovethresh = [a for a in altabund[0] if a > casemin]
         if len(abovethresh) == 0:
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
-        calc_likescore(call, altabund, refrabund, mu, sigma, epsilon)
+        calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
+                       dynamic=dynamic)
         annotate_abundances(call, altabund, samplelabels)
         calls_by_partition[call.attribute('PART')].append(call)
 
@@ -260,7 +272,7 @@ def main(args):
 
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
-        epsilon=args.epsilon, casemin=args.case_min,
+        epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
         samplelabels=args.sample_labels, logstream=args.logfile,
     )
     for call in calculator:
