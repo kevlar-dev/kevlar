@@ -9,6 +9,7 @@
 
 from collections import defaultdict
 import os.path
+import re
 import sys
 
 import kevlar
@@ -23,19 +24,35 @@ class KevlarRefrSeqNotFoundError(ValueError):
 
 
 class Localizer(object):
-    def __init__(self, seedsize, delta=0):
+    def __init__(self, seedsize, delta=0, incl=None, excl=None):
         self._positions = defaultdict(list)
         self._seedsize = seedsize
         self._delta = delta
+        self.inclpattern = incl
+        self.exclpattern = excl
 
     def __len__(self):
-        return len(self._positions)
+        return sum([
+            len(self._positions[s]) for s in self._positions
+            if not self.ignore_seqid(s)
+        ])
+
+    def ignore_seqid(self, seqid):
+        include = True
+        exclude = False
+        if self.inclpattern:
+            include = re.search(self.inclpattern, seqid) is not None
+        if self.exclpattern:
+            exclude = re.search(self.exclpattern, seqid) is not None
+        return exclude or not include
 
     def add_seed_match(self, seqid, pos):
         self._positions[seqid].append(pos)
 
     def get_cutouts(self, refrseqs=None, clusterdist=1000):
         for seqid in sorted(self._positions):
+            if self.ignore_seqid(seqid):
+                continue
             matchpos = sorted(self._positions[seqid])
             assert len(matchpos) > 0
             if refrseqs:
@@ -66,8 +83,7 @@ class Localizer(object):
                         cluster = list()
                 cluster.append(nextpos)
                 prevpos = nextpos
-            if len(cluster) > 0:
-                yield new_cutout(cluster)
+            yield new_cutout(cluster)
 
 
 def get_unique_seeds(recordstream, seedsize):
@@ -109,7 +125,8 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
 
 
 def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
-             refrseqs=None, logstream=sys.stderr):
+             inclpattern=None, exclpattern=None, refrseqs=None,
+             logstream=sys.stderr):
     """Wrap the `kevlar localize` task as a generator.
 
     Input is an iterable containing contigs (assembled by `kevlar assemble`),
@@ -117,7 +134,8 @@ def localize(contigstream, refrfile, seedsize=31, delta=50, maxdiff=None,
     """
     autoindex(refrfile, logstream)
     contigs = list(contigstream)
-    localizer = Localizer(seedsize, delta)
+    localizer = Localizer(seedsize, delta=delta, incl=inclpattern,
+                          excl=exclpattern)
     for seqid, start, end in get_exact_matches(contigs, refrfile, seedsize):
         localizer.add_seed_match(seqid, start)
     if len(localizer) == 0:
@@ -141,7 +159,8 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     localizer = localize(
         contigstream, args.refr, seedsize=args.seed_size, delta=args.delta,
-        maxdiff=args.max_diff, logstream=args.logfile
+        maxdiff=args.max_diff, inclpattern=args.include,
+        exclpattern=args.exclude, logstream=args.logfile
     )
     for cutout in localizer:
         record = Record(name=cutout.defline, sequence=cutout.sequence)
