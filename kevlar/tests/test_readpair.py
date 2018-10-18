@@ -145,6 +145,22 @@ def picorecord3():
     )
 
 
+@pytest.fixture
+def picorecord4():
+    return Record(
+        name='seqname',
+        sequence=('TGTTCACTCAGCCTTACTTTGGGAAACAAAAAAAAAACTAAGCTTTTGGATTACAGTTG'
+                  'GAAGTGAGGTCTCAGCCTGCACAAACGAATAAATG'),
+        annotations=[
+            KmerOfInterest(25, 8, [17, 0, 0]),
+            KmerOfInterest(25, 7, [18, 0, 0]),
+            KmerOfInterest(25, 6, [18, 1, 0]),
+            KmerOfInterest(25, 5, [18, 1, 0]),
+            KmerOfInterest(25, 4, [19, 0, 0]),
+        ],
+    )
+
+
 @pytest.mark.parametrize('read1,read2,sameorientation', [
     (record1(), record2(), True),
     (record2(), record1(), True),
@@ -236,3 +252,9 @@ def test_pico(picorecord1, picorecord2, picorecord3):
     print(pair2.mergedseq)
 
     assert kevlar.same_seq(pair1.mergedseq, pair2.mergedseq)
+
+
+def test_pico_contains(picorecord3, picorecord4):
+    pair = ReadPair(picorecord3, picorecord4, 'CACTCAGCCTTACTTTGGGAAACAA')
+    print(pair.mergedseq)
+    assert kevlar.same_seq(pair.mergedseq, picorecord3.sequence)

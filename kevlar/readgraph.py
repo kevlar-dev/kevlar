@@ -147,11 +147,15 @@ class ReadGraph(networkx.Graph):
                 if abundfilt:
                     if minabund and partition.number_of_nodes() < minabund:
                         continue  # Skip partitions that are too small
-                if partition.number_of_nodes() < 10:
-                    partition.populate_edges(strict=True)
-                    nedges = partition.number_of_edges()
-                    if minabund and nedges < minabund:
-                        continue  # Skip partitions with poor connectivity
+                # # Ill-advised strategy for pre-emptively discarding
+                # # unassemblable partitions. It turns out that number of edges
+                # # in the read graph (even in strict mode) doesn't really
+                # # distinguish between what assembles and what doesn't.
+                # if partition.number_of_nodes() < 10:
+                #     partition.populate_edges(strict=True)
+                #     nedges = partition.number_of_edges()
+                #     if minabund and nedges < minabund:
+                #         continue
                 yield partition
             else:
                 yield cc

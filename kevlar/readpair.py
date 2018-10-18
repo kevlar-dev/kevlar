@@ -34,10 +34,6 @@ class ReadWithKmer(object):
     def name(self):
         return self.read.name
 
-    @property
-    def sequence(self):
-        return self.read.sequence
-
     def revcom(self):
         seq = kevlar.revcom(self.read.sequence)
         kmerseqrc = kevlar.revcom(self.kmerseq)
