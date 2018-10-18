@@ -13,6 +13,16 @@ import kevlar
 
 KmerOfInterest = namedtuple('KmerOfInterest', 'ksize offset abund')
 
+revcomptab = str.maketrans(
+    'ATUGCYRSWKMBDHVNatugcyrswkmbdhvn',
+    'TAACGRYSWMKVHDBNTAACGRYSWMKVHDBN'
+)
+
+
+def revcom(str sequence):
+    return sequence.translate(revcomptab)[::-1]
+
+
 def tostr(stringlike):
     try:
         stringlike = stringlike.decode('utf-8')
@@ -27,14 +37,29 @@ cdef class Record:
     cdef public str quality
     cdef public list annotations
     cdef public list mates
+    cdef public dict ikmers
 
     def __init__(self, str name, str sequence, str quality=None,
-                 list annotations=None, list mates=None):
+                 list annotations=None, list mates=None, dict ikmers=None):
         self.name = name
         self.sequence = sequence
         self.quality = quality
-        self.annotations = list() if annotations is None else annotations
         self.mates = list() if mates is None else mates
+        self.ikmers = dict()
+        if annotations is None:
+            self.annotations = list()
+            self.ikmers = dict()
+        else:
+            self.annotations = annotations
+            if ikmers is None:
+                for kmer in annotations:
+                    kmerseq = self.ikmerseq(kmer)
+                    kmerseqrc = revcom(kmerseq)
+                    self.ikmers[kmerseq] = kmer
+                    self.ikmers[kmerseqrc] = kmer
+            else:
+                self.ikmers = ikmers
+
 
     def __len__(self):
         return len(self.sequence)
@@ -47,6 +72,8 @@ cdef class Record:
         assert checkseq == sequence, (checkseq, sequence)
         ikmer = KmerOfInterest(len(sequence), offset, abundances)
         self.annotations.append(ikmer)
+        self.ikmers[sequence] = ikmer
+        self.ikmers[revcom(sequence)] = ikmer
 
     @property
     def id(self):
