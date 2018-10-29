@@ -166,6 +166,23 @@ def test_perfect_match():
     assert calls[0].filterstr == 'PerfectMatch'
 
 
+def test_cigar_filter_regression():
+    contigfile = data_file('14153.cc5463.contig.augfasta.gz')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('14153.cc5463.gdna.augfasta.gz')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    calls = list(call(targets, contigs))
+    assert len(calls) == 1
+    assert calls[0].seqid == '6'
+    assert calls[0]._refr == 'AGAAA'
+    assert calls[0]._alt == 'A'
+    assert calls[0].position == 154734240
+
+
 def test_multibest_revcom():
     contigfile = data_file('multibestrc.contig.fa')
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
