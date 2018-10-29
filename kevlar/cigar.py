@@ -53,13 +53,15 @@ class AlignmentTokenizer(object):
         if self.blocks[-2].type == 'D':
             prevseq = self.blocks[-2].target
             lastseq = self.blocks[-1].target
+            endseq = self.blocks[-1].query
         else:
             prevseq = self.blocks[-2].query
             lastseq = self.blocks[-1].query
-        if prevseq.startswith(lastseq):
+            endseq = self.blocks[-1].target
+        longseq = prevseq + lastseq
+        if longseq.startswith(endseq):
             self.blocks[-3] = AlignmentBlock(
-                self.blocks[-3].length + self.blocks[-1].length,
-                'M',
+                self.blocks[-3].length + self.blocks[-1].length, 'M',
                 self.blocks[-3].target + self.blocks[-1].target,
                 self.blocks[-3].query + self.blocks[-1].query,
             )
