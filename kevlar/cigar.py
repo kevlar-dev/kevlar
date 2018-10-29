@@ -56,7 +56,7 @@ class AlignmentTokenizer(object):
         else:
             prevseq = self.blocks[-2].query
             lastseq = self.blocks[-1].query
-        if prevseq.startswith(lastseq):
+        if prevseq.startswith(lastseq) or lastseq.startswith(prevseq):
             self.blocks[-3] = AlignmentBlock(
                 self.blocks[-3].length + self.blocks[-1].length,
                 'M',

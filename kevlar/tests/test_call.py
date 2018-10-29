@@ -176,11 +176,15 @@ def test_cigar_filter_regression():
     targets = list(gdnastream)
 
     calls = list(call(targets, contigs))
-    assert len(calls) == 1
-    assert calls[0].seqid == '6'
-    assert calls[0]._refr == 'AGAAA'
-    assert calls[0]._alt == 'A'
-    assert calls[0].position == 154734240
+    assert len(calls) == 2
+    assert calls[1].seqid == '6'
+
+    # Equally valid calls from equally optimal alignments
+    c1 = ('AGAAA', 'A', 154734241)
+    c2 = ('GAAGA', 'G', 154734239)
+
+    varcall = (calls[1]._refr, calls[1]._alt, calls[1].position)
+    assert varcall in (c1, c2)
 
 
 def test_multibest_revcom():
