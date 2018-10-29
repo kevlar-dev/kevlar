@@ -30,6 +30,7 @@ class VariantFilter(Enum):
     MateFail = 4
     PartitionScore = 5
     LikelihoodFail = 6
+    NumerousMismatches = 7
 
 
 class FormattedList(list):
@@ -238,6 +239,9 @@ class VCFWriter(object):
         VariantFilter.LikelihoodFail:
             'Variant calls with a likelihood score < 0.0 are unlikely to be'
             'real',
+        VariantFilter.NumerousMismatches:
+            'No attempt at variant calling was made due to a suspicious '
+            'number of mismatches between the contig and the reference genome'
     }
 
     info_metadata = {

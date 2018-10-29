@@ -71,7 +71,7 @@ def test_pico_partitioned(capsys):
 
     out, err = capsys.readouterr()
     lines = out.strip().split('\n')
-    assert len(lines) == 34
+    assert len(lines) == 35
     lines = [l for l in lines if not l.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
