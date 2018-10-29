@@ -39,6 +39,16 @@ def test_blocks(contig, gdna):
             assert block.query is None
 
 
+def test_nomargin():
+    qfile = kevlar.open(data_file('nomargin-r-indel-contigs.augfasta'), 'r')
+    tfile = kevlar.open(data_file('nomargin-r-gdna.fa'), 'r')
+    query = next(kevlar.parse_augmented_fastx(qfile))
+    target = next(kevlar.parse_augmented_fastx(tfile))
+    cigar, score = kevlar.align(target.sequence, query.sequence)
+    tok = AlignmentTokenizer(query.sequence, target.sequence, cigar)
+    assert tok._cigar == tok._origcigar
+
+
 @pytest.mark.parametrize('contig,gdna,newcigar,origcigar,nblocks', [
     ('b.contig.fa', 'b.gdna.fa', '41D150M50D', '41D144M50D6M', 3),
     ('d.contig.fa', 'd.gdna.fa', '39D129M4D43M6D', '39D129M4D29M6D14M', 5),

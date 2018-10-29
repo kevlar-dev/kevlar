@@ -175,7 +175,7 @@ def test_cigar_filter_regression():
     gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
     targets = list(gdnastream)
 
-    calls = list(call(targets, contigs))
+    calls = sorted(call(targets, contigs), key=lambda c: c.position)
     assert len(calls) == 2
     assert calls[1].seqid == '6'
 
