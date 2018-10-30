@@ -18,6 +18,7 @@ import kevlar
 from kevlar.assemble import assemble_fml_asm
 from kevlar.localize import localize
 from kevlar.call import call
+import khmer
 
 
 def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
@@ -73,7 +74,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
 def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
          seedsize=31, maxdiff=None, inclpattern=None, exclpattern=None,
          match=1, mismatch=2, gapopen=5, gapextend=0, min_ikmers=None,
-         logstream=sys.stderr):
+         maskfile=None, maskmem=1e6, maskmaxfpr=0.01, logstream=sys.stderr):
     part_queue = Queue(maxsize=max(32, 12 * threads))
 
     refrstream = kevlar.open(refrfile, 'r')
@@ -106,6 +107,19 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
 
     part_queue.join()
     allcalls = sorted(chain(*call_lists), key=lambda c: (c.seqid, c.position))
+    if maskfile:
+        message = 'generating mask of variant-spanning k-mers'
+        print('[kevlar::alac]', message, file=logstream)
+        numtables = 4
+        buckets = maskmem * khmer._buckets_per_byte['nodegraph'] / numtables
+        mask = khmer.Nodetable(ksize, buckets, numtables)
+        for call in allcalls:
+            window = call.attribute('ALTWINDOW')
+            if window is not None:
+                print('DEBUG consume', window)
+                mask.consume(window)
+        mask.save(maskfile)
+        mask.save('TEMPLY')
     for call in allcalls:
         yield call
 

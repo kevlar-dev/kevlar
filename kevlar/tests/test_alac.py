@@ -7,7 +7,9 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import filecmp
 import pytest
+from tempfile import NamedTemporaryFile
 import sys
 import kevlar
 from kevlar.tests import data_file
@@ -164,6 +166,23 @@ def test_alac_bigpart():
     partstream = kevlar.parse_partitioned_reads(readstream)
     calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
     assert len(calls) == 3
+
+
+def test_alac_generate_mask():
+    readfile = data_file('fiveparts.augfastq.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    with NamedTemporaryFile(suffix='.nt') as maskfile:
+        calls = list(
+            kevlar.alac.alac(partstream, refrfile, maskfile=maskfile.name,
+                             maskmem=1e6)
+        )
+        assert len(calls) == 5
+        for c in calls:
+            print(c.vcf)
+        testfilename = data_file('fiveparts-genmask.nodetable')
+        assert filecmp.cmp(testfilename, maskfile.name) is True
 
 
 def test_alac_matedist():
