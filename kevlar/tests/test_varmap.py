@@ -306,3 +306,24 @@ def test_varmap_str():
     print(alignstr, file=sys.stderr)
 
     assert str(aln) == alignstr
+
+
+def test_drop_numerous_mismatches():
+    contig = next(
+        kevlar.parse_augmented_fastx(
+            kevlar.open(data_file('drop-polysnp-contig.augfasta'), 'r')
+        )
+    )
+    cutout = next(
+        kevlar.reference.load_refr_cutouts(
+            kevlar.open(data_file('drop-polysnp-gdna.fa'), 'r')
+        )
+    )
+    aln = VariantMapping(contig, cutout)
+    calls = list(aln.call_variants(21))
+    for c in calls:
+        print(c.vcf)
+    assert len(calls) == 1
+    assert calls[0].filterstr == 'NumerousMismatches'
+    assert calls[0]._refr == '.'
+    assert calls[0]._alt == '.'

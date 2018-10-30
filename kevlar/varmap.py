@@ -221,14 +221,17 @@ class VariantMapping(object):
         diffs = [i for i in range(length) if tseq[i] != qseq[i]]
         if mindist:
             diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
-        if len(diffs) == 0:
+        if len(diffs) == 0 or len(diffs) > 4:
             if donocall:
                 nocall = Variant(
                     self.seqid, self.cutout.local_to_global(offset), '.', '.',
                     CONTIG=qseq, CIGAR=self.cigar, KSW2=str(self.score),
                     IKMERS=str(len(self.contig.annotations))
                 )
-                nocall.filter(vf.PerfectMatch)
+                if len(diffs) == 0:
+                    nocall.filter(vf.PerfectMatch)
+                if len(diffs) > 4:
+                    nocall.filter(vf.NumerousMismatches)
                 yield nocall
             return
 
