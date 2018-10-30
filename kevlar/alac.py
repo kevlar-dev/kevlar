@@ -116,10 +116,8 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
         for call in allcalls:
             window = call.attribute('ALTWINDOW')
             if window is not None:
-                print('DEBUG consume', window)
                 mask.consume(window)
         mask.save(maskfile)
-        mask.save('TEMPLY')
     for call in allcalls:
         yield call
 
