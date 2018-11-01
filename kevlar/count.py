@@ -26,7 +26,13 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
     of all k-mers observed in the input. If `mask` is provided, only k-mers not
     present in the mask will be loaded.
     """
-    sketch = allocate(ksize, memory / 4, count=count, smallcount=smallcount)
+    numtables = 4
+    sketchtype = 'nodegraph'
+    if count:
+        sketchtype = 'smallcountgraph' if smallcount else 'countgraph'
+    tablesize = memory / numtables * khmer._buckets_per_byte[sketchtype]
+    sketch = allocate(ksize, tablesize, num_tables=numtables, count=count,
+                      smallcount=smallcount)
     numreads = 0
     for seqfile in seqfiles:
         print('[kevlar::count]      loading from', seqfile, file=logfile)

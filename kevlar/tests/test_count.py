@@ -15,7 +15,7 @@ from tempfile import NamedTemporaryFile
 import screed
 import time
 import kevlar
-from khmer import Nodetable
+from khmer import Nodetable, _buckets_per_byte
 from kevlar.tests import data_file, data_glob
 
 
@@ -211,3 +211,19 @@ def test_count_cli_with_mask(capsys):
         kevlar.count.main(args)
     out, err = capsys.readouterr()
     assert '36898 distinct k-mers stored' in err
+
+
+@pytest.mark.parametrize('count,smallcount,sketchtype', [
+    (False, False, 'nodegraph'),
+    (True, False, 'countgraph'),
+    (True, True, 'smallcountgraph'),
+])
+def test_load_sample_seqfile_memory_test(count, smallcount, sketchtype):
+    requested_memory = 2e6
+    sketch = kevlar.count.load_sample_seqfile(
+        [data_file('bogus-genome/refr.fa')], 21, requested_memory, count=count,
+        smallcount=smallcount,
+    )
+    buckets = sum(sketch.hashsizes())
+    actual_memory = buckets / _buckets_per_byte[sketchtype]
+    assert actual_memory / requested_memory == pytest.approx(1.0, rel=1e-4)
