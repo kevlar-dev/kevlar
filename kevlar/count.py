@@ -30,7 +30,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
     sketchtype = 'nodegraph'
     if count:
         sketchtype = 'smallcountgraph' if smallcount else 'countgraph'
-    tablesize = memory / numbtables * khmer._buckets_per_byte[sketchtype]
+    tablesize = memory / numtables * khmer._buckets_per_byte[sketchtype]
     sketch = allocate(ksize, tablesize, num_tables=numtables, count=count,
                       smallcount=smallcount)
     numreads = 0
