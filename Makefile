@@ -23,7 +23,7 @@ ext: kevlar/alignment.c src/align.c inc/align.h
 test: ext
 	py.test --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
-## test:     execute the automated test suite with 4 parallel threads
+## test4:    execute the automated test suite with 4 parallel threads
 test4: ext
 	py.test -n=4 --cov=kevlar kevlar/tests/*.py -m 'not long and not toolong'
 
