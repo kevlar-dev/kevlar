@@ -33,7 +33,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
             cc = ccmatch.group(1) if ccmatch else None
-            if cc is not None and int(cc) % 1000 == 0:
+            if cc is not None and int(cc) % 1000 == 0:  # pragma: no cover
                 message = '[kevlar::alac::make_call_from_reads'
                 message += ' (thread={:d})]'.format(idx)
                 message += ' grabbed partition={} from queue,'.format(cc)
@@ -106,7 +106,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
             continue
-        if np % 1000 == 0:
+        if np % 1000 == 0:  # pragma: no cover
             message = '{} partitions scheduled for processing'.format(np)
             print('[kevlar::alac]', message, file=logstream)
         part_queue.put(reads)
