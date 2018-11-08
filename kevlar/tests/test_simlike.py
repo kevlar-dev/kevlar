@@ -185,3 +185,26 @@ def test_simlike_cli_bad_labels():
     with pytest.raises(kevlar.simlike.KevlarSampleLabelingError) as sle:
         kevlar.simlike.main(args)
     assert 'provided 4 labels but 3 samples' in str(sle)
+
+
+def test_simlike_indel_1392():
+    fh = kevlar.open(data_file('cc1392/cc1392.call.raw.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(fh)
+    case = khmer.Counttable.load(data_file('cc1392/cc1392.proband.counttable'))
+    ctrlsketches = [
+        data_file('cc1392/cc1392.mother.counttable'),
+        data_file('cc1392/cc1392.father.counttable'),
+    ]
+    controls = [khmer.Counttable.load(c) for c in ctrlsketches]
+    refr = khmer.SmallCounttable.load(
+        data_file('cc1392/cc1392.hg19.smallcounttable')
+    )
+    calculator = kevlar.simlike.simlike(
+        reader, case, controls, refr, mu=32.0, sigma=10.0, epsilon=0.001,
+        casemin=8, samplelabels=['Proband', 'Mother', 'Father'],
+    )
+    calls = list(calculator)
+    assert len(calls) == 4
+
+    indel = [c for c in calls if c.position == 69852456][0]
+    assert indel.filterstr == 'PASS'

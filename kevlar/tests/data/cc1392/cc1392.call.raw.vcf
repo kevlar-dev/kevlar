@@ -1,0 +1,28 @@
+##fileformat=VCFv4.2
+##fileDate=2018-11-08
+##source=kevlar::call
+##FILTER=<ID=PerfectMatch,Description="No mismatches between contig with putatively novel content and reference target">
+##FILTER=<ID=InscrutableCigar,Description="Alignment path/structure cannot be interpreted as a variant">
+##FILTER=<ID=PassengerVariant,Description="A mismatch between contig and reference that is not spanned by any novel k-mers">
+##FILTER=<ID=MateFail,Description="Aligning mate reads suggests a better location for this variant call">
+##FILTER=<ID=PartitionScore,Description="Expectation is 1 variant call per partition, so all call(s) with suboptimal likelihood scores are filtered">
+##FILTER=<ID=LikelihoodFail,Description="Variant calls with a likelihood score < 0.0 are unlikely to bereal">
+##FILTER=<ID=NumerousMismatches,Description="No attempt at variant calling was made due to a suspicious number of mismatches between the contig and the reference genome">
+##INFO=<ID=ALTWINDOW,Number=1,Type=String,Description="window containing all k-mers that span the variant alternate allele">
+##INFO=<ID=CIGAR,Number=1,Type=String,Description="alignment path">
+##INFO=<ID=IKMERS,Number=1,Type=Integer,Description="number of "interesting" (novel) k-mers spanning the variant alternate allele">
+##INFO=<ID=KSW2,Number=1,Type=Float,Description="alignment score">
+##INFO=<ID=MATEDIST,Number=1,Type=Float,Description="average distance of aligned mates of assembled novel reads">
+##INFO=<ID=REFRWINDOW,Number=1,Type=String,Description="window containing all k-mers that span the variant reference allele">
+##INFO=<ID=CONTIG,Number=1,Type=String,Description="contig assembled from reads containing novel k-mers, aligned to reference to call variants">
+##INFO=<ID=LIKESCORE,Number=1,Type=Float,Description="likelihood score of the variant, computed as `LLDN - max(LLIH, LLFP)`">
+##INFO=<ID=LLDN,Number=1,Type=Float,Description="log likelihood that the variant is a de novo variant">
+##INFO=<ID=LLIH,Number=1,Type=Float,Description="log likelihood that the variant is an inherited variant">
+##INFO=<ID=LLFP,Number=1,Type=Float,Description="log likelihood that the variant is a false call">
+##INFO=<ID=DROPPED,Number=1,Type=Integer,Description="number of k-mers dropped from ALTWINDOW for likelihood calculations because it is present elsewhere in the genome (not novel)">
+##FORMAT=<ID=ALTABUND,Number=.,Type=Integer,Description="abundance of alternate allele k-mers">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+4	69852457	.	T	TTGATTATGTCAATC	.	PASS	ALTWINDOW=GAAGCATTAAATATAATAGGAATTAGAGATTGATTATGTCAATCTGATTATGTCAATCTGATCAGTAAATCACA;CIGAR=50D109M14I142M50D;IKMERS=10;KSW2=227;REFRWINDOW=AAAGCATTAAATATAATAGGAATTAGAGATTGATTATGTCAATCTGATCAGTAAATCATG;CONTIG=AAGAACAAAGAATATGGCTACATTTATATAGTATGTTCTTTTTCAAATAATTTGTAAAGGCAAATTTGAAAGCTCTAGTTGTTTACACGTTATCAGTGATGAGATAAAAATGTTAGCATAAAAATTTGGAAAGCATTAAATATAATAGGAATTAGAGATTGATTATGTCAATCTGATCAGTAAATCATGCTGATTTACTGAAAACAAATTACAAGAGTTTTAAAAACAAGGAAAAAAGGGTAACTAAAGTGAGATGATGGACATGTTTACTTGCTTCATTATGGTAGCCTTTTAACTAAGTATTTGTATCCCATACTATCACTTTCCATACCTTCAATAGACAAAATAAAA
+4	69852428	.	A	G	.	PassengerVariant	ALTWINDOW=TGAGATAAAAATGTTAGCATAAAAATTTGGGAAGCATTAAATATAATAGGAATTAGAGAT;CIGAR=50D109M14I142M50D;IKMERS=0;KSW2=227;REFRWINDOW=TGAGATAAAAATGTTAGCATAAAAATTTGGAAAGCATTAAATATAATAGGAATTAGAGAT;CONTIG=TTTGTAAAGGCAAATTTGAAAGCTCTAGTTGTTTACACGTTATCAGTGATGAGATAAAAATGTTAGCATAAAAATTTGGGAAGCATTAAATATAATAGGAATTAGAGAT
+4	69852486	.	T	C	.	PASS	ALTWINDOW=TGATTATGTCAATCTGATCAGTAAATCACACTGATTTACTGAAAACAAATTACAAGAGT;CIGAR=50D109M14I142M50D;IKMERS=4;KSW2=227;REFRWINDOW=TGATTATGTCAATCTGATCAGTAAATCATGCTGATTTACTGAAAACAAATTACAAGAGT;CONTIG=TGATTATGTCAATCTGATCAGTAAATCACACTGATTTACTGAAAACAAATTACAAGAGTTTTAAAAACAAGGAAAAAAGGGTAACTAAAGTGAGATGATGGACATGTTTACTTGCTTCATTATGGTAGCCTTTTAACTAAGT
+4	69852487	.	G	A	.	PASS	ALTWINDOW=TGATTATGTCAATCTGATCAGTAAATCACACTGATTTACTGAAAACAAATTACAAGAGTT;CIGAR=50D109M14I142M50D;IKMERS=4;KSW2=227;REFRWINDOW=TGATTATGTCAATCTGATCAGTAAATCATGCTGATTTACTGAAAACAAATTACAAGAGTT;CONTIG=TGATTATGTCAATCTGATCAGTAAATCACACTGATTTACTGAAAACAAATTACAAGAGTTTTAAAAACAAGGAAAAAAGGGTAACTAAAGTGAGATGATGGACATGTTTACTTGCTTCATTATGGTAGCCTTTTAACTAAGT
