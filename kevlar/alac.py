@@ -33,7 +33,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
             cc = ccmatch.group(1) if ccmatch else None
-            if int(cc) % 1000 == 0:
+            if cc is not None and int(cc) % 1000 == 0:
                 message = '[kevlar::alac::make_call_from_reads'
                 message += ' (thread={:d})]'.format(idx)
                 message += ' grabbed partition={} from queue,'.format(cc)
