@@ -82,6 +82,8 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
     print('[kevlar::alac]', message, file=logstream)
     refrstream = kevlar.open(refrfile, 'r')
     refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
+    message = 'done! Loading partitioned reads...'
+    print('[kevlar::alac]', message, file=logstream)
 
     call_lists = list()
     for idx in range(threads):
