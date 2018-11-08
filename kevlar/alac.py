@@ -28,16 +28,17 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                          logstream=sys.stderr):
         while True:
             if queue.empty():
-                sleep(3)
+                sleep(1)
                 continue
             reads = queue.get()
             ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
             cc = ccmatch.group(1) if ccmatch else None
-            message = '[kevlar::alac::make_call_from_reads'
-            message += ' (thread={:d})]'.format(idx)
-            message += ' grabbed partition={} from queue,'.format(cc)
-            message += ' queue size now {:d}'.format(queue.qsize())
-            print(message, file=sys.stderr)
+            if cc is not None and int(cc) % 1000 == 0:  # pragma: no cover
+                message = '[kevlar::alac::make_call_from_reads'
+                message += ' (thread={:d})]'.format(idx)
+                message += ' grabbed partition={} from queue,'.format(cc)
+                message += ' queue size now {:d}'.format(queue.qsize())
+                print(message, file=logstream)
 
             # Assemble partitioned reads into contig(s)
             contigs = list(assemble_fml_asm(reads, logstream=logstream))
@@ -77,8 +78,12 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
          maskfile=None, maskmem=1e6, maskmaxfpr=0.01, logstream=sys.stderr):
     part_queue = Queue(maxsize=max(32, 12 * threads))
 
+    message = 'loading reference genome into memory'
+    print('[kevlar::alac]', message, file=logstream)
     refrstream = kevlar.open(refrfile, 'r')
     refrseqs = kevlar.seqio.parse_seq_dict(refrstream)
+    message = 'done! Loading partitioned reads...'
+    print('[kevlar::alac]', message, file=logstream)
 
     call_lists = list()
     for idx in range(threads):
@@ -95,14 +100,15 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
         worker.setDaemon(True)
         worker.start()
 
-    for partition in pstream:
+    for np, partition in enumerate(pstream, 1):
         reads = list(partition)
         if len(reads) > bigpart:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
             continue
-        message = 'adding partition with {} reads to queue'.format(len(reads))
-        print('[kevlar::alac]', message, file=logstream)
+        if np % 1000 == 0:  # pragma: no cover
+            message = '{} partitions scheduled for processing'.format(np)
+            print('[kevlar::alac]', message, file=logstream)
         part_queue.put(reads)
 
     part_queue.join()
@@ -135,7 +141,8 @@ def main(args):
         maxdiff=args.max_diff, inclpattern=args.include,
         exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
-        logstream=args.logfile
+        maskfile=args.gen_mask, maskmem=args.mask_mem,
+        maskmaxfpr=args.mask_max_fpr, logstream=args.logfile
     )
 
     writer = kevlar.vcf.VCFWriter(
