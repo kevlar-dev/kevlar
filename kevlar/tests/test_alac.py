@@ -164,7 +164,7 @@ def test_alac_bigpart():
     refrfile = data_file('fiveparts-refr.fa.gz')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
-    calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
+    calls = list(kevlar.alac.alac(partstream, refrfile, maxreads=20))
     assert len(calls) == 3
 
 

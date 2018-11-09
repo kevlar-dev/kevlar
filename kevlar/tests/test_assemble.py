@@ -88,3 +88,17 @@ def test_assemble_no_edges(capsys):
     kevlar.assemble.main(args)
     out, err = capsys.readouterr()
     assert out == ''
+
+
+def test_assemble_single_part():
+    testcontig = ('TTAAACATCTTAATCCCAGATGTTCTGGCTTTAACATTCACATTTTATCATTCAACGGT'
+                  'CAAGATGTCCATTCCTAAAAACAGGCGCCTGTAATGGTGTAAATACAAATGCACATGAG'
+                  'TCTCA')
+    inreads = kevlar.open(data_file('fiveparts.augfastq.gz'), 'r')
+    readstream = kevlar.parse_augmented_fastx(inreads)
+    partitions = kevlar.parse_single_partition(readstream, '4')
+    assembler = kevlar.assemble.assemble(partitions)
+    contigs = list(assembler)
+    assert len(contigs) == 1
+    assert contigs[0].name == 'contig1 kvcc=4'
+    assert contigs[0].sequence == testcontig
