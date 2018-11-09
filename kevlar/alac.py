@@ -121,7 +121,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
         mask = khmer.Nodetable(ksize, buckets, numtables)
         for call in allcalls:
             window = call.attribute('ALTWINDOW')
-            if window is not None:
+            if window is not None and len(window) >= ksize:
                 mask.consume(window)
         mask.save(maskfile)
     for call in allcalls:
