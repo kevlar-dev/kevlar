@@ -26,9 +26,11 @@ def assemble_fml_asm(partition, logstream=sys.stderr):
 
 
 def assemble(partstream, logstream=sys.stderr):
+    n = 0
     for partition in partstream:
-        reads = list(partition)
-        for contig in assemble_fml_asm(reads, logstream=logstream):
+        for contig in assemble_fml_asm(partition, logstream=logstream):
+            n += 1
+            contig.name = re.sub(r'^contig\d+', 'contig' + str(n), contig.name)
             yield contig
 
 
