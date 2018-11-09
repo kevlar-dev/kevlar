@@ -50,6 +50,7 @@ from kevlar import count
 from kevlar import effcount
 from kevlar import partition
 from kevlar import localize
+from kevlar import cutout
 from kevlar import call
 from kevlar import alac
 from kevlar import simplex
