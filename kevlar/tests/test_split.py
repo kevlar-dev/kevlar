@@ -42,6 +42,7 @@ def test_split_cli():
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 2
     assert len(partitions[0]) == 67
     assert len(partitions[1]) == 12
@@ -50,6 +51,7 @@ def test_split_cli():
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 2
     assert len(partitions[0]) == 23
     assert len(partitions[1]) == 11
@@ -58,6 +60,7 @@ def test_split_cli():
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 1
     assert len(partitions[0]) == 15
 

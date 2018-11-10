@@ -187,6 +187,7 @@ def test_partition_reader_simple():
     infile = data_file('part-reads-simple.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_partitioned_reads(readstream))
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 2
     assert len(partitions[0]) == 4
     assert len(partitions[1]) == 2
@@ -205,16 +206,19 @@ def test_parse_single_partition():
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_single_partition(readstream, '1'))
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 1
     assert len(partitions[0]) == 4
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_single_partition(readstream, '2'))
+    partitions = [part for partid, part in partitions]
     assert len(partitions) == 1
     assert len(partitions[0]) == 2
 
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
     partitions = list(kevlar.parse_single_partition(readstream, 'alFrED'))
+    partitions = [part for partid, part in partitions]
     assert partitions == []
 
 

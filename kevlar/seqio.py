@@ -83,25 +83,23 @@ def parse_partitioned_reads(readstream):
 
         if part != current_part:
             if current_part:
-                yield reads
+                yield current_part, reads
                 reads = list()
             current_part = part
         reads.append(read)
 
-    yield reads
+    if current_part is False:
+        current_part = None
+    yield current_part, reads
 
 
 def parse_single_partition(readstream, partid):
     """
     Retrieve a single partition (by label) from a stream of partitioned reads.
     """
-    for partition in parse_partitioned_reads(readstream):
-        readname = partition[0].name
-        partmatch = re.search(r'kvcc=(\d+)', readname)
-        if not partmatch:
-            continue
-        if partmatch.group(1) == partid:
-            yield partition
+    for pid, partition in parse_partitioned_reads(readstream):
+        if pid == partid:
+            yield pid, partition
 
 
 class AnnotatedReadSet(object):

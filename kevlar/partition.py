@@ -42,9 +42,9 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
     timer.start('partition')
     print('[kevlar::partition] Partition readgraph', file=logstream)
     part_iter = graph.partitions(dedup, minabund, maxabund, abundfilt=True)
-    for part in part_iter:
+    for n, part in enumerate(part_iter, 1):
         reads = [graph.get_record(readname) for readname in list(part)]
-        yield reads
+        yield n, reads
     elapsed = timer.stop('partition')
     print('[kevlar::partition]',
           'Partitioning done in {:.2f} sec'.format(elapsed), file=logstream)
@@ -59,13 +59,13 @@ def main(args):
         kevlar.mkdirp(args.split, trim=True)
     outstream = None if args.split else kevlar.open(args.out, 'w')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(args.infile, 'r'))
-    partitioner = partition(readstream, strict=args.strict,
-                            minabund=args.min_abund, maxabund=args.max_abund,
-                            dedup=args.dedup, gmlfile=args.gml,
-                            logstream=args.logfile)
-    partnum = 0
+    partitioner = partition(
+        readstream, strict=args.strict, minabund=args.min_abund,
+        maxabund=args.max_abund, dedup=args.dedup, gmlfile=args.gml,
+        logstream=args.logfile
+    )
     numreads = 0
-    for partnum, part in enumerate(partitioner, 1):
+    for partnum, part in partitioner:
         numreads += len(part)
         if args.split:
             ofname = '{:s}.cc{:d}.augfastq.gz'.format(args.split, partnum)
