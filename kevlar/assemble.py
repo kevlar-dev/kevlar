@@ -30,9 +30,9 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
         pn += 1
 
         # Status update intervals on a log scale :-)
-        if pn in [100, 1000, 10000]:
+        if pn in [100, 1000, 10000]:  # pragma: no cover
             upint = pn
-        if pn >= upthreshold:
+        if pn >= upthreshold:  # pragma: no cover
             upthreshold += upint
             message = 'processed {} read partitions'.format(pn)
             print('[kevlar::assemble]', message, file=logstream)
