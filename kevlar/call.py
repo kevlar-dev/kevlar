@@ -125,17 +125,20 @@ def call(*args, **kwargs):
 def main(args):
     outstream = kevlar.open(args.out, 'w')
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
-    queryseqs = list(qinstream)
+    qparts = kevlar.parse_partitioned_reads(qinstream)
     tinstream = kevlar.open(args.targetseq, 'r')
-    targetseqs = list(kevlar.reference.load_refr_cutouts(tinstream))
-    caller = call(
-        targetseqs, queryseqs,
-        args.match, args.mismatch, args.open, args.extend,
-        args.ksize, args.refr, args.debug, 5, args.logfile
-    )
+    targetseqs = kevlar.reference.load_refr_cutouts(tinstream)
+    targetparts = kevlar.parse_partitioned_reads(targetseqs)
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::call', refr=args.refr,
     )
     writer.write_header()
-    for varcall in caller:
-        writer.write(varcall)
+    loader = kevlar.seqio.parse_paired_partitions(qparts, targetparts)
+    for pid, contigs, gdnas in loader:
+        caller = call(
+            gdnas, contigs,
+            args.match, args.mismatch, args.open, args.extend,
+            args.ksize, args.refr, args.debug, 5, args.logfile
+        )
+        for varcall in caller:
+            writer.write(varcall)

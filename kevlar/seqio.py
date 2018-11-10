@@ -71,7 +71,8 @@ def parse_partitioned_reads(readstream):
     current_part = None
     reads = list()
     for read in readstream:
-        part = partition_id(read.name)
+        name = read.name if hasattr(read, 'name') else read.defline
+        part = partition_id(name)
         if part is None:
             reads.append(read)
             current_part = False
@@ -100,6 +101,18 @@ def parse_single_partition(readstream, partid):
     for pid, partition in parse_partitioned_reads(readstream):
         if pid == partid:
             yield pid, partition
+
+
+def parse_paired_partitions(contigstream, gdnastream):
+    gdna_pid = False
+    while True:
+        try:
+            contig_pid, contigs = next(contigstream)
+        except StopIteration:
+            break
+        while contig_pid != gdna_pid:
+            gdna_pid, gdnas = next(gdnastream)
+        yield contig_pid, contigs, gdnas
 
 
 class AnnotatedReadSet(object):

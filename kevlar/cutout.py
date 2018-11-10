@@ -83,7 +83,9 @@ def localize(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
 
 def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
            inclpattern=None, exclpattern=None, logstream=sys.stdout):
-    partitions = list(partstream)
+    partdata = list(partstream)
+    partitions = [part for partid, part in partdata]
+    partids = [partid for partid, part in partdata]
     message = 'loaded {} read partitions into memory'.format(len(partitions))
     print('[kevlar::cutout]', message, file=logstream)
     kevlar.reference.autoindex(refrfile, logstream)
@@ -107,16 +109,14 @@ def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
 
     message = 'computing the reference target sequence for each partition'
     print('[kevlar::cutout]', message, file=logstream)
-    for contiglist in partitions:
-        ccmatch = re.search(r'kvcc=(\d+)', contiglist[0].name)
-        cc = ccmatch.group(1) if ccmatch else None
+    for partid, contiglist in partdata:
         cutter = localize(
             contiglist, refrseqs, seed_matches, seedsize=seedsize, delta=delta,
             maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
             logstream=logstream
         )
         for gdna in cutter:
-            yield cc, gdna
+            yield partid, gdna
 
 
 def main(args):
