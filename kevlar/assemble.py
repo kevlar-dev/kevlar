@@ -38,7 +38,7 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
             print('[kevlar::assemble]', message, file=logstream)
 
         numreads = len(partition)
-        if numreads > maxreads:
+        if numreads > maxreads:  # pragma: no cover
             message = 'skipping partition with {:d} reads'.format(numreads)
             print('[kevlar::assemble] WARNING:', message, file=logstream)
             continue
