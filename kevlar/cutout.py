@@ -75,7 +75,7 @@ def localize(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
         for seed in decompose_seeds(contig.sequence, seedsize):
             seed = kevlar.revcommin(seed)
             if seed not in seed_matches:
-                if debug:
+                if debug:  # pragma: no cover
                     message = 'WARNING: no position for seed {}'.format(seed)
                     print('[kevlar::cutout]', message, file=logstream)
                 continue
@@ -123,7 +123,7 @@ def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
         cutter = localize(
             contiglist, refrseqs, seed_matches, seedsize=seedsize, delta=delta,
             maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
-            logstream=logstream
+            debug=True, logstream=logstream
         )
         for gdna in cutter:
             yield partid, gdna
