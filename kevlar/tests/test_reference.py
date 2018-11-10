@@ -81,13 +81,14 @@ def test_autoindex():
 
 
 def test_bwa_align_coords():
-    fasta = ('>seq1\nTGACGTGACCCCAAGAAAACACTGCACCCAACTTCTTTCTTTAAGCCTTCGTGTGTG'
-             'CAGGAGGAGGCCAGCCCTGGTTTCAAAATTGTTCCTCAGCATT\n')
+    seq = ('TGACGTGACCCCAAGAAAACACTGCACCCAACTTCTTTCTTTAAGCCTTCGTGTGTGCAGGAGGAG'
+           'GCCAGCCCTGGTTTCAAAATTGTTCCTCAGCATT')
+    fasta = '>seq1\n{}\n'.format(seq)
     args = ['bwa', 'mem', data_file('fiveparts-refr.fa.gz'), '-']
     aligner = kevlar.reference.bwa_align(args, fasta)
     mappings = list(aligner)
     assert len(mappings) == 1
-    assert mappings[0] == ('seq1', 50, 150)
+    assert mappings[0] == ('seq1', 50, 150, seq)
 
 
 def test_bwa_failure():

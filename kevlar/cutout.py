@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 import kevlar
+from kevlar.reference import bwa_align
 import pysam
 import re
 from subprocess import Popen, PIPE
@@ -16,11 +17,22 @@ from tempfile import TemporaryFile, NamedTemporaryFile
 
 
 def decompose_seeds(seq, seedsize):
+    """Break up a sequence into seeds.
+
+    Seeds are essentially k-mers, but we use different terminology for here two
+    reasons.
+
+    1. These sequences are used specifically as anchors.
+    2. We want to distinguish between k size (for k-mer counting) and seed size
+       (for definining reference target sequences), which often have different
+       optimal values.
+    """
     for i in range(len(seq) - seedsize + 1):
         yield seq[i:i+seedsize]
 
 
 def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
+    """Convert a stream of partitioned contigs to seeds and write to a file."""
     message = 'decomposing contigs into seeds of length {}'.format(seedsize)
     print('[kevlar::cutout]', message, file=logstream)
     seeds = set()
@@ -35,31 +47,27 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
 
 
 def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
+    """Determine the position of all seeds with a single system call to BWA."""
     print('[kevlar::cutout] computing seed matches', file=logstream)
-    seed_index = dict()
     bwa_cmd = 'bwa mem -k {k} -T {k} -a -c 5000 {idx} {seeds}'.format(
         k=seedsize, idx=refrfile, seeds=seedfile
     )
     bwa_args = bwa_cmd.split()
-    with TemporaryFile() as samfile:
-        bwaproc = Popen(bwa_args, stdout=samfile, stderr=PIPE)
-        stdout, stderr = bwaproc.communicate()
-        if bwaproc.returncode != 0:
-            print(stderr, file=sys.stderr)
-            raise kevlar.reference.KevlarBWAError('problem running BWA')
-        samfile.seek(0)
-        sam = pysam.AlignmentFile(samfile, 'r')
-        for record in sam:
-            if record.is_unmapped:
-                continue
-            seqid = sam.get_reference_name(record.reference_id)
-            seed_index[record.seq] = (seqid, record.reference_start)
+    seed_index = dict()
+    for seqid, start, end, seq in bwa_align(bwa_args, seqfilename=seedfile):
+        seed_index[seq] = (seqid, start)
     return seed_index
 
 
 def localize(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
              maxdiff=None, inclpattern=None, exclpattern=None,
              debug=False, logstream=sys.stdout):
+    """Compute reference target sequences for a set of partitioned contigs.
+
+    Partition by partition, decompose contigs into seeds, determine the genomic
+    location of each seed, calculated the span of all seeds (plus some
+    extension delta), and cut out that interval of the genome.
+    """
     localizer = kevlar.localize.Localizer(
         seedsize, delta=delta, incl=inclpattern, excl=exclpattern
     )
@@ -82,7 +90,9 @@ def localize(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
 
 
 def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
-           inclpattern=None, exclpattern=None, logstream=sys.stdout):
+           inclpattern=None, exclpattern=None, debug=False,
+           logstream=sys.stdout):
+    """Generator wrapper for the reference target cutout procedure."""
     partdata = list(partstream)
     partitions = [part for partid, part in partdata]
     partids = [partid for partid, part in partdata]

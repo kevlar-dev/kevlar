@@ -103,18 +103,6 @@ def parse_single_partition(readstream, partid):
             yield pid, partition
 
 
-def parse_paired_partitions(contigstream, gdnastream):
-    gdna_pid = False
-    while True:
-        try:
-            contig_pid, contigs = next(contigstream)
-        except StopIteration:
-            break
-        while contig_pid != gdna_pid:
-            gdna_pid, gdnas = next(gdnastream)
-        yield contig_pid, contigs, gdnas
-
-
 class AnnotatedReadSet(object):
     """Data structure for de-duplicating reads and combining annotated k-mers.
 
