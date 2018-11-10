@@ -21,9 +21,27 @@ def assemble_fml_asm(partition, logstream=sys.stderr):
         yield next(kevlar.augment.augment(reads, [record]))
 
 
-def assemble(partstream, logstream=sys.stderr):
+def assemble(partstream, maxreads=10000, logstream=sys.stderr):
     n = 0
+    pn = 0
+    upint = 10
+    upthreshold = upint
     for partid, partition in partstream:
+        pn += 1
+
+        # Status update intervals on a log scale :-)
+        if pn in [100, 1000, 10000]:
+            upint = pn
+        if pn >= upthreshold:
+            upthreshold += upint
+            message = 'processed {} read partitions'.format(pn)
+            print('[kevlar::assemble]', message, file=logstream)
+
+        numreads = len(partition)
+        if numreads > maxreads:
+            message = 'skipping partition with {:d} reads'.format(numreads)
+            print('[kevlar::assemble] WARNING:', message, file=logstream)
+            continue
         for contig in assemble_fml_asm(partition, logstream=logstream):
             n += 1
             newname = 'contig{}'.format(n)
@@ -40,5 +58,7 @@ def main(args):
     else:
         pstream = kevlar.parse_partitioned_reads(readstream)
     outstream = kevlar.open(args.out, 'w')
-    for contig in assemble(pstream, logstream=args.logfile):
+    assembler = assemble(pstream, maxreads=args.max_reads,
+                         logstream=args.logfile)
+    for contig in assembler:
         kevlar.print_augmented_fastx(contig, outstream)

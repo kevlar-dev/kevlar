@@ -34,8 +34,6 @@ def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
         assert len(record.mates) in (0, 1)
         if len(record.mates) == 1:
             mateseqs[record.name] = record.mates[0]
-    if n > 100:
-        print('[kevlar::augment] done loading input', file=sys.stderr)
 
     for record in nakedseqstream:
         qual = None
