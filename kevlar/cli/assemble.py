@@ -15,6 +15,11 @@ def subparser(subparsers):
 
     desc = 'Assemble reads into contigs representing putative variants'
     subparser = subparsers.add_parser('assemble', description=desc)
+    subparser.add_argument('-p', '--part-id', type=str, metavar='ID',
+                           help='only assemble partition "ID" in the input')
+    subparser.add_argument('--max-reads', type=int, metavar='N', default=10000,
+                           help='do not attempt to assemble any partitions '
+                           'with more than N reads (default: 10000)')
     subparser.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('augfastq', help='annotated reads in augmented '

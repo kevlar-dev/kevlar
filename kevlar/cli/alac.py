@@ -24,10 +24,11 @@ def subparser(subparsers):
 
     asmbl_args = subparser.add_argument_group('Read assembly')
     asmbl_args.add_argument('-p', '--part-id', type=str, metavar='ID',
-                            help='only process partition "PID" in the input')
-    asmbl_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
-                            help='do not attempt to assembly any partitions '
-                            'with more than N reads (default: 10000)')
+                            help='only process partition "ID" in the input')
+    asmbl_args.add_argument('--max-reads', type=int, metavar='N',
+                            default=10000, help='do not attempt to assemble '
+                            'any partitions with more than N reads (default: '
+                            '10000)')
 
     local_args = subparser.add_argument_group('Target extraction')
     local_args.add_argument('-z', '--seed-size', type=int, default=51,

@@ -31,8 +31,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
                 sleep(1)
                 continue
             reads = queue.get()
-            ccmatch = re.search(r'kvcc=(\d+)', reads[0].name)
-            cc = ccmatch.group(1) if ccmatch else None
+            cc = kevlar.seqio.partition_id(reads[0].name)
             if cc is not None and int(cc) % 1000 == 0:  # pragma: no cover
                 message = '[kevlar::alac::make_call_from_reads'
                 message += ' (thread={:d})]'.format(idx)
@@ -72,7 +71,7 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             queue.task_done()
 
 
-def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
+def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
          seedsize=31, maxdiff=None, inclpattern=None, exclpattern=None,
          match=1, mismatch=2, gapopen=5, gapextend=0, min_ikmers=None,
          maskfile=None, maskmem=1e6, maskmaxfpr=0.01, logstream=sys.stderr):
@@ -100,14 +99,14 @@ def alac(pstream, refrfile, threads=1, ksize=31, bigpart=10000, delta=50,
         worker.setDaemon(True)
         worker.start()
 
-    for np, partition in enumerate(pstream, 1):
+    for partid, partition in pstream:
         reads = list(partition)
-        if len(reads) > bigpart:
+        if len(reads) > maxreads:
             message = 'skipping partition with {:d} reads'.format(len(reads))
             print('[kevlar::alac] WARNING:', message, file=logstream)
             continue
-        if np % 1000 == 0:  # pragma: no cover
-            message = '{} partitions scheduled for processing'.format(np)
+        if partid is not None and int(partid) % 1000 == 0:  # pragma: no cover
+            message = '{} partitions scheduled for processing'.format(partid)
             print('[kevlar::alac]', message, file=logstream)
         part_queue.put(reads)
 
@@ -137,7 +136,7 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     workflow = alac(
         pstream, args.refr, threads=args.threads, ksize=args.ksize,
-        bigpart=args.bigpart, delta=args.delta, seedsize=args.seed_size,
+        maxreads=args.max_reads, delta=args.delta, seedsize=args.seed_size,
         maxdiff=args.max_diff, inclpattern=args.include,
         exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,

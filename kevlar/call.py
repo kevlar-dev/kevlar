@@ -21,7 +21,7 @@ def align_mates(record, refrfile):
         fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
     cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
-    for seqid, start, end in bwa_align(cmdargs, seqstring=fasta):
+    for seqid, start, end, seq in bwa_align(cmdargs, seqstring=fasta):
         yield seqid, start, end
 
 
@@ -125,17 +125,27 @@ def call(*args, **kwargs):
 def main(args):
     outstream = kevlar.open(args.out, 'w')
     qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
-    queryseqs = list(qinstream)
+    qparts = kevlar.parse_partitioned_reads(qinstream)
+    contigs_by_partition = dict()
+    for partid, contiglist in qparts:
+        contigs_by_partition[partid] = contiglist
+
     tinstream = kevlar.open(args.targetseq, 'r')
-    targetseqs = list(kevlar.reference.load_refr_cutouts(tinstream))
-    caller = call(
-        targetseqs, queryseqs,
-        args.match, args.mismatch, args.open, args.extend,
-        args.ksize, args.refr, args.debug, 5, args.logfile
-    )
+    targetseqs = kevlar.reference.load_refr_cutouts(tinstream)
+    targetparts = kevlar.parse_partitioned_reads(targetseqs)
+
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::call', refr=args.refr,
     )
     writer.write_header()
-    for varcall in caller:
-        writer.write(varcall)
+
+    for partid, gdnas in targetparts:
+        contigs = contigs_by_partition[partid]
+        caller = call(
+            gdnas, contigs, match=args.match, mismatch=args.mismatch,
+            gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
+            refrfile=args.refr, debug=args.debug, mindist=5,
+            logstream=args.logfile
+        )
+        for varcall in caller:
+            writer.write(varcall)

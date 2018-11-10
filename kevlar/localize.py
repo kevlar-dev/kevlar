@@ -120,7 +120,7 @@ def get_exact_matches(contigstream, bwaindexfile, seedsize=31):
         k=seedsize, idx=bwaindexfile
     )
     cmdargs = cmd.split(' ')
-    for seqid, start, end in bwa_align(cmdargs, seqstring=kmers):
+    for seqid, start, end, seq in bwa_align(cmdargs, seqstring=kmers):
         yield seqid, start, end
 
 
