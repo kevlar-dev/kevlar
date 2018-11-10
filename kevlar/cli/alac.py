@@ -44,10 +44,10 @@ def subparser(subparsers):
                             'length of the longest contig; each bin specifies '
                             'a reference target sequence against which '
                             'assembled contigs will be aligned')
-    local_args.add_argument('--include', metavar='REGEX', type=re.escape,
+    local_args.add_argument('--include', metavar='REGEX', type=str,
                             help='discard alignments to any chromosomes whose '
                             'sequence IDs do not match the given pattern')
-    local_args.add_argument('--exclude', metavar='REGEX', type=re.escape,
+    local_args.add_argument('--exclude', metavar='REGEX', type=str,
                             help='discard alignments to any chromosomes whose '
                             'sequence IDs match the given pattern')
 

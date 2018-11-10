@@ -36,10 +36,10 @@ def subparser(subparsers):
                            'reference targets if the distance between two '
                            'seed matches is > X; by default, X is 3 times the '
                            'length of the longest contig')
-    subparser.add_argument('--include', metavar='REGEX', type=re.escape,
+    subparser.add_argument('--include', metavar='REGEX', type=str,
                            help='discard alignments to any chromosomes whose '
                            'sequence IDs do not match the given pattern')
-    subparser.add_argument('--exclude', metavar='REGEX', type=re.escape,
+    subparser.add_argument('--exclude', metavar='REGEX', type=str,
                            help='discard alignments to any chromosomes whose '
                            'sequence IDs match the given pattern')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')

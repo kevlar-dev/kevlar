@@ -44,6 +44,8 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
     for n, seed in enumerate(sorted(seeds)):
         print('>seed{}\n{}'.format(n, seed), file=seedstream)
     seedstream.flush()
+    message = 'contigs decomposed into {} seeds'.format(n)
+    print('[kevlar::cutout]', message, file=logstream)
 
 
 def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
@@ -56,6 +58,8 @@ def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
     seed_index = dict()
     for seqid, start, end, seq in bwa_align(bwa_args, seqfilename=seedfile):
         seed_index[seq] = (seqid, start)
+    message = 'found positions for {} seeds'.format(len(seed_index))
+    print('[kevlar::cutout]', message, file=logstream)
     return seed_index
 
 
@@ -123,7 +127,7 @@ def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
         cutter = localize(
             contiglist, refrseqs, seed_matches, seedsize=seedsize, delta=delta,
             maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
-            debug=True, logstream=logstream
+            debug=False, logstream=logstream
         )
         for gdna in cutter:
             yield partid, gdna
