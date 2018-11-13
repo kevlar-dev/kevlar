@@ -44,6 +44,8 @@ def partition(readstream, strict=False, minabund=None, maxabund=None,
     part_iter = graph.partitions(dedup, minabund, maxabund, abundfilt=True)
     for n, part in enumerate(part_iter, 1):
         reads = [graph.get_record(readname) for readname in list(part)]
+        for read in reads:
+            read.name += ' kvcc={:d}'.format(n)
         yield n, reads
     elapsed = timer.stop('partition')
     print('[kevlar::partition]',
@@ -74,7 +76,6 @@ def main(args):
                     kevlar.print_augmented_fastx(read, outfile)
         else:
             for read in part:
-                read.name += ' kvcc={:d}'.format(partnum)
                 kevlar.print_augmented_fastx(read, outstream)
     message = '[kevlar::partition] grouped {:d} reads'.format(numreads)
     message += ' into {:d} connected components'.format(partnum)

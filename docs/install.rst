@@ -27,7 +27,7 @@ We recommend installing kevlar and its dependencies in a dedicated virtual envir
 Dependencies
 ------------
 
-The kevlar package **requires Python 3** has several dependencies that are not in the standard Python libraries.
+The kevlar package **requires Python 3** and has several dependencies that are not in the standard Python libraries.
 
 - the `networkx package <https://networkx.github.io/>`_
 - the `pysam module <http://pysam.readthedocs.io/>`_
@@ -40,6 +40,8 @@ When kevlar is installed from PyPI most dependencies *should* handled automatica
 .. code::
 
     pip3 install git+https://github.com/dib-lab/khmer.git
+
+The `bwa <https://github.com/lh3/bwa>`_ and `samtools <https://github.com/samtools/samtools>`_ commands must also be in your ``$PATH`` environmental variable.
 
 
 .. note::
@@ -72,7 +74,7 @@ If you want to install the latest (possibly unstable) version, pip can install k
 
     pip3 install git+https://github.com/dib-lab/kevlar.git
 
-If you want to test whether kevlar is installed and running correctly, use pytest.
+If you want to test whether kevlar is installed and running correctly, use `pytest <https://docs.pytest.org/>`_.
 
 .. code::
 
