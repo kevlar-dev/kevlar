@@ -107,7 +107,7 @@ def save_all_counts(casecounts, casefiles, ctrlcounts, ctrlfiles,
 
 def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
           casemin=5, ctrlmax=0, numbands=None, band=None, skipuntil=None,
-          updateint=10000, logstream=sys.stderr):
+          logstream=sys.stderr):
     numbands_unset = not numbands
     band_unset = not band and band != 0
     if numbands_unset is not band_unset:
@@ -123,22 +123,28 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
     timer.start()
     nkmers = 0
     nreads = 0
-    nextupdate = updateint
+    update_message = '[kevlar::novel]     processed {counter} reads'
+    skip_message = None
+    if skipuntil:
+        msg = '; skipping reads in search of {read}'.format(read=skipuntil)
+        skip_message = update_message + msg
+    first_message = skip_message if skipuntil else update_message
+    progress_indicator = kevlar.ProgressIndicator(
+        first_message, interval=1e6,
+        breaks=[1e7, 1e8, 1e9], usetimer=True, logstream=logstream,
+    )
     unique_kmers = set()
     for n, record, mate in kevlar.paired_reader(casestream):
+        progress_indicator.update()
         if skipuntil:  # pragma: no cover
             if record.name == skipuntil:
                 message = 'Found read {:s}'.format(skipuntil)
                 message += ' (skipped {:d} reads)'.format(n)
                 print('[kevlar::novel]', message, file=logstream)
                 skipuntil = False
+                progress_indicator.message = update_message
             continue
-        if n >= nextupdate:
-            nextupdate += updateint
-            elapsed = timer.probe()
-            msg = '    processed {} reads'.format(n)
-            msg += ' in {:.2f} seconds...'.format(elapsed)
-            print(msg, file=logstream)
+
         if len(record.sequence) < ksize:
             continue
         if re.search('[^ACGT]', record.sequence):
@@ -231,8 +237,7 @@ def main(args):
         caserecords, cases, controls, ksize=args.ksize,
         abundscreen=args.abund_screen, casemin=args.case_min,
         ctrlmax=args.ctrl_max, numbands=args.num_bands, band=myband,
-        skipuntil=args.skip_until, updateint=args.upint,
-        logstream=args.logfile,
+        skipuntil=args.skip_until, logstream=args.logfile,
     )
     for augmented_read in readstream:
         kevlar.print_augmented_fastx(augmented_read, outstream)

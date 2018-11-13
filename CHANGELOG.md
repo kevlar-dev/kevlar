@@ -11,12 +11,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New filter that discards any contig/gDNA alignment with more than 4 mismatches (see #288).
 - A new feature that generates a Nodetable containing only variant-spanning k-mers to support re-counting k-mers and computing likelihood scores in low memory (see #289, #292).
 - A new `kevlar cutout` command that mimics the behavior of `kevlar localize` but does so much more efficiently (see #294).
+- A new `ProgressIndicator` class that provides gradually less frequent updates over time (see #299).
 
 ### Changed
 - Ported augfastx handling from `kevlar.seqio` module to a new Cython module (see #279).
 - Dynamic error model for likelihood calculations is now an configurable option (see #286).
 - Cleaned up overlap-related code with a new `ReadPair` class (see #283).
-- Updated `kevlar assemble`, `kevlar localize`, and `kevlar call` to accept streams of partitioned reads—previously, only reads for a single partition were permitted (see #294).
+- Updated `kevlar assemble`, `kevlar localize`, and `kevlar call` to accept streams of partitioned reads; previously, only reads for a single partition were permitted (see #294).
 
 ### Fixed
 - Minor bug with .gml output due to a change in the networkx package (see #278).

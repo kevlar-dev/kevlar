@@ -123,7 +123,12 @@ def cutout(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
 
     message = 'computing the reference target sequence for each partition'
     print('[kevlar::cutout]', message, file=logstream)
+    progress_indicator = kevlar.ProgressIndicator(
+        '[kevlar::cutout]     computed targets for {counter} partitions',
+        interval=100, breaks=[1000, 10000, 100000], logstream=logstream,
+    )
     for partid, contiglist in partdata:
+        progress_indicator.update()
         cutter = localize(
             contiglist, refrseqs, seed_matches, seedsize=seedsize, delta=delta,
             maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,

@@ -38,6 +38,7 @@ from kevlar.sequence import parse_augmented_fastx, print_augmented_fastx
 from kevlar.sequence import revcom
 from kevlar.seqio import parse_partitioned_reads, parse_single_partition
 from kevlar.timer import Timer
+from kevlar.progress import ProgressIndicator
 
 # Subcommands and command-line interface
 from kevlar import dump
