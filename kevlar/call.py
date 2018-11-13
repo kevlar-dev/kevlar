@@ -122,24 +122,48 @@ def call(*args, **kwargs):
         yield call
 
 
-def main(args):
-    outstream = kevlar.open(args.out, 'w')
-    qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
-    qparts = kevlar.parse_partitioned_reads(qinstream)
+def load_contigs(contigstream, logstream=sys.stderr):
+    message = 'loading contigs into memory by partition'
+    print('[kevlar::call]', message, file=logstream)
     contigs_by_partition = dict()
-    for partid, contiglist in qparts:
+    nparts = 0
+    ncontigs = 0
+    for partid, contiglist in contigstream:
+        nparts += 1
+        ncontigs += len(contiglist)
         contigs_by_partition[partid] = contiglist
+    message = 'loaded {} contigs from {} partitions'.format(ncontigs, nparts)
+    print('[kevlar::call]', message, file=logstream)
+    return contigs_by_partition
 
-    tinstream = kevlar.open(args.targetseq, 'r')
-    targetseqs = kevlar.reference.load_refr_cutouts(tinstream)
-    targetparts = kevlar.parse_partitioned_reads(targetseqs)
 
+def main(args):
+    # Input and output files
+    outstream = kevlar.open(args.out, 'w')
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::call', refr=args.refr,
     )
     writer.write_header()
 
-    for partid, gdnas in targetparts:
+    # Contigs = query sequences
+    contigstream = kevlar.parse_partitioned_reads(
+        kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
+    )
+    contigs_by_partition = load_contigs(contigstream)
+
+    upint = 10
+    nextupdate = upint
+    gdnastream = kevlar.parse_partitioned_reads(
+        kevlar.reference.load_refr_cutouts(kevlar.open(args.targetseq, 'r'))
+    )
+    for n, gdnadata in enumerate(gdnastream):
+        partid, gdnas = gdnadata
+        if n in [100, 1000, 10000]:
+            upint = n
+        if n >= nextupdate:
+            nextupdate += upint
+            message = 'processed contigs/gDNAs for {} partitions'.format(n)
+            print('[kevlar::call]', message, file=logstream)
         contigs = contigs_by_partition[partid]
         caller = call(
             gdnas, contigs, match=args.match, mismatch=args.mismatch,
