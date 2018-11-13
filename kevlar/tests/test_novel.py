@@ -195,7 +195,7 @@ def test_skip_until(capsys):
     readname = 'BOGUSREADNAME'
     arglist = [
         'novel', '--ctrl-max', '0', '--case-min', '6', '--case', case,
-        '--control', ctrls[0], '--control', ctrls[1],'--skip-until', readname
+        '--control', ctrls[0], '--control', ctrls[1], '--skip-until', readname
     ]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
