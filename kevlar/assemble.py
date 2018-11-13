@@ -24,19 +24,14 @@ def assemble_fml_asm(partition, logstream=sys.stderr):
 def assemble(partstream, maxreads=10000, logstream=sys.stderr):
     n = 0
     pn = 0
-    upint = 10
-    upthreshold = upint
+    progress_indicator = kevlar.ProgressIndicator(
+        '[kevlar::assemble] skipping partition with {counter} reads',
+        interval=10, breaks=[100, 1000, 10000], usetimer=True,
+        logstream=logstream,
+    )
     for partid, partition in partstream:
         pn += 1
-
-        # Status update intervals on a log scale :-)
-        if pn in [100, 1000, 10000]:  # pragma: no cover
-            upint = pn
-        if pn >= upthreshold:  # pragma: no cover
-            upthreshold += upint
-            message = 'processed {} read partitions'.format(pn)
-            print('[kevlar::assemble]', message, file=logstream)
-
+        progress_indicator.update()
         numreads = len(partition)
         if numreads > maxreads:  # pragma: no cover
             message = 'skipping partition with {:d} reads'.format(numreads)
@@ -49,6 +44,9 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
                 newname += ' kvcc={}'.format(partid)
             contig.name = newname
             yield contig
+    message = 'processed {} partitions'.format(pn)
+    message += ' and assembled {} contigs'.format(n)
+    print('[kevlar::assemble] ', message, file=logstream)
 
 
 def main(args):
