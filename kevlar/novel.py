@@ -123,27 +123,26 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
     timer.start()
     nkmers = 0
     nreads = 0
-    upint = 1e6
-    nextupdate = upint
+    update_message = '[kevlar::novel]     processed {counter} reads'
+    skip_message = None
+    if skipuntil:
+        msg = '; skipping reads in search of {read}'.format(read=skipuntil)
+        skip_message = update_message + msg
+    first_message = skip_message if skipuntil else update_message
+    progress_indicator = kevlar.ProgressIndicator(
+        first_message, interval=1e6,
+        breaks=[1e7, 1e8, 1e9], usetimer=True, logstream=logstream,
+    )
     unique_kmers = set()
     for n, record, mate in kevlar.paired_reader(casestream):
-        if n in [1e7, 1e8, 1e9]:
-            upint = n
-        if n >= nextupdate:
-            nextupdate += upint
-            elapsed = timer.probe()
-            message = '    processed {} reads'.format(n)
-            message += '  in {:.2f} seconds...'.format(elapsed)
-            if skipuntil:
-                message += '(skipping reads in search of {})'.format(skipuntil)
-            print(message, file=logstream)
-
+        progress_indicator.update()
         if skipuntil:  # pragma: no cover
             if record.name == skipuntil:
                 message = 'Found read {:s}'.format(skipuntil)
                 message += ' (skipped {:d} reads)'.format(n)
                 print('[kevlar::novel]', message, file=logstream)
                 skipuntil = False
+                progress_indicator.message = update_message
             continue
 
         if len(record.sequence) < ksize:

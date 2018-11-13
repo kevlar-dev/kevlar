@@ -151,19 +151,15 @@ def main(args):
     )
     contigs_by_partition = load_contigs(contigstream)
 
-    upint = 10
-    nextupdate = upint
     gdnastream = kevlar.parse_partitioned_reads(
         kevlar.reference.load_refr_cutouts(kevlar.open(args.targetseq, 'r'))
     )
-    for n, gdnadata in enumerate(gdnastream):
-        partid, gdnas = gdnadata
-        if n in [100, 1000, 10000]:
-            upint = n
-        if n >= nextupdate:
-            nextupdate += upint
-            message = 'processed contigs/gDNAs for {} partitions'.format(n)
-            print('[kevlar::call]', message, file=logstream)
+    progress_indicator = kevlar.ProgressIndicator(
+        '[kevlar::call] processed contigs/gDNAs for {counter} partitions',
+        interval=10, breaks=[100, 1000, 10000], logstream=args.logfile,
+    )
+    for partid, gdnas in gdnastream:
+        progress_indicator.update()
         contigs = contigs_by_partition[partid]
         caller = call(
             gdnas, contigs, match=args.match, mismatch=args.mismatch,
