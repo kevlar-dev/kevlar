@@ -22,6 +22,7 @@ Documentation for **kevlar**
    running
    quick-start
    tutorial
+   terms
    formats
    banding
    sim
