@@ -35,14 +35,14 @@ The kevlar package **requires Python 3** and has several dependencies that are n
 - the `scipy library <https://www.scipy.org/>`_
 - the `khmer package <http://khmer.readthedocs.io/>`_
 
-When kevlar is installed from PyPI most dependencies *should* handled automatically, but since kevlar relies on an unreleased version of **khmer** this last dependency must be installed manually.
+Also, kevlar requires the `bwa <https://github.com/lh3/bwa>`_ and `samtools <https://github.com/samtools/samtools>`_ commands to be callable from your ``$PATH`` environmental variable.
+
+When kevlar is installed from PyPI, most Python dependencies *should* handled automatically.
+But since kevlar currently relies on an unreleased version of khmer this last dependency must be installed manually.
 
 .. code::
 
     pip3 install git+https://github.com/dib-lab/khmer.git
-
-The `bwa <https://github.com/lh3/bwa>`_ and `samtools <https://github.com/samtools/samtools>`_ commands must also be in your ``$PATH`` environmental variable.
-
 
 .. note::
 
@@ -61,7 +61,7 @@ The `bwa <https://github.com/lh3/bwa>`_ and `samtools <https://github.com/samtoo
 Installation
 ------------
 
-Once **khmer** is installed, kevlar can be installed with the :code:`pip` command.
+Once the prerequisites are installed, kevlar can be installed with the pip.
 
 .. code::
 
@@ -74,7 +74,7 @@ If you want to install the latest (possibly unstable) version, pip can install k
 
     pip3 install git+https://github.com/dib-lab/kevlar.git
 
-If you want to test whether kevlar is installed and running correctly, use `pytest <https://docs.pytest.org/>`_.
+To test whether kevlar is installed and running correctly, use `pytest <https://docs.pytest.org/>`_.
 
 .. code::
 
