@@ -35,7 +35,7 @@ The kevlar package **requires Python 3** and has several dependencies that are n
 - the `scipy library <https://www.scipy.org/>`_
 - the `khmer package <http://khmer.readthedocs.io/>`_
 
-Also, kevlar requires the `bwa <https://github.com/lh3/bwa>`_ and `samtools <https://github.com/samtools/samtools>`_ commands to be callable from your ``$PATH`` environmental variable.
+Also, kevlar requires the `bwa <https://github.com/lh3/bwa>`_ command to be callable from your ``$PATH`` environmental variable.
 
 When kevlar is installed from PyPI, most Python dependencies *should* handled automatically.
 But since kevlar currently relies on an unreleased version of khmer this last dependency must be installed manually.
