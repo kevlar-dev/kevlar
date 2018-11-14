@@ -34,8 +34,8 @@ This software is free for use under the MIT license.
   See [the kevlar documentation](http://kevlar.readthedocs.io/en/latest/install.html) for complete instructions, but the impatient can try the following.
 
   ```
-  pip install git+https://github.com/dib-lab/khmer.git
-  pip install biokevlar
+  pip3 install git+https://github.com/dib-lab/khmer.git
+  pip3 install biokevlar
   ```
 </details>
 
