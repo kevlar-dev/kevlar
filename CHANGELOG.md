@@ -10,7 +10,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New flags for filtering gDNA cutouts or calls from specified sequences (see #285).
 - New filter that discards any contig/gDNA alignment with more than 4 mismatches (see #288).
 - A new feature that generates a Nodetable containing only variant-spanning k-mers to support re-counting k-mers and computing likelihood scores in low memory (see #289, #292).
-- A new `kevlar cutout` command that mimics the behavior of `kevlar localize` but does so much more efficiently (see #294).
 - A new `ProgressIndicator` class that provides gradually less frequent updates over time (see #299).
 
 ### Changed
@@ -18,6 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Dynamic error model for likelihood calculations is now an configurable option (see #286).
 - Cleaned up overlap-related code with a new `ReadPair` class (see #283).
 - Updated `kevlar assemble`, `kevlar localize`, and `kevlar call` to accept streams of partitioned reads; previously, only reads for a single partition were permitted (see #294).
+- Overhauled the `kevlar localize` command to compute seed locations for all seeds in all partitions with a single BWA call, massively improving efficiency (see #294 and #301).
 
 ### Fixed
 - Minor bug with .gml output due to a change in the networkx package (see #278).
