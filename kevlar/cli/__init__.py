@@ -22,7 +22,6 @@ from . import mutate
 from . import gentrio
 from . import partition
 from . import localize
-from . import cutout
 from . import call
 from . import alac
 from . import simplex
@@ -41,7 +40,6 @@ mains = {
     'mutate': kevlar.mutate.main,
     'gentrio': kevlar.gentrio.main,
     'partition': kevlar.partition.main,
-    'cutout': kevlar.cutout.main,
     'localize': kevlar.localize.main,
     'call': kevlar.call.main,
     'alac': kevlar.alac.main,
@@ -63,7 +61,6 @@ subparser_funcs = {
     'gentrio': gentrio.subparser,
     'partition': partition.subparser,
     'localize': localize.subparser,
-    'cutout': cutout.subparser,
     'call': call.subparser,
     'alac': alac.subparser,
     'simplex': simplex.subparser,

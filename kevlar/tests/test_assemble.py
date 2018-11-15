@@ -98,7 +98,7 @@ def test_assemble_single_part():
     readstream = kevlar.parse_augmented_fastx(inreads)
     partitions = kevlar.parse_single_partition(readstream, '4')
     assembler = kevlar.assemble.assemble(partitions)
-    contigs = list(assembler)
+    contigs = [contig for partid, contig in assembler]
     assert len(contigs) == 1
     assert contigs[0].name == 'contig1 kvcc=4'
     assert contigs[0].sequence == testcontig

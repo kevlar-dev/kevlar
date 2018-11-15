@@ -81,9 +81,9 @@ def dedup(callstream):
             yield sortedcalls[0]
 
 
-def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-                gapextend=0, ksize=31, refrfile=None, debug=False, mindist=5,
-                logstream=sys.stderr):
+def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
+                gapopen=5, gapextend=0, ksize=31, refrfile=None, debug=False,
+                mindist=5, logstream=sys.stderr):
     """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
@@ -108,6 +108,8 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                       alignment.contig.name, '\n', str(alignment), sep='',
                       end='\n\n', file=logstream)
             for varcall in alignment.call_variants(ksize, mindist, logstream):
+                if partid is not None:
+                    varcall.annotate('PART', partid)
                 if alignment.matedist:
                     varcall.annotate('MATEDIST', alignment.matedist)
                 yield varcall
@@ -162,7 +164,7 @@ def main(args):
         progress_indicator.update()
         contigs = contigs_by_partition[partid]
         caller = call(
-            gdnas, contigs, match=args.match, mismatch=args.mismatch,
+            gdnas, contigs, partid, match=args.match, mismatch=args.mismatch,
             gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
             refrfile=args.refr, debug=args.debug, mindist=5,
             logstream=args.logfile

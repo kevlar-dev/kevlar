@@ -55,6 +55,7 @@ def bwa_align(cmdargs, seqstring=None, seqfilename=None):
     if (not seqstring) is (not seqfilename):
         raise Exception('supply sequence string or file, not both')
     with TemporaryFile() as samfile:
+        kmerseqs = dict()
         if seqstring:
             bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
                             universal_newlines=True)
@@ -72,6 +73,10 @@ def bwa_align(cmdargs, seqstring=None, seqfilename=None):
                 continue
             seqid = sam.get_reference_name(record.reference_id)
             seq = record.seq
+            if seq:
+                kmerseqs[record.query_name] = seq
+            else:
+                seq = kmerseqs[record.query_name]
             yield seqid, record.reference_start, record.reference_end, seq
 
 
