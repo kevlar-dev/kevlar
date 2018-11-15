@@ -123,6 +123,7 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
                 seeds.add(kevlar.revcommin(seed))
     for n, seed in enumerate(sorted(seeds)):
         print('>seed{}\n{}'.format(n, seed), file=seedstream)
+    print('DEBUG', 'numseeds', n)
     seedstream.flush()
     message = 'contigs decomposed into {} seeds'.format(n)
     print('[kevlar::localize]', message, file=logstream)
@@ -168,6 +169,7 @@ def cutout(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
                 continue
             seqid, position = seed_matches[seed]
             localizer.add_seed_match(seqid, position)
+    print('DEBUG', 'nummatches', len(localizer))
     if maxdiff is None:
         maxcontiglen = max([len(c.sequence) for c in contigs])
         maxdiff = maxcontiglen * 3
