@@ -47,16 +47,6 @@ kevlar assemble
    :prog: kevlar
    :path: assemble
 
-kevlar cutout
--------------
-
-.. argparse::
-   :module: kevlar.cli.__init__
-   :func: parser
-   :nodefault:
-   :prog: kevlar
-   :path: cutout
-
 kevlar localize
 ---------------
 

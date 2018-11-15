@@ -28,8 +28,9 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
 
     contigstream = [(pid, ctgs) for pid, ctgs in contigs_by_partition.items()]
     targeter = kevlar.localize.localize(
-        contigstream, refrfile, seedsize=seedsize, delta=delta, maxdiff=maxdiff,
-        inclpattern=inclpattern, exclpattern=exclpattern, logstream=logstream
+        contigstream, refrfile, seedsize=seedsize, delta=delta,
+        maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
+        logstream=logstream
     )
     targets_by_partition = defaultdict(list)
     for partid, gdna in targeter:
@@ -76,7 +77,7 @@ def main(args):
         exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
         maskfile=args.gen_mask, maskmem=args.mask_mem,
-        maskmaxfpr=args.mask_max_fpr, logstream=args.logfile
+        maskmaxfpr=args.mask_max_fpr, logstream=args.logfile,
     )
 
     writer = kevlar.vcf.VCFWriter(
