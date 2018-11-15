@@ -121,6 +121,7 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
         for contig in contigs:
             for seed in decompose_seeds(contig.sequence, seedsize):
                 seeds.add(kevlar.revcommin(seed))
+    n = 0
     for n, seed in enumerate(sorted(seeds)):
         print('>seed{}\n{}'.format(n, seed), file=seedstream)
     seedstream.flush()

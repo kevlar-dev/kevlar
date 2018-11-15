@@ -43,10 +43,10 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
             if partid is not None:
                 newname += ' kvcc={}'.format(partid)
             contig.name = newname
-            yield contig
+            yield partid, contig
     message = 'processed {} partitions'.format(pn)
     message += ' and assembled {} contigs'.format(n)
-    print('[kevlar::assemble] ', message, file=logstream)
+    print('[kevlar::assemble]', message, file=logstream)
 
 
 def main(args):
@@ -58,5 +58,5 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     assembler = assemble(pstream, maxreads=args.max_reads,
                          logstream=args.logfile)
-    for contig in assembler:
+    for partid, contig in assembler:
         kevlar.print_augmented_fastx(contig, outstream)
