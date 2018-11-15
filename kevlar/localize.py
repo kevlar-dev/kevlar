@@ -123,7 +123,6 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
                 seeds.add(kevlar.revcommin(seed))
     for n, seed in enumerate(sorted(seeds)):
         print('>seed{}\n{}'.format(n, seed), file=seedstream)
-    print('DEBUG', 'numseeds', n)
     seedstream.flush()
     message = 'contigs decomposed into {} seeds'.format(n)
     print('[kevlar::localize]', message, file=logstream)
@@ -136,12 +135,10 @@ def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
         k=seedsize, idx=refrfile, seeds=seedfile
     )
     bwa_args = bwa_cmd.split()
-    seed_index = dict()
+    seed_index = defaultdict(set)
     for seqid, start, end, seq in bwa_align(bwa_args, seqfilename=seedfile):
-        if seq is None:
-            continue
         minseq = kevlar.revcommin(seq)
-        seed_index[minseq] = (seqid, start)
+        seed_index[minseq].add((seqid, start))
     message = 'found positions for {} seeds'.format(len(seed_index))
     print('[kevlar::localize]', message, file=logstream)
     return seed_index
@@ -167,9 +164,8 @@ def cutout(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
                     message = 'WARNING: no position for seed {}'.format(seed)
                     print('[kevlar::localize]', message, file=logstream)
                 continue
-            seqid, position = seed_matches[seed]
-            localizer.add_seed_match(seqid, position)
-    print('DEBUG', 'nummatches', len(localizer))
+            for seqid, position in seed_matches[seed]:
+                localizer.add_seed_match(seqid, position)
     if maxdiff is None:
         maxcontiglen = max([len(c.sequence) for c in contigs])
         maxdiff = maxcontiglen * 3

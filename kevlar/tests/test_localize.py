@@ -243,14 +243,14 @@ def test_get_seed_matches():
         seed_matches = get_seed_matches(seedfile.name, refrfile, seedsize=51)
         print(seed_matches)
         assert seed_matches == {
-            'AACCAATAGAGGTCCACAGAAGTATATATAATCTGTTCTTGGCCAATAGAA': ('seq1',
-                                                                    284819),
-            'AAGATACTATAATATGTTTCCCTGAGCACACCCCTTCGAAAGAGCAGAATT': ('seq1',
-                                                                    284722),
-            'ATCTGTTCTTGGCCAATAGAAAAAGCAAGGAGCCCTGAAAGACTCACAGTG': ('seq1',
-                                                                    284849),
-            'AAGAACAGATTATATATACTTCTGTGGACCTCTATTGGTTTTTACACACAA': ('seq1',
-                                                                    284808),
+            'AACCAATAGAGGTCCACAGAAGTATATATAATCTGTTCTTGGCCAATAGAA': {('seq1',
+                                                                     284819)},
+            'AAGATACTATAATATGTTTCCCTGAGCACACCCCTTCGAAAGAGCAGAATT': {('seq1',
+                                                                     284722)},
+            'ATCTGTTCTTGGCCAATAGAAAAAGCAAGGAGCCCTGAAAGACTCACAGTG': {('seq1',
+                                                                     284849)},
+            'AAGAACAGATTATATATACTTCTGTGGACCTCTATTGGTTTTTACACACAA': {('seq1',
+                                                                     284808)},
         }
 
 
