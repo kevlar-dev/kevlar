@@ -30,8 +30,8 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
             if queue.empty():
                 sleep(1)
                 continue
-            reads = queue.get()
-            cc = kevlar.seqio.partition_id(reads[0].name)
+            partdata = queue.get()
+            cc, reads = partdata
             if cc is not None and int(cc) % 1000 == 0:  # pragma: no cover
                 message = '[kevlar::alac::make_call_from_reads'
                 message += ' (thread={:d})]'.format(idx)
@@ -52,11 +52,11 @@ def make_call_from_reads(queue, idx, calls, refrfile, ksize=31, delta=50,
 
             # Identify the genomic region(s) associated with each contig
             localizer = localize(
-                contigs, refrfile, seedsize, delta=delta, maxdiff=maxdiff,
-                inclpattern=inclpattern, exclpattern=exclpattern,
-                refrseqs=refrseqs, logstream=logstream
+                [(cc, contigs)], refrfile, seedsize, delta=delta,
+                maxdiff=maxdiff, inclpattern=inclpattern,
+                exclpattern=exclpattern, logstream=logstream
             )
-            targets = list(localizer)
+            targets = [gdna for partid, gdna in localizer]
             if len(targets) == 0:
                 queue.task_done()
                 continue
@@ -99,7 +99,8 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
         worker.setDaemon(True)
         worker.start()
 
-    for partid, partition in pstream:
+    for partdata in pstream:
+        partid, partition = partdata
         reads = list(partition)
         if len(reads) > maxreads:
             message = 'skipping partition with {:d} reads'.format(len(reads))
@@ -108,7 +109,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
         if partid is not None and int(partid) % 1000 == 0:  # pragma: no cover
             message = '{} partitions scheduled for processing'.format(partid)
             print('[kevlar::alac]', message, file=logstream)
-        part_queue.put(reads)
+        part_queue.put(partdata)
 
     part_queue.join()
     allcalls = sorted(chain(*call_lists), key=lambda c: (c.seqid, c.position))

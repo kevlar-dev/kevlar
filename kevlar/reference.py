@@ -52,8 +52,6 @@ def autoindex(refrfile, logstream=sys.stderr):
 
 
 def bwa_align(cmdargs, seqstring=None, seqfilename=None):
-    with open('GANDALF', 'w') as fp, open(seqfilename, 'r') as infp:
-        print(infp.read().strip(), file=fp)
     if (not seqstring) is (not seqfilename):
         raise Exception('supply sequence string or file, not both')
     with TemporaryFile() as samfile:

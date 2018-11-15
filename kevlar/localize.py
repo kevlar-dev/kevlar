@@ -219,7 +219,7 @@ def localize(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
             debug=False, logstream=logstream
         )
         for gdna in cutter:
-            ncutouts +=1
+            ncutouts += 1
             yield partid, gdna
     if ncutouts == 0:
         message = 'WARNING: no reference matches'

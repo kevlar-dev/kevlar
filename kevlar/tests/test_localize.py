@@ -107,7 +107,9 @@ def test_get_cutouts_basic_3():
     intervals.add_seed_match('simple', 500)
     refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
     seqs = kevlar.seqio.parse_seq_dict(refrstream)
-    cutouts = list(intervals.get_cutouts(refrseqs=seqs, clusterdist=None, delta=10))
+    cutouts = list(
+        intervals.get_cutouts(refrseqs=seqs, clusterdist=None, delta=10)
+    )
     assert len(cutouts) == 1
     assert cutouts[0].defline == 'simple_30-531'
     assert len(cutouts[0].sequence) == 501
