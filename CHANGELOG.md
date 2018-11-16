@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.6] 2018-11-16
 
 ### Added
 - The `kevlar count` operation now supports masks and 8-, 4-, or 1-bit counters (see #277 and #291).
@@ -27,7 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Buggy home-grown greedy assembler dropped (see #279). Some parts of the overlap code retained and refactored (see #283).
 
 
-## [0.5.0] 2018-06-14
+## [0.5] 2018-06-14
 
 ### Fixed
 - Refined handling of mate read alignments (see #247, #250, #251, #255, and #263).
