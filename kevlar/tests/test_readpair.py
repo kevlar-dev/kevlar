@@ -14,8 +14,7 @@ from kevlar.sequence import KmerOfInterest, Record
 from kevlar.readpair import ReadPair
 
 
-@pytest.fixture
-def record1():
+def record1fix():
     return Record(
         name='read1',
         sequence='GCTGCACCGATGTACGCAAA',
@@ -23,8 +22,7 @@ def record1():
     )
 
 
-@pytest.fixture
-def record2():
+def record2fix():
     return Record(
         name='read2',
         sequence='ACGCAAAGCTATTTAAAACC',
@@ -33,6 +31,28 @@ def record2():
             KmerOfInterest(5, 14, [19, 1, 0]),
         ],
     )
+
+
+def record3fix():
+    # reverse complement of record2
+    return Record(
+        name='read3',
+        sequence='GGTTTTAAATAGCTTTGCGT',
+        annotations=[
+            KmerOfInterest(5, 1, [19, 1, 0]),
+            KmerOfInterest(5, 14, [15, 0, 0]),
+        ],
+    )
+
+
+@pytest.fixture
+def record1():
+    return record1fix()
+
+
+@pytest.fixture
+def record2():
+    return record2fix()
 
 
 @pytest.fixture
@@ -50,14 +70,7 @@ def record2a():
 @pytest.fixture
 def record3():
     # reverse complement of record2
-    return Record(
-        name='read3',
-        sequence='GGTTTTAAATAGCTTTGCGT',
-        annotations=[
-            KmerOfInterest(5, 1, [19, 1, 0]),
-            KmerOfInterest(5, 14, [15, 0, 0]),
-        ],
-    )
+    return record3fix()
 
 
 @pytest.fixture
@@ -162,10 +175,10 @@ def picorecord4():
 
 
 @pytest.mark.parametrize('read1,read2,sameorientation', [
-    (record1(), record2(), True),
-    (record2(), record1(), True),
-    (record1(), record3(), False),
-    (record3(), record1(), False),
+    (record1fix(), record2fix(), True),
+    (record2fix(), record1fix(), True),
+    (record1fix(), record3fix(), False),
+    (record3fix(), record1fix(), False),
 ])
 def test_basic(read1, read2, sameorientation):
     """Pair of reads sharing an interesting k-mer.
