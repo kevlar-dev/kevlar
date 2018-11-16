@@ -58,6 +58,12 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
             window = call.attribute('ALTWINDOW')
             if window is not None and len(window) >= ksize:
                 mask.consume(window)
+        fpr = khmer.calc_expected_collisions(mask, max_false_pos=1.0)
+        if fpr > maskmaxfpr:
+            message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
+            message += '; exceeds user-specified limit'
+            message += ' of {:.4f}'.format(maskmaxfpr)
+            print('[kevlar::alac]', message, file=logstream)
         mask.save(maskfile)
     for call in calls:
         yield call

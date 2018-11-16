@@ -7,6 +7,9 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
+import khmer
+from khmer import khmer_args
+
 
 def subparser(subparsers):
     """Define the `kevlar call` command-line interface."""
@@ -28,6 +31,18 @@ def subparser(subparsers):
                             help='gap open penalty; default is 5')
     score_args.add_argument('-E', '--extend', type=int, default=0, metavar='E',
                             help='gap extension penalty; default is 0')
+
+    mask_args = subparser.add_argument_group('Mask generation settings')
+    mask_args.add_argument('--gen-mask', metavar='FILE', help='generate '
+                           'a nodetable containing all k-mers that span any '
+                           'variant call')
+    mask_args.add_argument('--mask-mem', type=khmer_args.memory_setting,
+                           default=1e6, metavar='MEM',
+                           help='memory to allocate for the node table')
+    mask_args.add_argument('--mask-max-fpr', type=float, default=0.01,
+                           metavar='FPR', help='terminate if the estimated '
+                           'false positive rate is higher than "FPR"; default '
+                           'is 0.01')
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
