@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - A Jupyter notebook and supporting code and data for evaluating kevlar's performance on a simulated data set (see #271).
 - New flags for filtering gDNA cutouts or calls from specified sequences (see #285).
 - New filter that discards any contig/gDNA alignment with more than 4 mismatches (see #288).
-- A new feature that generates a Nodetable containing only variant-spanning k-mers to support re-counting k-mers and computing likelihood scores in low memory (see #289, #292).
+- A new feature that generates a Nodetable containing only variant-spanning k-mers to support re-counting k-mers and computing likelihood scores in low memory (see #289, #292, #302).
 - A new `ProgressIndicator` class that provides gradually less frequent updates over time (see #299).
 
 ### Changed
@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Cleaned up overlap-related code with a new `ReadPair` class (see #283).
 - Updated `kevlar assemble`, `kevlar localize`, and `kevlar call` to accept streams of partitioned reads; previously, only reads for a single partition were permitted (see #294).
 - Overhauled the `kevlar localize` command to compute seed locations for all seeds in all partitions with a single BWA call, massively improving efficiency (see #294 and #301).
+- Updated the variant calling procedure to discard alignment blocks less than `ksize` in length (see #303).
 
 ### Fixed
 - Minor bug with .gml output due to a change in the networkx package (see #278).
