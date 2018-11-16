@@ -8,11 +8,11 @@
 # -----------------------------------------------------------------------------
 
 import filecmp
+import kevlar
+from kevlar.tests import data_file
 import pytest
 from tempfile import NamedTemporaryFile
 import sys
-import kevlar
-from kevlar.tests import data_file
 
 
 def test_pico_4(capsys):
@@ -184,6 +184,22 @@ def test_alac_generate_mask():
             print(c.vcf)
         testfilename = data_file('fiveparts-genmask.nodetable')
         assert filecmp.cmp(testfilename, maskfile.name) is True
+
+
+def test_alac_generate_mask_lowmem(capsys):
+    readfile = data_file('fiveparts.augfastq.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    with NamedTemporaryFile(suffix='.nt') as maskfile:
+        calls = list(
+            kevlar.alac.alac(partstream, refrfile, maskfile=maskfile.name,
+                             maskmem=100, logstream=sys.stderr)
+        )
+        assert len(calls) == 5
+    out, err = capsys.readouterr()
+    message = 'WARNING: mask FPR is 0.8065; exceeds user-specified limit'
+    assert message in out or message in err
 
 
 def test_alac_matedist():

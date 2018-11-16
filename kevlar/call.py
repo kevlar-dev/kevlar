@@ -13,6 +13,8 @@ import kevlar
 from kevlar.reference import bwa_align
 from kevlar.varmap import VariantMapping
 from kevlar.vcf import VariantFilter as vf
+import khmer
+from khmer import _buckets_per_byte
 
 
 def align_mates(record, refrfile):
@@ -156,6 +158,13 @@ def main(args):
     gdnastream = kevlar.parse_partitioned_reads(
         kevlar.reference.load_refr_cutouts(kevlar.open(args.targetseq, 'r'))
     )
+    mask = None
+    if args.gen_mask:
+        message = 'generating mask of variant-spanning k-mers'
+        print('[kevlar::call]', message, file=args.logfile)
+        ntables = 4
+        buckets = args.mask_mem * _buckets_per_byte['nodegraph'] / ntables
+        mask = khmer.Nodetable(args.ksize, buckets, ntables)
     progress_indicator = kevlar.ProgressIndicator(
         '[kevlar::call] processed contigs/gDNAs for {counter} partitions',
         interval=10, breaks=[100, 1000, 10000], logstream=args.logfile,
@@ -170,4 +179,16 @@ def main(args):
             logstream=args.logfile
         )
         for varcall in caller:
+            if args.gen_mask:
+                window = varcall.attribute('ALTWINDOW')
+                if window is not None and len(window) >= args.ksize:
+                    mask.consume(window)
             writer.write(varcall)
+    if args.gen_mask:
+        fpr = khmer.calc_expected_collisions(mask, max_false_pos=1.0)
+        if fpr > args.mask_max_fpr:
+            message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
+            message += '; exceeds user-specified limit'
+            message += ' of {:.4f}'.format(args.mask_max_fpr)
+            print('[kevlar::call]', message, file=args.logfile)
+        mask.save(args.gen_mask)
