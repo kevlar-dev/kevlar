@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.1] 2018-11-16
+
+### Fixed
+- Updated `setup.py` so that the README markdown is included in the long description attribute for rendering on PyPI (see commit 9f51024898).
+- Removed direct calls to fixures that are no longer supported by pytest (see commit dab6418b9f).
+- Updated the Makefile so that `kevlar/tests/__init__.py` is not included when running the test suite. Now compatible with pytest>=4.0.0 (see commit 965bd0da48).
+
+
 ## [0.6] 2018-11-16
 
 ### Added
