@@ -218,6 +218,8 @@ class VariantMapping(object):
         """
         length = len(qseq)
         assert len(tseq) == length
+        if length < ksize:
+            return
         diffs = [i for i in range(length) if tseq[i] != qseq[i]]
         if mindist:
             diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
@@ -297,8 +299,9 @@ def trim_terminal_snvs(mismatches, alnlength, mindist=5, logstream=sys.stderr):
     valid = list()
     for mm in mismatches:
         if mm < mindist or alnlength - mm < mindist:
-            msg = 'discarding SNV due to proximity to end of the contig'
-            print('[kevlar::call] NOTE:', msg, file=logstream)
+            # msg = 'discarding SNV due to proximity to end of the contig'
+            # print('[kevlar::call] NOTE:', msg, file=logstream)
+            pass
         else:
             valid.append(mm)
     return valid
