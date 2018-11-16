@@ -7,7 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-from io import StringIO
 import sys
 import kevlar
 from kevlar.varmap import VariantMapping
@@ -131,14 +130,13 @@ def test_variant_mapping():
     assert mapping.interval == ('chr1', 10000, 10060)
 
 
-@pytest.mark.parametrize('query,target,dist,n,msgcount', [
+@pytest.mark.parametrize('query,target,dist,n,trimcount', [
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 5, 1, 1),
     ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', 5, 1, 1),
     ('phony-snv-01b.contig.fa', 'phony-snv-01.gdna.fa', 2, 2, 0),
     ('phony-snv-02b.contig.fa', 'phony-snv-02.gdna.fa', None, 2, 0),
 ])
-def test_call_near_end(query, target, dist, n, msgcount):
-    log = StringIO()
+def test_call_near_end(query, target, dist, n, trimcount):
     contig = next(
         kevlar.parse_augmented_fastx(
             kevlar.open(data_file(query), 'r')
@@ -150,12 +148,9 @@ def test_call_near_end(query, target, dist, n, msgcount):
         )
     )
     aln = VariantMapping(contig, cutout)
-    calls = list(aln.call_variants(31, mindist=dist, logstream=log))
+    calls = list(aln.call_variants(31, mindist=dist))
     assert len(calls) == n
-
-    err = log.getvalue()
-    count = err.count('discarding SNV due to proximity to end of the contig')
-    assert count == msgcount
+    assert aln.trimmed == trimcount
 
 
 @pytest.mark.parametrize('query,target,vw,rw', [
