@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # -----------------------------------------------------------------------------
-# Copyright (c) 2017 The Regents of the University of California
+# Copyright (c) 2018 The Regents of the University of California
 #
 # This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.
@@ -14,10 +14,9 @@ def subparser(subparsers):
     """Define the `kevlar localize` command-line interface."""
 
     desc = """\
-    Given a reference genome and a contig (or set of contigs) assembled from
-    variant-related reads, retrieve the portion of the reference genome
-    corresponding to the variant. NOTE: this command relies on the `bwa`
-    program being in the PATH environmental variable.
+    For each partition, compute the reference target sequence to use for
+    variant calling. NOTE: this command relies on the `bwa` program being in
+    the PATH environmental variable.
     """
 
     subparser = subparsers.add_parser('localize', description=desc)
@@ -25,6 +24,8 @@ def subparser(subparsers):
                            default=50, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
                            'of all k-mer starting positions by D bp')
+    subparser.add_argument('-p', '--part-id', type=str, metavar='ID',
+                           help='only localize partition "ID" in the input')
     subparser.add_argument('-o', '--out', metavar='FILE', default='-',
                            help='output file; default is terminal (stdout)')
     subparser.add_argument('-z', '--seed-size', type=int, metavar='Z',
@@ -32,12 +33,16 @@ def subparser(subparsers):
     subparser.add_argument('-x', '--max-diff', type=int, metavar='X',
                            default=None, help='split and report multiple '
                            'reference targets if the distance between two '
-                           'seed matches is > X; by default, X is 3 times the '
-                           'length of the longest contig')
-    subparser.add_argument('--include', metavar='REGEX', type=re.escape,
+                           'seed matches is > X; by default, X is set '
+                           'dynamically for each partition and is equal to 3 '
+                           'times the length of the longest contig in the '
+                           'partition; each resulting bin specifies a '
+                           'reference target sequence to which assembled '
+                           'contigs will subsequently be aligned')
+    subparser.add_argument('--include', metavar='REGEX', type=str,
                            help='discard alignments to any chromosomes whose '
                            'sequence IDs do not match the given pattern')
-    subparser.add_argument('--exclude', metavar='REGEX', type=re.escape,
+    subparser.add_argument('--exclude', metavar='REGEX', type=str,
                            help='discard alignments to any chromosomes whose '
                            'sequence IDs match the given pattern')
     subparser.add_argument('contigs', help='assembled reads in Fasta format')

@@ -13,7 +13,8 @@ import kevlar
 
 def split(pstream, outstreams):
     """Split the partitions across the N outstreams."""
-    for partition, outstream in zip(pstream, cycle(outstreams)):
+    for partdata, outstream in zip(pstream, cycle(outstreams)):
+        partid, partition = partdata
         for read in partition:
             kevlar.print_augmented_fastx(read, outstream)
 

@@ -13,6 +13,8 @@ import kevlar
 from kevlar.reference import bwa_align
 from kevlar.varmap import VariantMapping
 from kevlar.vcf import VariantFilter as vf
+import khmer
+from khmer import _buckets_per_byte
 
 
 def align_mates(record, refrfile):
@@ -21,7 +23,7 @@ def align_mates(record, refrfile):
         fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
     cmd = 'bwa mem {:s} -'.format(refrfile)
     cmdargs = cmd.split()
-    for seqid, start, end in bwa_align(cmdargs, seqstring=fasta):
+    for seqid, start, end, seq in bwa_align(cmdargs, seqstring=fasta):
         yield seqid, start, end
 
 
@@ -81,9 +83,9 @@ def dedup(callstream):
             yield sortedcalls[0]
 
 
-def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
-                gapextend=0, ksize=31, refrfile=None, debug=False, mindist=5,
-                logstream=sys.stderr):
+def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
+                gapopen=5, gapextend=0, ksize=31, refrfile=None, debug=False,
+                mindist=5, logstream=sys.stderr):
     """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
@@ -108,6 +110,8 @@ def prelim_call(targetlist, querylist, match=1, mismatch=2, gapopen=5,
                       alignment.contig.name, '\n', str(alignment), sep='',
                       end='\n\n', file=logstream)
             for varcall in alignment.call_variants(ksize, mindist, logstream):
+                if partid is not None:
+                    varcall.annotate('PART', partid)
                 if alignment.matedist:
                     varcall.annotate('MATEDIST', alignment.matedist)
                 yield varcall
@@ -122,20 +126,69 @@ def call(*args, **kwargs):
         yield call
 
 
+def load_contigs(contigstream, logstream=sys.stderr):
+    message = 'loading contigs into memory by partition'
+    print('[kevlar::call]', message, file=logstream)
+    contigs_by_partition = dict()
+    nparts = 0
+    ncontigs = 0
+    for partid, contiglist in contigstream:
+        nparts += 1
+        ncontigs += len(contiglist)
+        contigs_by_partition[partid] = contiglist
+    message = 'loaded {} contigs from {} partitions'.format(ncontigs, nparts)
+    print('[kevlar::call]', message, file=logstream)
+    return contigs_by_partition
+
+
 def main(args):
+    # Input and output files
     outstream = kevlar.open(args.out, 'w')
-    qinstream = kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
-    queryseqs = list(qinstream)
-    tinstream = kevlar.open(args.targetseq, 'r')
-    targetseqs = list(kevlar.reference.load_refr_cutouts(tinstream))
-    caller = call(
-        targetseqs, queryseqs,
-        args.match, args.mismatch, args.open, args.extend,
-        args.ksize, args.refr, args.debug, 5, args.logfile
-    )
     writer = kevlar.vcf.VCFWriter(
         outstream, source='kevlar::call', refr=args.refr,
     )
     writer.write_header()
-    for varcall in caller:
-        writer.write(varcall)
+
+    # Contigs = query sequences
+    contigstream = kevlar.parse_partitioned_reads(
+        kevlar.parse_augmented_fastx(kevlar.open(args.queryseq, 'r'))
+    )
+    contigs_by_partition = load_contigs(contigstream)
+
+    gdnastream = kevlar.parse_partitioned_reads(
+        kevlar.reference.load_refr_cutouts(kevlar.open(args.targetseq, 'r'))
+    )
+    mask = None
+    if args.gen_mask:
+        message = 'generating mask of variant-spanning k-mers'
+        print('[kevlar::call]', message, file=args.logfile)
+        ntables = 4
+        buckets = args.mask_mem * _buckets_per_byte['nodegraph'] / ntables
+        mask = khmer.Nodetable(args.ksize, buckets, ntables)
+    progress_indicator = kevlar.ProgressIndicator(
+        '[kevlar::call] processed contigs/gDNAs for {counter} partitions',
+        interval=10, breaks=[100, 1000, 10000], logstream=args.logfile,
+    )
+    for partid, gdnas in gdnastream:
+        progress_indicator.update()
+        contigs = contigs_by_partition[partid]
+        caller = call(
+            gdnas, contigs, partid, match=args.match, mismatch=args.mismatch,
+            gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
+            refrfile=args.refr, debug=args.debug, mindist=5,
+            logstream=args.logfile
+        )
+        for varcall in caller:
+            if args.gen_mask:
+                window = varcall.attribute('ALTWINDOW')
+                if window is not None and len(window) >= args.ksize:
+                    mask.consume(window)
+            writer.write(varcall)
+    if args.gen_mask:
+        fpr = khmer.calc_expected_collisions(mask, max_false_pos=1.0)
+        if fpr > args.mask_max_fpr:
+            message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
+            message += '; exceeds user-specified limit'
+            message += ' of {:.4f}'.format(args.mask_max_fpr)
+            print('[kevlar::call]', message, file=args.logfile)
+        mask.save(args.gen_mask)

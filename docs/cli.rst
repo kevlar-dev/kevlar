@@ -7,25 +7,15 @@ From this one command, a variety of tasks and procedures can be invoked using se
 Once kevlar is installed, available subcommands can be listed by executing :code:`kevlar -h`.
 To see instructions for running a specific subcommand, execute :code:`kevlar <subcommand> -h` (of course replacing :code:`subcommand` with the actual name of the subcommand).
 
-kevlar simplex
---------------
+kevlar count
+------------
 
 .. argparse::
    :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
-   :path: simplex
-
-kevlar alac
------------
-
-.. argparse::
-   :module: kevlar.cli.__init__
-   :func: parser
-   :nodefault:
-   :prog: kevlar
-   :path: alac
+   :path: count
 
 kevlar novel
 ------------
@@ -77,15 +67,35 @@ kevlar call
    :prog: kevlar
    :path: call
 
-kevlar count
-------------
+kevlar simlike
+--------------
 
 .. argparse::
    :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
-   :path: count
+   :path: simlike
+
+kevlar alac
+-----------
+
+.. argparse::
+   :module: kevlar.cli.__init__
+   :func: parser
+   :nodefault:
+   :prog: kevlar
+   :path: alac
+
+kevlar simplex
+--------------
+
+.. argparse::
+   :module: kevlar.cli.__init__
+   :func: parser
+   :nodefault:
+   :prog: kevlar
+   :path: simplex
 
 kevlar dump
 -----------

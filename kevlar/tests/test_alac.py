@@ -8,11 +8,11 @@
 # -----------------------------------------------------------------------------
 
 import filecmp
+import kevlar
+from kevlar.tests import data_file
 import pytest
 from tempfile import NamedTemporaryFile
 import sys
-import kevlar
-from kevlar.tests import data_file
 
 
 def test_pico_4(capsys):
@@ -149,10 +149,11 @@ def test_alac_single_partition_badlabel(capsys):
 def test_alac_exclude(capsys):
     readfile = data_file('fiveparts.augfastq.gz')
     refrfile = data_file('fiveparts-refr.fa.gz')
-    arglist = ['alac', '--exclude', '"^seq"', readfile, refrfile]
+    arglist = ['alac', '--exclude', '^seq', readfile, refrfile]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.alac.main(args)
     out, err = capsys.readouterr()
+    print(err)
 
     # grep -v ^'#' out
     out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
@@ -164,7 +165,7 @@ def test_alac_bigpart():
     refrfile = data_file('fiveparts-refr.fa.gz')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
-    calls = list(kevlar.alac.alac(partstream, refrfile, bigpart=20))
+    calls = list(kevlar.alac.alac(partstream, refrfile, maxreads=20))
     assert len(calls) == 3
 
 
@@ -183,6 +184,22 @@ def test_alac_generate_mask():
             print(c.vcf)
         testfilename = data_file('fiveparts-genmask.nodetable')
         assert filecmp.cmp(testfilename, maskfile.name) is True
+
+
+def test_alac_generate_mask_lowmem(capsys):
+    readfile = data_file('fiveparts.augfastq.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    readstream = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(readstream)
+    with NamedTemporaryFile(suffix='.nt') as maskfile:
+        calls = list(
+            kevlar.alac.alac(partstream, refrfile, maskfile=maskfile.name,
+                             maskmem=100, logstream=sys.stderr)
+        )
+        assert len(calls) == 5
+    out, err = capsys.readouterr()
+    message = 'WARNING: mask FPR is 0.8065; exceeds user-specified limit'
+    assert message in out or message in err
 
 
 def test_alac_matedist():

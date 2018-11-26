@@ -8,13 +8,13 @@
 # -----------------------------------------------------------------------------
 
 
-import sys
-import khmer
+import filecmp
 import kevlar
 from kevlar.call import call
 from kevlar.sequence import Record
 from kevlar.tests import data_file
 import pytest
+from tempfile import NamedTemporaryFile
 
 
 def test_align():
@@ -127,7 +127,7 @@ def test_funky_cigar(part, coord, window):
 
     calls = list(call(targets, contigs))
     assert len(calls) == 1
-    print('DEBUG', calls[0].vcf, file=sys.stderr)
+    print('DEBUG', calls[0].vcf)
     assert calls[0].seqid == '17'
     assert calls[0].position == coord - 1
     assert calls[0].attribute('ALTWINDOW') == window
@@ -220,7 +220,7 @@ def test_align_mates():
     positions = list(kevlar.call.align_mates(record, refrfile))
     seqids = set([seqid for seqid, start, end in positions])
     coords = sorted([(start, end) for seqid, start, end in positions])
-    print('DEBUG', coords, file=sys.stderr)
+    print('DEBUG', coords)
     assert seqids == set(['seq1'])
     assert coords == [
         (45332, 45432), (45377, 45477), (45393, 45493), (45428, 45528),
@@ -274,3 +274,34 @@ def test_debug_mode(capsys):
     out, err = capsys.readouterr()
     alignstr = kevlar.open(data_file('wasp-align.txt'), 'r').read().strip()
     assert alignstr in err
+
+
+def test_call_generate_mask():
+    contigfile = data_file('fiveparts.contigs.augfasta.gz')
+    gdnafile = data_file('fiveparts.gdnas.fa.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    with NamedTemporaryFile(suffix='.nt') as maskfile:
+        arglist = [
+            'call', '--gen-mask', maskfile.name, '--mask-mem', '1M',
+            '--refr', refrfile, contigfile, gdnafile
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.call.main(args)
+        testfilename = data_file('fiveparts-genmask.nodetable')
+        assert filecmp.cmp(testfilename, maskfile.name) is True
+
+
+def test_call_generate_mask_lowmem(capsys):
+    contigfile = data_file('fiveparts.contigs.augfasta.gz')
+    gdnafile = data_file('fiveparts.gdnas.fa.gz')
+    refrfile = data_file('fiveparts-refr.fa.gz')
+    with NamedTemporaryFile(suffix='.nt') as maskfile:
+        arglist = [
+            'call', '--gen-mask', maskfile.name, '--mask-mem', '100',
+            '--refr', refrfile, contigfile, gdnafile
+        ]
+        args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.call.main(args)
+    out, err = capsys.readouterr()
+    message = 'WARNING: mask FPR is 0.8065; exceeds user-specified limit'
+    assert message in out or message in err

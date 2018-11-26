@@ -212,13 +212,14 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
         if call.window is None or len(call.window) < case.ksize():
-            message = 'WARNING: stubbornly refusing to compute likelihood for '
-            if call.window is None:
-                message += 'variant with no spanning window'
-            else:
-                message += 'variant-spanning window {:s}'.format(call.window)
-                message += ', shorter than k size {:d}'.format(case.ksize())
-            print(message, file=logstream)
+            if call.filterstr == 'PASS':
+                msg = 'WARNING: stubbornly refusing to compute likelihood for '
+                if call.window is None:
+                    msg += 'variant with no spanning window'
+                else:
+                    msg += 'variant-spanning window {:s}'.format(call.window)
+                    msg += ', shorter than k size {:d}'.format(case.ksize())
+                print('[kevlar::simlike]', msg, file=logstream)
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue

@@ -90,7 +90,7 @@ def simplex(case, casecounts, controlcounts, refrfile, ctrlmax=0, casemin=5,
     """
     discoverer = novel(
         case, [casecounts], controlcounts, ksize=ksize, casemin=casemin,
-        ctrlmax=ctrlmax, updateint=100000, logstream=logstream
+        ctrlmax=ctrlmax, logstream=logstream
     )
     filterer = kfilter(
         discoverer, mask=mask, casemin=casemin, ctrlmax=ctrlmax, ksize=ksize,

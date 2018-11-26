@@ -51,11 +51,18 @@ def autoindex(refrfile, logstream=sys.stderr):
         raise KevlarBWAError('Could not run "bwa index"') from err
 
 
-def bwa_align(cmdargs, seqstring):
+def bwa_align(cmdargs, seqstring=None, seqfilename=None):
+    if (not seqstring) is (not seqfilename):
+        raise Exception('supply sequence string or file, not both')
     with TemporaryFile() as samfile:
-        bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
-                        universal_newlines=True)
-        stdout, stderr = bwaproc.communicate(input=seqstring)
+        kmerseqs = dict()
+        if seqstring:
+            bwaproc = Popen(cmdargs, stdin=PIPE, stdout=samfile, stderr=PIPE,
+                            universal_newlines=True)
+            stdout, stderr = bwaproc.communicate(input=seqstring)
+        else:
+            bwaproc = Popen(cmdargs, stdout=samfile, stderr=PIPE)
+            stdout, stderr = bwaproc.communicate()
         if bwaproc.returncode != 0:
             print(stderr, file=sys.stderr)
             raise KevlarBWAError('problem running BWA')
@@ -65,7 +72,12 @@ def bwa_align(cmdargs, seqstring):
             if record.is_unmapped:
                 continue
             seqid = sam.get_reference_name(record.reference_id)
-            yield seqid, record.reference_start, record.reference_end
+            seq = record.seq
+            if seq:
+                kmerseqs[record.query_name] = seq
+            else:
+                seq = kmerseqs[record.query_name]
+            yield seqid, record.reference_start, record.reference_end, seq
 
 
 class ReferenceCutout(object):

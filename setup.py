@@ -40,11 +40,16 @@ dependencies = [
     'matplotlib>=2.2'
 ]
 
+desc = 'Reference-free variant discovery scalable to large eukaryotic genomes'
+with open('README.md', 'r') as infile:
+    longdesc = infile.read()
+
 setup(name='biokevlar',
       version=versioneer.get_version(),
       cmdclass=versioneer.get_cmdclass(),
-      description=('Reference-free variant discovery scalable to large '
-                   'eukaryotic genomes'),
+      description=desc,
+      long_description=longdesc,
+      long_description_content_type='text/markdown',
       url='https://github.com/dib-lab/kevlar',
       author='Daniel Standage',
       author_email='daniel.standage@gmail.com',

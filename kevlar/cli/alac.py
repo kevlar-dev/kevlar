@@ -24,10 +24,11 @@ def subparser(subparsers):
 
     asmbl_args = subparser.add_argument_group('Read assembly')
     asmbl_args.add_argument('-p', '--part-id', type=str, metavar='ID',
-                            help='only process partition "PID" in the input')
-    asmbl_args.add_argument('--bigpart', type=int, metavar='N', default=10000,
-                            help='do not attempt to assembly any partitions '
-                            'with more than N reads (default: 10000)')
+                            help='only process partition "ID" in the input')
+    asmbl_args.add_argument('--max-reads', type=int, metavar='N',
+                            default=10000, help='do not attempt to assemble '
+                            'any partitions with more than N reads (default: '
+                            '10000)')
 
     local_args = subparser.add_argument_group('Target extraction')
     local_args.add_argument('-z', '--seed-size', type=int, default=51,
@@ -37,16 +38,18 @@ def subparser(subparsers):
                             'reference by extending beyond the span of all '
                             'k-mer starting positions by D bp')
     local_args.add_argument('-x', '--max-diff', type=int, metavar='X',
-                            default=None, help='split seed matches into '
-                            'distinct bins if the distance between two seed '
-                            'matches is > X; by default, X is 3 times the '
-                            'length of the longest contig; each bin specifies '
-                            'a reference target sequence against which '
-                            'assembled contigs will be aligned')
-    local_args.add_argument('--include', metavar='REGEX', type=re.escape,
+                            default=None, help='split and report multiple '
+                            'reference targets if the distance between two '
+                            'seed matches is > X; by default, X is set '
+                            'dynamically for each partition and is equal to 3 '
+                            'times the length of the longest contig in the '
+                            'partition; each resulting bin specifies a '
+                            'reference target sequence to which assembled '
+                            'contigs will subsequently be aligned')
+    local_args.add_argument('--include', metavar='REGEX', type=str,
                             help='discard alignments to any chromosomes whose '
                             'sequence IDs do not match the given pattern')
-    local_args.add_argument('--exclude', metavar='REGEX', type=re.escape,
+    local_args.add_argument('--exclude', metavar='REGEX', type=str,
                             help='discard alignments to any chromosomes whose '
                             'sequence IDs match the given pattern')
 

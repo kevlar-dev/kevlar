@@ -8,7 +8,8 @@ Command line interface
 
 Once installed, the kevlar software can be invoked from the shell using the ``kevlar`` command.
 The kevlar command line interface (CLI) uses the *subcommand* pattern, in which a single master command supports several different operations by defining multiple subcommands (such as ``kevlar novel`` and ``kevlar partition``).
-Comprehensive documentation of the kevlar CLI is available :doc:`here <cli>`.
+Invoke ``kevlar -h`` or ``kevlar --help`` to see a list of all available subcommands, and invoke ``kevlar <subcommand> -h`` to see detailed instructions for that subcommand.
+Comprehensive documentation of the kevlar CLI is also available :doc:`here <cli>`.
 
 Starting with version 1.0, the CLI will be under `semantic versioning <http://semver.org/>`_.
 
@@ -23,21 +24,21 @@ The following example shows how a standalone script or notebook would invoke the
 
     fh = kevlar.open('novel-reads.augfastq.gz', 'r')
     readstream = kevlar.parse_augmented_fastx(fh)
-    numreads_per_partition = list()
-    for part in kevlar.partition.partition(readstream, maxabund=200):
-        numreads = len(part)
-        numreads_per_partition.append(numreads)
-        # do some other uber cool calculations
+    partitioner = kevlar.partition.partition(readstream, maxabund=200)
+    numreads_per_partition = [len(part) for partid, part in partitioner]
     plt.hist(numreads_per_partition, bins=25)
 
 It is also possible to mimic the behavior of the CLI with Python code.
-The following example shows how to execute ``kevlar reaugment`` from a standalone script or notebook.
+The following example shows how to execute ``kevlar partition`` from a standalone script or notebook.
 
 .. code:: python
 
-   arglist = ['reaugment', '--out', 'new.augfastq', 'old.augfastq', 'new.fastq']
-   args = kevlar.cli.parser().parse_args(arglist)
-   kevlar.reaugment.main(args)
+    arglist = [
+        'partition', '--out', 'partitioned-reads.augfastq.gz',
+        '--max-abund', '200', 'novel-reads.augfastq.gz'
+    ]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.partition.main(args)
 
 Other units of code in the kevlar package may also be useful for standalone Python programs.
 However, the Python API is not yet slated for semantic versioning and is not as stable or well documented as the CLI.

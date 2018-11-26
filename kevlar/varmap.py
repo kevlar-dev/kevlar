@@ -36,6 +36,7 @@ class VariantMapping(object):
         self.score = score
         self.strand = strand
         self.matedist = None
+        self.trimmed = 0
 
         self.tok = AlignmentTokenizer(self.varseq, self.refrseq, cigar)
         self.cigar = self.tok._cigar
@@ -218,9 +219,11 @@ class VariantMapping(object):
         """
         length = len(qseq)
         assert len(tseq) == length
+        if length < ksize:
+            return
         diffs = [i for i in range(length) if tseq[i] != qseq[i]]
         if mindist:
-            diffs = trim_terminal_snvs(diffs, length, mindist, logstream)
+            self.trimmed, diffs = trim_terminal_snvs(diffs, length, mindist)
         if len(diffs) == 0 or len(diffs) > 4:
             if donocall:
                 nocall = Variant(
@@ -295,10 +298,12 @@ def n_ikmers_present(record, window):
 
 def trim_terminal_snvs(mismatches, alnlength, mindist=5, logstream=sys.stderr):
     valid = list()
+    trimcount = 0
     for mm in mismatches:
         if mm < mindist or alnlength - mm < mindist:
-            msg = 'discarding SNV due to proximity to end of the contig'
-            print('[kevlar::call] NOTE:', msg, file=logstream)
+            trimcount += 1
+            # msg = 'discarding SNV due to proximity to end of the contig'
+            # print('[kevlar::call] NOTE:', msg, file=logstream)
         else:
             valid.append(mm)
-    return valid
+    return trimcount, valid
