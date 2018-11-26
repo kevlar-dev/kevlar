@@ -279,7 +279,7 @@ class VariantMapping(object):
         globalcoord = self.cutout.local_to_global(localcoord)
         indel = Variant(
             self.seqid, globalcoord - 1, refrallele, altallele,
-            CONTIG=self.refrseq, CIGAR=self.cigar, KSW2=str(self.score),
+            CONTIG=self.varseq, CIGAR=self.cigar, KSW2=str(self.score),
             IKMERS=str(nikmers), ALTWINDOW=altwindow, REFRWINDOW=refrwindow
         )
         yield indel
