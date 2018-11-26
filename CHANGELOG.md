@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
+
+
 ## [0.6.1] 2018-11-16
 
 ### Fixed

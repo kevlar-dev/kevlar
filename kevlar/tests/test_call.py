@@ -148,6 +148,7 @@ def test_funky_cigar_deletion():
     assert calls[0].position == 53644
     assert calls[0]._refr == 'ATGTCTGTTTTCTTAACCT'
     assert calls[0]._alt == 'A'
+    assert calls[0].attribute('CONTIG') == contigs[0].sequence
 
 
 def test_perfect_match():
