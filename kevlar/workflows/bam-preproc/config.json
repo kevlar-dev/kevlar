@@ -1,0 +1,7 @@
+{
+    "case": "/scratch/standage/12345/BAMs/12345.proband.bam",
+    "controls": [
+        "/scratch/standage/12345/BAMs/12345.mother.bam",
+        "/scratch/standage/12345/BAMs/12345.father.bam"
+    ]
+}

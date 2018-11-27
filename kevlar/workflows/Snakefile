@@ -1,0 +1,128 @@
+# -----------------------------------------------------------------------------
+# Copyright (c) 2018 The Regents of the University of California
+#
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
+# licensed under the MIT license: see LICENSE.
+# -----------------------------------------------------------------------------
+import os
+
+
+NUMCONTROLS = len(config['controls'])
+SAMPLES = ['case.interleaved'] + ['ctrl{}'.format(i) for i in range(NUMCONTROLS)]
+
+# -----------------------------------------------------------------------------
+# Primary target
+# -----------------------------------------------------------------------------
+
+rule reads:
+    input: expand('Reads/{prefix}.ec.reads.fq.gz', prefix=SAMPLES)
+    output: touch('preprocessing.complete')
+
+
+# -----------------------------------------------------------------------------
+# Create standardized named links to input BAM files for internal use.
+# -----------------------------------------------------------------------------
+
+rule link_bams:
+    input:
+        config['case'],
+        *config['controls'],
+    output:
+        'Alignments/case.bam',
+        expand('Alignments/ctrl{serial}.bam', serial=range(NUMCONTROLS)),
+    threads: 1
+    message: 'Create symlinks to input BAM files.'
+    run:
+        for inbam, outbam in zip(input, output):
+            os.symlink(os.path.abspath(inbam), outbam)
+
+
+# -----------------------------------------------------------------------------
+# Collate reads, convert to interleaved Fastq, and compress using pipes
+# instead of normal files to reduce I/O intensity.
+#
+# $ samtools collate <args> | samtools fastq <args> | bgzip <args> > seqs.fq.gz
+# -----------------------------------------------------------------------------
+
+rule collate_bam:
+    input: 'Alignments/case.bam'
+    output: pipe('Alignments/case.collate.bam')
+    threads: 24
+    message: 'Collate read pairs.'
+    shell: 'samtools collate -f -r 1000000 -n 128 -@ {threads} -o {output} {input}'
+
+rule bam_to_paired_fastq:
+    input: rules.collate_bam.output
+    output: pipe('Reads/case.interleaved.reads.fq')
+    threads: 24
+    message: 'Convert collated alignments to interleaved Fastq format.'
+    shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output}'
+
+rule compress_paired_fastq:
+    input: rules.bam_to_paired_fastq.output
+    output: 'Reads/case.interleaved.reads.fq.gz'
+    threads: 24
+    message: 'Compress interleaved reads.'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
+
+
+# -----------------------------------------------------------------------------
+# Convert reads to unpaired Fastq and compress.
+#
+# $ samtools fastq <args> | bgzip <args> > seqs.fq.gz
+# -----------------------------------------------------------------------------
+
+rule bam_to_fastq:
+    input: 'Alignments/ctrl{indiv}.bam'
+    output: pipe('Reads/ctrl{indiv}.reads.fq')
+    threads: 36
+    message: 'Convert read alignments to unpaired Fastq format.'
+    shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output}'
+
+rule compress_unpaired_fastq:
+    input: 'Reads/ctrl{indiv}.reads.fq'
+    output: 'Reads/ctrl{indiv}.reads.fq.gz'
+    wildcard_constraints: indiv='\d+'
+    threads: 36
+    message: 'Compress unpaired reads.'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
+
+
+# -----------------------------------------------------------------------------
+# Perform quality control on reads.
+# -----------------------------------------------------------------------------
+
+rule qc:
+    input: 'Reads/{prefix}.reads.fq.gz'
+    output: pipe('Reads/{prefix}.qc.reads.fq')
+    threads: 16
+    message: 'Perform quality control on reads.'
+    shell: 'fastp -i {input} --interleaved_in --stdout -p --thread {threads} -q 15 -u 40 -l 15 > {output}'
+
+rule compress_qc_reads:
+    input: 'Reads/{prefix}.qc.reads.fq'
+    output: 'Reads/{prefix}.qc.reads.fq.gz'
+    threads: 56
+    message: 'Compress quality controlled reads.'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
+
+
+# -----------------------------------------------------------------------------
+# Perform error correction on reads
+# -----------------------------------------------------------------------------
+
+rule trusted_kmers:
+    input: expand('Reads/{prefix}.qc.reads.fq.gz', prefix=SAMPLES)
+    output: 'lighter.trustedkmers'
+    threads: 72
+    message: 'Compute trusted k-mers across all samples for error correction.'
+    shell: 'lighter -K 27 3100000000 -r {input[0]} -r {input[1]} -r {input[2]} -saveTrustedKmers {output} -t {threads}'
+
+rule ec:
+    input:
+        'Reads/{prefix}.qc.reads.fq.gz',
+        'lighter.trustedkmers'
+    output: 'Reads/{prefix}.ec.reads.fq.gz'
+    threads: 72
+    message: 'Perform error correction sample by sample.'
+    shell: 'lighter -K 27 3100000000 -r {input[0]} -loadTrustedKmers {input[1]} -t {threads} && mv {wildcards.prefix}.qc.reads.cor.fq.gz {output}'

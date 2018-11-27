@@ -56,7 +56,10 @@ setup(name='biokevlar',
       license='MIT',
       packages=['kevlar', 'kevlar.cli', 'kevlar.tests'],
       package_data={
-          'kevlar': ['kevlar/tests/data/*', 'kevlar/tests/data/*/*']
+          'kevlar': [
+              'kevlar/tests/data/*', 'kevlar/tests/data/*/*',
+              'kevlar/workflows/bam-preproc/*'
+          ]
       },
       include_package_data=True,
       ext_modules=[ksw2, fermilite, sequencemod],
