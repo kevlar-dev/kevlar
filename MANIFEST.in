@@ -1,6 +1,7 @@
 include versioneer.py
 include kevlar/_version.py
 recursive-include kevlar/tests/data *
+recursive-include kevlar/workflows *
 recursive-include src *
 recursive-include inc *
 recursive-include third-party *
