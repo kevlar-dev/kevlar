@@ -5,7 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Unreleased
 
 ### Added
-- Included a Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
+- A new Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
+- A new Snakemake workflow for kevlar's standard processing procedure (see #306).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).

@@ -31,7 +31,11 @@
                 "label": "Father",
                 "max_fpr": 0.05
             }
-        ]
+        ],
+        "coverage": {
+            "mean": 30.0,
+            "stdev": 10.0
+        }
     },
     "mask": {
         "fastx": [

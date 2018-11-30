@@ -116,6 +116,14 @@ class SimplexDesign(object):
     def all_sample_counts(self):
         return [self.case_sample_counts] + self.control_sample_counts
 
+    @property
+    def sample_labels(self):
+        def getlabels():
+            yield self._config['samples']['case']['label']
+            for control in self._config['samples']['controls']:
+                yield control['label']
+        return list(getlabels())
+
 
 simplex = SimplexDesign(config)
 
@@ -175,6 +183,14 @@ rule create_mask:
     threads: 32
     message: 'Generate a mask of sequences to ignore while k-mer counting.'
     shell: 'kevlar count --ksize {config[ksize]} --counter-size 1 --memory {config[mask][memory]} --max-fpr {config[mask][max_fpr]} --threads {threads} {output} {input}'
+
+
+rule count_reference:
+    input: simplex.refr_files[0]
+    output: 'Reference/refr-counts.smallcounttable'
+    threads: 32
+    message: 'Count k-mers in the reference genome.'
+    shell: 'kevlar count --ksize {config[ksize]} --counter-size 4 --memory {config[reference][memory]} --max-fpr {config[reference][max_fpr]} --threads {threads} {output} {input}'
 
 
 rule count_all_samples:
@@ -248,13 +264,14 @@ rule partition:
 
 
 # -----------------------------------------------------------------------------
-# Assemble, localize, align, and make preliminary calls
+# Assemble, localize, align, make preliminary calls, and score/sort calls.
 # -----------------------------------------------------------------------------
 
 rule assemble:
     input: 'NovelReads/partitioned.augfastq.gz'
     output: 'contigs.augfasta.gz'
     threads: 1
+    message: 'Assemble reads into contigs partition by partition.'
     shell: 'kevlar assemble --out {output} {input}'
 
 
@@ -264,6 +281,7 @@ rule localize:
         simplex.refr_files
     output: 'reference.gdnas.fa.gz'
     threads: 1
+    message: 'Compute reference target sequences for each partition.'
     shell: 'kevlar localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include {config[localize][seqpattern]} --out {output} {input[0]} {input[1]}'
 
 
@@ -276,11 +294,33 @@ rule call:
         'calls.prelim.vcf.gz',
         'Sketches/spanning-kmers.nodetable'
     threads: 1
+    message: 'Align contigs to reference targets and make preliminary calls.'
     shell: 'kevlar call --gen-mask {output[1]} --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
 
 
-# -----------------------------------------------------------------------------
-# Score and sort variant calls
-# -----------------------------------------------------------------------------
+rule like_scores:
+    input:
+        'calls.prelim.vcf.gz',
+        'Reference/refr-counts.smallcounttable',
+        simplex.all_sample_counts
+    output: 'calls.scored.sorted.vcf.gz'
+    threads: 1
+    message: 'Filter calls, compute likelihood scores, and sort calls by score.'
+    run:
+        cmd = [
+            'kevlar', 'simlike', '--mu', config['samples']['coverage']['mean'],
+            '--sigma', config['samples']['coverage']['stdev'],
+            '--epsilon', '0.001', '--case-min', config['samples']['casemin'],
+            '--refr', 'Reference/refr-counts.smallcounttable',
+            '--sample-labels', *simplex.sample_labels, '--out', output[0],
+            '--controls', *simplex.control_sample_counts,
+            '--case', simplex.case_sample_counts, input[0]
+        ]
+        cmd = [str(arg) for arg in cmd]
+        cmd = ' '.join(cmd)
+        shell(cmd)
 
-# Coming soon!
+
+rule calls:
+    input: 'calls.scored.sorted.vcf.gz'
+    output: touch('complete')
