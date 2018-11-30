@@ -1,0 +1,286 @@
+# -----------------------------------------------------------------------------
+# Copyright (c) 2018 The Regents of the University of California
+#
+# This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
+# licensed under the MIT license: see LICENSE.
+# -----------------------------------------------------------------------------
+import os
+
+
+# -----------------------------------------------------------------------------
+# Ancillary code for parsing the sample configuration and organizing files in
+# the working directory.
+# -----------------------------------------------------------------------------
+
+def unpack(list_of_lists):
+    """Flatten a list of lists into a single list."""
+    return [item for sublist in list_of_lists for item in sublist]
+
+
+class SimplexDesign(object):
+    """Class for managing files related to samples from a simplex case.
+
+    A simplex case is an isolated manifestation of a condition in a family. The
+    sample of interest is designated the "case" sample (sometimes referred to
+    as the "proband" or "focal sample"), and all other samples (parents,
+    siblings) are control samples.
+
+    This class manages files associated with each sample. It creates symlinks
+    to input files and creates standardized filenames to facilitate processing
+    in a designated working directory. The workflow enforces the following
+    constraints.
+
+        - There is a single case sample.
+        - There are 1 or more control samples.
+        - There are 1 or more Fasta/Fastq files associated with each sample.
+    """
+    def __init__(self, config):
+        self._config = config
+        self.case_seqfiles = config['samples']['case']['fastx']
+        self.control_seqfiles = unpack(
+            [cfg['fastx'] for cfg in config['samples']['controls']]
+        )
+        self.case_seqfiles_internal = list(
+            self.internal_filenames(self.case_seqfiles, sampleclass='case')
+        )
+        self.control_seqfiles_internal = list()
+        self.control_seqfiles_internal_flat = list()
+        for n, cfg in enumerate(config['samples']['controls']):
+            seqlist = list(
+                self.internal_filenames(
+                    cfg['fastx'], sampleclass='ctrl', index=n
+                )
+            )
+            self.control_seqfiles_internal.append(seqlist)
+            self.control_seqfiles_internal_flat.extend(seqlist)
+
+    @property
+    def numcontrols(self):
+        return len(self._config['samples']['controls'])
+
+    def internal_filenames(self, filelist, sampleclass='case', index=0):
+        """Designate a standardized filename for each input for internal use.
+
+        If the input filename extension is recognized, it is retained.
+        Otherwise, the internal file has no extension.
+        """
+        extensions = ['fastq', 'fq', 'fasta' 'fa', 'fna', 'gz']
+        gzextensions = [ext + '.gz' for ext in extensions]
+        theclass = sampleclass
+        if sampleclass != 'case':
+            assert sampleclass == 'ctrl'
+            theclass += str(index)
+        for n, filename in enumerate(filelist):
+            for ext in gzextensions + extensions:
+                if filename.endswith(ext):
+                    newfilename = 'Reads/{cls}.inseq.{n}.{ext}'.format(
+                        cls=theclass, n=n, ext=ext
+                    )
+                    yield newfilename
+                    break
+            else:
+                newfilename = 'Reads/{cls}.inseq.{n}'.format(cls=theclass, n=n)
+                yield newfilename
+
+    @property
+    def refr_files(self):
+        def genfiles():
+            name = os.path.basename(self._config['reference']['fasta'])
+            yield os.path.join('Reference', name)
+            for ext in ['amb', 'ann', 'bwt', 'pac', 'sa']:
+                yield os.path.join('Reference', name + '.' + ext)
+        return list(genfiles())
+
+    @property
+    def mask_file(self):
+        return 'Mask/mask.nodetable'
+
+    @property
+    def mask_input_files(self):
+        def genfiles():
+            for infile in self._config['mask']['fastx']:
+                name = os.path.basename(infile)
+                yield os.path.join('Mask', name)
+        return list(genfiles())
+
+    @property
+    def case_sample_counts(self):
+        return 'Sketches/case-counts.counttable'
+
+    @property
+    def control_sample_counts(self):
+        pattern = 'Sketches/ctrl{i}-counts.counttable'
+        return [pattern.format(i=i) for i in range(self.numcontrols)]
+
+    @property
+    def all_sample_counts(self):
+        return [self.case_sample_counts] + self.control_sample_counts
+
+
+simplex = SimplexDesign(config)
+
+
+# -----------------------------------------------------------------------------
+# Create standardized named links to input Fasta/Fastq files for internal use.
+# -----------------------------------------------------------------------------
+
+rule link_input_seqs:
+    input:
+        simplex.case_seqfiles,
+        simplex.control_seqfiles,
+    output:
+        simplex.case_seqfiles_internal,
+        simplex.control_seqfiles_internal_flat,
+    threads: 1
+    message: 'Create internal links for sample sequence data.'
+    run:
+        for oldseq, newseq in zip(input, output):
+            os.symlink(os.path.abspath(oldseq), newseq)
+
+
+rule link_reference:
+    input: config['reference']['fasta']
+    output: simplex.refr_files
+    threads: 1
+    message: 'Create internal links for reference genome, and index if needed.'
+    run:
+        os.symlink(os.path.abspath(input[0]), output[0])
+        extensions = ['amb', 'ann', 'bwt', 'pac', 'sa']
+        for ext, outfile in zip(extensions, output[1:]):
+            testinfile = os.path.abspath(input[0]) + '.' + ext
+            if os.path.isfile(testinfile):
+                os.symlink(testinfile, outfile)
+            else:
+                shell('bwa index {output[0]}')
+                break
+
+
+rule link_mask:
+    input: config['mask']['fastx']
+    output: simplex.mask_input_files
+    threads: 1
+    message: 'Create internal links for mask sequence data.'
+    run:
+        for infile, outfile in zip(input, output):
+            os.symlink(os.path.abspath(infile), outfile)
+
+
+# -----------------------------------------------------------------------------
+# Create sketches for the reference, mask, and each sample.
+# -----------------------------------------------------------------------------
+
+rule create_mask:
+    input: simplex.mask_input_files
+    output: simplex.mask_file
+    threads: 32
+    message: 'Generate a mask of sequences to ignore while k-mer counting.'
+    shell: 'kevlar count --ksize {config[ksize]} --counter-size 1 --memory {config[mask][memory]} --max-fpr {config[mask][max_fpr]} --threads {threads} {output} {input}'
+
+
+rule count_all_samples:
+    input: simplex.all_sample_counts
+    output: touch('Sketches/counting.complete')
+
+
+rule count_case:
+    input:
+        simplex.mask_file,
+        simplex.case_seqfiles_internal
+    output: simplex.case_sample_counts
+    threads: 32
+    message: 'Count k-mers in the case sample'
+    shell: 'kevlar count --ksize {config[ksize]} --memory {config[samples][case][memory]} --max-fpr {config[samples][case][max_fpr]} --threads {threads} {output} --mask {input}'
+
+
+rule count_control:
+    input: lambda wildcards: [simplex.mask_file] + simplex.control_seqfiles_internal[int(wildcards.index)]
+    output: 'Sketches/ctrl{index}-counts.counttable'
+    threads: 32
+    message: 'Count k-mers in a control sample'
+    run:
+        mem = config['samples']['controls'][int(wildcards.index)]['memory']
+        fpr = config['samples']['controls'][int(wildcards.index)]['max_fpr']
+        seqfiles = ' '.join(input[1:])
+        cmd = 'kevlar count --ksize {{config[ksize]}} --memory {mem} --max-fpr {fpr} --mask {{input[0]}} --threads {{threads}} {{output}} {seqs}'.format(mem=mem, fpr=fpr, seqs=seqfiles)
+        shell(cmd)
+
+
+# -----------------------------------------------------------------------------
+# Find, filter, and organize reads containing novel k-mers.
+# -----------------------------------------------------------------------------
+
+rule novel:
+    input:
+        simplex.all_sample_counts,
+        simplex.case_seqfiles_internal
+    output: 'NovelReads/novel.augfastq.gz'
+    threads: 1
+    message: 'Find reads containing k-mers that are abundant in the proband and low/zero abundance in each control.'
+    run:
+        caseconfig = '--case ' + ' '.join(simplex.case_seqfiles_internal)
+        caseconfig += ' --case-counts Sketches/case-counts.counttable'
+        caseconfig += ' --case-min ' + str(config['samples']['casemin'])
+        ctrlconfig = ' --control-counts ' + ' '.join(simplex.control_sample_counts)
+        ctrlconfig += ' --ctrl-max ' + str(config['samples']['ctrlmax'])
+        cmd = [
+            'kevlar', 'novel', caseconfig, ctrlconfig,
+            '--ksize', str(config['ksize']), '--threads', str(threads),
+            '--max-fpr', str(config['samples']['case']['max_fpr']),
+            '--out', output[0]
+        ]
+        shell(' '.join(cmd))
+
+
+rule filter_novel:
+    input: 'NovelReads/novel.augfastq.gz'
+    output: 'NovelReads/filtered.augfastq.gz'
+    threads: 1
+    message: 'Filter out k-mers that '
+    shell: 'kevlar filter --mask Mask/mask.nodetable --mask-max-fpr {config[mask][max_fpr]} --abund-memory {config[recountmem]} --case-min {config[samples][casemin]} --ctrl-max {config[samples][ctrlmax]} --ksize {config[ksize]} --out {output} {input}'
+
+
+rule partition:
+    input: 'NovelReads/filtered.augfastq.gz'
+    output: 'NovelReads/partitioned.augfastq.gz'
+    threads: 1
+    message: 'Partition reads by shared novel k-mers.'
+    shell: 'kevlar partition --min-abund {config[samples][casemin]} --out {output} {input}'
+
+
+# -----------------------------------------------------------------------------
+# Assemble, localize, align, and make preliminary calls
+# -----------------------------------------------------------------------------
+
+rule assemble:
+    input: 'NovelReads/partitioned.augfastq.gz'
+    output: 'contigs.augfasta.gz'
+    threads: 1
+    shell: 'kevlar assemble --out {output} {input}'
+
+
+rule localize:
+    input:
+        'contigs.augfasta.gz',
+        simplex.refr_files
+    output: 'reference.gdnas.fa.gz'
+    threads: 1
+    shell: 'kevlar localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include {config[localize][seqpattern]} --out {output} {input[0]} {input[1]}'
+
+
+rule call:
+    input:
+        'contigs.augfasta.gz',
+        'reference.gdnas.fa.gz',
+        simplex.refr_files[0]
+    output:
+        'calls.prelim.vcf.gz',
+        'Sketches/spanning-kmers.nodetable'
+    threads: 1
+    shell: 'kevlar call --gen-mask {output[1]} --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
+
+
+# -----------------------------------------------------------------------------
+# Score and sort variant calls
+# -----------------------------------------------------------------------------
+
+# Coming soon!

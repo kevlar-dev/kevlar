@@ -1,0 +1,54 @@
+{
+    "ksize": 31,
+    "recountmem": "1G",
+    "samples": {
+        "casemin": 6,
+        "ctrlmax": 1,
+        "case": {
+            "fastx": [
+                "/scratch/standage/demo-data/proband-reads-interleaved.fastq.gz"
+            ],
+            "memory": "4G",
+            "label": "Proband",
+            "max_fpr": 0.3
+        },
+        "controls": [
+            {
+                "fastx": [
+                    "/scratch/standage/demo-data/mother-reads-R1.fasta",
+                    "/scratch/standage/demo-data/mother-reads-R2.fasta"
+                ],
+                "memory": "8G",
+                "label": "Mother",
+                "max_fpr": 0.05
+            },
+            {
+                "fastx": [
+                    "/scratch/standage/demo-data/father-reads-R1.fasta",
+                    "/scratch/standage/demo-data/father-reads-R2.fasta"
+                ],
+                "memory": "8G",
+                "label": "Father",
+                "max_fpr": 0.05
+            }
+        ]
+    },
+    "mask": {
+        "fastx": [
+            "/data/refr/human_g1k_v37.fasta",
+            "/data/ncbi/UniVec.fa"
+        ],
+        "memory": "6G",
+        "max_fpr": 0.005
+    },
+    "reference": {
+        "fasta": "/data/refr/human_g1k_v37.fasta",
+        "memory": "12G",
+        "max_fpr": 0.025
+    },
+    "localize": {
+        "seedsize": 51,
+        "delta": 50,
+        "seqpattern": "."
+    }
+}
