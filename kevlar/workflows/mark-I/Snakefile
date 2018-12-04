@@ -179,18 +179,22 @@ rule link_mask:
 
 rule create_mask:
     input: simplex.mask_input_files
-    output: simplex.mask_file
+    output:
+        simplex.mask_file,
+        'Logs/mask.log'
     threads: 32
     message: 'Generate a mask of sequences to ignore while k-mer counting.'
-    shell: 'kevlar count --ksize {config[ksize]} --counter-size 1 --memory {config[mask][memory]} --max-fpr {config[mask][max_fpr]} --threads {threads} {output} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} count --ksize {config[ksize]} --counter-size 1 --memory {config[mask][memory]} --max-fpr {config[mask][max_fpr]} --threads {threads} {output[0]} {input}'
 
 
 rule count_reference:
     input: simplex.refr_files[0]
-    output: 'Reference/refr-counts.smallcounttable'
+    output:
+        'Reference/refr-counts.smallcounttable',
+        'Logs/refrcount.log'
     threads: 32
     message: 'Count k-mers in the reference genome.'
-    shell: 'kevlar count --ksize {config[ksize]} --counter-size 4 --memory {config[reference][memory]} --max-fpr {config[reference][max_fpr]} --threads {threads} {output} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} count --ksize {config[ksize]} --counter-size 4 --memory {config[reference][memory]} --max-fpr {config[reference][max_fpr]} --threads {threads} {output[0]} {input}'
 
 
 rule count_all_samples:
@@ -202,22 +206,26 @@ rule count_case:
     input:
         simplex.mask_file,
         simplex.case_seqfiles_internal
-    output: simplex.case_sample_counts
+    output:
+        simplex.case_sample_counts,
+        'Logs/casecount.log'
     threads: 32
     message: 'Count k-mers in the case sample'
-    shell: 'kevlar count --ksize {config[ksize]} --memory {config[samples][case][memory]} --max-fpr {config[samples][case][max_fpr]} --threads {threads} {output} --mask {input}'
+    shell: 'kevlar --tee --logfile {output[1]} count --ksize {config[ksize]} --memory {config[samples][case][memory]} --max-fpr {config[samples][case][max_fpr]} --threads {threads} {output[0]} --mask {input}'
 
 
 rule count_control:
     input: lambda wildcards: [simplex.mask_file] + simplex.control_seqfiles_internal[int(wildcards.index)]
-    output: 'Sketches/ctrl{index}-counts.counttable'
+    output:
+        'Sketches/ctrl{index}-counts.counttable',
+        'Logs/ctrl{index}count.log'
     threads: 32
     message: 'Count k-mers in a control sample'
     run:
         mem = config['samples']['controls'][int(wildcards.index)]['memory']
         fpr = config['samples']['controls'][int(wildcards.index)]['max_fpr']
         seqfiles = ' '.join(input[1:])
-        cmd = 'kevlar count --ksize {{config[ksize]}} --memory {mem} --max-fpr {fpr} --mask {{input[0]}} --threads {{threads}} {{output}} {seqs}'.format(mem=mem, fpr=fpr, seqs=seqfiles)
+        cmd = 'kevlar --tee --logfile {{output[1]}} count --ksize {{config[ksize]}} --memory {mem} --max-fpr {fpr} --mask {{input[0]}} --threads {{threads}} {{output[0]}} {seqs}'.format(mem=mem, fpr=fpr, seqs=seqfiles)
         shell(cmd)
 
 
@@ -229,7 +237,9 @@ rule novel:
     input:
         simplex.all_sample_counts,
         simplex.case_seqfiles_internal
-    output: 'NovelReads/novel.augfastq.gz'
+    output:
+        'NovelReads/novel.augfastq.gz',
+        'Logs/novel.log'
     threads: 1
     message: 'Find reads containing k-mers that are abundant in the proband and low/zero abundance in each control.'
     run:
@@ -239,7 +249,8 @@ rule novel:
         ctrlconfig = ' --control-counts ' + ' '.join(simplex.control_sample_counts)
         ctrlconfig += ' --ctrl-max ' + str(config['samples']['ctrlmax'])
         cmd = [
-            'kevlar', 'novel', caseconfig, ctrlconfig,
+            'kevlar', '--tee', '--logfile', output[1], 'novel',
+            caseconfig, ctrlconfig,
             '--ksize', str(config['ksize']), '--threads', str(threads),
             '--max-fpr', str(config['samples']['case']['max_fpr']),
             '--out', output[0]
@@ -249,18 +260,22 @@ rule novel:
 
 rule filter_novel:
     input: 'NovelReads/novel.augfastq.gz'
-    output: 'NovelReads/filtered.augfastq.gz'
+    output:
+        'NovelReads/filtered.augfastq.gz',
+        'Logs/filter.log'
     threads: 1
     message: 'Filter out k-mers that '
-    shell: 'kevlar filter --mask Mask/mask.nodetable --mask-max-fpr {config[mask][max_fpr]} --abund-memory {config[recountmem]} --case-min {config[samples][casemin]} --ctrl-max {config[samples][ctrlmax]} --ksize {config[ksize]} --out {output} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} filter --mask Mask/mask.nodetable --mask-max-fpr {config[mask][max_fpr]} --abund-memory {config[recountmem]} --case-min {config[samples][casemin]} --ctrl-max {config[samples][ctrlmax]} --ksize {config[ksize]} --out {output[0]} {input}'
 
 
 rule partition:
     input: 'NovelReads/filtered.augfastq.gz'
-    output: 'NovelReads/partitioned.augfastq.gz'
+    output:
+        'NovelReads/partitioned.augfastq.gz',
+        'Logs/partition.log'
     threads: 1
     message: 'Partition reads by shared novel k-mers.'
-    shell: 'kevlar partition --min-abund {config[samples][casemin]} --out {output} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} partition --min-abund {config[samples][casemin]} --out {output[0]} {input}'
 
 
 # -----------------------------------------------------------------------------
@@ -269,20 +284,24 @@ rule partition:
 
 rule assemble:
     input: 'NovelReads/partitioned.augfastq.gz'
-    output: 'contigs.augfasta.gz'
+    output:
+        'contigs.augfasta.gz',
+        'Logs/assemble.log'
     threads: 1
     message: 'Assemble reads into contigs partition by partition.'
-    shell: 'kevlar assemble --out {output} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} assemble --out {output[0]} {input}'
 
 
 rule localize:
     input:
         'contigs.augfasta.gz',
         simplex.refr_files
-    output: 'reference.gdnas.fa.gz'
+    output:
+        'reference.gdnas.fa.gz',
+        'Logs/localize.log'
     threads: 1
     message: 'Compute reference target sequences for each partition.'
-    shell: 'kevlar localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include {config[localize][seqpattern]} --out {output} {input[0]} {input[1]}'
+    shell: 'kevlar --tee --logfile {output[1]} localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include {config[localize][seqpattern]} --out {output[0]} {input[0]} {input[1]}'
 
 
 rule call:
@@ -292,10 +311,11 @@ rule call:
         simplex.refr_files[0]
     output:
         'calls.prelim.vcf.gz',
-        'Sketches/spanning-kmers.nodetable'
+        'Sketches/spanning-kmers.nodetable',
+        'Logs/call.log'
     threads: 1
     message: 'Align contigs to reference targets and make preliminary calls.'
-    shell: 'kevlar call --gen-mask {output[1]} --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
+    shell: 'kevlar --tee --logfile {output[2]} call --gen-mask {output[1]} --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
 
 
 rule like_scores:
@@ -303,12 +323,15 @@ rule like_scores:
         'calls.prelim.vcf.gz',
         'Reference/refr-counts.smallcounttable',
         simplex.all_sample_counts
-    output: 'calls.scored.sorted.vcf.gz'
+    output:
+        'calls.scored.sorted.vcf.gz',
+        'Logs/simlike.log'
     threads: 1
     message: 'Filter calls, compute likelihood scores, and sort calls by score.'
     run:
         cmd = [
-            'kevlar', 'simlike', '--mu', config['samples']['coverage']['mean'],
+            'kevlar', '--tee', '--logfile', output[1], 'simlike',
+            '--mu', config['samples']['coverage']['mean'],
             '--sigma', config['samples']['coverage']['stdev'],
             '--epsilon', '0.001', '--case-min', config['samples']['casemin'],
             '--refr', 'Reference/refr-counts.smallcounttable',

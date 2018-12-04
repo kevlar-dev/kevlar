@@ -8,8 +8,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - A new Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
 - A new Snakemake workflow for kevlar's standard processing procedure (see #306).
 
+### Changed
+- Added a new flag to print to the terminal (stderr) and a logfile simultanously (see #308).
+
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
+
+### Removed
+- The `effcount` an `dump` modules have been disabled (see #308).
 
 
 ## [0.6.1] 2018-11-16
