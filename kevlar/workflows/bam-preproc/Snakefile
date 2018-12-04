@@ -60,10 +60,12 @@ rule bam_to_paired_fastq:
 
 rule compress_paired_fastq:
     input: rules.bam_to_paired_fastq.output
-    output: 'Reads/case.interleaved.reads.fq.gz'
+    output:
+        'Reads/case.interleaved.reads.fq.gz',
+        'Logs/case-fastq.log'
     threads: 24
     message: 'Compress interleaved reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output}'
+    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
 
 
 # -----------------------------------------------------------------------------
@@ -81,11 +83,13 @@ rule bam_to_fastq:
 
 rule compress_unpaired_fastq:
     input: 'Reads/ctrl{indiv}.reads.fq'
-    output: 'Reads/ctrl{indiv}.reads.fq.gz'
+    output:
+        'Reads/ctrl{indiv}.reads.fq.gz',
+        'Logs/ctrl{indiv}-fastq.log'
     wildcard_constraints: indiv='\d+'
     threads: 36
     message: 'Compress unpaired reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output}'
+    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
 
 
 # -----------------------------------------------------------------------------
@@ -101,10 +105,12 @@ rule qc:
 
 rule compress_qc_reads:
     input: 'Reads/{prefix}.qc.reads.fq'
-    output: 'Reads/{prefix}.qc.reads.fq.gz'
+    output:
+        'Reads/{prefix}.qc.reads.fq.gz',
+        'Logs/{prefix}-qc.log'
     threads: 56
     message: 'Compress quality controlled reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output}'
+    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
 
 
 # -----------------------------------------------------------------------------
@@ -113,16 +119,20 @@ rule compress_qc_reads:
 
 rule trusted_kmers:
     input: expand('Reads/{prefix}.qc.reads.fq.gz', prefix=SAMPLES)
-    output: 'lighter.trustedkmers'
+    output:
+        'lighter.trustedkmers',
+        'Logs/trustedkmers.log'
     threads: 72
     message: 'Compute trusted k-mers across all samples for error correction.'
-    shell: 'lighter -K 27 3100000000 -r {input[0]} -r {input[1]} -r {input[2]} -saveTrustedKmers {output} -t {threads}'
+    shell: 'lighter -K 27 3100000000 -r {input[0]} -r {input[1]} -r {input[2]} -saveTrustedKmers {output[0]} -t {threads} 2>&1 | tee {output[1]}'
 
 rule ec:
     input:
         'Reads/{prefix}.qc.reads.fq.gz',
         'lighter.trustedkmers'
-    output: 'Reads/{prefix}.ec.reads.fq.gz'
+    output:
+        'Reads/{prefix}.ec.reads.fq.gz',
+        'Logs/{prefix}-ec.log'
     threads: 72
     message: 'Perform error correction sample by sample.'
-    shell: 'lighter -K 27 3100000000 -r {input[0]} -loadTrustedKmers {input[1]} -t {threads} && mv {wildcards.prefix}.qc.reads.cor.fq.gz {output}'
+    shell: 'lighter -K 27 3100000000 -r {input[0]} -loadTrustedKmers {input[1]} -t {threads} 2>&1 | tee {output[1]} && mv {wildcards.prefix}.qc.reads.cor.fq.gz {output[0]}'
