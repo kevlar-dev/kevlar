@@ -161,7 +161,7 @@ def main(args):
     mask = None
     if args.gen_mask:
         message = 'generating mask of variant-spanning k-mers'
-        print('[kevlar::call]', message, file=args.logfile)
+        kevlar.plog('[kevlar::call]', message)
         ntables = 4
         buckets = args.mask_mem * _buckets_per_byte['nodegraph'] / ntables
         mask = khmer.Nodetable(args.ksize, buckets, ntables)
@@ -189,5 +189,5 @@ def main(args):
             message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
             message += '; exceeds user-specified limit'
             message += ' of {:.4f}'.format(args.mask_max_fpr)
-            print('[kevlar::call]', message, file=args.logfile)
+            kevlar.plog('[kevlar::call]', message)
         mask.save(args.gen_mask)
