@@ -80,7 +80,9 @@ def test_partition_nodedup(capsys):
     arglist = ['partition', '--no-dedup', '--split', tempdir + '/nodedup',
                infile]
     args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.logstream, logstream = sys.stderr, kevlar.logstream
     kevlar.partition.main(args)
+    kevlar.logstream = logstream
     out, err = capsys.readouterr()
     assert 'grouped 18 reads into 1 connected components' in err
 

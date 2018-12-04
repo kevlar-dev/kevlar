@@ -41,14 +41,12 @@ from kevlar.timer import Timer
 from kevlar.progress import ProgressIndicator
 
 # Subcommands and command-line interface
-from kevlar import dump
 from kevlar import novel
 from kevlar import filter
 from kevlar import augment
 from kevlar import mutate
 from kevlar import assemble
 from kevlar import count
-from kevlar import effcount
 from kevlar import partition
 from kevlar import localize
 from kevlar import call
@@ -68,6 +66,18 @@ import kevlar.sequence
 from kevlar._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
+
+
+logstream = None
+teelog = False
+
+
+def plog(*args, **kwargs):
+    """Print logging output."""
+    if logstream is not None:
+        print(*args, **kwargs, file=logstream)
+    if logstream is None or teelog:
+        print(*args, **kwargs, file=sys.stderr)
 
 
 def open(filename, mode):

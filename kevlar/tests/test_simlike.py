@@ -18,7 +18,7 @@ from kevlar.simlike import likelihood_inherited
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def minitrio():
     kid = khmer.Counttable(31, 1e6, 4)
     mom = khmer.Counttable(31, 1e6, 4)
@@ -31,7 +31,7 @@ def minitrio():
     return kid, mom, dad, ref
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def miniabund(minitrio):
     kid, mom, dad, ref = minitrio
     altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'

@@ -9,14 +9,12 @@
 
 from collections import defaultdict
 from itertools import combinations, product
-from networkx import Graph, connected_components
-from sys import stdout, stderr, exit
-import re
-import khmer
-import screed
 import kevlar
 from kevlar.sequence import Record, KmerOfInterest
 from kevlar.sequence import write_record, parse_augmented_fastx
+from khmer import Counttable
+from networkx import Graph, connected_components
+from re import search
 
 
 class KevlarPartitionLabelError(ValueError):
@@ -61,7 +59,7 @@ def afxstream(filelist):
 
 
 def partition_id(readname):
-    partmatch = re.search(r'kvcc=(\d+)', readname)
+    partmatch = search(r'kvcc=(\d+)', readname)
     if not partmatch:
         return None
     return partmatch.group(1)
@@ -126,7 +124,7 @@ class AnnotatedReadSet(object):
 
     def __init__(self, ksize, abundmem, mask=None):
         self._reads = dict()
-        self._counts = khmer.Counttable(ksize, abundmem / 4, 4)
+        self._counts = Counttable(ksize, abundmem / 4, 4)
         self._mask = mask
         self._readcounts = defaultdict(int)
         self._ikmercounts = defaultdict(int)

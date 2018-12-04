@@ -9,10 +9,9 @@
 
 import kevlar
 import re
-import sys
 
 
-def assemble_fml_asm(partition, logstream=sys.stderr):
+def assemble_fml_asm(partition):
     reads = list(partition)
     assembler = kevlar.assembly.fml_asm(reads)
     for n, contig in enumerate(assembler, 1):
@@ -21,13 +20,12 @@ def assemble_fml_asm(partition, logstream=sys.stderr):
         yield next(kevlar.augment.augment(reads, [record]))
 
 
-def assemble(partstream, maxreads=10000, logstream=sys.stderr):
+def assemble(partstream, maxreads=10000):
     n = 0
     pn = 0
     progress_indicator = kevlar.ProgressIndicator(
         '[kevlar::assemble] skipping partition with {counter} reads',
         interval=10, breaks=[100, 1000, 10000], usetimer=True,
-        logstream=logstream,
     )
     for partid, partition in partstream:
         pn += 1
@@ -35,9 +33,9 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
         numreads = len(partition)
         if numreads > maxreads:  # pragma: no cover
             message = 'skipping partition with {:d} reads'.format(numreads)
-            print('[kevlar::assemble] WARNING:', message, file=logstream)
+            kevlar.plog('[kevlar::assemble] WARNING:', message)
             continue
-        for contig in assemble_fml_asm(partition, logstream=logstream):
+        for contig in assemble_fml_asm(partition):
             n += 1
             newname = 'contig{}'.format(n)
             if partid is not None:
@@ -46,7 +44,7 @@ def assemble(partstream, maxreads=10000, logstream=sys.stderr):
             yield partid, contig
     message = 'processed {} partitions'.format(pn)
     message += ' and assembled {} contigs'.format(n)
-    print('[kevlar::assemble]', message, file=logstream)
+    kevlar.plog('[kevlar::assemble]', message)
 
 
 def main(args):
@@ -56,7 +54,6 @@ def main(args):
     else:
         pstream = kevlar.parse_partitioned_reads(readstream)
     outstream = kevlar.open(args.out, 'w')
-    assembler = assemble(pstream, maxreads=args.max_reads,
-                         logstream=args.logfile)
+    assembler = assemble(pstream, maxreads=args.max_reads)
     for partid, contig in assembler:
         kevlar.print_augmented_fastx(contig, outstream)

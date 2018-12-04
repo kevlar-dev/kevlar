@@ -99,53 +99,6 @@ def test_count_problematic():
         kevlar.count.main(args)
 
 
-def test_effcount_smoketest():
-    with NamedTemporaryFile(suffix='.ct') as o1, \
-            NamedTemporaryFile(suffix='.ct') as o2, \
-            NamedTemporaryFile(suffix='.ct') as o3:
-
-        arglist = [
-            'effcount', '--sample', data_file('trio1/ctrl1.fq'),
-            '--sample', data_file('trio1/ctrl2.fq'),
-            '--sample', data_file('trio1/case2.fq'),
-            '--ksize', '21', '--memory', '200K', '--memfrac', '0.005',
-            '--max-fpr', '0.1', '--max-abund', '0', '--threads', '2',
-            o1.name, o2.name, o3.name
-        ]
-        args = kevlar.cli.parser().parse_args(arglist)
-        kevlar.effcount.main(args)
-
-
-def test_effcount_problematic():
-    arglist = [
-        'effcount', '--sample', data_file('trio1/ctrl1.fq'), '--ksize', '21',
-        '--memory', '200K', 'bogusoutput'
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(AssertionError):
-        kevlar.effcount.main(args)
-
-    arglist = [
-        'effcount', '--sample', data_file('trio1/ctrl1.fq'),
-        '--sample', data_file('trio1/ctrl2.fq'), '--ksize', '21',
-        '--memory', '200K', 'bogusoutput'
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(ValueError) as ve:
-        kevlar.effcount.main(args)
-    assert 'number of outfiles must match number of declared' in str(ve)
-
-    arglist = [
-        'effcount', '--sample', data_file('trio1/ctrl1.fq'),
-        '--sample', data_file('trio1/ctrl2.fq'), '--ksize', '21',
-        '--memory', '200K', '--band', '2', 'bogusoutput1', 'bogusoutput2'
-    ]
-    args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(ValueError) as ve:
-        kevlar.effcount.main(args)
-    assert 'Must specify --num-bands and --band together' in str(ve)
-
-
 @pytest.mark.parametrize('count,smallcount,extension,shortext', [
     (True, True, '.smallcounttable', '.sct'),
     (True, False, '.counttable', '.ct'),

@@ -18,7 +18,7 @@ from kevlar.sketch import allocate, get_extension
 def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
                         smallcount=False, mask=None, maskmaxabund=0,
                         consume_masked=False, numbands=None, band=None,
-                        outfile=None, numthreads=1, logfile=sys.stderr):
+                        outfile=None, numthreads=1):
     """Compute k-mer abundances for the specified sequence input.
 
     Expected input is a list of one or more FASTA/FASTQ files corresponding
@@ -35,7 +35,8 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
                       smallcount=smallcount)
     numreads = 0
     for seqfile in seqfiles:
-        print('[kevlar::count]      loading from', seqfile, file=logfile)
+        message = '- processing "{}"'.format(seqfile)
+        kevlar.plog('[kevlar::count]', message)
         parser = khmer.ReadParser(seqfile)
         threads = list()
         for _ in range(numthreads):
@@ -75,7 +76,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
             thread.join()
         numreads += parser.num_reads
 
-    message = 'done loading reads'
+    message = 'Done loading k-mers'
     if numbands:
         message += ' (band {:d}/{:d})'.format(band+1, numbands)
     fpr = kevlar.sketch.estimate_fpr(sketch)
@@ -84,7 +85,7 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
     message += ';\n    estimated false positive rate is {:1.3f}'.format(fpr)
     if fpr > maxfpr:
         message += ' (FPR too high, bailing out!!!)'
-        message = '[kevlar::count]     ' + message
+        message = '[kevlar::count] ' + message
         raise kevlar.sketch.KevlarUnsuitableFPRError(message)
 
     if outfile:
@@ -93,9 +94,26 @@ def load_sample_seqfile(seqfiles, ksize, memory, maxfpr=0.2, count=True,
             outfile += extensions[1]
         sketch.save(outfile)
         message += ';\n    saved to "{:s}"'.format(outfile)
-    print('[kevlar::count]    ', message, file=logfile)
+    kevlar.plog('[kevlar::count]', message)
 
     return sketch
+
+
+def print_config(args):
+    tabletypes = {1: 'node', 4: 'small count', 8: 'count'}
+    maxcounts = {1: 1, 4: 15, 8: 255}
+    tabletype = tabletypes[args.counter_size]
+    message = 'Storing k-mers in a {} table'.format(tabletype)
+    if args.counter_size == 1:
+        message += ' (Bloom filter)'
+        message += ' for k-mer presence/absence queries'
+    else:
+        message += ', a CountMin sketch'
+        maxcount = maxcounts[args.counter_size]
+        message += ' with a counter size of {} bits'.format(args.counter_size)
+        message += ', for k-mer abundance queries'
+        message += ' (max abundance {})'.format(maxcount)
+    kevlar.plog('[kevlar::count]', message)
 
 
 def main(args):
@@ -104,6 +122,7 @@ def main(args):
     myband = args.band - 1 if args.band else None
     if args.mask:
         args.mask = kevlar.sketch.load(args.mask)
+    print_config(args)
 
     timer = kevlar.Timer()
     timer.start()
@@ -114,9 +133,8 @@ def main(args):
         args.seqfile, args.ksize, args.memory, args.max_fpr, count=docount,
         smallcount=dosmallcount, mask=args.mask,
         consume_masked=args.count_masked, numbands=args.num_bands, band=myband,
-        numthreads=args.threads, outfile=args.counttable, logfile=args.logfile
+        numthreads=args.threads, outfile=args.counttable
     )
 
     total = timer.stop()
-    message = 'Total time: {:.2f} seconds'.format(total)
-    print('[kevlar::count]', message, file=args.logfile)
+    kevlar.plog('[kevlar::count] Total time: {:.2f} seconds'.format(total))

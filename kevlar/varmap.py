@@ -9,7 +9,6 @@
 
 from itertools import chain
 import re
-import sys
 import kevlar
 from kevlar.alignment import align_both_strands
 from kevlar.cigar import AlignmentTokenizer
@@ -156,7 +155,7 @@ class VariantMapping(object):
         numikmers = sum([1 for k in self.ikmers if k in call.window])
         return numikmers == 0
 
-    def call_variants(self, ksize, mindist=6, logstream=sys.stderr):
+    def call_variants(self, ksize, mindist=6):
         """Attempt to call variants from this contig alignment.
 
         If the alignment CIGAR matches a known pattern, the appropriate caller
@@ -171,7 +170,7 @@ class VariantMapping(object):
         offset = 0 if self.targetshort else self.offset
         if self.vartype == 'snv':
             caller = self.call_snv(self.match.query, self.match.target, offset,
-                                   ksize, mindist, logstream=logstream)
+                                   ksize, mindist)
             for call in caller:
                 if self.is_passenger(call):
                     call.filter(vf.PassengerVariant)
@@ -206,8 +205,7 @@ class VariantMapping(object):
             nocall.filter(vf.InscrutableCigar)
             yield nocall
 
-    def call_snv(self, qseq, tseq, offset, ksize, mindist=6, donocall=True,
-                 logstream=sys.stderr):
+    def call_snv(self, qseq, tseq, offset, ksize, mindist=6, donocall=True):
         """Call SNVs from the aligned mismatched sequences.
 
         The `qseq` and `tseq` are strings containing query and target sequences
@@ -296,14 +294,14 @@ def n_ikmers_present(record, window):
     return n
 
 
-def trim_terminal_snvs(mismatches, alnlength, mindist=5, logstream=sys.stderr):
+def trim_terminal_snvs(mismatches, alnlength, mindist=5):
     valid = list()
     trimcount = 0
     for mm in mismatches:
         if mm < mindist or alnlength - mm < mindist:
             trimcount += 1
             # msg = 'discarding SNV due to proximity to end of the contig'
-            # print('[kevlar::call] NOTE:', msg, file=logstream)
+            # kevlar.plog('[kevlar::call] NOTE:', msg)
         else:
             valid.append(mm)
     return trimcount, valid

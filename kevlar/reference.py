@@ -10,7 +10,6 @@
 import os.path
 import re
 from subprocess import Popen, PIPE, check_call
-import sys
 from tempfile import TemporaryFile
 
 import khmer
@@ -32,7 +31,7 @@ class KevlarDeflineSequenceLengthMismatchError(RuntimeError):
     pass
 
 
-def autoindex(refrfile, logstream=sys.stderr):
+def autoindex(refrfile):
     if not os.path.isfile(refrfile):
         message = 'reference file {:s} does not exist'.format(refrfile)
         raise KevlarBWAError(message)
@@ -43,7 +42,7 @@ def autoindex(refrfile, logstream=sys.stderr):
 
     message = 'WARNING: BWA index not found for "{:s}"'.format(refrfile)
     message += ', indexing now'
-    print('[kevlar::reference]', message, file=logstream)
+    kevlar.plog('[kevlar::reference]', message)
 
     try:
         check_call(['bwa', 'index', refrfile])
@@ -64,7 +63,7 @@ def bwa_align(cmdargs, seqstring=None, seqfilename=None):
             bwaproc = Popen(cmdargs, stdout=samfile, stderr=PIPE)
             stdout, stderr = bwaproc.communicate()
         if bwaproc.returncode != 0:
-            print(stderr, file=sys.stderr)
+            kevlar.plog(stderr)
             raise KevlarBWAError('problem running BWA')
         samfile.seek(0)
         sam = pysam.AlignmentFile(samfile, 'r')

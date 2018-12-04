@@ -7,8 +7,9 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import pytest
 import kevlar
+import pytest
+from sys import stderr
 
 
 def test_kevlar_open():
@@ -27,8 +28,9 @@ def test_main(capsys):
     contig = kevlar.tests.data_file('wasp-pass.contig.augfasta')
     cutout = kevlar.tests.data_file('wasp.gdna.fa')
     arglist = ['call', contig, cutout]
-    args = kevlar.cli.parser().parse_args(arglist)
-    kevlar.__main__.main(args)
+    kevlar.logstream, logstream = stderr, kevlar.logstream
+    kevlar.__main__.main(arglist)
+    kevlar.logstream = logstream
     out, err = capsys.readouterr()
     assert '\tPASS\t' in out
     assert '\tPassengerVariant\t' in out

@@ -13,7 +13,6 @@ from kevlar.reference import bwa_align, ReferenceCutout
 import pysam
 import re
 from subprocess import Popen, PIPE
-import sys
 from tempfile import TemporaryFile, NamedTemporaryFile
 
 
@@ -111,10 +110,10 @@ def decompose_seeds(seq, seedsize):
         yield seq[i:i+seedsize]
 
 
-def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
+def contigs_2_seeds(partstream, seedstream, seedsize=51):
     """Convert a stream of partitioned contigs to seeds and write to a file."""
     message = 'decomposing contigs into seeds of length {}'.format(seedsize)
-    print('[kevlar::localize]', message, file=logstream)
+    kevlar.plog('[kevlar::localize]', message)
     seeds = set()
     for partition in partstream:
         contigs = list(partition)
@@ -126,12 +125,12 @@ def contigs_2_seeds(partstream, seedstream, seedsize=51, logstream=sys.stdout):
         print('>seed{}\n{}'.format(n, seed), file=seedstream)
     seedstream.flush()
     message = 'contigs decomposed into {} seeds'.format(n)
-    print('[kevlar::localize]', message, file=logstream)
+    kevlar.plog('[kevlar::localize]', message)
 
 
-def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
+def get_seed_matches(seedfile, refrfile, seedsize=51):
     """Determine the position of all seeds with a single system call to BWA."""
-    print('[kevlar::localize] computing seed matches', file=logstream)
+    kevlar.plog('[kevlar::localize] computing seed matches')
     bwa_cmd = 'bwa mem -k {k} -T {k} -a -c 5000 {idx} {seeds}'.format(
         k=seedsize, idx=refrfile, seeds=seedfile
     )
@@ -141,13 +140,12 @@ def get_seed_matches(seedfile, refrfile, seedsize=51, logstream=sys.stdout):
         minseq = kevlar.revcommin(seq)
         seed_index[minseq].add((seqid, start))
     message = 'found positions for {} seeds'.format(len(seed_index))
-    print('[kevlar::localize]', message, file=logstream)
+    kevlar.plog('[kevlar::localize]', message)
     return seed_index
 
 
 def cutout(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
-           maxdiff=None, inclpattern=None, exclpattern=None, debug=False,
-           logstream=sys.stdout):
+           maxdiff=None, inclpattern=None, exclpattern=None, debug=False):
     """Compute reference target sequences for a set of partitioned contigs.
 
     Partition by partition, decompose contigs into seeds, determine the genomic
@@ -163,7 +161,7 @@ def cutout(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
             if seed not in seed_matches:
                 if debug:  # pragma: no cover
                     message = 'WARNING: no position for seed {}'.format(seed)
-                    print('[kevlar::localize]', message, file=logstream)
+                    kevlar.plog('[kevlar::localize]', message)
                 continue
             for seqid, position in seed_matches[seed]:
                 localizer.add_seed_match(seqid, position)
@@ -178,53 +176,51 @@ def cutout(contigs, refrseqs, seed_matches, seedsize=51, delta=50,
 
 
 def localize(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
-             inclpattern=None, exclpattern=None, debug=False,
-             logstream=sys.stdout):
+             inclpattern=None, exclpattern=None, debug=False):
     """Generator wrapper for the reference target cutout procedure."""
     partdata = list(partstream)
     partitions = [part for partid, part in partdata]
     partids = [partid for partid, part in partdata]
     message = 'loaded {} read partitions into memory'.format(len(partitions))
-    print('[kevlar::localize]', message, file=logstream)
-    kevlar.reference.autoindex(refrfile, logstream)
+    kevlar.plog('[kevlar::localize]', message)
+    kevlar.reference.autoindex(refrfile)
 
     with NamedTemporaryFile(mode='w', suffix='.contigs.fa') as seedfile:
-        contigs_2_seeds(partitions, seedfile, seedsize=seedsize,
-                        logstream=logstream)
+        contigs_2_seeds(partitions, seedfile, seedsize=seedsize)
         message = 'seeds written to "{}"'.format(seedfile.name)
-        print('[kevlar::localize]', message, file=logstream)
+        kevlar.plog('[kevlar::localize]', message)
         seed_matches = get_seed_matches(seedfile.name, refrfile,
-                                        seedsize=seedsize, logstream=logstream)
+                                        seedsize=seedsize)
 
     if len(seed_matches) == 0:
         message = 'WARNING: no reference matches'
-        print('[kevlar::localize]', message, file=logstream)
+        kevlar.plog('[kevlar::localize]', message)
         return
 
     message = 'loading reference sequences into memory'
-    print('[kevlar::localize]', message, file=logstream)
+    kevlar.plog('[kevlar::localize]', message)
     refrseqs = kevlar.seqio.parse_seq_dict(kevlar.open(refrfile, 'r'))
 
     message = 'computing the reference target sequence for each partition'
-    print('[kevlar::localize]', message, file=logstream)
+    kevlar.plog('[kevlar::localize]', message)
     ncutouts = 0
     progress_indicator = kevlar.ProgressIndicator(
         '[kevlar::localize]     computed targets for {counter} partitions',
-        interval=100, breaks=[1000, 10000, 100000], logstream=logstream,
+        interval=100, breaks=[1000, 10000, 100000],
     )
     for partid, contiglist in partdata:
         progress_indicator.update()
         cutter = cutout(
             contiglist, refrseqs, seed_matches, seedsize=seedsize, delta=delta,
             maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
-            debug=False, logstream=logstream
+            debug=False,
         )
         for gdna in cutter:
             ncutouts += 1
             yield partid, gdna
     if ncutouts == 0:
         message = 'WARNING: no reference matches'
-        print('[kevlar::localize]', message, file=logstream)
+        kevlar.plog('[kevlar::localize]', message)
         return
 
 
@@ -238,7 +234,7 @@ def main(args):
     localizer = localize(
         pstream, args.refr, seedsize=args.seed_size, delta=args.delta,
         maxdiff=args.max_diff, inclpattern=args.include,
-        exclpattern=args.exclude, logstream=args.logfile
+        exclpattern=args.exclude,
     )
     for part, gdna in localizer:
         seqname = gdna.defline

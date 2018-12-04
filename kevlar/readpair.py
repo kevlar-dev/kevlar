@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 from collections import namedtuple
-import sys
 import kevlar
 from kevlar.sequence import Record, KmerOfInterest
 

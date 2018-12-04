@@ -66,16 +66,16 @@ def test_autoindex():
         assert 'does not exist' in str(e)
 
         # Should successfully index the sequence
-        log = StringIO()
+        kevlar.logstream = StringIO()
         copyfile(data_file('bogus-genome/refr.fa'), filename)
-        autoindex(filename, logstream=log)
-        assert 'BWA index not found' in log.getvalue()
-        assert 'indexing now' in log.getvalue()
+        autoindex(filename)
+        assert 'BWA index not found' in kevlar.logstream.getvalue()
+        assert 'indexing now' in kevlar.logstream.getvalue()
 
         # Should find existing index
-        log = StringIO()
-        autoindex(filename, logstream=log)
-        assert log.getvalue() == ''
+        kevlar.logstream = StringIO()
+        autoindex(filename)
+        assert kevlar.logstream.getvalue() == ''
     finally:
         rmtree(tmpdir)
 
