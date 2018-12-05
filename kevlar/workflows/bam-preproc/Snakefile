@@ -60,12 +60,10 @@ rule bam_to_paired_fastq:
 
 rule compress_paired_fastq:
     input: rules.bam_to_paired_fastq.output
-    output:
-        'Reads/case.interleaved.reads.fq.gz',
-        'Logs/case-fastq.log'
+    output: 'Reads/case.interleaved.reads.fq.gz'
     threads: 24
     message: 'Compress interleaved reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
 
 
 # -----------------------------------------------------------------------------
@@ -76,20 +74,20 @@ rule compress_paired_fastq:
 
 rule bam_to_fastq:
     input: 'Alignments/ctrl{indiv}.bam'
-    output: pipe('Reads/ctrl{indiv}.reads.fq')
+    output:
+        pipe('Reads/ctrl{indiv}.reads.fq'),
+        'Logs/ctrl{indiv}-fastq.log'
     threads: 36
     message: 'Convert read alignments to unpaired Fastq format.'
-    shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output}'
+    shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output[0]} 2> >(tee {output[1]})'
 
 rule compress_unpaired_fastq:
     input: 'Reads/ctrl{indiv}.reads.fq'
-    output:
-        'Reads/ctrl{indiv}.reads.fq.gz',
-        'Logs/ctrl{indiv}-fastq.log'
+    output: 'Reads/ctrl{indiv}.reads.fq.gz'
     wildcard_constraints: indiv='\d+'
     threads: 36
     message: 'Compress unpaired reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
 
 
 # -----------------------------------------------------------------------------
@@ -98,19 +96,21 @@ rule compress_unpaired_fastq:
 
 rule qc:
     input: 'Reads/{prefix}.reads.fq.gz'
-    output: pipe('Reads/{prefix}.qc.reads.fq')
+    output:
+        pipe('Reads/{prefix}.qc.reads.fq'),
+        'Logs/{prefix}-fastp.json',
+        'Logs/{prefix}-fastp.html',
+        'Logs/{prefix}-qc.log'
     threads: 16
     message: 'Perform quality control on reads.'
-    shell: 'fastp -i {input} --interleaved_in --stdout -p --thread {threads} -q 15 -u 40 -l 15 > {output}'
+    shell: 'fastp -i {input} --interleaved_in --stdout -p --thread {threads} --json {output[1]} --html {output[2]} -q 15 -u 40 -l 15 > {output[0]} 2> >(tee {output[3]})'
 
 rule compress_qc_reads:
     input: 'Reads/{prefix}.qc.reads.fq'
-    output:
-        'Reads/{prefix}.qc.reads.fq.gz',
-        'Logs/{prefix}-qc.log'
+    output: 'Reads/{prefix}.qc.reads.fq.gz'
     threads: 56
     message: 'Compress quality controlled reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output[0]} 2> >(tee {output[1]})'
+    shell: 'bgzip -@ {threads} -c {input} > {output}'
 
 
 # -----------------------------------------------------------------------------

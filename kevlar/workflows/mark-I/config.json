@@ -8,7 +8,7 @@
             "fastx": [
                 "/scratch/standage/demo-data/proband-reads-interleaved.fastq.gz"
             ],
-            "memory": "4G",
+            "memory": "8G",
             "label": "Proband",
             "max_fpr": 0.3
         },
@@ -18,7 +18,7 @@
                     "/scratch/standage/demo-data/mother-reads-R1.fasta",
                     "/scratch/standage/demo-data/mother-reads-R2.fasta"
                 ],
-                "memory": "8G",
+                "memory": "16G",
                 "label": "Mother",
                 "max_fpr": 0.05
             },
@@ -27,7 +27,7 @@
                     "/scratch/standage/demo-data/father-reads-R1.fasta",
                     "/scratch/standage/demo-data/father-reads-R2.fasta"
                 ],
-                "memory": "8G",
+                "memory": "16G",
                 "label": "Father",
                 "max_fpr": 0.05
             }
