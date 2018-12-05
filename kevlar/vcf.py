@@ -10,7 +10,6 @@
 from collections import defaultdict
 from datetime import date
 from enum import Enum
-import sys
 import kevlar
 from numpy import float64
 
@@ -412,7 +411,7 @@ class VCFReader(object):
             if not line.startswith('#'):
                 message = 'WARNING: VCF file has no samples annotated'
                 message += ', certain sanity checks disabled'
-                print('[kevlar::vcf]', message, file=sys.stderr)
+                kevlar.plog('[kevlar::vcf]', message)
                 yield self._variant_from_vcf_string(line)
                 break
             if not line.startswith('#CHROM\t'):

@@ -11,9 +11,7 @@
 import argparse
 import sys
 import kevlar
-from . import dump
 from . import count
-from . import effcount
 from . import novel
 from . import filter
 from . import augment
@@ -30,9 +28,7 @@ from . import split
 from . import dist
 
 mains = {
-    'dump': kevlar.dump.main,
     'count': kevlar.count.main,
-    'effcount': kevlar.effcount.main,
     'novel': kevlar.novel.main,
     'filter': kevlar.filter.main,
     'augment': kevlar.augment.main,
@@ -50,9 +46,7 @@ mains = {
 }
 
 subparser_funcs = {
-    'dump': dump.subparser,
     'count': count.subparser,
-    'effcount': effcount.subparser,
     'novel': novel.subparser,
     'filter': filter.subparser,
     'augment': augment.subparser,
@@ -90,12 +84,22 @@ def parser():
     parser._optionals.title = 'Global arguments'
     parser.add_argument('-v', '--version', action='version',
                         version='kevlar v{}'.format(kevlar.__version__))
-    parser.add_argument('-l', '--logfile', metavar='F', default=sys.stderr,
-                        type=argparse.FileType('w'), help='log file for '
+    parser.add_argument('-l', '--logfile', metavar='F', help='log file for '
                         'diagnostic messages, warnings, and errors')
+    parser.add_argument('--tee', action='store_true', help='write diagnostic '
+                        'output to logfile AND terminal (stderr)')
     subparsers = parser.add_subparsers(dest='cmd', metavar='cmd',
                                        help='"' + subcommandstr + '"')
     for func in subparser_funcs.values():
         func(subparsers)
 
     return parser
+
+
+def parse_args(arglist=None):
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.logstream = sys.stderr
+    if args.logfile and args.logfile != '-':
+        kevlar.logstream = kevlar.open(args.logfile, 'w')
+    kevlar.teelog = args.tee
+    return args

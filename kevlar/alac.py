@@ -14,13 +14,12 @@ from kevlar.localize import localize
 from kevlar.call import call
 import khmer
 import re
-import sys
 
 
 def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
          seedsize=31, maxdiff=None, inclpattern=None, exclpattern=None,
          match=1, mismatch=2, gapopen=5, gapextend=0, min_ikmers=None,
-         maskfile=None, maskmem=1e6, maskmaxfpr=0.01, logstream=sys.stderr):
+         maskfile=None, maskmem=1e6, maskmaxfpr=0.01):
     assembler = kevlar.assemble.assemble(pstream, maxreads=maxreads)
     contigs_by_partition = defaultdict(list)
     for partid, contig in assembler:
@@ -30,7 +29,6 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
     targeter = kevlar.localize.localize(
         contigstream, refrfile, seedsize=seedsize, delta=delta,
         maxdiff=maxdiff, inclpattern=inclpattern, exclpattern=exclpattern,
-        logstream=logstream
     )
     targets_by_partition = defaultdict(list)
     for partid, gdna in targeter:
@@ -50,7 +48,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
     calls = sorted(calls, key=lambda c: (c.seqid, c.position))
     if maskfile:
         message = 'generating mask of variant-spanning k-mers'
-        print('[kevlar::alac]', message, file=logstream)
+        kevlar.plog('[kevlar::alac]', message)
         numtables = 4
         buckets = maskmem * khmer._buckets_per_byte['nodegraph'] / numtables
         mask = khmer.Nodetable(ksize, buckets, numtables)
@@ -63,7 +61,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
             message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
             message += '; exceeds user-specified limit'
             message += ' of {:.4f}'.format(maskmaxfpr)
-            print('[kevlar::alac]', message, file=logstream)
+            kevlar.plog('[kevlar::alac]', message)
         mask.save(maskfile)
     for call in calls:
         yield call
@@ -83,7 +81,7 @@ def main(args):
         exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
         maskfile=args.gen_mask, maskmem=args.mask_mem,
-        maskmaxfpr=args.mask_max_fpr, logstream=args.logfile,
+        maskmaxfpr=args.mask_max_fpr,
     )
 
     writer = kevlar.vcf.VCFWriter(

@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 from collections import defaultdict
-import sys
 import kevlar
 from kevlar.reference import bwa_align
 from kevlar.varmap import VariantMapping
@@ -85,7 +84,7 @@ def dedup(callstream):
 
 def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
                 gapopen=5, gapextend=0, ksize=31, refrfile=None, debug=False,
-                mindist=5, logstream=sys.stderr):
+                mindist=5):
     """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
@@ -106,10 +105,12 @@ def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
 
         for n, alignment in enumerate(aligns2report):
             if debug:
-                print('DEBUG ', alignment.cutout.defline, ' vs ',
-                      alignment.contig.name, '\n', str(alignment), sep='',
-                      end='\n\n', file=logstream)
-            for varcall in alignment.call_variants(ksize, mindist, logstream):
+                kevlar.plog(
+                    'DEBUG ', alignment.cutout.defline, ' vs ',
+                    alignment.contig.name, '\n', str(alignment), sep='',
+                    end='\n\n',
+                )
+            for varcall in alignment.call_variants(ksize, mindist):
                 if partid is not None:
                     varcall.annotate('PART', partid)
                 if alignment.matedist:
@@ -126,9 +127,8 @@ def call(*args, **kwargs):
         yield call
 
 
-def load_contigs(contigstream, logstream=sys.stderr):
-    message = 'loading contigs into memory by partition'
-    print('[kevlar::call]', message, file=logstream)
+def load_contigs(contigstream):
+    kevlar.plog('[kevlar::call] Loading contigs into memory by partition')
     contigs_by_partition = dict()
     nparts = 0
     ncontigs = 0
@@ -136,8 +136,8 @@ def load_contigs(contigstream, logstream=sys.stderr):
         nparts += 1
         ncontigs += len(contiglist)
         contigs_by_partition[partid] = contiglist
-    message = 'loaded {} contigs from {} partitions'.format(ncontigs, nparts)
-    print('[kevlar::call]', message, file=logstream)
+    message = 'Loaded {} contigs from {} partitions'.format(ncontigs, nparts)
+    kevlar.plog('[kevlar::call]', message)
     return contigs_by_partition
 
 
@@ -161,13 +161,13 @@ def main(args):
     mask = None
     if args.gen_mask:
         message = 'generating mask of variant-spanning k-mers'
-        print('[kevlar::call]', message, file=args.logfile)
+        kevlar.plog('[kevlar::call]', message)
         ntables = 4
         buckets = args.mask_mem * _buckets_per_byte['nodegraph'] / ntables
         mask = khmer.Nodetable(args.ksize, buckets, ntables)
     progress_indicator = kevlar.ProgressIndicator(
         '[kevlar::call] processed contigs/gDNAs for {counter} partitions',
-        interval=10, breaks=[100, 1000, 10000], logstream=args.logfile,
+        interval=10, breaks=[100, 1000, 10000],
     )
     for partid, gdnas in gdnastream:
         progress_indicator.update()
@@ -176,7 +176,6 @@ def main(args):
             gdnas, contigs, partid, match=args.match, mismatch=args.mismatch,
             gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
             refrfile=args.refr, debug=args.debug, mindist=5,
-            logstream=args.logfile
         )
         for varcall in caller:
             if args.gen_mask:
@@ -190,5 +189,5 @@ def main(args):
             message = 'WARNING: mask FPR is {:.4f}'.format(fpr)
             message += '; exceeds user-specified limit'
             message += ' of {:.4f}'.format(args.mask_max_fpr)
-            print('[kevlar::call]', message, file=args.logfile)
+            kevlar.plog('[kevlar::call]', message)
         mask.save(args.gen_mask)

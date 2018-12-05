@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import kevlar
-import sys
 
 
 class ProgressIndicator(object):
@@ -19,13 +18,12 @@ class ProgressIndicator(object):
     at first but ensures the progress updates don't overwhelm the terminal.
     """
     def __init__(self, message, interval=10, breaks=[100, 1000, 10000],
-                 usetimer=False, logstream=sys.stderr):
+                 usetimer=False):
         self.message = message
         self.counter = 0
         self.interval = interval
         self.nextupdate = interval
         self.breaks = breaks
-        self.outstream = logstream
         self.timer = None
         if usetimer:
             self.timer = kevlar.Timer()
@@ -40,5 +38,5 @@ class ProgressIndicator(object):
             if self.timer:
                 elapsed = self.timer.probe()
                 message += ' ({:.2f} seconds elapsed)'.format(elapsed)
-            print(message, file=self.outstream)
+            kevlar.plog(message)
         self.counter += 1

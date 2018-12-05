@@ -109,7 +109,7 @@ def test_no_reference_match(capsys):
     reads = kevlar.parse_augmented_fastx(kevlar.open(readfile, 'r'))
     partitions = kevlar.parse_partitioned_reads(reads)
     refr = data_file('localize-refr.fa')
-    baldwin = kevlar.alac.alac(partitions, refr, logstream=sys.stderr)
+    baldwin = kevlar.alac.alac(partitions, refr)
     calls = list(baldwin)
     out, err = capsys.readouterr()
     assert 'WARNING: no reference matches' in err
@@ -194,7 +194,7 @@ def test_alac_generate_mask_lowmem(capsys):
     with NamedTemporaryFile(suffix='.nt') as maskfile:
         calls = list(
             kevlar.alac.alac(partstream, refrfile, maskfile=maskfile.name,
-                             maskmem=100, logstream=sys.stderr)
+                             maskmem=100)
         )
         assert len(calls) == 5
     out, err = capsys.readouterr()

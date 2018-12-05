@@ -10,7 +10,6 @@
 from collections import namedtuple
 import kevlar
 import re
-import sys
 
 
 AlignmentBlock = namedtuple('AlignmentBlock', 'length type target query')

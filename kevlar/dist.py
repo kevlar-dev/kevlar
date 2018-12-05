@@ -10,7 +10,6 @@
 from collections import defaultdict
 import json
 import math
-import sys
 import threading
 
 import kevlar
@@ -23,12 +22,12 @@ class KevlarZeroAbundanceDistError(ValueError):
     pass
 
 
-def count_first_pass(infiles, counts, mask, nthreads=1, logstream=sys.stderr):
+def count_first_pass(infiles, counts, mask, nthreads=1):
     message = 'Processing input with {:d} threads'.format(nthreads)
-    print('[kevlar::dist]', message, file=logstream)
+    kevlar.plog('[kevlar::dist]', message)
 
     for filename in infiles:
-        print('    -', filename, file=logstream)
+        kevlar.plog('    -', filename)
         parser = khmer.ReadParser(filename)
         threads = list()
         for _ in range(nthreads):
@@ -42,11 +41,11 @@ def count_first_pass(infiles, counts, mask, nthreads=1, logstream=sys.stderr):
         for thread in threads:
             thread.join()
 
-    print('[kevlar::dist] Done processing input!', file=logstream)
+    kevlar.plog('[kevlar::dist] Done processing input!')
 
 
-def count_second_pass(infiles, counts, nthreads=1, logstream=sys.stderr):
-    print('[kevlar::dist] Second pass over the data', file=logstream)
+def count_second_pass(infiles, counts, nthreads=1):
+    kevlar.plog('[kevlar::dist] Second pass over the data')
     tracking = khmer.Nodetable(counts.ksize(), 1, 1, primes=counts.hashsizes())
     abund_lists = list()
 
@@ -55,7 +54,7 @@ def count_second_pass(infiles, counts, nthreads=1, logstream=sys.stderr):
         abund_lists.append(abund)
 
     for filename in infiles:
-        print('    -', filename, file=logstream)
+        kevlar.plog('    -', filename)
         parser = khmer.ReadParser(filename)
         threads = list()
         for _ in range(nthreads):
@@ -75,7 +74,7 @@ def count_second_pass(infiles, counts, nthreads=1, logstream=sys.stderr):
             if i > 0 and count > 0:
                 abundance[i] += count
 
-    print('[kevlar::dist] Done second pass over input!', file=logstream)
+    kevlar.plog('[kevlar::dist] Done second pass over input!')
 
     return abundance
 
@@ -117,12 +116,10 @@ def compute_dist(abundance):
     return data
 
 
-def dist(infiles, mask, ksize=31, memory=1e6, threads=1, logstream=sys.stderr):
+def dist(infiles, mask, ksize=31, memory=1e6, threads=1):
     counts = khmer.Counttable(ksize, memory / 4, 4)
-    count_first_pass(infiles, counts, mask, nthreads=threads,
-                     logstream=logstream)
-    abundance = count_second_pass(infiles, counts, nthreads=threads,
-                                  logstream=logstream)
+    count_first_pass(infiles, counts, mask, nthreads=threads)
+    abundance = count_second_pass(infiles, counts, nthreads=threads)
     mu, sigma = calc_mu_sigma(abundance)
     data = compute_dist(abundance)
     return mu, sigma, data
@@ -132,7 +129,7 @@ def main(args):
     mask = khmer.Nodetable.load(args.mask)
     mu, sigma, data = dist(
         args.infiles, mask, ksize=args.ksize, memory=args.memory,
-        threads=args.threads, logstream=args.logfile
+        threads=args.threads,
     )
     out = {'mu': mu, 'sigma': sigma}
     print(json.dumps(out))

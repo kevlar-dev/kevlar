@@ -73,7 +73,7 @@ def test_load_mask_too_small():
     infile = kevlar.tests.data_file('bogus-genome/refr.fa')
     with pytest.raises(SystemExit) as se:
         mask = kevlar.filter.load_mask([infile], 25, 1e3)
-    assert 'FPR too high, bailing out' in str(se)
+    assert 'FPR too high, bailing out' in str(se.value)
 
 
 def test_load_readset():

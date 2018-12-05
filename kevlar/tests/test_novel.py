@@ -16,6 +16,7 @@ import re
 from tempfile import NamedTemporaryFile, mkdtemp
 import screed
 from shutil import rmtree
+import sys
 import kevlar
 from kevlar.tests import data_file, data_glob
 from khmer import Counttable
@@ -185,6 +186,7 @@ def test_skip_until(capsys):
         '--control', ctrls[0], '--control', ctrls[1], '--skip-until', readname
     ]
     args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.logstream, logstream = sys.stderr, kevlar.logstream
     kevlar.novel.main(args)
     out, err = capsys.readouterr()
     message = ('Found read bogus-genome-chr1_115_449_0:0:0_0:0:0_1f4/1 '
@@ -199,6 +201,7 @@ def test_skip_until(capsys):
     ]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.novel.main(args)
+    kevlar.logstream = logstream
     out, err = capsys.readouterr()
     assert 'Found read' not in err
     assert '(skipped ' not in err
@@ -282,7 +285,9 @@ def test_novel_save_counts_mismatch(capsys):
             '--memory', '500K'
         ]
         args = kevlar.cli.parser().parse_args(arglist)
+        kevlar.logstream, logstream = sys.stderr, kevlar.logstream
         kevlar.novel.main(args)
+        kevlar.logstream = logstream
     finally:
         rmtree(outdir)
 
@@ -301,7 +306,9 @@ def test_novel_load_counts(capsys):
         '--control-counts', file4, file5
     ]
     args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.logstream, logstream = sys.stderr, kevlar.logstream
     kevlar.novel.main(args)
+    kevlar.logstream = logstream
 
     out, err = capsys.readouterr()
     assert 'counttables for 2 sample(s) provided' in err

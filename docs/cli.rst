@@ -97,16 +97,6 @@ kevlar simplex
    :prog: kevlar
    :path: simplex
 
-kevlar dump
------------
-
-.. argparse::
-   :module: kevlar.cli.__init__
-   :func: parser
-   :nodefault:
-   :prog: kevlar
-   :path: dump
-
 kevlar augment
 ----------------
 

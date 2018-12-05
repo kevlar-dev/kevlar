@@ -90,6 +90,9 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-k', '--ksize', type=int, default=31, metavar='K',
                            help='k-mer size; default is 31')
+    misc_args.add_argument('-t', '--threads', type=int, default=1, metavar='T',
+                           help='number of threads to use for mask processing;'
+                           ' default is 1')
     misc_args.add_argument('-o', '--out', metavar='FILE',
                            help='output file (in augmented Fastq format); '
                            'default is terminal (stdout)')

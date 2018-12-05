@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 import kevlar
-import sys
 
 
 def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
@@ -24,8 +23,7 @@ def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
     mateseqs = dict()
     for n, record in enumerate(augseqstream):
         if n > 0 and n % upint == 0:
-            print('[kevlar::augment] processed', n, 'input reads',
-                  file=sys.stderr)
+            kevlar.plog('[kevlar::augment] processed', n, 'input reads')
         for ikmer in record.annotations:
             seq = record.ikmerseq(ikmer)
             ikmers[seq] = ikmer.abund

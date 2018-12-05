@@ -52,20 +52,18 @@ def test_simplex_pico(pico_trio, capsys):
     with capsys.disabled():
         cases = kevlar.novel.load_samples(
             None, [[proband]], ksize=25, memory=5e6, maxfpr=0.6, numthreads=2,
-            logstream=sys.stderr
         )
         controls = kevlar.novel.load_samples(
             None, [[mother], [father]], ksize=25, memory=5e6, maxfpr=0.6,
-            numthreads=2, logstream=sys.stderr
+            numthreads=2,
         )
-        mask = kevlar.filter.load_mask([refr], 25, 5e7, maxfpr=0.005,
-                                       logstream=sys.stderr)
+        mask = kevlar.filter.load_mask([refr], 25, 5e7, maxfpr=0.005)
 
         caserecords = kevlar.multi_file_iter_screed([proband])
         workflow = kevlar.simplex.simplex(
             caserecords, cases[0], controls, refr, ksize=25, ctrlmax=0,
             casemin=6, mask=mask, filtermem=1e7, filterfpr=0.005,
-            refrsctmem=1e8, logstream=sys.stderr
+            refrsctmem=1e8,
         )
         variants = [v for v in workflow]
     variants = sorted(variants, key=lambda v: v._pos)

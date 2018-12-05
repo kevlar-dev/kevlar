@@ -8,12 +8,10 @@
 # -----------------------------------------------------------------------------
 
 from collections import defaultdict
-from math import log
-import sys
-
 import kevlar
 from kevlar.vcf import Variant
 import khmer
+from math import log
 import scipy.stats
 
 
@@ -206,7 +204,7 @@ def process_partition(partitionid, calls):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=5, samplelabels=None, logstream=sys.stderr):
+            dynamic=True, casemin=5, samplelabels=None):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -219,7 +217,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
                 else:
                     msg += 'variant-spanning window {:s}'.format(call.window)
                     msg += ', shorter than k size {:d}'.format(case.ksize())
-                print('[kevlar::simlike]', msg, file=logstream)
+                kevlar.plog('[kevlar::simlike]', msg)
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
@@ -274,7 +272,7 @@ def main(args):
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
-        samplelabels=args.sample_labels, logstream=args.logfile,
+        samplelabels=args.sample_labels,
     )
     for call in calculator:
         writer.write(call)
