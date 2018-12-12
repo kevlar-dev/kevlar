@@ -210,7 +210,10 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
         nowindow = call.window is None or call.refrwindow is None
-        tooshort = len(call.window) < case.ksize() or len(call.refrwindow) < case.ksize()
+        tooshort = (
+            len(call.refrwindow) < case.ksize() or
+            len(call.window) < case.ksize()
+        )
         if nowindow or tooshort:
             if call.filterstr == 'PASS':
                 msg = 'WARNING: stubbornly refusing to compute likelihood for '
