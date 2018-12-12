@@ -209,10 +209,12 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
-        if call.window is None or len(call.window) < case.ksize():
+        nowindow = call.window is None or call.refrwindow is None
+        tooshort = len(call.window) < case.ksize() or len(call.refrwindow) < case.ksize()
+        if nowindow or tooshort:
             if call.filterstr == 'PASS':
                 msg = 'WARNING: stubbornly refusing to compute likelihood for '
-                if call.window is None:
+                if nowindow is None:
                     msg += 'variant with no spanning window'
                 else:
                     msg += 'variant-spanning window {:s}'.format(call.window)
