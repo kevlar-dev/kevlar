@@ -301,7 +301,7 @@ rule localize:
         'Logs/localize.log'
     threads: 1
     message: 'Compute reference target sequences for each partition.'
-    shell: 'kevlar --tee --logfile {output[1]} localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include {config[localize][seqpattern]} --out {output[0]} {input[0]} {input[1]}'
+    shell: 'kevlar --tee --logfile {output[1]} localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include \'{config[localize][seqpattern]}\' --out {output[0]} {input[0]} {input[1]}'
 
 
 rule call:
