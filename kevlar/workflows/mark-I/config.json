@@ -53,6 +53,7 @@
     "localize": {
         "seedsize": 51,
         "delta": 50,
-        "seqpattern": "."
+        "seqpattern": ".",
+        "maxdiff": 10000
     }
 }
