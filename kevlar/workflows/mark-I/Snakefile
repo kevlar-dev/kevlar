@@ -278,15 +278,22 @@ rule partition:
     shell: 'kevlar --tee --logfile {output[1]} partition --min-abund {config[samples][casemin]} --out {output[0]} {input}'
 
 
+rule split:
+    input: 'NovelReads/partitioned.augfastq.gz'
+    output: expand('NovelReads/partitioned.{num}.augfastx.gz', num=range(config['numsplit']))
+    threads: 1
+    shell: 'kevlar split {input} {config[numsplit]} NovelReads/partitioned'
+
+
 # -----------------------------------------------------------------------------
 # Assemble, localize, align, make preliminary calls, and score/sort calls.
 # -----------------------------------------------------------------------------
 
 rule assemble:
-    input: 'NovelReads/partitioned.augfastq.gz'
+    input: 'NovelReads/partitioned.{num}.augfastx.gz'
     output:
-        'contigs.augfasta.gz',
-        'Logs/assemble.log'
+        'contigs.{num}.augfasta.gz',
+        'Logs/assemble.{num}.log'
     threads: 1
     message: 'Assemble reads into contigs partition by partition.'
     shell: 'kevlar --tee --logfile {output[1]} assemble --out {output[0]} {input}'
@@ -294,41 +301,41 @@ rule assemble:
 
 rule localize:
     input:
-        'contigs.augfasta.gz',
-        simplex.refr_files
+        simplex.refr_files[0],
+        expand('contigs.{num}.augfasta.gz', num=range(config['numsplit'])),
     output:
         'reference.gdnas.fa.gz',
         'Logs/localize.log'
     threads: 1
     message: 'Compute reference target sequences for each partition.'
-    shell: 'kevlar --tee --logfile {output[1]} localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include \'{config[localize][seqpattern]}\' --out {output[0]} {input[0]} {input[1]}'
+    shell: 'kevlar --tee --logfile {output[1]} localize --delta {config[localize][delta]} --seed-size {config[localize][seedsize]} --include \'{config[localize][seqpattern]}\' --out {output[0]} {input}'
 
 
 rule call:
     input:
-        'contigs.augfasta.gz',
+        'contigs.{num}.augfasta.gz',
         'reference.gdnas.fa.gz',
         simplex.refr_files[0]
     output:
-        'calls.prelim.vcf.gz',
-        'Sketches/spanning-kmers.nodetable',
-        'Logs/call.log'
+        'calls.{num}.prelim.vcf.gz',
+        'Logs/call.{num}.log'
     threads: 1
     message: 'Align contigs to reference targets and make preliminary calls.'
-    shell: 'kevlar --tee --logfile {output[2]} call --gen-mask {output[1]} --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
+    shell: 'kevlar --tee --logfile {output[1]} call --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
 
 
 rule like_scores:
     input:
-        'calls.prelim.vcf.gz',
         'Reference/refr-counts.smallcounttable',
-        simplex.all_sample_counts
+        simplex.all_sample_counts,
+        expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
     output:
         'calls.scored.sorted.vcf.gz',
         'Logs/simlike.log'
     threads: 1
     message: 'Filter calls, compute likelihood scores, and sort calls by score.'
     run:
+        in_vcfs = expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
         cmd = [
             'kevlar', '--tee', '--logfile', output[1], 'simlike',
             '--mu', config['samples']['coverage']['mean'],
@@ -337,7 +344,7 @@ rule like_scores:
             '--refr', 'Reference/refr-counts.smallcounttable',
             '--sample-labels', *simplex.sample_labels, '--out', output[0],
             '--controls', *simplex.control_sample_counts,
-            '--case', simplex.case_sample_counts, input[0]
+            '--case', simplex.case_sample_counts, *in_vcfs
         ]
         cmd = [str(arg) for arg in cmd]
         cmd = ' '.join(cmd)
