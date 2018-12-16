@@ -265,9 +265,8 @@ def main(args):
     controls = [khmer.Counttable.load(c) for c in args.controls]
     refr = khmer.SmallCounttable.load(args.refr)
 
-    instream = kevlar.open(args.vcf, 'r')
+    reader = kevlar.vcf.vcfstream(args.vcf)
     outstream = kevlar.open(args.out, 'w')
-    reader = kevlar.vcf.VCFReader(instream)
     writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::simlike')
 
     for label in args.sample_labels:

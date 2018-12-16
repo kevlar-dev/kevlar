@@ -60,4 +60,4 @@ def subparser(subparsers):
     misc_args.add_argument('--case-min', metavar='Y', type=int, default=5,
                            help='minimum abundance threshold for proband; '
                            'default is 5')
-    subparser.add_argument('vcf')
+    subparser.add_argument('vcf', nargs='+')

@@ -35,7 +35,7 @@ def main(args):
     partstream = kevlar.parse_partitioned_reads(readstream)
     outstreams = list()
     for i in range(args.numfiles):
-        outfile = '{:s}.{:d}.augfastx'.format(args.base, i + 1)
+        outfile = '{:s}.{:d}.augfastx'.format(args.base, i)
         if args.infile.endswith('.gz'):
             outfile += '.gz'
         os = kevlar.open(outfile, 'w')
