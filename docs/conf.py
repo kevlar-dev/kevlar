@@ -19,6 +19,8 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+import subprocess
+subprocess.check_call(['pip', 'install', 'cython'])
 
 # -- General configuration ------------------------------------------------
 
