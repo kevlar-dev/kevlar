@@ -11,7 +11,7 @@ import khmer
 import kevlar
 from kevlar.novel import novel, load_samples
 from kevlar.filter import filter as kfilter
-from kevlar.filter import load_mask
+# from kevlar.filter import load_mask
 from kevlar.partition import partition
 from kevlar.alac import alac
 from kevlar.simlike import simlike
