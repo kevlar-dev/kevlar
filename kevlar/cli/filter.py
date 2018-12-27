@@ -19,7 +19,7 @@ def subparser(subparsers):
     were inflated during the preliminary k-mer counting stage.
     """
 
-    subparser = subparsers.add_parser('recount', description=desc)
+    subparser = subparsers.add_parser('filter', description=desc)
     subparser.add_argument(
         '-M', '--memory', type=khmer_args.memory_setting, default=1e6,
         metavar='MEM', help='memory to allocate for the k-mer re-counting'

@@ -61,7 +61,7 @@ def second_pass(reads, counts, casemin, ctrlmax, timer):
         validated_kmers = list()
         for ikmer in read.annotations:
             ikseq = read.ikmerseq(ikmer)
-            ctrltoohigh = sum([1 for a in ikmer.abund[1:] if a > ctrlmax])
+            ctrltoohigh = sum([1 for a in ikmer.abund[1:] if a > ctrlmax]) > 0
             if ctrltoohigh:
                 continue
             newcount = counts.get(ikseq)
@@ -73,6 +73,7 @@ def second_pass(reads, counts, casemin, ctrlmax, timer):
             validated_kmers.append(newikmer)
         if len(validated_kmers) == 0:
             continue
+        read.annotations = validated_kmers
         yield read
         kept += 1
     elapsed = timer.stop('secondpass')
@@ -97,10 +98,10 @@ def filter(readfile, mask=None, memory=1e6, maxfpr=0.01, casemin=6, ctrlmax=1):
 
 def main(args):
     mask = kevlar.sketch.load(args.mask)
-    with kevlar.open(args.out, 'w') as outstream:
-        filterstream = filter(
-            args.augfastq, mask=mask, memory=args.memory, maxfpr=args.max_fpr,
-            casemin=args.case_min, ctrlmax=args.ctrl_max,
-        )
-        for n, record in enumerate(filterstream):
-            kevlar.print_augmented_fastx(record, outstream)
+    outstream = kevlar.open(args.out, 'w')
+    filterstream = filter(
+        args.augfastq, mask=mask, memory=args.memory, maxfpr=args.max_fpr,
+        casemin=args.case_min, ctrlmax=args.ctrl_max,
+    )
+    for n, record in enumerate(filterstream):
+        kevlar.print_augmented_fastx(record, outstream)
