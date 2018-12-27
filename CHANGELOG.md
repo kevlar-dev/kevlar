@@ -10,12 +10,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Added a new flag to print to the terminal (stderr) and a logfile simultanously (see #308).
+- The `filter` module no longer merges interesting *k*-mer annotations from multiple files and focuses solely on filters by recomputed *k*-mer abundance and mask (see #316).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
 
 ### Removed
-- The `effcount` an `dump` modules have been disabled (see #308).
+- The `effcount`, `dump`, and `simplex` modules have been disabled (see #308, #316).
 
 
 ## [0.6.1] 2018-11-16
