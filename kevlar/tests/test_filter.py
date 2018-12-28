@@ -35,14 +35,14 @@ def test_alpha():
         'AGGGGCGTGACTTAATAAG', 'GGGCGTGACTTAATAAGGT',
         'TAGGGGCGTGACTTAATAA', 'GGGGCGTGACTTAATAAGG',
     ]
-    for record in  validated:
+    for record in validated:
         for kmer in record.annotations:
             seq = record.ikmerseq(kmer)
             assert seq not in badkmers and kevlar.revcom(seq) not in badkmers
             assert seq in goodkmers or kevlar.revcom(seq) in goodkmers
 
 
-@pytest.mark.parametrize('mask,nkmers,nkmerinstances',[
+@pytest.mark.parametrize('mask,nkmers,nkmerinstances', [
     (None, 424, 5782),
     (bogusrefr(), 424, 5782),
     (kevlar.sketch.load(data_file('bogus-genome/mask.nt')), 13, 171)

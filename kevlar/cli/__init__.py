@@ -26,6 +26,7 @@ from . import simplex
 from . import simlike
 from . import split
 from . import dist
+from . import unband
 
 mains = {
     'count': kevlar.count.main,
@@ -42,6 +43,7 @@ mains = {
     'simlike': kevlar.simlike.main,
     'split': kevlar.split.main,
     'dist': kevlar.dist.main,
+    'unband': kevlar.unband.main,
 }
 
 subparser_funcs = {
@@ -59,6 +61,7 @@ subparser_funcs = {
     'simlike': simlike.subparser,
     'split': split.subparser,
     'dist': dist.subparser,
+    'unband': unband.subparser,
 }
 
 
