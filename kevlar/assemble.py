@@ -24,7 +24,7 @@ def assemble(partstream, maxreads=10000):
     n = 0
     pn = 0
     progress_indicator = kevlar.ProgressIndicator(
-        '[kevlar::assemble] skipping partition with {counter} reads',
+        '[kevlar::assemble] {counter} partitions assembled',
         interval=10, breaks=[100, 1000, 10000], usetimer=True,
     )
     for partid, partition in partstream:
