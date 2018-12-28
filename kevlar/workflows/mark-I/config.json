@@ -1,6 +1,7 @@
 {
     "ksize": 31,
     "recountmem": "1G",
+    "numsplit": 16,
     "samples": {
         "casemin": 6,
         "ctrlmax": 1,
