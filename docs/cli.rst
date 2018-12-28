@@ -87,15 +87,15 @@ kevlar alac
    :prog: kevlar
    :path: alac
 
-kevlar simplex
---------------
+kevlar unband
+-------------
 
 .. argparse::
    :module: kevlar.cli.__init__
    :func: parser
    :nodefault:
    :prog: kevlar
-   :path: simplex
+   :path: unband
 
 kevlar augment
 ----------------

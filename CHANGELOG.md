@@ -7,15 +7,17 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - A new Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
 - A new Snakemake workflow for kevlar's standard processing procedure (see #306).
+- New `unband` module to merge augmented Fastq files produced with a *k*-mer banding strategy (see #316).
 
 ### Changed
 - Added a new flag to print to the terminal (stderr) and a logfile simultanously (see #308).
+- The functionality of the previous `filter` module is now split between the new `unband` module and a reimplementation of the `filter` module (see #316).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
 
 ### Removed
-- The `effcount` an `dump` modules have been disabled (see #308).
+- The `effcount`, `dump`, and `simplex` modules have been disabled (see #308, #316).
 
 
 ## [0.6.1] 2018-11-16
