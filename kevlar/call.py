@@ -171,6 +171,8 @@ def main(args):
     )
     for partid, gdnas in gdnastream:
         progress_indicator.update()
+        if partid not in contigs_by_partition:
+            continue
         contigs = contigs_by_partition[partid]
         caller = call(
             gdnas, contigs, partid, match=args.match, mismatch=args.mismatch,

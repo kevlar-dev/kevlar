@@ -225,7 +225,7 @@ def localize(partstream, refrfile, seedsize=51, delta=50, maxdiff=None,
 
 
 def main(args):
-    contigstream = kevlar.parse_augmented_fastx(kevlar.open(args.contigs, 'r'))
+    contigstream = kevlar.seqio.afxstream(args.contigs)
     if args.part_id:
         pstream = kevlar.parse_single_partition(contigstream, args.part_id)
     else:

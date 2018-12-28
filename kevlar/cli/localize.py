@@ -45,5 +45,6 @@ def subparser(subparsers):
     subparser.add_argument('--exclude', metavar='REGEX', type=str,
                            help='discard alignments to any chromosomes whose '
                            'sequence IDs match the given pattern')
-    subparser.add_argument('contigs', help='assembled reads in Fasta format')
     subparser.add_argument('refr', help='BWA indexed reference genome')
+    subparser.add_argument('contigs', nargs='+', help='assembled reads in '
+                           'augmented Fasta format')

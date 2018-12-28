@@ -429,3 +429,10 @@ class VCFReader(object):
         if len(fields) == 8:
             return
         self._sample_labels = fields[9:]
+
+
+def vcfstream(filelist):
+    for infile in filelist:
+        reader = VCFReader(kevlar.open(infile, 'r'))
+        for record in reader:
+            yield record

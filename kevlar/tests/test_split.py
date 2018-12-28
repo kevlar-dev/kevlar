@@ -38,7 +38,7 @@ def test_split_cli():
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.split.main(args)
 
-    outfile = tempdir + '/out.1'
+    outfile = tempdir + '/out.0.augfastx.gz'
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)
@@ -47,7 +47,7 @@ def test_split_cli():
     assert len(partitions[0]) == 67
     assert len(partitions[1]) == 12
 
-    outfile = tempdir + '/out.2'
+    outfile = tempdir + '/out.1.augfastx.gz'
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)
@@ -56,7 +56,7 @@ def test_split_cli():
     assert len(partitions[0]) == 23
     assert len(partitions[1]) == 11
 
-    outfile = tempdir + '/out.3'
+    outfile = tempdir + '/out.2.augfastx.gz'
     readstream = kevlar.parse_augmented_fastx(kevlar.open(outfile, 'r'))
     partstream = kevlar.parse_partitioned_reads(readstream)
     partitions = list(partstream)

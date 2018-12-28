@@ -196,7 +196,7 @@ def test_maxdiff(X, numtargets):
 def test_main(incl, excl, output, capsys):
     contig = data_file('localize-contig.fa')
     refr = data_file('localize-refr.fa')
-    arglist = ['localize', '--seed-size', '23', '--delta', '50', contig, refr]
+    arglist = ['localize', '--seed-size', '23', '--delta', '50', refr, contig]
     args = kevlar.cli.parser().parse_args(arglist)
     args.include = incl
     args.exclude = excl
@@ -209,7 +209,7 @@ def test_main(incl, excl, output, capsys):
 def test_main_no_matches(capsys):
     contig = data_file('localize-contig-bad.fa')
     refr = data_file('localize-refr.fa')
-    arglist = ['localize', '--seed-size', '23', contig, refr]
+    arglist = ['localize', '--seed-size', '23', refr, contig]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.localize.main(args)
     out, err = capsys.readouterr()
@@ -318,7 +318,7 @@ def test_localize_cli(capsys):
     refr_file = data_file('fiveparts-refr.fa.gz')
     contig_file = data_file('fiveparts.contigs.augfasta.gz')
 
-    arglist = ['localize', '--part-id', '2', contig_file, refr_file]
+    arglist = ['localize', '--part-id', '2', refr_file, contig_file]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.localize.main(args)
     out, err = capsys.readouterr()
@@ -331,7 +331,7 @@ def test_localize_cli(capsys):
         'CTGGCTTGCCTTGACCCCA\n'
     )
 
-    arglist = ['localize', contig_file, refr_file]
+    arglist = ['localize', refr_file, contig_file]
     args = kevlar.cli.parser().parse_args(arglist)
     kevlar.localize.main(args)
     out, err = capsys.readouterr()
