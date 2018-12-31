@@ -52,6 +52,7 @@ def test_load_cutouts():
 
 
 def test_autoindex():
+    origlogstream = kevlar.logstream
     # Bogus directory
     with pytest.raises(KevlarBWAError) as e:
         autoindex('/a/truly/bogus/dir/seqs.fa')
@@ -78,6 +79,7 @@ def test_autoindex():
         assert kevlar.logstream.getvalue() == ''
     finally:
         rmtree(tmpdir)
+        kevlar.logstream = origlogstream
 
 
 def test_bwa_align_coords():

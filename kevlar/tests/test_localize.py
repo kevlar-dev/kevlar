@@ -285,8 +285,7 @@ def test_localize_new():
     ])
 
 
-def test_localize_no_match():
-    kevlar.logstream = StringIO()
+def test_localize_no_match(capsys):
     refr_file = data_file('fiveparts-refr.fa.gz')
     contig_file = data_file('wasp-pass.contig.augfasta')
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(contig_file, 'r'))
@@ -294,7 +293,8 @@ def test_localize_no_match():
     localizer = localize(pstream, refr_file, seedsize=41, debug=True)
     cutoutdata = list(localizer)
     assert cutoutdata == []
-    assert 'WARNING: no reference matches' in kevlar.logstream.getvalue()
+    out, err = capsys.readouterr()
+    assert 'WARNING: no reference matches' in err
 
 
 @pytest.mark.parametrize('partid,testdeflines', [
