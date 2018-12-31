@@ -203,26 +203,43 @@ def process_partition(partitionid, calls):
                 call.filter(kevlar.vcf.VariantFilter.MateFail)
 
 
+def window_check(call, ksize=31):
+    altspan = call.window
+    refspan = call.refrwindow
+    altmissing = altspan is None
+    refmissing = refspan is None
+    altshort = altspan and len(altspan) < ksize
+    refshort = refspan and len(refspan) < ksize
+    if altmissing or refmissing or altshort or refshort:
+        if call.filterstr == 'PASS':
+            message = 'WARNING: stubbornly refusing to compute likelihood:'
+            kevlar.plog('[kevlar::simlike]', message)
+            if altmissing:
+                message = '    missing alt allele spanning window'
+                kevlar.plog('[kevlar::simlike]', message)
+            if refmissing:
+                message = '    missing refr allele spanning window'
+                kevlar.plog('[kevlar::simlike]', message)
+            if altshort:
+                message = '    alt allele spanning window {:s}'.format(altspan)
+                message += ', shorter than k size {:d}'.format(ksize)
+                kevlar.plog('[kevlar::simlike]', message)
+            if refshort:
+                message = '    ref allele spanning window {:s}'.format(refspan)
+                message += ', shorter than k size {:d}'.format(ksize)
+                kevlar.plog('[kevlar::simlike]', message)
+        call.annotate('LIKESCORE', float('-inf'))
+        return True
+    return False
+
+
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             dynamic=True, casemin=5, samplelabels=None):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
     for call in variants:
-        nowindow = call.window is None or call.refrwindow is None
-        tooshort = (
-            len(call.refrwindow) < case.ksize() or
-            len(call.window) < case.ksize()
-        )
-        if nowindow or tooshort:
-            if call.filterstr == 'PASS':
-                msg = 'WARNING: stubbornly refusing to compute likelihood for '
-                if nowindow is None:
-                    msg += 'variant with no spanning window'
-                else:
-                    msg += 'variant-spanning window {:s}'.format(call.window)
-                    msg += ', shorter than k size {:d}'.format(case.ksize())
-                kevlar.plog('[kevlar::simlike]', msg)
+        if window_check(call, case.ksize()):
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
