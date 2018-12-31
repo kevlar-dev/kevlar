@@ -112,6 +112,29 @@ def test_joinlist():
     assert kevlar.simlike.joinlist([]) == '.'
 
 
+def test_simlike_bad_windows(minitrio, capsys):
+    kid, mom, dad, ref = minitrio
+    instream = kevlar.open(data_file('minitrio/calls-badwindows.vcf'), 'r')
+    reader = kevlar.vcf.VCFReader(instream)
+    calculator = kevlar.simlike.simlike(
+        reader, kid, (mom, dad), ref, samplelabels=('Kid', 'Mom', 'Dad')
+    )
+    calls = list(calculator)
+    assert len(calls) == 5
+    goodcalls = [c for c in calls if c.attribute('LIKESCORE') > float('-inf')]
+    assert len(goodcalls) == 1
+    assert len(goodcalls[0].window) == 61
+    assert len(goodcalls[0].refrwindow) == 61
+
+    out, err = capsys.readouterr()
+    print('DEBUG', out)
+    print('DEBUG', err)
+    assert 'missing alt allele spanning window' in err
+    assert 'missing refr allele spanning window' in err
+    assert 'alt allele spanning window CCCCAGAAATGGGTTTTTGATAGTC' in err
+    assert 'ref allele spanning window CCCCAGAAATGGCTTTTTGATAGTC' in err
+
+
 def test_simlike_main(minitrio):
     kid, mom, dad, ref = minitrio
     instream = kevlar.open(data_file('minitrio/calls.vcf'), 'r')
