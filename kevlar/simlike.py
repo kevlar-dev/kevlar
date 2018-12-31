@@ -228,7 +228,6 @@ def window_check(call, ksize=31):
                 message = '    ref allele spanning window {:s}'.format(refspan)
                 message += ', shorter than k size {:d}'.format(ksize)
                 kevlar.plog('[kevlar::simlike]', message)
-        call.annotate('LIKESCORE', float('-inf'))
         return True
     return False
 
