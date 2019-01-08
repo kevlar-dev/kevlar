@@ -30,7 +30,7 @@ def test_load_variant_mask_multi_chrom():
     with kevlar.open(bedfile, 'r') as bedstream:
         index = kevlar.varfilter.load_variant_mask(bedstream)
     assert len(index) == 5
-    assert list(index.trees.keys()) == ['1', '2', '3', '4']
+    assert sorted(index.trees.keys()) == ['1', '2', '3', '4']
     assert index.query('5', 1, 10000000) == set()
     itvls = [
         Interval(40, 400, '4:40-400'),
