@@ -22,7 +22,7 @@ from . import partition
 from . import localize
 from . import call
 from . import alac
-from . import simplex
+from . import varfilter
 from . import simlike
 from . import split
 from . import dist
@@ -40,6 +40,7 @@ mains = {
     'localize': kevlar.localize.main,
     'call': kevlar.call.main,
     'alac': kevlar.alac.main,
+    'varfilter': kevlar.varfilter.main,
     'simlike': kevlar.simlike.main,
     'split': kevlar.split.main,
     'dist': kevlar.dist.main,
@@ -58,6 +59,7 @@ subparser_funcs = {
     'localize': localize.subparser,
     'call': call.subparser,
     'alac': alac.subparser,
+    'varfilter': varfilter.subparser,
     'simlike': simlike.subparser,
     'split': split.subparser,
     'dist': dist.subparser,

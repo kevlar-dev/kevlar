@@ -30,6 +30,7 @@ class VariantFilter(Enum):
     PartitionScore = 5
     LikelihoodFail = 6
     NumerousMismatches = 7
+    UserFilter = 8
 
 
 class FormattedList(list):
@@ -240,7 +241,10 @@ class VCFWriter(object):
             'real',
         VariantFilter.NumerousMismatches:
             'No attempt at variant calling was made due to a suspicious '
-            'number of mismatches between the contig and the reference genome'
+            'number of mismatches between the contig and the reference genome',
+        VariantFilter.UserFilter:
+            'The user has explicitly filtered this variant out due to overlap '
+            'with problematic/undesired loci or variants.'
     }
 
     info_metadata = {

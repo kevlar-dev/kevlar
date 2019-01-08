@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # -----------------------------------------------------------------------------
-# Copyright (c) 2018 2018 Battelle National Biodefense Institute
+# Copyright (c) 2018 Battelle National Biodefense Institute
 #
 # This file is part of kevlar (http://github.com/dib-lab/kevlar) and is
 # licensed under the MIT license: see LICENSE.

@@ -2,5 +2,6 @@ pandas
 matplotlib
 pysam>=0.11.2
 networkx>=2.0
-scipy>=1.0
-git+https://github.com/dib-lab/khmer.git
+scipy>=1.1
+intervaltree>=3.0.2
+git+https://github.com/dib-lab/khmer.git@fix/build

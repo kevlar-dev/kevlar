@@ -31,6 +31,7 @@ from kevlar import reference
 from kevlar import cigar
 from kevlar import varmap
 from kevlar import vcf
+from kevlar.intervalforest import IntervalForest
 from kevlar.readpair import ReadPair
 from kevlar.readgraph import ReadGraph
 from kevlar.mutablestring import MutableString
@@ -51,6 +52,7 @@ from kevlar import partition
 from kevlar import localize
 from kevlar import call
 from kevlar import alac
+from kevlar import varfilter
 from kevlar import simlike
 from kevlar import dist
 from kevlar import split
@@ -131,6 +133,25 @@ def multi_file_iter_khmer(filenames):
     for filename in filenames:
         for record in khmer.ReadParser(filename):
             yield record
+
+
+def parse_bed(instream):
+    for line in instream:
+        if line.startswith('#'):
+            continue
+        line = line.strip()
+        if line == '':
+            continue
+        values = re.split(r'\s+', line)
+        chrom, start, end, *data = values
+        yield chrom, int(start), int(end), data
+
+
+def bedstream(bedfilelist):
+    for bedfile in bedfilelist:
+        fh = kevlar.open(bedfile, 'r')
+        for values in parse_bed(fh):
+            yield values
 
 
 def paired_reader(readstream):
