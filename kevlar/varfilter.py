@@ -31,4 +31,4 @@ def main(args):
     writer.write_header()
     varmask = load_variant_mask(kevlar.open(args.bed, 'r'))
     for varcall in varfilter(reader, varmask):
-        writer.write(call)
+        writer.write(varcall)

@@ -137,7 +137,12 @@ def multi_file_iter_khmer(filenames):
 
 def parse_bed(instream):
     for line in instream:
-        values = re.split(r'\s+', line.strip())
+        if line.startswith('#'):
+            continue
+        line = line.strip()
+        if line == '':
+            continue
+        values = re.split(r'\s+', line)
         chrom, start, end, *data = values
         yield chrom, int(start), int(end), data
 
