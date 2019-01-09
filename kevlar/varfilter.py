@@ -28,7 +28,8 @@ def varfilter(calls, varmask):
     message = 'Filtering preliminary variant calls'
     kevlar.plog('[kevlar::varfilter]', message)
     progress_indictator = kevlar.ProgressIndicator(
-        '[kevlar::varfilter]     {counter} calls processed'
+        '[kevlar::varfilter]     {counter} calls processed', interval=1e3,
+        breaks=[1e4, 1e5, 1e6], usetimer=True,
     )
     for varcall in calls:
         if varmask.query(varcall.seqid, varcall.position) != set():
