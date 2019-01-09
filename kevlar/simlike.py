@@ -237,6 +237,9 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
+    progress_indicator = kevlar.ProgressIndicator(
+        '[kevlar::simlike]     scores for {counter} calls computed'
+    )
     for call in variants:
         if window_check(call, case.ksize()):
             call.annotate('LIKESCORE', float('-inf'))
@@ -253,6 +256,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
                        dynamic=dynamic)
         annotate_abundances(call, altabund, samplelabels)
         calls_by_partition[call.attribute('PART')].append(call)
+        progress_indicator.update()
 
     allcalls = list()
     for partition, calls in calls_by_partition.items():
@@ -277,6 +281,7 @@ def main(args):
     else:
         args.sample_labels = default_sample_labels(nsamples)
 
+    kevlar.plog('[kevlar::simlike] Loading k-mer counts for each sample')
     case = khmer.Counttable.load(args.case)
     controls = [khmer.Counttable.load(c) for c in args.controls]
     refr = khmer.SmallCounttable.load(args.refr)
@@ -289,6 +294,8 @@ def main(args):
         writer.register_sample(label)
     writer.write_header()
 
+    message = 'Computing likelihood scores for preliminary variant calls'
+    kevlar.plog('[kevlar::simlike]', message)
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
