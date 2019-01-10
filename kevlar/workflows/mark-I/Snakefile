@@ -265,7 +265,7 @@ rule filter_novel:
         'Logs/filter.log'
     threads: 1
     message: 'Filter out k-mers that '
-    shell: 'kevlar --tee --logfile {output[1]} filter --mask Mask/mask.nodetable --mask-max-fpr {config[mask][max_fpr]} --abund-memory {config[recountmem]} --case-min {config[samples][casemin]} --ctrl-max {config[samples][ctrlmax]} --ksize {config[ksize]} --out {output[0]} {input}'
+    shell: 'kevlar --tee --logfile {output[1]} filter --mask Mask/mask.nodetable --memory {config[recountmem]} --case-min {config[samples][casemin]} --ctrl-max {config[samples][ctrlmax]} --out {output[0]} {input}'
 
 
 rule partition:
