@@ -54,6 +54,10 @@ def subparser(subparsers):
     misc_args.add_argument('--sample-labels', metavar='LBL', type=str,
                            nargs='+', help='list of sample labels (with case/'
                            'proband first)')
+    misc_args.add_argument('-f', '--fast-mode', action='store_true',
+                           help='whenever possible, stop computations '
+                           'prematurely for any putative variants that have '
+                           'already been filtered out')
     misc_args.add_argument('-o', '--out', metavar='OUT', default='-',
                            help='output file; default is terminal (standard '
                            'output)')
