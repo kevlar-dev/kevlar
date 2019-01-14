@@ -233,7 +233,7 @@ def window_check(call, ksize=31):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=5, samplelabels=None):
+            dynamic=True, casemin=5, ctrlmax=1, samplelabels=None):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -252,6 +252,11 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         abovethresh = [a for a in altabund[0] if a > casemin]
         if len(abovethresh) == 0:
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
+        for abundlist in altabund[1:]:
+            toohigh = [a for a in abundlist if a > ctrlmax]
+            if len(toohigh) > 2:
+                call.filter(kevlar.vcf.VariantFilter.CaseHigh)
+                break
         calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
                        dynamic=dynamic)
         annotate_abundances(call, altabund, samplelabels)
@@ -299,7 +304,7 @@ def main(args):
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
-        samplelabels=args.sample_labels,
+        ctrlmax=args.ctrl_max, samplelabels=args.sample_labels,
     )
     for call in calculator:
         writer.write(call)
