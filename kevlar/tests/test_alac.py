@@ -73,7 +73,12 @@ def test_pico_partitioned(capsys):
 
     out, err = capsys.readouterr()
     lines = out.strip().split('\n')
-    assert len(lines) == 36
+    nmetalines = 4  # filteformat filteDate source reference
+    nfilterlines = len(kevlar.vcf.VCFWriter.filter_desc)
+    ninfolines = len(kevlar.vcf.VCFWriter.info_metadata)
+    nformatlines = 1
+    nheaderlines = nmetalines + nfilterlines + ninfolines + nformatlines + 1
+    assert len(lines) == nheaderlines + 10
     lines = [l for l in lines if not l.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
