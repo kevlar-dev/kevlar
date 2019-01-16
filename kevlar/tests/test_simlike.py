@@ -211,7 +211,6 @@ def test_simlike_cli_bad_labels():
 
 
 def test_simlike_fastmode():
-    import sys
     kid = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.kid.ct'))
     mom = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.mom.ct'))
     dad = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.dad.ct'))
@@ -226,6 +225,24 @@ def test_simlike_fastmode():
     calls = list(scorer)
     assert len(calls) == 4
     proband_abunds = [c.format('Proband', 'ALTABUND') for c in calls]
-    assert proband_abunds[0] is not None
-    assert proband_abunds[1] is not None
-    assert proband_abunds[2:] == [None, None]
+    filters = [c.filterstr for c in calls]
+    assert proband_abunds == [None] * 4
+    assert filters == [
+        'LikelihoodFail;PassengerVariant', 'ControlAbundance;LikelihoodFail',
+        'ControlAbundance;LikelihoodFail', 'LikelihoodFail;UserFilter'
+    ]
+
+
+def test_simlike_ctrl_high_abund():
+    kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
+    mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
+    dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
+    refr = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.refr.sct'))
+    vcfin = kevlar.open(data_file('ctrl-high-abund/cc57120.calls.vcf'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+    )
+    calls = list(scorer)
+    assert len(calls) == 2
+    assert len([c for c in calls if 'ControlAbundance' in c.filterstr])

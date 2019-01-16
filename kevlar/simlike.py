@@ -10,7 +10,6 @@
 from collections import defaultdict
 import kevlar
 from kevlar.vcf import Variant
-import khmer
 from math import log
 import scipy.stats
 
@@ -233,7 +232,8 @@ def window_check(call, ksize=31):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=5, samplelabels=None, fastmode=False):
+            dynamic=True, casemin=6, ctrlmax=1, samplelabels=None,
+            fastmode=False):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -253,6 +253,11 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         abovethresh = [a for a in altabund[0] if a > casemin]
         if len(abovethresh) == 0:
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
+        for abundlist in altabund[1:]:
+            toohigh = [a for a in abundlist if a > ctrlmax]
+            if len(toohigh) > 4:
+                call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
+                break
         skipvar = fastmode and call.filterstr != 'PASS'
         if skipvar:
             call.annotate('LIKESCORE', float('-inf'))
@@ -288,9 +293,9 @@ def main(args):
         args.sample_labels = default_sample_labels(nsamples)
 
     kevlar.plog('[kevlar::simlike] Loading k-mer counts for each sample')
-    case = khmer.Counttable.load(args.case)
-    controls = [khmer.Counttable.load(c) for c in args.controls]
-    refr = khmer.SmallCounttable.load(args.refr)
+    case = kevlar.sketch.load(args.case)
+    controls = [kevlar.sketch.load(c) for c in args.controls]
+    refr = kevlar.sketch.load(args.refr)
 
     reader = kevlar.vcf.vcfstream(args.vcf)
     outstream = kevlar.open(args.out, 'w')
@@ -305,7 +310,8 @@ def main(args):
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
-        fastmode=args.fast_mode, samplelabels=args.sample_labels,
+        ctrlmax=args.ctrl_max, samplelabels=args.sample_labels,
+        fastmode=args.fast_mode,
     )
     for call in calculator:
         writer.write(call)
