@@ -208,3 +208,24 @@ def test_simlike_cli_bad_labels():
     with pytest.raises(kevlar.simlike.KevlarSampleLabelingError) as sle:
         kevlar.simlike.main(args)
     assert 'provided 4 labels but 3 samples' in str(sle)
+
+
+def test_simlike_fastmode():
+    import sys
+    kid = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.kid.ct'))
+    mom = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.mom.ct'))
+    dad = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.dad.ct'))
+    refr = kevlar.sketch.load(data_file('simlike-fast-mode/cc27.refr.sct'))
+
+    vcfin = kevlar.open(data_file('simlike-fast-mode/cc27.calls.vcf'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, fastmode=True,
+        samplelabels=['Proband', 'Mother', 'Father'],
+    )
+    calls = list(scorer)
+    assert len(calls) == 4
+    proband_abunds = [c.format('Proband', 'ALTABUND') for c in calls]
+    assert proband_abunds[0] is not None
+    assert proband_abunds[1] is not None
+    assert proband_abunds[2:] == [None, None]
