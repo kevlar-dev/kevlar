@@ -49,6 +49,8 @@ loc:
 	cloc kevlar/cli/*.py
 	@- echo -e "\n\n===== kevlar tests ====="
 	cloc kevlar/tests/test_*.py
+	@- echo -e "\n\n===== Sandbox scripts ====="
+	cloc kevlar/sandbox/*.py
 
 ## clean:    remove development artifacts
 clean:
