@@ -326,3 +326,21 @@ def test_call_mnv():
     assert calls[1]._refr == 'GA'
     assert calls[1]._alt == 'TT'
     assert calls[2].filterstr == 'PassengerVariant'
+
+
+def test_call_mnv_3bp():
+    contigfile = data_file('ant.contig.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('ant.gdna.fa')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=29)
+    calls = list(caller)
+
+    assert len(calls) == 1
+    assert calls[0]._refr = 'ACG'
+    assert calls[0]._alt = 'GTT'
+    assert calls[0].filterstr == 'PASS'
