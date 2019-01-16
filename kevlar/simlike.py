@@ -253,7 +253,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
         for abundlist in altabund[1:]:
             toohigh = [a for a in abundlist if a > ctrlmax]
-            if len(toohigh) > 2:
+            if len(toohigh) > 4:
                 call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
                 break
         calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
