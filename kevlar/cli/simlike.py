@@ -18,7 +18,7 @@ def subparser(subparsers):
                                       add_help=False)
 
     count_args = subparser.add_argument_group(
-        'K-mer counts',
+        'K-mer count files',
         'Likelihood scores are based on the abundance of alternate allele '
         'k-mers in each sample and on the abundance of reference allele '
         'k-mers in the reference genome.'
@@ -30,6 +30,18 @@ def subparser(subparsers):
                             'siblings, 1 counttable per sample')
     count_args.add_argument('--refr', metavar='REFR', help='k-mer '
                             'smallcounttable for reference genome')
+
+    thresh_args = subparser.add_argument_group(
+        'K-mer count thresholds',
+        'The thresholds originally used to detect novel k-mers are used at '
+        'this stage to distinguish true variants from spurious predictions.'
+    )
+    thresh_args.add_argument('--ctrl-max', metavar='X', type=int, default=1,
+                             help='maximum abundance threshold for controls; '
+                             'default is 1')
+    thresh_args.add_argument('--case-min', metavar='Y', type=int, default=6,
+                             help='minimum abundance threshold for proband; '
+                             'default is 6')
 
     cov_args = subparser.add_argument_group(
         'K-mer coverage',
@@ -57,7 +69,4 @@ def subparser(subparsers):
     misc_args.add_argument('-o', '--out', metavar='OUT', default='-',
                            help='output file; default is terminal (standard '
                            'output)')
-    misc_args.add_argument('--case-min', metavar='Y', type=int, default=5,
-                           help='minimum abundance threshold for proband; '
-                           'default is 5')
     subparser.add_argument('vcf', nargs='+')

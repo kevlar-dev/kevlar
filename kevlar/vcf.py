@@ -31,6 +31,7 @@ class VariantFilter(Enum):
     LikelihoodFail = 6
     NumerousMismatches = 7
     UserFilter = 8
+    ControlAbundance = 9
 
 
 class FormattedList(list):
@@ -244,7 +245,10 @@ class VCFWriter(object):
             'number of mismatches between the contig and the reference genome',
         VariantFilter.UserFilter:
             'The user has explicitly filtered this variant out due to overlap '
-            'with problematic/undesired loci or variants.'
+            'with problematic/undesired loci or variants.',
+        VariantFilter.ControlAbundance:
+            'Too many variant-spanning k-mers have high abundance in one or '
+            'more control samples.',
     }
 
     info_metadata = {
