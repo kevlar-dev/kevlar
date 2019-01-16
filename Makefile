@@ -13,7 +13,7 @@ devenv:
 
 ## style:    check Python code style against PEP8
 style:
-	pycodestyle kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
+	pycodestyle --exclude=kevlar/sandbox/*.py kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
 
 ## ext:      build C extensions
 ext: kevlar/alignment.c src/align.c inc/align.h
