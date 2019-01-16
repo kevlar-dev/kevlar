@@ -341,6 +341,6 @@ def test_call_mnv_3bp():
     calls = list(caller)
 
     assert len(calls) == 1
-    assert calls[0]._refr = 'ACG'
-    assert calls[0]._alt = 'GTT'
+    assert calls[0]._refr == 'ACG'
+    assert calls[0]._alt == 'GTT'
     assert calls[0].filterstr == 'PASS'

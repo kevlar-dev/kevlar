@@ -223,18 +223,19 @@ class Variant(object):
     def test_merge(self, other):
         if self.seqid != other.seqid:
             return None
-        if self.position != other.position - 1:
+        if len(self._alt) != len(self._refr):
             return None
-        if len(self._alt) != len(other._alt):
+        if len(other._alt) != len(other._refr):
             return None
-        if len(self._refr) != len(other._refr):
+        length = len(self._refr)
+        if self.position != other.position - length:
             return None
-        if self.window[1:] != other.window[:-1]:
+        if self.window[length:] != other.window[:-1]:
             return None
-        if self.refrwindow[1:] != other.refrwindow[:-1]:
+        if self.refrwindow[length:] != other.refrwindow[:-1]:
             return None
-        self.info['ALTWINDOW'] = self.window + other.window[-1]
-        self.info['REFRWINDOW'] = self.refrwindow + other.refrwindow[-1]
+        self.info['ALTWINDOW'] = self.window + other.window[-length]
+        self.info['REFRWINDOW'] = self.refrwindow + other.refrwindow[-length]
         self._alt = self._alt + other._alt
         self._refr = self._refr + other._refr
         return self
