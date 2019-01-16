@@ -232,7 +232,8 @@ def window_check(call, ksize=31):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=6, ctrlmax=1, samplelabels=None):
+            dynamic=True, casemin=6, ctrlmax=1, samplelabels=None,
+            fastmode=False):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -240,7 +241,8 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         '[kevlar::simlike]     scores for {counter} calls computed'
     )
     for call in variants:
-        if window_check(call, case.ksize()):
+        skipvar = fastmode and call.filterstr != 'PASS'
+        if skipvar or window_check(call, case.ksize()):
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
@@ -256,6 +258,11 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             if len(toohigh) > 4:
                 call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
                 break
+        skipvar = fastmode and call.filterstr != 'PASS'
+        if skipvar:
+            call.annotate('LIKESCORE', float('-inf'))
+            calls_by_partition[call.attribute('PART')].append(call)
+            continue
         calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
                        dynamic=dynamic)
         annotate_abundances(call, altabund, samplelabels)
@@ -304,6 +311,7 @@ def main(args):
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
         ctrlmax=args.ctrl_max, samplelabels=args.sample_labels,
+        fastmode=args.fast_mode,
     )
     for call in calculator:
         writer.write(call)
