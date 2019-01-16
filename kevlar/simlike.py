@@ -10,7 +10,6 @@
 from collections import defaultdict
 import kevlar
 from kevlar.vcf import Variant
-import khmer
 from math import log
 import scipy.stats
 
@@ -255,7 +254,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
         for abundlist in altabund[1:]:
             toohigh = [a for a in abundlist if a > ctrlmax]
             if len(toohigh) > 2:
-                call.filter(kevlar.vcf.VariantFilter.CaseHigh)
+                call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
                 break
         calc_likescore(call, altabund, refrabund, mu, sigma, epsilon,
                        dynamic=dynamic)
@@ -287,9 +286,9 @@ def main(args):
         args.sample_labels = default_sample_labels(nsamples)
 
     kevlar.plog('[kevlar::simlike] Loading k-mer counts for each sample')
-    case = khmer.Counttable.load(args.case)
-    controls = [khmer.Counttable.load(c) for c in args.controls]
-    refr = khmer.SmallCounttable.load(args.refr)
+    case = kevlar.sketch.load(args.case)
+    controls = [kevlar.sketch.load(c) for c in args.controls]
+    refr = kevlar.sketch.load(args.refr)
 
     reader = kevlar.vcf.vcfstream(args.vcf)
     outstream = kevlar.open(args.out, 'w')

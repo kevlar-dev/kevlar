@@ -31,7 +31,7 @@ class VariantFilter(Enum):
     LikelihoodFail = 6
     NumerousMismatches = 7
     UserFilter = 8
-    CaseHigh = 9
+    ControlAbundance = 9
 
 
 class FormattedList(list):
@@ -246,7 +246,7 @@ class VCFWriter(object):
         VariantFilter.UserFilter:
             'The user has explicitly filtered this variant out due to overlap '
             'with problematic/undesired loci or variants.',
-        VariantFilter.CaseHigh:
+        VariantFilter.ControlAbundance:
             'Too many variant-spanning k-mers have high abundance in one or '
             'more control samples.',
     }

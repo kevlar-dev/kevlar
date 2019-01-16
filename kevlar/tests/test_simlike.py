@@ -208,3 +208,18 @@ def test_simlike_cli_bad_labels():
     with pytest.raises(kevlar.simlike.KevlarSampleLabelingError) as sle:
         kevlar.simlike.main(args)
     assert 'provided 4 labels but 3 samples' in str(sle)
+
+
+def test_simlike_ctrl_high_abund():
+    kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
+    mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
+    dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
+    refr = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.refr.sct'))
+    vcfin = kevlar.open(data_file('ctrl-high-abund/cc57120.calls.vcf'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+    )
+    calls = list(scorer)
+    assert len(calls) == 2
+    assert len([c for c in calls if 'ControlAbundance' in c.filterstr])
