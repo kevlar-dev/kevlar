@@ -323,6 +323,6 @@ def test_call_mnv():
 
     assert len(calls) == 3
     assert [v.position for v in calls] == [98153308, 98153312, 98153407]
-    assert v[1]._refr == 'GA'
-    assert v[1]._alt == 'TT'
-    assert v[2].filterstr == 'PassengerVariant'
+    assert calls[1]._refr == 'GA'
+    assert calls[1]._alt == 'TT'
+    assert calls[2].filterstr == 'PassengerVariant'

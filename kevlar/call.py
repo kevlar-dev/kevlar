@@ -73,13 +73,27 @@ def dedup(callstream):
         if call.seqid not in calls:
             calls[call.seqid] = defaultdict(set)
         calls[call.seqid][call.position].add(call)
-    for seqid in calls:
-        for position in calls[seqid]:
+    for seqid in sorted(calls):
+        for position in sorted(calls[seqid]):
             sortedcalls = sorted(
                 calls[seqid][position], key=lambda call: call.windowlength,
                 reverse=True
             )
             yield sortedcalls[0]
+
+
+def merge_adjacent(callstream):
+    prev = None
+    for call in callstream:
+        if prev is not None:
+            trymerge = prev.test_merge(call)
+            if trymerge is not None:
+                call = trymerge
+                prev = None
+        if prev is not None:
+            yield prev
+        prev = call
+    yield prev
 
 
 def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
@@ -123,7 +137,7 @@ def call(*args, **kwargs):
 
     This function applies a deduplication procedure to preliminary calls.
     """
-    for call in dedup(prelim_call(*args, **kwargs)):
+    for call in merge_adjacent(dedup(prelim_call(*args, **kwargs))):
         yield call
 
 
