@@ -220,6 +220,26 @@ class Variant(object):
             return None
         return tuple(gt.split(','))
 
+    def test_merge(self, other):
+        if self.seqid != other.seqid:
+            return None
+        if len(self._alt) != len(self._refr):
+            return None
+        if len(other._alt) != len(other._refr):
+            return None
+        length = len(self._refr)
+        if self.position != other.position - length:
+            return None
+        if self.window[length:] != other.window[:-1]:
+            return None
+        if self.refrwindow[length:] != other.refrwindow[:-1]:
+            return None
+        self.info['ALTWINDOW'] = self.window + other.window[-length]
+        self.info['REFRWINDOW'] = self.refrwindow + other.refrwindow[-length]
+        self._alt = self._alt + other._alt
+        self._refr = self._refr + other._refr
+        return self
+
 
 class VCFWriter(object):
     filter_desc = {

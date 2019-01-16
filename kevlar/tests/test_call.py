@@ -306,3 +306,41 @@ def test_call_generate_mask_lowmem(capsys):
     out, err = capsys.readouterr()
     message = 'WARNING: mask FPR is 0.8065; exceeds user-specified limit'
     assert message in out or message in err
+
+
+def test_call_mnv():
+    contigfile = data_file('mnv-contig.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('mnv-gdna.fa')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=49)
+    calls = list(caller)
+    calls.sort(key=lambda v: v.position)
+
+    assert len(calls) == 3
+    assert [v.position for v in calls] == [98153308, 98153312, 98153407]
+    assert calls[1]._refr == 'GA'
+    assert calls[1]._alt == 'TT'
+    assert calls[2].filterstr == 'PassengerVariant'
+
+
+def test_call_mnv_3bp():
+    contigfile = data_file('ant.contig.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('ant.gdna.fa')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=29)
+    calls = list(caller)
+
+    assert len(calls) == 1
+    assert calls[0]._refr == 'ACG'
+    assert calls[0]._alt == 'GTT'
+    assert calls[0].filterstr == 'PASS'
