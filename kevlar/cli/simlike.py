@@ -33,7 +33,8 @@ def subparser(subparsers):
 
     thresh_args = subparser.add_argument_group(
         'K-mer count thresholds',
-        'asdf'
+        'The thresholds originally used to detect novel k-mers are used at '
+        'this stage to distinguish true variants from spurious predictions.'
     )
     thresh_args.add_argument('--ctrl-max', metavar='X', type=int, default=1,
                              help='maximum abundance threshold for controls; '

@@ -232,7 +232,7 @@ def window_check(call, ksize=31):
 
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=5, ctrlmax=1, samplelabels=None):
+            dynamic=True, casemin=6, ctrlmax=1, samplelabels=None):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
