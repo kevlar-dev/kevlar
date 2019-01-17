@@ -231,6 +231,10 @@ class Variant(object):
         length = len(self._refr)
         if self.position != other.position - length:
             return None
+        if self.window is None or other.window is None:
+            return None
+        if self.refrwindow is None or other.refrwindow is None:
+            return None
         if self.window[length:] != other.window[:-1]:
             return None
         if self.refrwindow[length:] != other.refrwindow[:-1]:
