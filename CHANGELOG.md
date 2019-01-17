@@ -10,12 +10,14 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New `unband` module to merge augmented Fastq files produced with a *k*-mer banding strategy (see #316).
 - New `varfilter` module to filter out preliminary variant calls overlapping with problematic/unwanted loci or features (see #318).
 - New dependency: `intervaltree` package (see #318).
+- A new `sandbox` directory with convenience scripts for development and analysis (see #335).
 
 ### Changed
-- Added a new flag to print to the terminal (stderr) and a logfile simultanously (see #308).
+- Added a new flag to print to the terminal (stderr) and a logfile simultaneously (see #308).
 - The functionality of the previous `filter` module is now split between the new `unband` module and a reimplementation of the `filter` module (see #316).
 - Added `--ctrl-max` flag to the `simlike` module, enabling a new `ControlAbundance` filter (see #327).
 - Added a "fast mode" to the `simlike` module, prematurely halting computations for calls already marked for filtering (see #328).
+- Added a filter for problematic short indels adjacent to homopolymers (see #336).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
