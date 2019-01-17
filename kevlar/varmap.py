@@ -155,6 +155,15 @@ class VariantMapping(object):
         numikmers = sum([1 for k in self.ikmers if k in call.window])
         return numikmers == 0
 
+    def homopolymer_filter(self):
+        rf = self.rightflank
+        if rf is None or len(rf.target) < 4:
+            return False
+        rf = rf.target
+        firstchar = rf[0]
+        first4chars = rf[0:4]
+        return first4chars == firstchar * 4
+
     def call_variants(self, ksize, mindist=6):
         """Attempt to call variants from this contig alignment.
 
@@ -180,6 +189,8 @@ class VariantMapping(object):
             indel = next(indelcaller)
             if self.is_passenger(indel):
                 indel.filter(vf.PassengerVariant)
+            if self.homopolymer_filter():
+                indel.filter(vf.Homopolymer)
             yield indel
 
             leftflankcaller = self.call_snv(

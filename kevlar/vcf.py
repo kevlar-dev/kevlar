@@ -32,6 +32,7 @@ class VariantFilter(Enum):
     NumerousMismatches = 7
     UserFilter = 8
     ControlAbundance = 9
+    Homopolymer = 10
 
 
 class FormattedList(list):
@@ -269,6 +270,9 @@ class VCFWriter(object):
         VariantFilter.ControlAbundance:
             'Too many variant-spanning k-mers have high abundance in one or '
             'more control samples.',
+        VariantFilter.Homopolymer:
+            'Indels associate with homopolymers are most often spurious and '
+            'very difficult to verify with confidence.'
     }
 
     info_metadata = {
