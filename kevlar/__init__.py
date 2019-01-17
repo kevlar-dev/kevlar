@@ -31,6 +31,7 @@ from kevlar import reference
 from kevlar import cigar
 from kevlar import varmap
 from kevlar import vcf
+from kevlar import evaluate
 from kevlar.intervalforest import IntervalForest
 from kevlar.readpair import ReadPair
 from kevlar.readgraph import ReadGraph
