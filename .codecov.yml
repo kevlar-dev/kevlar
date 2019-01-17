@@ -1,0 +1,6 @@
+coverage:
+  precision: 2
+  round: nearest
+  range: "50...95"
+ignore:
+  - "kevlar/sandbox/*.py"
