@@ -344,3 +344,59 @@ def test_call_mnv_3bp():
     assert calls[0]._refr == 'ACG'
     assert calls[0]._alt == 'GTT'
     assert calls[0].filterstr == 'PASS'
+
+
+def test_call_homopolymers():
+    contigfile = data_file('homopolymer/14153-5parts.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('homopolymer/14153-5parts.targets.fasta')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=49)
+    calls = list(caller)
+
+    assert len(calls) == 5
+    filters = [c.filterstr for c in calls]
+    assert 'PASS' not in filters
+    for f in filters:
+        assert 'Homopolymer' in f
+
+
+def test_call_homopolymers_mixed_results():
+    contigfile = data_file('homopolymer/12175-3parts.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('homopolymer/12175-3parts.targets.fasta')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=31)
+    calls = list(caller)
+    assert len(calls) == 6
+
+    poscontrol = [c for c in calls if c.seqid == '4']
+    assert len(poscontrol) == 3
+    poscontrol.sort(key=lambda c: c.position)
+    assert poscontrol[0].position == 123651819
+    assert poscontrol[0].filterstr == 'PassengerVariant'
+    assert poscontrol[1].position == 123651924
+    assert poscontrol[1].filterstr == 'PASS'
+    assert poscontrol[1]._refr == 'TAA'
+    assert poscontrol[1]._alt == 'T'
+    assert poscontrol[2].position == 123652028
+    assert poscontrol[2].filterstr == 'PassengerVariant'
+
+    false = [c for c in calls if c.seqid == '9']
+    assert len(false) == 2
+    indel = [c for c in calls if c._alt == 'GAA'][0]
+    assert 'Homopolymer' in indel.filterstr
+
+    borderline = [c for c in calls if c.seqid == '2']
+    # CTTTTTTATTATTTATTCTTTTTATTACTTAA   TCATAAATTTTTATCCATAAATATTTTT
+    # CTTTTTTATTATTTATTCTTTTTATTACTTAAAAATCATAAATTTTTATCCATAAATATTTTT
+    assert len(borderline) == 1
+    assert 'Homopolymer' not in borderline[0].filterstr
