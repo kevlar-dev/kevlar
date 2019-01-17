@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # -----------------------------------------------------------------------------
 # Copyright (c) 2018 The Regents of the University of California
@@ -20,10 +21,10 @@ def subparser(subparsers):
     """
 
     subparser = subparsers.add_parser('localize', description=desc)
-    subparser.add_argument('-d', '--delta', type=int, metavar='D',
+    subparser.add_argument('-d', '--delta', type=int, metavar='Δ',
                            default=50, help='retrieve the genomic interval '
                            'from the reference by extending beyond the span '
-                           'of all k-mer starting positions by D bp')
+                           'of all k-mer starting positions by Δ bp')
     subparser.add_argument('-p', '--part-id', type=str, metavar='ID',
                            help='only localize partition "ID" in the input')
     subparser.add_argument('-o', '--out', metavar='FILE', default='-',

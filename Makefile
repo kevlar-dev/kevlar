@@ -13,7 +13,7 @@ devenv:
 
 ## style:    check Python code style against PEP8
 style:
-	pycodestyle kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
+	pycodestyle --exclude=kevlar/sandbox/*.py kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
 
 ## ext:      build C extensions
 ext: kevlar/alignment.c src/align.c inc/align.h
@@ -49,6 +49,8 @@ loc:
 	cloc kevlar/cli/*.py
 	@- echo -e "\n\n===== kevlar tests ====="
 	cloc kevlar/tests/test_*.py
+	@- echo -e "\n\n===== Sandbox scripts ====="
+	cloc kevlar/sandbox/*.py
 
 ## clean:    remove development artifacts
 clean:

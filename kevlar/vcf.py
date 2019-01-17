@@ -339,6 +339,10 @@ class VCFWriter(object):
     def register_sample(self, label):
         self._sample_labels.append(label)
 
+    def register_samples_from_reader(self, reader):
+        for label in reader._sample_labels:
+            self.register_sample(label)
+
     def describe_format(self, label, datatype, datanumber, desc):
         self.format_metadata[label] = (datatype, datanumber, desc)
 

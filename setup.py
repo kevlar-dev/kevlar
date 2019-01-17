@@ -62,6 +62,7 @@ setup(name='biokevlar',
           ]
       },
       include_package_data=True,
+      scripts=glob.glob('kevlar/sandbox/*.py'),
       ext_modules=[ksw2, fermilite, sequencemod],
       setup_requires=dependencies,
       install_requires=dependencies,
