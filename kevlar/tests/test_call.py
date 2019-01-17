@@ -344,3 +344,68 @@ def test_call_mnv_3bp():
     assert calls[0]._refr == 'ACG'
     assert calls[0]._alt == 'GTT'
     assert calls[0].filterstr == 'PASS'
+
+
+def test_call_homopolymers():
+    contigfile = data_file('homopolymer/14153-5parts.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    contigs = list(contigstream)
+
+    gdnafile = data_file('homopolymer/14153-5parts.targets.fasta')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    targets = list(gdnastream)
+
+    caller = kevlar.call.call(targets, contigs, ksize=49)
+    calls = list(caller)
+
+    assert len(calls) == 5
+    filters = [c.filterstr for c in calls]
+    assert 'PASS' not in filters
+    for f in filters:
+        assert 'Homopolymer' in f
+
+
+def test_call_homopolymers_mixed_results():
+    contigfile = data_file('homopolymer/12175-3parts.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(contigstream)
+    contigs = kevlar.call.load_contigs(partstream)
+
+    gdnafile = data_file('homopolymer/12175-3parts.targets.fasta')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(gdnastream)
+    targets = kevlar.call.load_contigs(partstream)
+
+    kid = kevlar.sketch.load(data_file('homopolymer/12175-kid.sct'))
+    mom = kevlar.sketch.load(data_file('homopolymer/12175-mom.sct'))
+    dad = kevlar.sketch.load(data_file('homopolymer/12175-dad.sct'))
+    refr = kevlar.sketch.load(data_file('homopolymer/12175-refr.sct'))
+
+    prelimcalls = list()
+    for partid in contigs:
+        contiglist = contigs[partid]
+        gdnalist = targets[partid]
+        caller = kevlar.call.call(gdnalist, contiglist, partid=partid)
+        prelimcalls.extend(list(caller))
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+    )
+    calls = list(scorer)
+
+    assert len(calls) == 6
+    for c in calls:
+        print(c.vcf)
+    unintrstng = [c for c in calls if c.filterstr in ('PASS', 'Homopolymer')]
+    assert len(unintrstng) == 3
+
+    call1, call2, call3 = unintrstng
+    assert call1.position == 123651924
+    assert call1.filterstr == 'PASS'  # negative control
+    assert call1._refr == 'TAA'
+    assert call1._alt == 'T'
+    assert call2.position == 124641259
+    assert call2.filterstr == 'PASS'  # borderline
+    assert call2._refr == 'TAAA'
+    assert call2._alt == 'T'
+    assert call3.position == 128660727
+    assert call3.filterstr == 'Homopolymer'  # positive control
