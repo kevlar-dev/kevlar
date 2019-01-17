@@ -368,35 +368,44 @@ def test_call_homopolymers():
 def test_call_homopolymers_mixed_results():
     contigfile = data_file('homopolymer/12175-3parts.contigs.augfasta')
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
-    contigs = list(contigstream)
+    partstream = kevlar.parse_partitioned_reads(contigstream)
+    contigs = kevlar.call.load_contigs(partstream)
 
     gdnafile = data_file('homopolymer/12175-3parts.targets.fasta')
     gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
-    targets = list(gdnastream)
+    partstream = kevlar.parse_partitioned_reads(gdnastream)
+    targets = kevlar.call.load_contigs(partstream)
 
-    caller = kevlar.call.call(targets, contigs, ksize=31)
-    calls = list(caller)
+    kid = kevlar.sketch.load(data_file('homopolymer/12175-kid.sct'))
+    mom = kevlar.sketch.load(data_file('homopolymer/12175-mom.sct'))
+    dad = kevlar.sketch.load(data_file('homopolymer/12175-dad.sct'))
+    refr = kevlar.sketch.load(data_file('homopolymer/12175-refr.sct'))
+
+    prelimcalls = list()
+    for partid in contigs:
+        contiglist = contigs[partid]
+        gdnalist = targets[partid]
+        caller = kevlar.call.call(gdnalist, contiglist, partid=partid)
+        prelimcalls.extend(list(caller))
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+    )
+    calls = list(scorer)
+
     assert len(calls) == 6
+    for c in calls:
+        print(c.vcf)
+    unintrstng = [c for c in calls if c.filterstr in ('PASS', 'Homopolymer')]
+    assert len(unintrstng) == 3
 
-    poscontrol = [c for c in calls if c.seqid == '4']
-    assert len(poscontrol) == 3
-    poscontrol.sort(key=lambda c: c.position)
-    assert poscontrol[0].position == 123651819
-    assert poscontrol[0].filterstr == 'PassengerVariant'
-    assert poscontrol[1].position == 123651924
-    assert poscontrol[1].filterstr == 'PASS'
-    assert poscontrol[1]._refr == 'TAA'
-    assert poscontrol[1]._alt == 'T'
-    assert poscontrol[2].position == 123652028
-    assert poscontrol[2].filterstr == 'PassengerVariant'
-
-    false = [c for c in calls if c.seqid == '9']
-    assert len(false) == 2
-    indel = [c for c in calls if c._alt == 'GAA'][0]
-    assert 'Homopolymer' in indel.filterstr
-
-    borderline = [c for c in calls if c.seqid == '2']
-    # CTTTTTTATTATTTATTCTTTTTATTACTTAA   TCATAAATTTTTATCCATAAATATTTTT
-    # CTTTTTTATTATTTATTCTTTTTATTACTTAAAAATCATAAATTTTTATCCATAAATATTTTT
-    assert len(borderline) == 1
-    assert 'Homopolymer' not in borderline[0].filterstr
+    call1, call2, call3 = unintrstng
+    assert call1.position == 123651924
+    assert call1.filterstr == 'PASS'  # negative control
+    assert call1._refr == 'TAA'
+    assert call1._alt == 'T'
+    assert call2.position == 124641259
+    assert call2.filterstr == 'PASS'  # borderline
+    assert call2._refr == 'TAAA'
+    assert call2._alt == 'T'
+    assert call3.position == 128660727
+    assert call3.filterstr == 'Homopolymer'  # positive control
