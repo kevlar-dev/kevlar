@@ -17,7 +17,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - The functionality of the previous `filter` module is now split between the new `unband` module and a reimplementation of the `filter` module (see #316).
 - Added `--ctrl-max` flag to the `simlike` module, enabling a new `ControlAbundance` filter (see #327).
 - Added a "fast mode" to the `simlike` module, prematurely halting computations for calls already marked for filtering (see #328).
-- Added a filter for problematic short indels adjacent to homopolymers (see #336).
+- Added a filter for problematic short indels adjacent to homopolymers (see #336, #338).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).

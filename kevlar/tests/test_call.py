@@ -347,18 +347,18 @@ def test_call_mnv_3bp():
 
 
 def test_call_homopolymers():
-    contigfile = data_file('homopolymer/14153-5parts.contigs.augfasta')
+    contigfile = data_file('homopolymer/14153-6parts.contigs.augfasta')
     contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
     contigs = list(contigstream)
 
-    gdnafile = data_file('homopolymer/14153-5parts.targets.fasta')
+    gdnafile = data_file('homopolymer/14153-6parts.targets.fasta')
     gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
     targets = list(gdnastream)
 
     caller = kevlar.call.call(targets, contigs, ksize=49)
     calls = list(caller)
 
-    assert len(calls) == 5
+    assert len(calls) == 6
     filters = [c.filterstr for c in calls]
     assert 'PASS' not in filters
     for f in filters:
