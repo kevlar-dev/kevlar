@@ -161,8 +161,11 @@ class VariantMapping(object):
             return False
         rf = rf.target
         firstchar = rf[0]
-        first4chars = rf[0:4]
-        return first4chars == firstchar * 4
+        poly = firstchar * 4
+        prefix1 = rf[0:4]
+        prefix2 = rf[1:5]
+        prefix3 = rf[2:6]
+        return poly in [prefix1, prefix2, prefix3]
 
     def call_variants(self, ksize, mindist=6):
         """Attempt to call variants from this contig alignment.
