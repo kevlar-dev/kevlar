@@ -60,7 +60,8 @@ def subparser(subparsers):
 
     filt_args = subparser.add_argument_group(
         'Heuristic filters',
-        'asdf'
+        'The following heuristic filters can improve accuracy when calling '
+        'de novo variants but may require tuning for your particular data set.'
     )
     filt_args.add_argument(
         '--ctrl-abund-high', metavar='H', type=int, default=4,
