@@ -166,8 +166,8 @@ class VariantMapping(object):
         rf = rf.target
         firstchar = rf[0]
         poly4 = firstchar * 4
-        first6 = rf[0:6]
-        return poly4 in first6
+        first7 = rf[0:7]
+        return poly4 in first7
 
     def call_variants(self, ksize, mindist=6):
         """Attempt to call variants from this contig alignment.

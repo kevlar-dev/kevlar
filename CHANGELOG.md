@@ -15,9 +15,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Added a new flag to print to the terminal (stderr) and a logfile simultaneously (see #308).
 - The functionality of the previous `filter` module is now split between the new `unband` module and a reimplementation of the `filter` module (see #316).
-- Added `--ctrl-max` flag to the `simlike` module, enabling a new `ControlAbundance` filter (see #327).
 - Added a "fast mode" to the `simlike` module, prematurely halting computations for calls already marked for filtering (see #328).
-- Added a filter for problematic short indels adjacent to homopolymers (see #336, #338).
+- Added a filter for problematic short indels adjacent to homopolymers (see #336, #338, #339).
+- Implemented new filters in the `simlike` module based on thresholds and k-mer abundances: the `ControlAbundance` filter for predictions with too many high-abundance parent/control k-mers spanning the variant, and the `CaseAbundance` filter for predictions with too many consecutive proband/child k-mers spanning the variant (see #327, #339).
 
 ### Fixed
 - Corrected a bug that reported the reference target sequence instead of the assembled contig sequence in the `CONTIG` attribute of indel calls in the VCF (see #304).
