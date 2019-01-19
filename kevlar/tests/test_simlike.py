@@ -233,7 +233,19 @@ def test_simlike_fastmode():
     ]
 
 
-def test_simlike_ctrl_high_abund():
+@pytest.mark.parametrize('threshold,filterstatus', [
+    (-10, False),
+    (-1, False),
+    (0, False),
+    (None, False),
+    (False, False),
+    (1, True),
+    (3, True),
+    (5, True),
+    (15, False),
+    (49, False),
+])
+def test_simlike_ctrl_high_abund(threshold, filterstatus):
     kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
     mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
     dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
@@ -242,7 +254,10 @@ def test_simlike_ctrl_high_abund():
     prelimcalls = kevlar.vcf.VCFReader(vcfin)
     scorer = kevlar.simlike.simlike(
         prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+        ctrlabundhigh=threshold,
     )
     calls = list(scorer)
     assert len(calls) == 2
-    assert len([c for c in calls if 'ControlAbundance' in c.filterstr])
+    print([c.filterstr for c in calls])
+    for c in calls:
+        assert ('ControlAbundance' in c.filterstr) is filterstatus

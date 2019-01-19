@@ -238,7 +238,7 @@ def check_hash_spanning_novel_kmers(call, caseabundlist, casemin):
 
 
 def check_case_abund_low(call, caseabundlist, casemin, caseabundlow):
-    if caseabundlow <= 0:
+    if not caseabundlow or caseabundlow <= 0:
         return
     belowthresh = [a < casemin for a in caseabundlist]
     toomanykmers = [True] * caseabundlow
@@ -247,7 +247,7 @@ def check_case_abund_low(call, caseabundlist, casemin, caseabundlow):
 
 
 def check_ctrl_abund_high(call, ctrlabundlists, ctrlmax, ctrlabundhigh):
-    if ctrlabundhigh <= 0:
+    if not ctrlabundhigh or ctrlabundhigh <= 0:
         return
     for abundlist in ctrlabundlists:
         toohigh = [a for a in abundlist if a > ctrlmax]
