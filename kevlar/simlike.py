@@ -186,15 +186,18 @@ def annotate_abundances(call, abundances, samplelabels):
 
 
 def process_partition(partitionid, calls):
-    maxscore = max([c.attribute('LIKESCORE') for c in calls])
+    passcalls = [c for c in calls if c.filterstr == 'PASS']
+    if len(passcalls) == 0:
+        return
+    maxscore = max([c.attribute('LIKESCORE') for c in passcalls])
     maxcalls = list()
-    for call in calls:
-        if call.attribute('LIKESCORE') == maxscore:
-            maxcalls.append(call)
+    for c in calls:
+        if c.attribute('LIKESCORE') == maxscore and c.filterstr == 'PASS':
+            maxcalls.append(c)
         else:
-            call.filter(kevlar.vcf.VariantFilter.PartitionScore)
-    for call in maxcalls:
-        call.annotate('CALLCLASS', partitionid)
+            c.filter(kevlar.vcf.VariantFilter.PartitionScore)
+    for c in maxcalls:
+        c.annotate('CALLCLASS', partitionid)
     if calls[0].attribute('MATEDIST') is not None:
         matedists = set([c.attribute('MATEDIST') for c in calls])
         if matedists == set([float('inf')]):
@@ -242,7 +245,7 @@ def check_case_abund_low(call, caseabundlist, casemin, caseabundlow):
         return
     belowthresh = [a < casemin for a in caseabundlist]
     toomanykmers = [True] * caseabundlow
-    if toomanykmers in belowthresh:
+    if ''.join(map(str, toomanykmers)) in ''.join(map(str, belowthresh)):
         call.filter(kevlar.vcf.VariantFilter.CaseAbundance)
 
 

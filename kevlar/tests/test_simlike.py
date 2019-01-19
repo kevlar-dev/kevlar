@@ -43,6 +43,24 @@ def miniabund(minitrio):
     return altabund, refrabund
 
 
+@pytest.fixture
+def caselowsketches(scope="module"):
+    kid = kevlar.sketch.load(data_file('case-low-abund/kid.ct'))
+    mom = kevlar.sketch.load(data_file('case-low-abund/mom.ct'))
+    dad = kevlar.sketch.load(data_file('case-low-abund/dad.ct'))
+    refr = kevlar.sketch.load(data_file('case-low-abund/refr.sct'))
+    return kid, mom, dad, refr
+
+
+@pytest.fixture
+def ctrlhighsketches(scope="module"):
+    kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
+    mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
+    dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
+    refr = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.refr.sct'))
+    return kid, mom, dad, refr
+
+
 def test_get_abundances(minitrio):
     kid, mom, dad, ref = minitrio
     altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
@@ -245,11 +263,8 @@ def test_simlike_fastmode():
     (15, False),
     (49, False),
 ])
-def test_simlike_ctrl_high_abund(threshold, filterstatus):
-    kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
-    mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
-    dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
-    refr = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.refr.sct'))
+def test_simlike_ctrl_high_abund(threshold, filterstatus, ctrlhighsketches):
+    kid, mom, dad, refr = ctrlhighsketches
     vcfin = kevlar.open(data_file('ctrl-high-abund/cc57120.calls.vcf'), 'r')
     prelimcalls = kevlar.vcf.VCFReader(vcfin)
     scorer = kevlar.simlike.simlike(
@@ -261,3 +276,30 @@ def test_simlike_ctrl_high_abund(threshold, filterstatus):
     print([c.filterstr for c in calls])
     for c in calls:
         assert ('ControlAbundance' in c.filterstr) is filterstatus
+
+
+@pytest.mark.parametrize('casemin,abund,numfilt', [
+    (6, -10, 0),
+    (6, -1, 0),
+    (6, 0, 0),
+    (6, None, 0),
+    (6, False, 0),
+    (6, 5, 4),
+    (7, 5, 5),
+    (6, 4, 5),
+    (6, 9, 4),
+    (6, 10, 3),
+])
+def test_simlike_case_low_abund(casemin, abund, numfilt, caselowsketches):
+    kid, mom, dad, refr = caselowsketches
+    vcfin = kevlar.open(data_file('case-low-abund/calls.vcf.gz'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+        casemin=casemin, caseabundlow=abund,
+    )
+    calls = list(scorer)
+    assert len(calls) == 5
+    print([c.filterstr for c in calls])
+    filtered = [c for c in calls if 'CaseAbundance' in c.filterstr]
+    assert len(filtered) == numfilt
