@@ -186,15 +186,18 @@ def annotate_abundances(call, abundances, samplelabels):
 
 
 def process_partition(partitionid, calls):
-    maxscore = max([c.attribute('LIKESCORE') for c in calls])
+    passcalls = [c for c in calls if c.filterstr == 'PASS']
+    if len(passcalls) == 0:
+        return
+    maxscore = max([c.attribute('LIKESCORE') for c in passcalls])
     maxcalls = list()
-    for call in calls:
-        if call.attribute('LIKESCORE') == maxscore:
-            maxcalls.append(call)
+    for c in calls:
+        if c.attribute('LIKESCORE') == maxscore and c.filterstr == 'PASS':
+            maxcalls.append(c)
         else:
-            call.filter(kevlar.vcf.VariantFilter.PartitionScore)
-    for call in maxcalls:
-        call.annotate('CALLCLASS', partitionid)
+            c.filter(kevlar.vcf.VariantFilter.PartitionScore)
+    for c in maxcalls:
+        c.annotate('CALLCLASS', partitionid)
     if calls[0].attribute('MATEDIST') is not None:
         matedists = set([c.attribute('MATEDIST') for c in calls])
         if matedists == set([float('inf')]):
@@ -231,9 +234,34 @@ def window_check(call, ksize=31):
     return False
 
 
+def check_hash_spanning_novel_kmers(call, caseabundlist, casemin):
+    abovethresh = [a for a in caseabundlist if a >= casemin]
+    if len(abovethresh) == 0:
+        call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
+
+
+def check_case_abund_low(call, caseabundlist, casemin, caseabundlow):
+    if not caseabundlow or caseabundlow <= 0:
+        return
+    belowthresh = [a < casemin for a in caseabundlist]
+    toomanykmers = [True] * caseabundlow
+    if ''.join(map(str, toomanykmers)) in ''.join(map(str, belowthresh)):
+        call.filter(kevlar.vcf.VariantFilter.CaseAbundance)
+
+
+def check_ctrl_abund_high(call, ctrlabundlists, ctrlmax, ctrlabundhigh):
+    if not ctrlabundhigh or ctrlabundhigh <= 0:
+        return
+    for abundlist in ctrlabundlists:
+        toohigh = [a for a in abundlist if a > ctrlmax]
+        if len(toohigh) > ctrlabundhigh:
+            call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
+            break
+
+
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
-            dynamic=True, casemin=6, ctrlmax=1, samplelabels=None,
-            fastmode=False):
+            dynamic=True, casemin=6, ctrlmax=1, caseabundlow=5,
+            ctrlabundhigh=4, samplelabels=None, fastmode=False):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -250,14 +278,9 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             call.window, call.refrwindow, case, controls, refr
         )
         call.annotate('DROPPED', ndropped)
-        abovethresh = [a for a in altabund[0] if a > casemin]
-        if len(abovethresh) == 0:
-            call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
-        for abundlist in altabund[1:]:
-            toohigh = [a for a in abundlist if a > ctrlmax]
-            if len(toohigh) > 4:
-                call.filter(kevlar.vcf.VariantFilter.ControlAbundance)
-                break
+        check_hash_spanning_novel_kmers(call, altabund[0], casemin)
+        check_case_abund_low(call, altabund[0], casemin, caseabundlow)
+        check_ctrl_abund_high(call, altabund[1:], ctrlmax, ctrlabundhigh)
         skipvar = fastmode and call.filterstr != 'PASS'
         if skipvar:
             call.annotate('LIKESCORE', float('-inf'))
@@ -310,7 +333,8 @@ def main(args):
     calculator = simlike(
         reader, case, controls, refr, mu=args.mu, sigma=args.sigma,
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
-        ctrlmax=args.ctrl_max, samplelabels=args.sample_labels,
+        ctrlmax=args.ctrl_max, caseabundlow=args.case_abund_low,
+        ctrlabundhigh=args.ctrl_abund_high, samplelabels=args.sample_labels,
         fastmode=args.fast_mode,
     )
     for call in calculator:

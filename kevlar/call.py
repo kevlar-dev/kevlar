@@ -98,14 +98,14 @@ def merge_adjacent(callstream):
 
 def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
                 gapopen=5, gapextend=0, ksize=31, refrfile=None, debug=False,
-                mindist=5):
+                mindist=5, homopolyfilt=True):
     """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
         for target in sorted(targetlist, key=lambda cutout: cutout.defline):
             mapping = VariantMapping(
                 query, target, match=match, mismatch=mismatch, gapopen=gapopen,
-                gapextend=gapextend
+                gapextend=gapextend, homopolyfilt=homopolyfilt,
             )
             alignments.append(mapping)
         aligns2report = alignments_to_report(alignments)
@@ -192,6 +192,7 @@ def main(args):
             gdnas, contigs, partid, match=args.match, mismatch=args.mismatch,
             gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
             refrfile=args.refr, debug=args.debug, mindist=5,
+            homopolyfilt=not args.no_homopoly_filter,
         )
         for varcall in caller:
             if args.gen_mask:

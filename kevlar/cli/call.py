@@ -49,6 +49,10 @@ def subparser(subparsers):
                            help='show this help message and exit')
     misc_args.add_argument('-d', '--debug', action='store_true',
                            help='show debugging output')
+    misc_args.add_argument('--no-homopoly-filter', action='store_true',
+                           help='by default, short indels adjacent to '
+                           'homopolymers are filtered out; use this flag to '
+                           'disable that filter')
     misc_args.add_argument('--refr', metavar='FILE',
                            help='reference genome indexed for BWA search; if '
                            'provided, mates of interesting reads will be used '

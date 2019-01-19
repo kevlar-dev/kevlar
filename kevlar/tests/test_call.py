@@ -376,19 +376,20 @@ def test_call_homopolymers_mixed_results():
     partstream = kevlar.parse_partitioned_reads(gdnastream)
     targets = kevlar.call.load_contigs(partstream)
 
-    kid = kevlar.sketch.load(data_file('homopolymer/12175-kid.sct'))
-    mom = kevlar.sketch.load(data_file('homopolymer/12175-mom.sct'))
-    dad = kevlar.sketch.load(data_file('homopolymer/12175-dad.sct'))
-    refr = kevlar.sketch.load(data_file('homopolymer/12175-refr.sct'))
-
     prelimcalls = list()
     for partid in contigs:
         contiglist = contigs[partid]
         gdnalist = targets[partid]
         caller = kevlar.call.call(gdnalist, contiglist, partid=partid)
         prelimcalls.extend(list(caller))
+
+    kid = kevlar.sketch.load(data_file('homopolymer/12175-kid.sct'))
+    mom = kevlar.sketch.load(data_file('homopolymer/12175-mom.sct'))
+    dad = kevlar.sketch.load(data_file('homopolymer/12175-dad.sct'))
+    refr = kevlar.sketch.load(data_file('homopolymer/12175-refr.sct'))
     scorer = kevlar.simlike.simlike(
-        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+        prelimcalls, kid, [mom, dad], refr,
+        samplelabels=['Proband', 'Mother', 'Father'],
     )
     calls = list(scorer)
 
@@ -409,3 +410,38 @@ def test_call_homopolymers_mixed_results():
     assert call2._alt == 'T'
     assert call3.position == 128660727
     assert call3.filterstr == 'Homopolymer'  # positive control
+
+
+def test_call_homopolymer_filter_disabled():
+    contigfile = data_file('homopolymer/12175-3parts.contigs.augfasta')
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(contigstream)
+    contigs = kevlar.call.load_contigs(partstream)
+
+    gdnafile = data_file('homopolymer/12175-3parts.targets.fasta')
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(gdnastream)
+    targets = kevlar.call.load_contigs(partstream)
+
+    prelimcalls = list()
+    for partid in contigs:
+        contiglist = contigs[partid]
+        gdnalist = targets[partid]
+        caller = kevlar.call.call(
+            gdnalist, contiglist, partid=partid, homopolyfilt=False
+        )
+        prelimcalls.extend(list(caller))
+
+    kid = kevlar.sketch.load(data_file('homopolymer/12175-kid.sct'))
+    mom = kevlar.sketch.load(data_file('homopolymer/12175-mom.sct'))
+    dad = kevlar.sketch.load(data_file('homopolymer/12175-dad.sct'))
+    refr = kevlar.sketch.load(data_file('homopolymer/12175-refr.sct'))
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr,
+        samplelabels=['Proband', 'Mother', 'Father'],
+    )
+    calls = list(scorer)
+
+    assert len(calls) == 6
+    for c in calls:
+        assert 'Homopolymer' not in c.filterstr
