@@ -7,8 +7,6 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 
-import sys
-
 
 def subparser(subparsers):
     """Define the `kevlar simlike` command-line interface."""
@@ -59,6 +57,25 @@ def subparser(subparsers):
                           help='when computing likelihood scores for SNVs, '
                           'disable dynamic error rate (scaled by abundance of '
                           'reference allele k-mer in the reference genome)')
+
+    filt_args = subparser.add_argument_group(
+        'Heuristic filters',
+        'asdf'
+    )
+    filt_args.add_argument(
+        '--ctrl-abund-high', metavar='H', type=int, default=4,
+        help='a variant call will be filtered out if either of the control '
+        'samples has >H high abundance k-mers spanning the variant (where '
+        'high abundance means > --ctrl-max); by default, H=4; set H<=0 to '
+        'disable the filter'
+    )
+    filt_args.add_argument(
+        '--case-abund-low', metavar='L', type=int, default=5,
+        help='a variant call will be filtered out if the case sample has L or '
+        'more consecutive low abundance k-mers spanning the variant (where '
+        'low abundance means < --case-min); by default, L=5; set L<=0 to '
+        'disable the filter'
+    )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',

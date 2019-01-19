@@ -25,7 +25,8 @@ class VariantMapping(object):
     procedures.
     """
     def __init__(self, contig, cutout, score=None, cigar=None, strand=1,
-                 match=1, mismatch=2, gapopen=5, gapextend=0):
+                 match=1, mismatch=2, gapopen=5, gapextend=0,
+                 homopolyfilt=True):
         if score is None:
             score, cigar, strand = align_both_strands(
                 cutout, contig, match, mismatch, gapopen, gapextend
@@ -34,6 +35,7 @@ class VariantMapping(object):
         self.cutout = cutout
         self.score = score
         self.strand = strand
+        self.do_homopolymer_filter = homopolyfilt
         self.matedist = None
         self.trimmed = 0
 
@@ -156,6 +158,8 @@ class VariantMapping(object):
         return numikmers == 0
 
     def homopolymer_filter(self):
+        if not self.do_homopolymer_filter:
+            return False
         rf = self.rightflank
         if rf is None or len(rf.target) < 4:
             return False
