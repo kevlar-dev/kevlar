@@ -250,9 +250,12 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             call.window, call.refrwindow, case, controls, refr
         )
         call.annotate('DROPPED', ndropped)
-        abovethresh = [a for a in altabund[0] if a > casemin]
+        abovethresh = [a for a in altabund[0] if a >= casemin]
         if len(abovethresh) == 0:
             call.filter(kevlar.vcf.VariantFilter.PassengerVariant)
+        belowthresh = [a < casemin for a in altabund[0]]
+        if [True] * 5 in belowthresh:
+            call.filter(kevlar.vcf.VariantFilter.CaseAbundance)
         for abundlist in altabund[1:]:
             toohigh = [a for a in abundlist if a > ctrlmax]
             if len(toohigh) > 4:
