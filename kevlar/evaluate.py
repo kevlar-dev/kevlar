@@ -10,6 +10,7 @@
 from collections import defaultdict
 import kevlar
 from kevlar.intervalforest import IntervalForest
+import sys
 
 
 def populate_index_from_bed(instream):
