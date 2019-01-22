@@ -60,6 +60,6 @@ def main(args):
     else:
         varmask = load_variant_mask(kevlar.open(args.filt, 'r'))
     if args.save_index:
-        save_index_to_file(index, args.save_index)
+        save_index_to_file(varmask, args.save_index)
     for varcall in varfilter(reader, varmask):
         writer.write(varcall)

@@ -117,8 +117,7 @@ def populate_index_from_bed(instream):
         values = line.strip().split()
         chrom = values[0]
         start, end = [int(coord) for coord in values[1:3]]
-        strrepr = '{:s}:{:d}-{:d}'.format(chrom, start, end)
-        index.insert(chrom, start, end, strrepr)
+        index.insert(chrom, start, end)
     return index
 
 
