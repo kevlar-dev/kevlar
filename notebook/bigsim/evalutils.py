@@ -109,6 +109,18 @@ def populate_index_from_simulation(instream, chrlabel):
     return index
 
 
+def populate_index_from_bed(instream):
+    index = IntervalForest()
+    for line in instream:
+        if line.strip() == '':
+            continue
+        values = line.strip().split()
+        chrom = values[0]
+        start, end = [int(coord) for coord in values[1:3]]
+        index.insert(chrom, start, end)
+    return index
+
+
 def compact(reader, index, delta=10):
     """Compact variants by call class
 
@@ -263,6 +275,25 @@ def subset_variants(variants, vartype, minlength=None, maxlength=None):
         if maxlength and indellength > maxlength:
             continue
         yield line
+
+        
+def subset_variants_bed(variants, vartype, minlength=None, maxlength=None):
+    assert vartype in ('SNV', 'INDEL')
+    for line in variants:
+        if line.strip() == '':
+            continue
+        values = line.strip().split()
+        if len(values) == 5:
+            if vartype == 'SNV':
+                yield line
+            continue
+        if vartype == 'INDEL':
+            indellength = int(values[3])
+            if minlength and indellength < minlength:
+                continue
+            if maxlength and indellength > maxlength:
+                continue
+            yield line
 
 
 def subset_vcf(varcalls, vartype, minlength=None, maxlength=None):

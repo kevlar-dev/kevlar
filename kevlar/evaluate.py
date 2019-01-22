@@ -10,6 +10,7 @@
 from collections import defaultdict
 import kevlar
 from kevlar.intervalforest import IntervalForest
+import sys
 
 
 def populate_index_from_bed(instream):
@@ -62,14 +63,15 @@ def compact(variants, index, delta=10):
                 nmatches += 1
                 if match is None:
                     match = varcall
-                    localfound = hits
         if nmatches == 0:
+            calllist[0].annotate('EVAL', 'False')
             calls.append(calllist[0])
         else:
             assert nmatches > 0, nmatches
             if nmatches > 1:
                 print('WARNING: found', nmatches, 'matches for CALLCLASS',
                       callclass, file=sys.stderr)
+            match.annotate('EVAL', 'True')
             calls.append(match)
 
     calls.sort(key=lambda c: float(c.attribute('LIKESCORE')), reverse=True)
