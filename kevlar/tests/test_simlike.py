@@ -303,3 +303,30 @@ def test_simlike_case_low_abund(casemin, abund, numfilt, caselowsketches):
     print([c.filterstr for c in calls])
     filtered = [c for c in calls if 'CaseAbundance' in c.filterstr]
     assert len(filtered) == numfilt
+
+
+def test_simlike_min_like_score(ctrlhighsketches):
+    kid, mom, dad, refr = ctrlhighsketches
+    vcfin = kevlar.open(data_file('ctrl-high-abund/cc57120.calls.vcf'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+        ctrlabundhigh=0, caseabundlow=0, minlikescore=0.0,
+    )
+    calls = list(scorer)
+    passing = [c for c in calls if c.filterstr == 'PASS']
+    notpassing = [c for c in calls if c.filterstr != 'PASS']
+    assert len(passing) == 1
+    assert len(notpassing) == 1
+
+    vcfin = kevlar.open(data_file('ctrl-high-abund/cc57120.calls.vcf'), 'r')
+    prelimcalls = kevlar.vcf.VCFReader(vcfin)
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, samplelabels=['Kid', 'Mom', 'Dad'],
+        ctrlabundhigh=0, caseabundlow=0, minlikescore=400.0,
+    )
+    calls = list(scorer)
+    passing = [c for c in calls if c.filterstr == 'PASS']
+    notpassing = [c for c in calls if c.filterstr != 'PASS']
+    assert len(passing) == 0
+    assert len(notpassing) == 2

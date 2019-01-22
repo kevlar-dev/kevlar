@@ -261,7 +261,8 @@ def check_ctrl_abund_high(call, ctrlabundlists, ctrlmax, ctrlabundhigh):
 
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             dynamic=True, casemin=6, ctrlmax=1, caseabundlow=5,
-            ctrlabundhigh=4, samplelabels=None, fastmode=False):
+            ctrlabundhigh=4, samplelabels=None, fastmode=False,
+            minlikescore=0.0):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -299,7 +300,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
     allcalls.sort(key=lambda c: c.attribute('LIKESCORE'), reverse=True)
     for call in allcalls:
-        if call.attribute('LIKESCORE') < 0.0:
+        if call.attribute('LIKESCORE') < minlikescore:
             call.filter(kevlar.vcf.VariantFilter.LikelihoodFail)
         yield call
 
@@ -335,7 +336,7 @@ def main(args):
         epsilon=args.epsilon, dynamic=args.dynamic, casemin=args.case_min,
         ctrlmax=args.ctrl_max, caseabundlow=args.case_abund_low,
         ctrlabundhigh=args.ctrl_abund_high, samplelabels=args.sample_labels,
-        fastmode=args.fast_mode,
+        fastmode=args.fast_mode, minlikescore=args.min_like_score,
     )
     for call in calculator:
         writer.write(call)
