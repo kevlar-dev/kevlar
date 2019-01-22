@@ -8,6 +8,18 @@
 # -----------------------------------------------------------------------------
 
 import kevlar
+import pickle
+
+
+def save_index_to_file(index, filename):
+    with open(filename, 'wb') as fh:
+        pickle.dump(index, fh)
+
+
+def load_index_from_file(filename):
+    with open(filename, 'rb') as fh:
+        index = pickle.load(fh)
+    return index
 
 
 def load_variant_mask(bedstream):
@@ -43,6 +55,11 @@ def main(args):
     outstream = kevlar.open(args.out, 'w')
     writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::varfilter')
     writer.write_header()
-    varmask = load_variant_mask(kevlar.open(args.bed, 'r'))
+    if args.load_index:
+        varmask = load_index_from_file(args.filt)
+    else:
+        varmask = load_variant_mask(kevlar.open(args.filt, 'r'))
+    if args.save_index:
+        save_index_to_file(varmask, args.save_index)
     for varcall in varfilter(reader, varmask):
         writer.write(varcall)
