@@ -77,6 +77,12 @@ def subparser(subparsers):
         'low abundance means < --case-min); by default, L=5; set L<=0 to '
         'disable the filter'
     )
+    filt_args.add_argument(
+        '--min-like-score', metavar='S', type=float, default=0.0,
+        help='filter out variant predictions with likelihood scores < S; by '
+        'default, S = 0.0, but it\'s often possible to improve specificity '
+        'without sacrificing sensitivity by raising S to, for example, 50.0'
+    )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',
