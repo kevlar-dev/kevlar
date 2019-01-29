@@ -18,8 +18,20 @@ class KevlarSampleLabelingError(ValueError):
     pass
 
 
-def get_abundances(altseq, refrseq, case, controls, refr):
-    """Create a nested list of k-mer abundances.
+def spanning_kmer_abundances(altseq, refrseq, case, controls, refr):
+    """Aggregate the abundances of the k-mers spanning the variant.
+
+    - altseq: sequence spanning the variant (alternate allele)
+    - refrseq: sequence spanning the reference allele
+    - case: table of k-mer counts from proband reads
+    - controls: list of k-mer count tables, 1 for each parent/control
+    - refr: table of k-mer counts from reference genome assembly
+
+    This function collects the k-mer counts of each k-mer spanning the variant
+    alternate allele. Alt allele k-mers not unique to the variant (abundance >
+    0 in the reference genome) are discarded. The counts of the remaining
+    k-mers are retained for subsequent likelihood score calculations, in the
+    following format.
 
     abundances = [
         [15, 14, 13, 16, 14, 15, 14, 14],  # k-mer abundances from case/proband
@@ -27,29 +39,36 @@ def get_abundances(altseq, refrseq, case, controls, refr):
         [0, 1, 1, 0, 1, 0, 2, 0],  # k-mer abundances from parent/control 2
     ]
     refr_abunds = [1, 1, 2, 1, 4, 2, 1, 1]  # genomic freq of refr allele kmers
-    """
-    abundances = list()
-    while len(abundances) < len(controls) + 1:
-        abundances.append(list())
-    refr_abunds = list()
 
+    For SNVs and MNVs, each alternate allele k-mer has a corresponding
+    reference allele k-mer, and the counts of these in the reference genome are
+    retained to enable a dynamic error model. For indels there is no such
+    correspondence, in which case `refr_abunds` is full of `None` values.
+    """
     case_counts = case.get_kmer_counts(altseq)
-    ctrl_counts = [ctrl.get_kmer_counts(altseq) for ctrl in controls]
+    alt_counts_refr = refr.get_kmer_counts(altseq)
+
+    # Discard k-mer counts if the k-mer is not unique to the variant
+    case_counts_valid = [
+        c for c, r in zip(case_counts, alt_counts_refr) if r == 0
+    ]
+    ctrl_counts_valid = list()
+    for control in controls:
+        ctrl_counts = control.get_kmer_counts(altseq)
+        valid_counts = [
+            c for c, r in zip(ctrl_counts, alt_counts_refr) if r == 0
+        ]
+        ctrl_counts_valid.append(valid_counts)
+    ndropped = len(case_counts) - len(case_counts_valid)
+
+    abundances = [case_counts_valid] + ctrl_counts_valid
     if len(altseq) == len(refrseq):  # SNV or MNV
         refr_counts = refr.get_kmer_counts(refrseq)
-        zipper = zip(case_counts, refr_counts, *ctrl_counts)
-        for countcase, countrefr, *countsctrl in zipper:
-            if countrefr > 0:
-                abundances[0].append(countcase)
-                for abundlist, count in zip(abundances[1:], countsctrl):
-                    abundlist.append(count)
-                refr_abunds.append(countrefr)
+        refr_abunds = [
+            c for c, r in zip(refr_counts, alt_counts_refr) if r == 0
+        ]
     else:  # INDEL
-        abundances[0].extend(case_counts)
-        for abundlist, count in zip(abundances[1:], ctrl_counts):
-            abundlist.extend(count)
-        refr_abunds = [None] * len(case_counts)
-    ndropped = len(case_counts) - len(abundances[0])
+        refr_abunds = [None] * len(case_counts_valid)
     return abundances, refr_abunds, ndropped
 
 
@@ -274,7 +293,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
-        altabund, refrabund, ndropped = get_abundances(
+        altabund, refrabund, ndropped = spanning_kmer_abundances(
             call.window, call.refrwindow, case, controls, refr
         )
         call.annotate('DROPPED', ndropped)
