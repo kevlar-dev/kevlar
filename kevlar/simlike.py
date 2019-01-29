@@ -28,29 +28,28 @@ def get_abundances(altseq, refrseq, case, controls, refr):
     ]
     refr_abunds = [1, 1, 2, 1, 4, 2, 1, 1]  # genomic freq of refr allele kmers
     """
-    altkmers = case.get_kmers(altseq)
-    refrkmers = case.get_kmers(refrseq)
-    if len(altseq) == len(refrseq):
-        valid_alt_kmers = list()
-        refr_abunds = list()
-        for altkmer, refrkmer in zip(altkmers, refrkmers):
-            if refr.get(altkmer) == 0:
-                valid_alt_kmers.append(altkmer)
-                refr_abunds.append(refr.get(refrkmer))
-    else:
-        valid_alt_kmers = [k for k in altkmers if refr.get(k) == 0]
-        refr_abunds = [None] * len(valid_alt_kmers)
-    ndropped = len(altkmers) - len(valid_alt_kmers)
-
     abundances = list()
-    for _ in range(len(controls) + 1):
+    while len(abundances) < len(controls) + 1:
         abundances.append(list())
-    for kmer in valid_alt_kmers:
-        abund = case.get(kmer)
-        abundances[0].append(abund)
-        for control, abundlist in zip(controls, abundances[1:]):
-            abund = control.get(kmer)
-            abundlist.append(abund)
+    refr_abunds = list()
+
+    case_counts = case.get_kmer_counts(altseq)
+    ctrl_counts = [ctrl.get_kmer_counts(altseq) for ctrl in controls]
+    if len(altseq) == len(refrseq):  # SNV or MNV
+        refr_counts = refr.get_kmer_counts(refrseq)
+        zipper = zip(case_counts, refr_counts, *ctrl_counts)
+        for countcase, countrefr, *countsctrl in zipper:
+            if countrefr > 0:
+                abundances[0].append(countcase)
+                for abundlist, count in zip(abundances[1:], countsctrl):
+                    abundlist.append(count)
+                refr_abunds.append(countrefr)
+    else:  # INDEL
+        abundances[0].extend(case_counts)
+        for abundlist, count in zip(abundances[1:], ctrl_counts):
+            abundlist.extend(count)
+        refr_abunds = [None] * len(case_counts)
+    ndropped = len(case_counts) - len(abundances[0])
     return abundances, refr_abunds, ndropped
 
 
@@ -86,8 +85,8 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
 
 def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001,
                       dynamic=True):
-    assert len(abunds[1]) == len(refrabunds)
-    assert len(abunds[2]) == len(refrabunds)
+    assert len(abunds[1]) == len(refrabunds), (len(abunds[1]), len(refrabunds))
+    assert len(abunds[2]) == len(refrabunds), (len(abunds[2]), len(refrabunds))
     logsum = 0.0
 
     # Case
