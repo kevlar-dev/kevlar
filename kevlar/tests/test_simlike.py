@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 import khmer
 import kevlar
 from kevlar.tests import data_file
-from kevlar.simlike import get_abundances, abund_log_prob
+from kevlar.simlike import spanning_kmer_abundances, abund_log_prob
 from kevlar.simlike import likelihood_denovo
 from kevlar.simlike import likelihood_false
 from kevlar.simlike import likelihood_inherited
@@ -36,7 +36,7 @@ def miniabund(minitrio):
     kid, mom, dad, ref = minitrio
     altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
     refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    altabund, refrabund, ndropped = get_abundances(
+    altabund, refrabund, ndropped = spanning_kmer_abundances(
         altseq, refseq, kid, (mom, dad), ref
     )
     assert ndropped == 3
@@ -61,11 +61,11 @@ def ctrlhighsketches(scope="module"):
     return kid, mom, dad, refr
 
 
-def test_get_abundances(minitrio):
+def test_spanning_kmer_abundances(minitrio):
     kid, mom, dad, ref = minitrio
     altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
     refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGCTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    altabund, refrabund, ndropped = get_abundances(
+    altabund, refrabund, ndropped = spanning_kmer_abundances(
         altseq, refseq, kid, (mom, dad), ref
     )
     assert ndropped == 3
@@ -81,7 +81,7 @@ def test_get_abundances(minitrio):
                          1, 1, 1, 1, 2, 1, 1, 1, 1, 1]
 
     refseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGAAATTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
-    altabund, refrabund, ndropped = get_abundances(
+    altabund, refrabund, ndropped = spanning_kmer_abundances(
         altseq, refseq, kid, (mom, dad), ref
     )
     assert ndropped == 3

@@ -18,8 +18,20 @@ class KevlarSampleLabelingError(ValueError):
     pass
 
 
-def get_abundances(altseq, refrseq, case, controls, refr):
-    """Create a nested list of k-mer abundances.
+def spanning_kmer_abundances(altseq, refrseq, case, controls, refr):
+    """Aggregate the abundances of the k-mers spanning the variant.
+
+    - altseq: sequence spanning the variant (alternate allele)
+    - refrseq: sequence spanning the reference allele
+    - case: table of k-mer counts from proband reads
+    - controls: list of k-mer count tables, 1 for each parent/control
+    - refr: table of k-mer counts from reference genome assembly
+
+    This function collects the k-mer counts of each k-mer spanning the variant
+    alternate allele. Alt allele k-mers not unique to the variant (abundance >
+    0 in the reference genome) are discarded. The counts of the remaining
+    k-mers are retained for subsequent likelihood score calculations, in the
+    following format.
 
     abundances = [
         [15, 14, 13, 16, 14, 15, 14, 14],  # k-mer abundances from case/proband
@@ -27,30 +39,36 @@ def get_abundances(altseq, refrseq, case, controls, refr):
         [0, 1, 1, 0, 1, 0, 2, 0],  # k-mer abundances from parent/control 2
     ]
     refr_abunds = [1, 1, 2, 1, 4, 2, 1, 1]  # genomic freq of refr allele kmers
-    """
-    altkmers = case.get_kmers(altseq)
-    refrkmers = case.get_kmers(refrseq)
-    if len(altseq) == len(refrseq):
-        valid_alt_kmers = list()
-        refr_abunds = list()
-        for altkmer, refrkmer in zip(altkmers, refrkmers):
-            if refr.get(altkmer) == 0:
-                valid_alt_kmers.append(altkmer)
-                refr_abunds.append(refr.get(refrkmer))
-    else:
-        valid_alt_kmers = [k for k in altkmers if refr.get(k) == 0]
-        refr_abunds = [None] * len(valid_alt_kmers)
-    ndropped = len(altkmers) - len(valid_alt_kmers)
 
-    abundances = list()
-    for _ in range(len(controls) + 1):
-        abundances.append(list())
-    for kmer in valid_alt_kmers:
-        abund = case.get(kmer)
-        abundances[0].append(abund)
-        for control, abundlist in zip(controls, abundances[1:]):
-            abund = control.get(kmer)
-            abundlist.append(abund)
+    For SNVs and MNVs, each alternate allele k-mer has a corresponding
+    reference allele k-mer, and the counts of these in the reference genome are
+    retained to enable a dynamic error model. For indels there is no such
+    correspondence, in which case `refr_abunds` is full of `None` values.
+    """
+    case_counts = case.get_kmer_counts(altseq)
+    alt_counts_refr = refr.get_kmer_counts(altseq)
+
+    # Discard k-mer counts if the k-mer is not unique to the variant
+    case_counts_valid = [
+        c for c, r in zip(case_counts, alt_counts_refr) if r == 0
+    ]
+    ctrl_counts_valid = list()
+    for control in controls:
+        ctrl_counts = control.get_kmer_counts(altseq)
+        valid_counts = [
+            c for c, r in zip(ctrl_counts, alt_counts_refr) if r == 0
+        ]
+        ctrl_counts_valid.append(valid_counts)
+    ndropped = len(case_counts) - len(case_counts_valid)
+
+    abundances = [case_counts_valid] + ctrl_counts_valid
+    if len(altseq) == len(refrseq):  # SNV or MNV
+        refr_counts = refr.get_kmer_counts(refrseq)
+        refr_abunds = [
+            c for c, r in zip(refr_counts, alt_counts_refr) if r == 0
+        ]
+    else:  # INDEL
+        refr_abunds = [None] * len(case_counts_valid)
     return abundances, refr_abunds, ndropped
 
 
@@ -86,8 +104,8 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
 
 def likelihood_denovo(abunds, refrabunds, mean=30.0, sd=8.0, error=0.001,
                       dynamic=True):
-    assert len(abunds[1]) == len(refrabunds)
-    assert len(abunds[2]) == len(refrabunds)
+    assert len(abunds[1]) == len(refrabunds), (len(abunds[1]), len(refrabunds))
+    assert len(abunds[2]) == len(refrabunds), (len(abunds[2]), len(refrabunds))
     logsum = 0.0
 
     # Case
@@ -275,7 +293,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             call.annotate('LIKESCORE', float('-inf'))
             calls_by_partition[call.attribute('PART')].append(call)
             continue
-        altabund, refrabund, ndropped = get_abundances(
+        altabund, refrabund, ndropped = spanning_kmer_abundances(
             call.window, call.refrwindow, case, controls, refr
         )
         call.annotate('DROPPED', ndropped)
