@@ -117,6 +117,8 @@ def populate_index_from_bed(instream):
         values = line.strip().split()
         chrom = values[0]
         start, end = [int(coord) for coord in values[1:3]]
+        if start == end:
+            start -= 1
         index.insert(chrom, start, end)
     return index
 
@@ -276,7 +278,7 @@ def subset_variants(variants, vartype, minlength=None, maxlength=None):
             continue
         yield line
 
-        
+
 def subset_variants_bed(variants, vartype, minlength=None, maxlength=None):
     assert vartype in ('SNV', 'INDEL')
     for line in variants:
@@ -288,7 +290,10 @@ def subset_variants_bed(variants, vartype, minlength=None, maxlength=None):
                 yield line
             continue
         if vartype == 'INDEL':
-            indellength = int(values[3])
+            if len(values) > 3:
+                indellength = int(values[3])
+            else:
+                indellength = int(values[2]) - int(values[1])
             if minlength and indellength < minlength:
                 continue
             if maxlength and indellength > maxlength:
