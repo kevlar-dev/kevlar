@@ -63,13 +63,12 @@ class IntervalForest(object):
     def query(self, label, start, end=None, delta=0):
         if label not in self.trees:
             return set()
-        if delta > 0:
-            if end:
-                end += delta
-            else:
-                end = start + delta
-            start -= delta
         if end is None:
+            end = start
+        if delta > 0:
+            start -= delta
+            end += delta
+        if end == start:
             return self.trees[label][start]
         else:
             return self.trees[label][start:end]
