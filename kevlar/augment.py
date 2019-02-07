@@ -10,7 +10,7 @@
 import kevlar
 
 
-def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
+def augment(augseqstream, nakedseqstream, upint=10000):
     """
     Augment an unannotated stream of sequences.
 
@@ -20,7 +20,6 @@ def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
     """
     ksize = None
     ikmers = dict()
-    mateseqs = dict()
     for n, record in enumerate(augseqstream):
         if n > 0 and n % upint == 0:
             kevlar.plog('[kevlar::augment] processed', n, 'input reads')
@@ -29,23 +28,13 @@ def augment(augseqstream, nakedseqstream, collapsemates=False, upint=10000):
             ikmers[seq] = ikmer.abund
             ikmers[kevlar.revcom(seq)] = ikmer.abund
             ksize = ikmer.ksize
-        assert len(record.mates) in (0, 1)
-        if len(record.mates) == 1:
-            mateseqs[record.name] = record.mates[0]
 
     for record in nakedseqstream:
         qual = None
         if hasattr(record, 'quality') and record.quality is not None:
             qual = record.quality
-        mates = list()
-        if collapsemates:
-            mates = sorted(mateseqs.values())
-        else:
-            if record.name in mateseqs:
-                mates.append(mateseqs[record.name])
         newrecord = kevlar.sequence.Record(
             name=record.name, sequence=record.sequence, quality=qual,
-            mates=mates,
         )
         numkmers = len(record.sequence) - ksize + 1
         for offset in range(numkmers):
@@ -60,6 +49,5 @@ def main(args):
     augseqs = kevlar.parse_augmented_fastx(kevlar.open(args.augseqs, 'r'))
     nakedseqs = kevlar.parse_augmented_fastx(kevlar.open(args.seqs, 'r'))
     outstream = kevlar.open(args.out, 'w')
-    docollapse = args.collapse_mates
-    for record in augment(augseqs, nakedseqs, collapsemates=docollapse):
+    for record in augment(augseqs, nakedseqs):
         kevlar.print_augmented_fastx(record, outstream)
