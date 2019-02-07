@@ -244,3 +244,14 @@ def test_vcf_roundtrip(capsys):
     assert [c.position for c in calls] == [c.position for c in calls2]
     assert [str(c) for c in calls] == [str(c) for c in calls2]
     assert [c.window for c in calls] == [c.window for c in calls2]
+
+
+def test_region():
+    variant = Variant('chr12', 1033773, 'A', 'G')
+    assert variant.region == ('chr12', 1033773, 1033774)
+    variant = Variant('chr12', 1033773, 'A', 'AGTG')
+    assert variant.region == ('chr12', 1033773, 1033774)
+    variant = Variant('chr12', 1033773, 'AT', 'TG')
+    assert variant.region == ('chr12', 1033773, 1033775)
+    variant = Variant('chr12', 1033773, 'ATACCG', 'A')
+    assert variant.region == ('chr12', 1033773, 1033779)

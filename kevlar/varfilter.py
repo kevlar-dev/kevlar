@@ -8,58 +8,38 @@
 # -----------------------------------------------------------------------------
 
 import kevlar
-import pickle
 
 
-def save_index_to_file(index, filename):
-    with open(filename, 'wb') as fh:
-        pickle.dump(index, fh)
-
-
-def load_index_from_file(filename):
-    with open(filename, 'rb') as fh:
-        index = pickle.load(fh)
-    return index
-
-
-def load_variant_mask(bedstream):
-    message = 'Loading genomic intervals to be filtered into memory'
-    kevlar.plog('[kevlar::varfilter]', message)
-    progress_indictator = kevlar.ProgressIndicator(
-        '[kevlar::varfilter]     {counter} intervals loaded', interval=1e4,
-        breaks=[1e5, 1e6, 1e7], usetimer=True,
-    )
+def load_predictions(varcalls):
+    kevlar.plog('[kevlar::varfilter] Loading predictions to filter')
     index = kevlar.IntervalForest()
-    for chrom, start, end, data in kevlar.parse_bed(bedstream):
-        index.insert(chrom, start, end)
-        progress_indictator.update()
+    for call in varcalls:
+        index.insert(*call.region, data=call)
     return index
 
 
-def varfilter(calls, varmask):
+def varfilter(callstream, maskstream):
+    callindex = load_predictions(callstream)
     message = 'Filtering preliminary variant calls'
     kevlar.plog('[kevlar::varfilter]', message)
     progress_indictator = kevlar.ProgressIndicator(
-        '[kevlar::varfilter]     {counter} calls processed', interval=1e3,
-        breaks=[1e4, 1e5, 1e6], usetimer=True,
+        '[kevlar::varfilter]     {counter} regions processed', interval=1e5,
+        breaks=[1e6, 1e6, 1e7], usetimer=True,
     )
-    for varcall in calls:
-        if varmask.query(varcall.seqid, varcall.position) != set():
-            varcall.filter(kevlar.vcf.VariantFilter.UserFilter)
-        yield varcall
+    for chrom, start, end, data in maskstream:
+        hits = callindex.query(chrom, start, end)
+        for interval in hits:
+            interval.data.filter(kevlar.vcf.VariantFilter.UserFilter)
         progress_indictator.update()
+    for varcall in callindex:
+        yield varcall
 
 
 def main(args):
     reader = kevlar.vcf.vcfstream(args.vcf)
+    bedstream = kevlar.parse_bed(kevlar.open(args.filt, 'r'))
     outstream = kevlar.open(args.out, 'w')
     writer = kevlar.vcf.VCFWriter(outstream, source='kevlar::varfilter')
     writer.write_header()
-    if args.load_index:
-        varmask = load_index_from_file(args.filt)
-    else:
-        varmask = load_variant_mask(kevlar.open(args.filt, 'r'))
-    if args.save_index:
-        save_index_to_file(varmask, args.save_index)
-    for varcall in varfilter(reader, varmask):
+    for varcall in varfilter(reader, bedstream):
         writer.write(varcall)
