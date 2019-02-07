@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - New dependency: `intervaltree` package (see #318).
 - A new `sandbox` directory with convenience scripts for development and analysis (see #335).
 - A new `--min-like-score` filter for the `simlike` module (see #343).
+- A new `--drop-outliers` filter for the `simlike` module (see #350).
 
 ### Changed
 - Added a new flag to print to the terminal (stderr) and a logfile simultaneously (see #308).
