@@ -83,6 +83,13 @@ def subparser(subparsers):
         'default, S = 0.0, but it\'s often possible to improve specificity '
         'without sacrificing sensitivity by raising S to, for example, 50.0'
     )
+    filt_args.add_argument(
+        '--drop-outliers', action='store_true',
+        help='discard terminal variant-spanning k-mers with abunance much '
+        'higher than average (representing k-mers that should be in the '
+        'reference genome but are not); this will increase sensitivity, but '
+        'will potentially introduce many false calls as well'
+    )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
     misc_args.add_argument('-h', '--help', action='help',

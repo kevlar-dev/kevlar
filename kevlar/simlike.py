@@ -18,7 +18,37 @@ class KevlarSampleLabelingError(ValueError):
     pass
 
 
-def spanning_kmer_abundances(altseq, refrseq, case, controls, refr):
+def discard_nonunique_kmers(altseq, case, controls, refr):
+    case_counts = case.get_kmer_counts(altseq)
+    alt_counts_refr = refr.get_kmer_counts(altseq)
+    case_counts_valid = [
+        c for c, r in zip(case_counts, alt_counts_refr) if r == 0
+    ]
+    ctrl_counts_valid = list()
+    for control in controls:
+        ctrl_counts = control.get_kmer_counts(altseq)
+        valid_counts = [
+            c for c, r in zip(ctrl_counts, alt_counts_refr) if r == 0
+        ]
+        ctrl_counts_valid.append(valid_counts)
+    return case_counts_valid, ctrl_counts_valid, alt_counts_refr
+
+
+def discard_outlier_abunds(case_counts, ctrl_counts):
+    meanabund = sum(case_counts) / len(case_counts)
+    case_counts_valid = [
+        a for a in case_counts if abs(a - meanabund) < 20
+    ]
+    ctrl_counts_valid = list()
+    for control in ctrl_counts:
+        meanabund = sum(control) / len(control)
+        alist = [a for a in control if abs(a - meanabund) < 20]
+        ctrl_counts_valid.append(alist)
+    return case_counts_valid, ctrl_counts_valid
+
+
+def spanning_kmer_abundances(altseq, refrseq, case, controls, refr,
+                             dropoutliers=False):
     """Aggregate the abundances of the k-mers spanning the variant.
 
     - altseq: sequence spanning the variant (alternate allele)
@@ -45,41 +75,23 @@ def spanning_kmer_abundances(altseq, refrseq, case, controls, refr):
     retained to enable a dynamic error model. For indels there is no such
     correspondence, in which case `refr_abunds` is full of `None` values.
     """
-    case_counts = case.get_kmer_counts(altseq)
-    alt_counts_refr = refr.get_kmer_counts(altseq)
-
-    # Discard k-mer counts if the k-mer is not unique to the variant
-    case_counts_valid = [
-        c for c, r in zip(case_counts, alt_counts_refr) if r == 0
-    ]
-    ctrl_counts_valid = list()
-    for control in controls:
-        ctrl_counts = control.get_kmer_counts(altseq)
-        valid_counts = [
-            c for c, r in zip(ctrl_counts, alt_counts_refr) if r == 0
-        ]
-        ctrl_counts_valid.append(valid_counts)
-    meanabund = sum(case_counts_valid) / len(case_counts_valid)
-    case_counts_valid = [
-        a for a in case_counts_valid if abs(a - meanabund) < 20
-    ]
-    temp = list()
-    for control in ctrl_counts_valid:
-        meanabund = sum(control) / len(control)
-        t = [a for a in control if abs(a - meanabund) < 20]
-        temp.append(t)
-        assert len(t) == len(case_counts_valid)
-    ctrl_counts_valid = temp
-    ndropped = len(case_counts) - len(case_counts_valid)
-
-    abundances = [case_counts_valid] + ctrl_counts_valid
+    orig_nkmers = len(altseq) - case.ksize() + 1
+    case_counts, ctrl_counts, alt_counts_refr = discard_nonunique_kmers(
+        altseq, case, controls, refr
+    )
+    if dropoutliers:
+        case_counts, ctrl_counts = discard_outlier_abunds(
+            case_counts, ctrl_counts
+        )
+    ndropped = orig_nkmers - len(case_counts)
+    abundances = [case_counts] + ctrl_counts
     if len(altseq) == len(refrseq):  # SNV or MNV
         refr_counts = refr.get_kmer_counts(refrseq)
         refr_abunds = [
             c for c, r in zip(refr_counts, alt_counts_refr) if r == 0
         ]
     else:  # INDEL
-        refr_abunds = [None] * len(case_counts_valid)
+        refr_abunds = [None] * len(case_counts)
     return abundances, refr_abunds, ndropped
 
 
@@ -291,7 +303,7 @@ def check_ctrl_abund_high(call, ctrlabundlists, ctrlmax, ctrlabundhigh):
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             dynamic=True, casemin=6, ctrlmax=1, caseabundlow=5,
             ctrlabundhigh=4, samplelabels=None, fastmode=False,
-            minlikescore=0.0):
+            minlikescore=0.0, dropoutliers=False):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -305,7 +317,8 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             calls_by_partition[call.attribute('PART')].append(call)
             continue
         altabund, refrabund, ndropped = spanning_kmer_abundances(
-            call.window, call.refrwindow, case, controls, refr
+            call.window, call.refrwindow, case, controls, refr,
+            dropoutliers=dropoutliers
         )
         call.annotate('DROPPED', ndropped)
         check_hash_spanning_novel_kmers(call, altabund[0], casemin)
@@ -366,6 +379,7 @@ def main(args):
         ctrlmax=args.ctrl_max, caseabundlow=args.case_abund_low,
         ctrlabundhigh=args.ctrl_abund_high, samplelabels=args.sample_labels,
         fastmode=args.fast_mode, minlikescore=args.min_like_score,
+        dropoutliers=args.drop_outliers,
     )
     for call in calculator:
         writer.write(call)
