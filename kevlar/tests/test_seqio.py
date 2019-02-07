@@ -11,7 +11,6 @@ from io import StringIO
 import pytest
 import kevlar
 from kevlar.tests import data_file
-from kevlar.seqio import AnnotatedReadSet as ReadSet
 from kevlar.seqio import KevlarPartitionLabelError
 from kevlar.sequence import KmerOfInterest, Record
 import khmer
@@ -244,32 +243,6 @@ def test_kevlar_open(basename):
         'AAGACGGCATACGAGCTCTTTTCACGTGACTGGAGTTCAGACGTGTGCTCTTCCGAT'
     )
     assert len(record.annotations) == 2
-
-
-def test_ikmer_abund_after_recalc():
-    """Ensure interesting k-mer abundances are correct after recalculation.
-
-    The interesting k-mer has an advertised abundance of 28, but a true
-    abundance (in `counts`) of 10. The readset "validate" function should check
-    and correct this.
-    """
-    read = Record(
-        name='read1',
-        sequence='AAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGT',
-        annotations=[KmerOfInterest(17, 13, (28, 0, 0))],
-    )
-    rs = ReadSet(17, 4e5)
-    rs.add(read)
-
-    seq = 'TTCGTTCCCGAAGCAGGGGTCTACATTGTCCTCGGGACTCGAGATTTCTTCGCTGTTCCGTCCTTCA'
-    for _ in range(9):
-        rs._counts.consume(seq)
-
-    assert read.annotations[0].abund[0] == 28
-
-    rs.validate(casemin=8)
-    assert rs.valid == (1, 1)
-    assert read.annotations[0].abund[0] == 10
 
 
 def test_ikmer_out_of_bounds():

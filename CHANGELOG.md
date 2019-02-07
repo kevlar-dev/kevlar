@@ -27,6 +27,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 - The `effcount`, `dump`, and `simplex` modules have been disabled (see #308, #316).
+- Internal handling of interesting read mate sequences has been dropped (see #353).
 
 
 ## [0.6.1] 2018-11-16

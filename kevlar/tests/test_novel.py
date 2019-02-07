@@ -208,37 +208,6 @@ def test_skip_until(capsys):
     assert 'Found 0 instances of 0 unique novel kmers in 0 reads' in err
 
 
-def test_novel_output_has_mates():
-    kid = data_file('microtrios/trio-na-proband.fq.gz')
-    mom = data_file('microtrios/trio-na-mother.fq.gz')
-    dad = data_file('microtrios/trio-na-father.fq.gz')
-    testnovel = data_file('microtrios/novel-na.augfastq.gz')
-
-    with NamedTemporaryFile(suffix='.augfastq') as novelfile:
-        arglist = [
-            'novel', '--out', novelfile.name, '--case', kid, '--case-min', '5',
-            '--control', mom, '--control', dad, '--ctrl-max', '1',
-            '--memory', '500K'
-        ]
-        args = kevlar.cli.parser().parse_args(arglist)
-        kevlar.novel.main(args)
-
-        intread_ids = set()
-        mate_seqs = set()
-        stream = kevlar.parse_augmented_fastx(kevlar.open(novelfile.name, 'r'))
-        for read in stream:
-            intread_ids.add(read.name)
-            mate_seqs.update(read.mates)
-
-        stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
-        test_ids = set([r.name for r in stream])
-        assert intread_ids == test_ids
-
-        stream = kevlar.parse_augmented_fastx(kevlar.open(testnovel, 'r'))
-        test_mate_seqs = set([m for r in stream for m in r.mates])
-        assert mate_seqs == test_mate_seqs
-
-
 def test_novel_save_counts():
     outdir = mkdtemp()
     try:

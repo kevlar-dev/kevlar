@@ -22,8 +22,5 @@ def subparser(subparsers):
     subparser = subparsers.add_parser('augment', description=desc)
     subparser.add_argument('-o', '--out', metavar='FILE',
                            help='output file; default is terminal (stdout)')
-    subparser.add_argument('-c', '--collapse-mates', action='store_true',
-                           help='annotate output sequence with all mate '
-                           'seqeuences')
     subparser.add_argument('augseqs', help='augmented sequence file')
     subparser.add_argument('seqs', help='sequences to annotate')

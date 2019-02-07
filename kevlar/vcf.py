@@ -26,14 +26,13 @@ class VariantFilter(Enum):
     PerfectMatch = 1
     InscrutableCigar = 2
     PassengerVariant = 3
-    MateFail = 4
-    PartitionScore = 5
-    LikelihoodFail = 6
-    NumerousMismatches = 7
-    UserFilter = 8
-    ControlAbundance = 9
-    CaseAbundance = 10
-    Homopolymer = 11
+    PartitionScore = 4
+    LikelihoodFail = 5
+    NumerousMismatches = 6
+    UserFilter = 7
+    ControlAbundance = 8
+    CaseAbundance = 9
+    Homopolymer = 10
 
 
 class FormattedList(list):
@@ -260,9 +259,6 @@ class VCFWriter(object):
         VariantFilter.PassengerVariant:
             'A mismatch between contig and reference that is not spanned by '
             'any novel k-mers',
-        VariantFilter.MateFail:
-            'Aligning mate reads suggests a better location for this variant '
-            'call',
         VariantFilter.PartitionScore:
             'Expectation is 1 variant call per partition, so all call(s) with '
             'suboptimal likelihood scores are filtered',
@@ -300,10 +296,6 @@ class VCFWriter(object):
         ),
         'KSW2': (
             'Float', '1', 'alignment score',
-        ),
-        'MATEDIST': (
-            'Float', '1', 'average distance of aligned mates of assembled '
-            'novel reads',
         ),
         'REFRWINDOW': (
             'String', '1', 'window containing all k-mers that span the '

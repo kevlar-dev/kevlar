@@ -239,11 +239,6 @@ def process_partition(partitionid, calls):
             c.filter(kevlar.vcf.VariantFilter.PartitionScore)
     for c in maxcalls:
         c.annotate('CALLCLASS', partitionid)
-    if calls[0].attribute('MATEDIST') is not None:
-        matedists = set([c.attribute('MATEDIST') for c in calls])
-        if matedists == set([float('inf')]):
-            for call in calls:
-                call.filter(kevlar.vcf.VariantFilter.MateFail)
 
 
 def window_check(call, ksize=31):

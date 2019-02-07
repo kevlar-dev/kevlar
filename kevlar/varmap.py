@@ -36,7 +36,6 @@ class VariantMapping(object):
         self.score = score
         self.strand = strand
         self.do_homopolymer_filter = homopolyfilt
-        self.matedist = None
         self.trimmed = 0
 
         self.tok = AlignmentTokenizer(self.varseq, self.refrseq, cigar)
