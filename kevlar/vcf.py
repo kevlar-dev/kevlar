@@ -171,8 +171,11 @@ class Variant(object):
         """Similar to `window`, but encapsulating the reference allele."""
         return self.attribute('REFRWINDOW')
 
-    def annotate(self, key, value):
-        self.info[key].append(value)
+    def annotate(self, key, value, replace=True):
+        if replace:
+            self.info[key] = FormattedList([value])
+        else:
+            self.info[key].append(value)
 
     def attribute(self, key, pair=False, string=False):
         """Query annotated INFO data.
