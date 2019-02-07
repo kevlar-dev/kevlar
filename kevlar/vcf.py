@@ -113,6 +113,10 @@ class Variant(object):
         return self._pos
 
     @property
+    def region(self):
+        return self.seqid, self.position, self.position + len(self._refr)
+
+    @property
     def vcf(self):
         """Print variant to VCF."""
         attrstr = '.'
