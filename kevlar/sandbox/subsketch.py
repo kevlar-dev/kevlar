@@ -24,7 +24,7 @@ allocators = {
 
 
 cli = argparse.ArgumentParser()
-cli.add_argument('--sketch-type', metvar='T', choices=loaders.keys(), default='counttable', help='Sketch type to use for output')
+cli.add_argument('--sketch-type', metavar='T', choices=allocators.keys(), default='counttable', help='Sketch type to use for output')
 cli.add_argument('--num-tables', type=int, default=4, metavar='N')
 cli.add_argument('--table-size', type=int, default=1000, metavar='X')
 cli.add_argument('sketch', help='original sketch')
