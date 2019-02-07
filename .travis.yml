@@ -13,6 +13,7 @@ cache: pip
 python:
     - 3.5
     - 3.6
+    - 3.7
 before_install:
     - git clone https://github.com/lh3/bwa.git && cd bwa && make -j 2 && sudo cp bwa /usr/local/bin && cd -
 install:
