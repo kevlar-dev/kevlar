@@ -59,6 +59,17 @@ def spanning_kmer_abundances(altseq, refrseq, case, controls, refr):
             c for c, r in zip(ctrl_counts, alt_counts_refr) if r == 0
         ]
         ctrl_counts_valid.append(valid_counts)
+    meanabund = sum(case_counts_valid) / len(case_counts_valid)
+    case_counts_valid = [
+        a for a in case_counts_valid if abs(a - meanabund) < 20
+    ]
+    temp = list()
+    for control in ctrl_counts_valid:
+        meanabund = sum(control) / len(control)
+        t = [a for a in control if abs(a - meanabund) < 20]
+        temp.append(t)
+        assert len(t) == len(case_counts_valid)
+    ctrl_counts_valid = temp
     ndropped = len(case_counts) - len(case_counts_valid)
 
     abundances = [case_counts_valid] + ctrl_counts_valid
