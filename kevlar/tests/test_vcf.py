@@ -101,17 +101,20 @@ def test_info():
     v = Variant('1', 12345, 'G', 'C')
     assert v.attribute('VW') is None
 
+    v.annotate('VW', 'AGTNNNNNNNNNNNNNNNNNNNNNTGA')
+    assert v.attribute('VW') == 'AGTNNNNNNNNNNNNNNNNNNNNNTGA'
+
     v.annotate('VW', 'GATTACA')
     assert v.attribute('VW') == 'GATTACA'
     assert v.attribute('VW', pair=True) == 'VW=GATTACA'
 
-    v.annotate('VW', 'ATGCCCTAG')
+    v.annotate('VW', 'ATGCCCTAG', replace=False)
     assert v.info['VW'] == ['GATTACA', 'ATGCCCTAG']
     assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG']
     assert v.attribute('VW', string=True) == 'GATTACA,ATGCCCTAG'
     assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG'
 
-    v.annotate('VW', 'AAAAAAAAA')
+    v.annotate('VW', 'AAAAAAAAA', replace=False)
     assert v.attribute('VW') == ['GATTACA', 'ATGCCCTAG', 'AAAAAAAAA']
     assert v.attribute('VW', pair=True) == 'VW=GATTACA,ATGCCCTAG,AAAAAAAAA'
 
@@ -119,13 +122,13 @@ def test_info():
     assert v.attribute('DROPPED') == 3
     assert v.attribute('DROPPED', string=True) == '3'
 
-    v.annotate('DROPPED', 31)
+    v.annotate('DROPPED', 31, replace=False)
     assert v.attribute('DROPPED') == [3, 31]
     assert v.attribute('DROPPED', string=True) == '3,31'
     assert v.attribute('DROPPED', pair=True) == 'DROPPED=3,31'
 
-    v.annotate('MATEDIST', 432.1234)
-    v.annotate('MATEDIST', 8765.4321)
+    v.annotate('MATEDIST', 432.1234, replace=False)
+    v.annotate('MATEDIST', 8765.4321, replace=False)
     assert v.attribute('MATEDIST', string=True) == '432.123,8765.432'
 
     v.annotate('LLIH', -436.0111857750478)
