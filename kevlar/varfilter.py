@@ -11,16 +11,10 @@ import kevlar
 
 
 def load_predictions(varcalls):
-    message = 'Loading predictions to filter'
-    kevlar.plog('[kevlar::varfilter]', message)
-    progress_indictator = kevlar.ProgressIndicator(
-        '[kevlar::varfilter]     {counter} intervals loaded', interval=1e4,
-        breaks=[1e5, 1e6, 1e7], usetimer=True,
-    )
+    kevlar.plog('[kevlar::varfilter] Loading predictions to filter')
     index = kevlar.IntervalForest()
     for call in varcalls:
         index.insert(*call.region, data=call)
-        progress_indictator.update()
     return index
 
 
@@ -29,8 +23,8 @@ def varfilter(callstream, maskstream):
     message = 'Filtering preliminary variant calls'
     kevlar.plog('[kevlar::varfilter]', message)
     progress_indictator = kevlar.ProgressIndicator(
-        '[kevlar::varfilter]     {counter} regions processed', interval=1e4,
-        breaks=[1e5, 1e6, 1e7], usetimer=True,
+        '[kevlar::varfilter]     {counter} regions processed', interval=1e5,
+        breaks=[1e6, 1e6, 1e7], usetimer=True,
     )
     for chrom, start, end, data in maskstream:
         hits = callindex.query(chrom, start, end)

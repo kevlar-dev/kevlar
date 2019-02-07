@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - A new Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
 - A new Snakemake workflow for kevlar's standard processing procedure (see #306).
 - New `unband` module to merge augmented Fastq files produced with a *k*-mer banding strategy (see #316).
-- New `varfilter` module to filter out preliminary variant calls overlapping with problematic/unwanted loci or features (see #318, #342).
+- New `varfilter` module to filter out preliminary variant calls overlapping with problematic/unwanted loci or features (see #318, #342, #354).
 - New dependency: `intervaltree` package (see #318).
 - A new `sandbox` directory with convenience scripts for development and analysis (see #335).
 - A new `--min-like-score` filter for the `simlike` module (see #343).
