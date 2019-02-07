@@ -16,37 +16,6 @@ import khmer
 from khmer import _buckets_per_byte
 
 
-def align_mates(record, refrfile):
-    fasta = ''
-    for n, mateseq in enumerate(record.mates, 1):
-        fasta += '>mateseq{:d}\n{:s}\n'.format(n, mateseq)
-    cmd = 'bwa mem {:s} -'.format(refrfile)
-    cmdargs = cmd.split()
-    for seqid, start, end, seq in bwa_align(cmdargs, seqstring=fasta):
-        yield seqid, start, end
-
-
-def mate_distance(mate_positions, gdna_position):
-    gdnaseq, startpos, endpos = gdna_position
-
-    def intvldist(istart, iend):
-        x, y = sorted(((startpos, endpos), (istart, iend)))
-        if x[0] <= x[1] < y[0]:
-            return y[0] - x[1]
-        return 0
-
-    distances = list()
-    for seqid, start, end in mate_positions:
-        if seqid != gdnaseq:
-            continue
-        d = intvldist(start, end)
-        if d < 10000:
-            distances.append(d)
-    if len(distances) == 0:
-        return float('Inf')
-    return sum(distances) / len(distances)
-
-
 def alignments_to_report(alignments):
     """Determine which alignments should be reported and used to call variants.
 
@@ -109,14 +78,6 @@ def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
             )
             alignments.append(mapping)
         aligns2report = alignments_to_report(alignments)
-        if len(aligns2report) > 1:
-            if refrfile and len(query.mates) > 0:
-                mate_pos = list(align_mates(query, refrfile))
-                if len(mate_pos) > 0:
-                    for aln in aligns2report:
-                        aln.matedist = mate_distance(mate_pos, aln.interval)
-                    aligns2report.sort(key=lambda aln: aln.matedist)
-
         for n, alignment in enumerate(aligns2report):
             if debug:
                 kevlar.plog(
@@ -127,8 +88,6 @@ def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
             for varcall in alignment.call_variants(ksize, mindist):
                 if partid is not None:
                     varcall.annotate('PART', partid)
-                if alignment.matedist:
-                    varcall.annotate('MATEDIST', alignment.matedist)
                 yield varcall
 
 

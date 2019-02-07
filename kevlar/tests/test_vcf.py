@@ -72,8 +72,8 @@ def test_filter_field():
     assert v.filterstr == 'PASS'
     v.filter(vf.PassengerVariant)
     assert v.filterstr == 'PassengerVariant'
-    v.filter(vf.MateFail)
-    assert v.filterstr == 'MateFail;PassengerVariant'
+    v.filter(vf.Homopolymer)
+    assert v.filterstr == 'Homopolymer;PassengerVariant'
 
     v = Variant('one', 112358, 'T', 'A')
     v.filter('SNPyMcSNPface')

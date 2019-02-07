@@ -120,7 +120,7 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
         breaks=[1e7, 1e8, 1e9], usetimer=True,
     )
     unique_kmers = set()
-    for n, record, mate in kevlar.paired_reader(casestream):
+    for n, record in enumerate(casestream, 1):
         progress_indicator.update()
         if skipuntil:  # pragma: no cover
             if record.name == skipuntil:
@@ -166,8 +166,6 @@ def novel(casestream, casecounts, controlcounts, ksize=31, abundscreen=None,
 
         nreads += 1
         nkmers += len(irecord.annotations)
-        if mate:
-            irecord.add_mate(mate.sequence)
         yield irecord
 
     elapsed = timer.stop()
@@ -219,7 +217,7 @@ def main(args):
     kevlar.plog('[kevlar::novel]', message)
     outstream = kevlar.open(args.out, 'w')
     infiles = [f for filelist in args.case for f in filelist]
-    caserecords = kevlar.multi_file_iter_screed(infiles)
+    caserecords = kevlar.multi_file_iter_khmer(infiles)
     readstream = novel(
         caserecords, cases, controls, ksize=args.ksize,
         abundscreen=args.abund_screen, casemin=args.case_min,
