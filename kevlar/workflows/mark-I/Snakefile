@@ -124,6 +124,20 @@ class SimplexDesign(object):
                 yield control['label']
         return list(getlabels())
 
+    @property
+    def varfilter_input(self):
+        infiles = list()
+        if self._config['varfilter']:
+            infiles.append(self._config['varfilter'])
+        return infiles + expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+
+    @property
+    def simlike_input(self):
+        if self._config['varfilter']:
+            return ['calls.filtered.vcf.gz']
+        else:
+            return expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+
 
 simplex = SimplexDesign(config)
 
@@ -324,18 +338,28 @@ rule call:
     shell: 'kevlar --tee --logfile {output[1]} call --mask-mem 10M --refr {input[2]} --ksize {config[ksize]} --out {output[0]} {input[0]} {input[1]}'
 
 
+rule varfilter:
+    input: simplex.varfilter_input
+    output:
+        'calls.filtered.vcf.gz',
+        'Logs/varfilter.log'
+    threads: 1
+    message: 'Filter out calls from the provided regions (usually common variants, repetitive DNA, etc)'
+    shell: 'kevlar --tee --logfile {output[1]} varfilter --out {output[0]} {input}'
+
+
 rule like_scores:
     input:
         'Reference/refr-counts.smallcounttable',
         simplex.all_sample_counts,
-        expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+        simplex.simlike_input
     output:
         'calls.scored.sorted.vcf.gz',
         'Logs/simlike.log'
     threads: 1
     message: 'Filter calls, compute likelihood scores, and sort calls by score.'
     run:
-        in_vcfs = expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+        in_vcfs = simplex.simlike_input
         cmd = [
             'kevlar', '--tee', '--logfile', output[1], 'simlike',
             '--mu', config['samples']['coverage']['mean'],

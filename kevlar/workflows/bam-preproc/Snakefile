@@ -8,14 +8,14 @@ import os
 
 
 NUMCONTROLS = len(config['controls'])
-SAMPLES = ['case.interleaved'] + ['ctrl{}'.format(i) for i in range(NUMCONTROLS)]
+SAMPLES = ['case'] + ['ctrl{}'.format(i) for i in range(NUMCONTROLS)]
 
 # -----------------------------------------------------------------------------
 # Primary target
 # -----------------------------------------------------------------------------
 
 rule reads:
-    input: expand('Reads/{prefix}.ec.reads.fq.gz', prefix=SAMPLES)
+    input: expand('Reads/{prefix}.reads.ec.fq.gz', prefix=SAMPLES)
     output: touch('preprocessing.complete')
 
 
@@ -38,53 +38,23 @@ rule link_bams:
 
 
 # -----------------------------------------------------------------------------
-# Collate reads, convert to interleaved Fastq, and compress using pipes
-# instead of normal files to reduce I/O intensity.
-#
-# $ samtools collate <args> | samtools fastq <args> | bgzip <args> > seqs.fq.gz
-# -----------------------------------------------------------------------------
-
-rule collate_bam:
-    input: 'Alignments/case.bam'
-    output: pipe('Alignments/case.collate.bam')
-    threads: 24
-    message: 'Collate read pairs.'
-    shell: 'samtools collate -f -r 1000000 -n 128 -@ {threads} -o {output} {input}'
-
-rule bam_to_paired_fastq:
-    input: rules.collate_bam.output
-    output: pipe('Reads/case.interleaved.reads.fq')
-    threads: 24
-    message: 'Convert collated alignments to interleaved Fastq format.'
-    shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output}'
-
-rule compress_paired_fastq:
-    input: rules.bam_to_paired_fastq.output
-    output: 'Reads/case.interleaved.reads.fq.gz'
-    threads: 24
-    message: 'Compress interleaved reads.'
-    shell: 'bgzip -@ {threads} -c {input} > {output}'
-
-
-# -----------------------------------------------------------------------------
 # Convert reads to unpaired Fastq and compress.
 #
 # $ samtools fastq <args> | bgzip <args> > seqs.fq.gz
 # -----------------------------------------------------------------------------
 
 rule bam_to_fastq:
-    input: 'Alignments/ctrl{indiv}.bam'
+    input: 'Alignments/{indiv}.bam'
     output:
-        pipe('Reads/ctrl{indiv}.reads.fq'),
-        'Logs/ctrl{indiv}-fastq.log'
+        pipe('Reads/{indiv}.reads.fq'),
+        'Logs/{indiv}-fastq.log'
     threads: 36
     message: 'Convert read alignments to unpaired Fastq format.'
     shell: 'samtools fastq -N -F 2304 -@ {threads} {input} > {output[0]} 2> >(tee {output[1]})'
 
 rule compress_unpaired_fastq:
-    input: 'Reads/ctrl{indiv}.reads.fq'
-    output: 'Reads/ctrl{indiv}.reads.fq.gz'
-    wildcard_constraints: indiv='\d+'
+    input: 'Reads/{indiv}.reads.fq'
+    output: 'Reads/{indiv}.reads.fq.gz'
     threads: 36
     message: 'Compress unpaired reads.'
     shell: 'bgzip -@ {threads} -c {input} > {output}'
@@ -97,7 +67,7 @@ rule compress_unpaired_fastq:
 rule qc:
     input: 'Reads/{prefix}.reads.fq.gz'
     output:
-        pipe('Reads/{prefix}.qc.reads.fq'),
+        pipe('Reads/{prefix}.reads.qc.fq'),
         'Logs/{prefix}-fastp.json',
         'Logs/{prefix}-fastp.html',
         'Logs/{prefix}-qc.log'
@@ -106,8 +76,8 @@ rule qc:
     shell: 'fastp -i {input} --interleaved_in --stdout -p --thread {threads} --json {output[1]} --html {output[2]} -q 15 -u 40 -l 15 > {output[0]} 2> >(tee {output[3]})'
 
 rule compress_qc_reads:
-    input: 'Reads/{prefix}.qc.reads.fq'
-    output: 'Reads/{prefix}.qc.reads.fq.gz'
+    input: 'Reads/{prefix}.reads.qc.fq'
+    output: 'Reads/{prefix}.reads.qc.fq.gz'
     threads: 56
     message: 'Compress quality controlled reads.'
     shell: 'bgzip -@ {threads} -c {input} > {output}'
@@ -118,7 +88,7 @@ rule compress_qc_reads:
 # -----------------------------------------------------------------------------
 
 rule trusted_kmers:
-    input: expand('Reads/{prefix}.qc.reads.fq.gz', prefix=SAMPLES)
+    input: expand('Reads/{prefix}.reads.qc.fq.gz', prefix=SAMPLES)
     output:
         'lighter.trustedkmers',
         'Logs/trustedkmers.log'
@@ -128,10 +98,10 @@ rule trusted_kmers:
 
 rule ec:
     input:
-        'Reads/{prefix}.qc.reads.fq.gz',
+        'Reads/{prefix}.reads.qc.fq.gz',
         'lighter.trustedkmers'
     output:
-        'Reads/{prefix}.ec.reads.fq.gz',
+        'Reads/{prefix}.reads.ec.fq.gz',
         'Logs/{prefix}-ec.log'
     threads: 72
     message: 'Perform error correction sample by sample.'

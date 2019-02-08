@@ -63,12 +63,13 @@ class IntervalForest(object):
     def query(self, label, start, end=None, delta=0):
         if label not in self.trees:
             return set()
-        if end is None:
-            end = start
         if delta > 0:
+            if end:
+                end += delta
+            else:
+                end = start + delta
             start -= delta
-            end += delta
-        if end == start:
+        if end is None:
             return self.trees[label][start]
         else:
             return self.trees[label][start:end]
@@ -116,10 +117,10 @@ def populate_index_from_bed(instream):
         values = line.strip().split()
         chrom = values[0]
         start, end = [int(coord) for coord in values[1:3]]
-        if start == end:
-            start -= 1
-        index.insert(chrom, start, end)
+        strrepr = '{:s}:{:d}-{:d}'.format(chrom, start, end)
+        index.insert(chrom, start, end, strrepr)
     return index
+
 
 
 def compact(reader, index, delta=10):
@@ -200,7 +201,6 @@ def load_gatk_mvf(filename, vartype=None, minlength=None, maxlength=None):
 
 def assess_variants_vcf(variants, index, delta=10):
     """Assess kevlar calls in .vcf format."""
-    variants_by_class = defaultdict(list)
     correct = set()
     false = set()
     missing = set()
@@ -226,9 +226,17 @@ def assess_variants_vcf(variants, index, delta=10):
     return correct, false, missing, mapping
 
 
+def check_variants_vcf(variants, index, delta=10):
+    for varcall in variants:
+        assert varcall.filterstr == 'PASS'
+        hits = index.query(varcall.seqid, varcall.position, delta=delta)
+        congruent = hits != set()
+        varcall.annotate('CONGRUENT', congruent)
+        yield varcall
+
+
 def assess_variants_mvf(variants, index, delta=10):
     """Assess GATK calls in .mvf format."""
-    variants_by_class = defaultdict(list)
     correct = set()
     false = set()
     missing = set()
@@ -284,15 +292,14 @@ def subset_variants_bed(variants, vartype, minlength=None, maxlength=None):
         if line.strip() == '':
             continue
         values = line.strip().split()
-        if len(values) == 5:
+        assert len(values) == 4
+        refr, alt = values[3].split('>')
+        if len(refr) == len(alt):
             if vartype == 'SNV':
                 yield line
             continue
         if vartype == 'INDEL':
-            if len(values) > 3:
-                indellength = int(values[3])
-            else:
-                indellength = int(values[2]) - int(values[1])
+            indellength = abs(len(refr) - len(alt))
             if minlength and indellength < minlength:
                 continue
             if maxlength and indellength > maxlength:
