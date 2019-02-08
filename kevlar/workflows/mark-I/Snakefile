@@ -125,11 +125,18 @@ class SimplexDesign(object):
         return list(getlabels())
 
     @property
+    def varfilter_input(self):
+        infiles = list()
+        if self._config['varfilter']:
+            infiles.append(self._config['varfilter'])
+        return infiles + expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+
+    @property
     def simlike_input(self):
-        if self._config['varfilter'] is None:
-            expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
-        else:
+        if self._config['varfilter']:
             return ['calls.filtered.vcf.gz']
+        else:
+            return expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
 
 
 simplex = SimplexDesign(config)
@@ -332,9 +339,7 @@ rule call:
 
 
 rule varfilter:
-    input:
-        config['varfilter'],
-        expand('calls.{num}.prelim.vcf.gz', num=range(config['numsplit']))
+    input: simplex.varfilter_input
     output:
         'calls.filtered.vcf.gz',
         'Logs/varfilter.log'
