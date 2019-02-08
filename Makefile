@@ -16,7 +16,7 @@ style:
 	pycodestyle --exclude=kevlar/sandbox/*.py kevlar/*.py kevlar/*/*.py kevlar/*/*/*.py
 
 ## ext:      build C extensions
-ext: kevlar/alignment.c src/align.c inc/align.h
+ext: kevlar/alignment.pyx kevlar/sequence.pyx kevlar/assembly.pyx src/align.c inc/align.h
 	python setup.py build_ext --inplace
 
 ## test:     execute the automated test suite

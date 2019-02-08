@@ -61,8 +61,10 @@ Augmented Fastq files are easily converted to normal Fastq files by invoking a c
 The functions ``kevlar.parse_augmented_fastx`` and ``kevlar.print_augmented_fastx`` are used internally to read and write augmented Fastq/Fasta files.
 However, these functions can easily be imported and called from third-party Python scripts as well.
 
-Mate sequences
---------------
+Mate sequences (deprecated)
+---------------------------
+
+.. note:: Mate sequences are no longer used by kevlar internally. Augmented Fastq files containing mate sequences will still be processed correctly, but they are no longer created by kevlar.
 
 Although kevlar does not require pairing information, it can be used to improve calling when it's available.
 The augmented Fastq/Fasta format also allows mate sequences to be associated with each record.

@@ -330,3 +330,23 @@ def test_simlike_min_like_score(ctrlhighsketches):
     notpassing = [c for c in calls if c.filterstr != 'PASS']
     assert len(passing) == 0
     assert len(notpassing) == 2
+
+
+@pytest.mark.parametrize('dodrop,filterstr', [
+    (True, 'PASS'),
+    (False, 'LikelihoodFail'),
+])
+def test_simlike_drop_outliers(dodrop, filterstr):
+    kid = kevlar.sketch.load(data_file('term-high-abund/proband.ct'))
+    mom = kevlar.sketch.load(data_file('term-high-abund/mother.ct'))
+    dad = kevlar.sketch.load(data_file('term-high-abund/father.ct'))
+    refr = khmer.Nodetable(31, 1, 1)
+    prelimcalls = kevlar.vcf.VCFReader(
+        kevlar.open(data_file('term-high-abund/calls.vcf'), 'r')
+    )
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, mu=30.0, sigma=10.0, casemin=5,
+        ctrlmax=1, dropoutliers=dodrop
+    )
+    for call in scorer:
+        assert call.filterstr == filterstr

@@ -42,6 +42,11 @@ class IntervalForest(object):
     def __len__(self):
         return sum([len(tree) for tree in self.trees.values()])
 
+    def __iter__(self):
+        for label, tree in self.trees.items():
+            for interval in tree:
+                yield interval.data
+
     def insert(self, label, start, end, data=None):
         assert label is not None
         if data is None:

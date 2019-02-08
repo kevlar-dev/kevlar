@@ -11,7 +11,6 @@ from collections import defaultdict
 import glob
 import kevlar
 from kevlar.count import load_sample_seqfile
-from kevlar.seqio import AnnotatedReadSet as ReadSet
 from kevlar.sequence import parse_augmented_fastx
 from kevlar.tests import data_file
 import khmer

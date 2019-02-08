@@ -43,18 +43,13 @@ def test_augment_reads(capsys):
     assert out == testout
 
 
-@pytest.mark.parametrize('docollapse,nummates', [
-    (True, 26),
-    (False, 0),
-])
-def test_augment_contig_mates(docollapse, nummates):
+def test_augment_contig_mates():
     augfh = kevlar.open(data_file('deadbeef.augfastq.gz'), 'r')
     augreads = kevlar.parse_augmented_fastx(augfh)
     nakedfh = kevlar.open(data_file('deadbeef.contig.fa'), 'r')
     nakedseq = kevlar.parse_augmented_fastx(nakedfh)
-    contigs = list(augment(augreads, nakedseq, collapsemates=docollapse))
+    contigs = list(augment(augreads, nakedseq))
     assert len(contigs) == 1
-    assert len(contigs[0].mates) == nummates
     assert len(contigs[0].annotations) == 74
 
 
@@ -66,7 +61,6 @@ def test_augment_reads_mates():
     newreads = list(augment(augreads, nakedseq, upint=5))
     for oldread, newread in zip(augreads, newreads):
         assert oldread.sequence == newread.sequence
-        assert oldread.mates == newread.mates
         assert oldread.annotations == newread.annotations
 
 

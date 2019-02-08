@@ -19,10 +19,8 @@ from tempfile import TemporaryFile
 
 # Third-party libraries
 import khmer
-from khmer.utils import broken_paired_reader
 import networkx
 import pysam
-import screed
 
 # Internal modules
 from kevlar import seqio
@@ -124,12 +122,6 @@ def to_gml(graph, outfilename, logfile=sys.stderr):
     print(message, file=logfile)
 
 
-def multi_file_iter_screed(filenames):
-    for filename in filenames:
-        for record in screed.open(filename):
-            yield record
-
-
 def multi_file_iter_khmer(filenames):
     for filename in filenames:
         for record in khmer.ReadParser(filename):
@@ -153,16 +145,6 @@ def bedstream(bedfilelist):
         fh = kevlar.open(bedfile, 'r')
         for values in parse_bed(fh):
             yield values
-
-
-def paired_reader(readstream):
-    i = 0
-    for n, ispaired, read1, read2 in broken_paired_reader(readstream):
-        i += 1
-        yield i, read1, read2
-        if ispaired:
-            i += 1
-            yield i, read2, read1
 
 
 def vcf_header(outstream, version='4.2', source='kevlar', infoheader=False):

@@ -9,11 +9,10 @@
 
 
 def subparser(subparsers):
-    """Define the `kevlar simlike` command-line interface."""
-
-    desc = "Sort variants by likelihood score"
-    subparser = subparsers.add_parser('simlike', description=desc,
-                                      add_help=False)
+    subparser = subparsers.add_parser(
+        'simlike', description='Sort variants by likelihood score',
+        add_help=False
+    )
 
     count_args = subparser.add_argument_group(
         'K-mer count files',
@@ -21,13 +20,19 @@ def subparser(subparsers):
         'k-mers in each sample and on the abundance of reference allele '
         'k-mers in the reference genome.'
     )
-    count_args.add_argument('--case', metavar='CT',
-                            help='k-mer counttable for case/proband')
-    count_args.add_argument('--controls', nargs='+', metavar='CT',
-                            help='k-mer counttables for controls/parents/'
-                            'siblings, 1 counttable per sample')
-    count_args.add_argument('--refr', metavar='REFR', help='k-mer '
-                            'smallcounttable for reference genome')
+    count_args.add_argument(
+        '--case', metavar='CT', required=True,
+        help='k-mer counttable for case/proband'
+    )
+    count_args.add_argument(
+        '--controls', nargs='+', metavar='CT', required=True,
+        help='k-mer counttables for controls/parents/siblings, 1 counttable '
+        'per sample'
+    )
+    count_args.add_argument(
+        '--refr', metavar='REFR',  required=True,
+        help='k-mer smallcounttable for reference genome'
+    )
 
     thresh_args = subparser.add_argument_group(
         'K-mer count thresholds',
@@ -82,6 +87,13 @@ def subparser(subparsers):
         help='filter out variant predictions with likelihood scores < S; by '
         'default, S = 0.0, but it\'s often possible to improve specificity '
         'without sacrificing sensitivity by raising S to, for example, 50.0'
+    )
+    filt_args.add_argument(
+        '--drop-outliers', action='store_true',
+        help='discard terminal variant-spanning k-mers with abunance much '
+        'higher than average (representing k-mers that should be in the '
+        'reference genome but are not); this will increase sensitivity, but '
+        'will potentially introduce many false calls as well'
     )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')
