@@ -25,7 +25,6 @@ Documentation for **kevlar**
    terms
    formats
    banding
-   sim
    cli
    conduct
 
