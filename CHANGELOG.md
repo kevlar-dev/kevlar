@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - A new Snakemake workflow for preprocessing BAM inputs for analysis with kevlar (see #305).
-- A new Snakemake workflow for kevlar's standard processing procedure (see #306).
+- A new Snakemake workflow for kevlar's standard processing procedure (see #306, #355).
 - New `unband` module to merge augmented Fastq files produced with a *k*-mer banding strategy (see #316).
 - New `varfilter` module to filter out preliminary variant calls overlapping with problematic/unwanted loci or features (see #318, #342, #354).
 - New dependency: `intervaltree` package (see #318).
@@ -26,7 +26,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Corrected a bug that called adjacent substitutions as independent SNVs rather than an aggregate MNV (see #332).
 
 ### Removed
-- The `effcount`, `dump`, and `simplex` modules have been disabled (see #308, #316).
+- The `effcount`, `dump`, and `simplex` modules have been dropped (see #308, #316).
 - Internal handling of interesting read mate sequences has been dropped (see #353).
 
 
