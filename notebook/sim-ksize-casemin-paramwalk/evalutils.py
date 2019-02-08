@@ -63,12 +63,13 @@ class IntervalForest(object):
     def query(self, label, start, end=None, delta=0):
         if label not in self.trees:
             return set()
-        if end is None:
-            end = start
         if delta > 0:
+            if end:
+                end += delta
+            else:
+                end = start + delta
             start -= delta
-            end += delta
-        if end == start:
+        if end is None:
             return self.trees[label][start]
         else:
             return self.trees[label][start:end]
@@ -277,7 +278,7 @@ def subset_variants(variants, vartype, minlength=None, maxlength=None):
             continue
         yield line
 
-
+        
 def subset_variants_bed(variants, vartype, minlength=None, maxlength=None):
     assert vartype in ('SNV', 'INDEL')
     for line in variants:
