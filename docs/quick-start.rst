@@ -21,8 +21,5 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
      curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-refr.fa.gz -o refr.fa.gz
      bwa index refr.fa.gz
 
-     # curl -L config.json
-     # Edit config.json, provide full path of all files
-
-     snakemake --snakefile kevlar/workflows/mark-I/Snakefile --configfile config.json \
-         --cores 4 --directory workdir -p calls
+     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-config.json | sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
+     snakemake --snakefile kevlar/workflows/mark-I/Snakefile --configfile helium-config.json --cores 4 --directory workdir -p calls

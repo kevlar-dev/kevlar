@@ -57,5 +57,5 @@
         "seqpattern": ".",
         "maxdiff": 10000
     },
-    "varfilter": "/data/refr/dbSNP_common.bed"
+    "varfilter": null
 }
