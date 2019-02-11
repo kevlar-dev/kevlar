@@ -15,11 +15,18 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
 
 .. code::
 
+     # Download data
      curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-mother-reads.fq.gz -o mother.fq.gz
      curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-father-reads.fq.gz -o father.fq.gz
      curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-proband-reads.fq.gz -o proband.fq.gz
      curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-refr.fa.gz -o refr.fa.gz
      bwa index refr.fa.gz
 
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-config.json | sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
-     snakemake --snakefile kevlar/workflows/mark-I/Snakefile --configfile helium-config.json --cores 4 --directory workdir -p calls
+     # Download and format configuration file
+     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-config.json \
+         | sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
+
+     # Invoke the workflow
+     snakemake \
+         --snakefile kevlar/workflows/mark-I/Snakefile \
+         --configfile helium-config.json --cores 4 --directory workdir -p calls
