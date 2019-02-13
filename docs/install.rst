@@ -9,7 +9,7 @@ Otherwise, we suggest reading through the entire installation instructions befor
 
 .. code::
 
-    pip3 install pysam networkx pandas scipy git+https://github.com/dib-lab/khmer.git
+    pip3 install pysam networkx pandas scipy intervaltree git+https://github.com/dib-lab/khmer.git
     pip3 install biokevlar
 
 Virtual environment
@@ -33,6 +33,7 @@ The kevlar package **requires Python 3** and has several dependencies that are n
 - the `pysam module <http://pysam.readthedocs.io/>`_
 - the `pandas library <http://pandas.pydata.org/>`_
 - the `scipy library <https://www.scipy.org/>`_
+- the `intervaltree library <https://github.com/chaimleib/intervaltree>`_
 - the `khmer package <http://khmer.readthedocs.io/>`_
 
 Also, kevlar requires the `bwa <https://github.com/lh3/bwa>`_ command to be callable from your ``$PATH`` environmental variable.
