@@ -9,11 +9,11 @@
 
 # kevlar
 
-Daniel Standage, 2016  
+Daniel Standage, 2016-2019  
 https://kevlar.readthedocs.io
 
 Welcome to **kevlar**, software for predicting *de novo* genetic variants without mapping reads to a reference genome!
-kevlar's k-mer abundance based method calls single nucleotide variants (SNVs) as well as short, medium and long insertion/deletion variants (indels) simultaneously.
+kevlar's *k*-mer abundance based method calls single nucleotide variants (SNVs), multinucleotide variants (MNVs), insertion/deletion variants (indels), and structural variants (SVs) simultaneously with a single simple model.
 This software is free for use under the MIT license.
 
 <details>
