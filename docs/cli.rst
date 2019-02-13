@@ -7,6 +7,9 @@ From this one command, a variety of tasks and procedures can be invoked using se
 Once kevlar is installed, available subcommands can be listed by executing :code:`kevlar -h`.
 To see instructions for running a specific subcommand, execute :code:`kevlar <subcommand> -h` (of course replacing :code:`subcommand` with the actual name of the subcommand).
 
+
+.. _kevlar_count_api:
+
 kevlar count
 ------------
 
@@ -16,6 +19,8 @@ kevlar count
    :nodefault:
    :prog: kevlar
    :path: count
+
+.. _kevlar_novel_api:
 
 kevlar novel
 ------------
@@ -27,6 +32,8 @@ kevlar novel
    :prog: kevlar
    :path: novel
 
+.. _kevlar_filter_api:
+
 kevlar filter
 -------------
 
@@ -36,6 +43,20 @@ kevlar filter
    :nodefault:
    :prog: kevlar
    :path: filter
+
+.. _kevlar_partition_api:
+
+kevlar partition
+----------------
+
+.. argparse::
+   :module: kevlar.cli.__init__
+   :func: parser
+   :nodefault:
+   :prog: kevlar
+   :path: partition
+
+.. _kevlar_assemble_api:
 
 kevlar assemble
 ---------------
@@ -47,6 +68,8 @@ kevlar assemble
    :prog: kevlar
    :path: assemble
 
+.. _kevlar_localize_api:
+
 kevlar localize
 ---------------
 
@@ -56,6 +79,8 @@ kevlar localize
    :nodefault:
    :prog: kevlar
    :path: localize
+
+.. _kevlar_call_api:
 
 kevlar call
 -----------
@@ -67,6 +92,8 @@ kevlar call
    :prog: kevlar
    :path: call
 
+.. _kevlar_simlike_api:
+
 kevlar simlike
 --------------
 
@@ -76,6 +103,8 @@ kevlar simlike
    :nodefault:
    :prog: kevlar
    :path: simlike
+
+.. _kevlar_alac_api:
 
 kevlar alac
 -----------
@@ -87,6 +116,8 @@ kevlar alac
    :prog: kevlar
    :path: alac
 
+.. _kevlar_unband_api:
+
 kevlar unband
 -------------
 
@@ -97,6 +128,8 @@ kevlar unband
    :prog: kevlar
    :path: unband
 
+.. _kevlar_augment_api:
+
 kevlar augment
 ----------------
 
@@ -106,6 +139,8 @@ kevlar augment
    :nodefault:
    :prog: kevlar
    :path: augment
+
+.. _kevlar_mutate_api:
 
 kevlar mutate
 -------------
