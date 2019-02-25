@@ -439,6 +439,7 @@ class VCFReader(object):
                     message = 'filter "{}" no recognized'.format(filterstr)
                     message += '; attempting to write this variant to VCF'
                     message += ' will probably turn out poorly'
+                    kevlar.plog('[kevlar::vcf]', message)
         if len(fields) > 9:
             fmtkeys = fields[8].split(':')
             sample_data = fields[9:]
