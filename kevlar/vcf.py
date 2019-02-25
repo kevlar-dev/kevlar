@@ -425,12 +425,20 @@ class VCFReader(object):
         filterstr = fields[6]
         variant = Variant(seqid, pos, refr, alt)
         for kvp in fields[7].split(';'):
-            key, values = kvp.split('=')
-            for value in values.split(','):
-                variant.annotate(key, value)
+            if '=' in kvp:
+                key, values = kvp.split('=')
+                for value in values.split(','):
+                    variant.annotate(key, value)
+            else:
+                variant.annotate(kvp, True)
         if filterstr not in ('.', 'PASS'):
             for filterlabel in filterstr.split(';'):
-                variant.filter(VariantFilter[filterlabel])
+                if filterlabel in VariantFilter:
+                    variant.filter(VariantFilter[filterlabel])
+                else:
+                    message = 'filter "{}" no recognized'.format(filterstr)
+                    message += '; attempting to write this variant to VCF'
+                    message += ' will probably turn out poorly'
         if len(fields) > 9:
             fmtkeys = fields[8].split(':')
             sample_data = fields[9:]
