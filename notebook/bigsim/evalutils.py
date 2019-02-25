@@ -182,6 +182,15 @@ def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, max
     return calls
 
 
+def load_scalpel_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
+    reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    calls = list(reader)
+    calls.sort(key=lambda c: float(c.attribute('CHI2')), reverse=True)
+    if vartype:
+        calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
+    return calls
+
+
 def load_triodenovo_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
     calls = list(reader)
