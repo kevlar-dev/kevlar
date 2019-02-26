@@ -415,6 +415,7 @@ class VCFReader(object):
     def __init__(self, instream):
         self._in = instream
         self._sample_labels = list()
+        self.suppress_filter_warnings = False
 
     def _variant_from_vcf_string(self, vcfstr):
         fields = vcfstr.strip().split('\t')
@@ -435,8 +436,8 @@ class VCFReader(object):
             for filterlabel in filterstr.split(';'):
                 if filterlabel in VariantFilter:
                     variant.filter(VariantFilter[filterlabel])
-                else:
-                    message = 'filter "{}" no recognized'.format(filterstr)
+                elif not self.suppress_filter_warnings:
+                    message = 'filter "{}" not recognized'.format(filterstr)
                     message += '; attempting to write this variant to VCF'
                     message += ' will probably turn out poorly'
                     kevlar.plog('[kevlar::vcf]', message)

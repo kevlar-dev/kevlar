@@ -176,6 +176,7 @@ def compact(reader, index, delta=10):
 
 def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, maxlength=None):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
     calls = compact(reader, index, delta=delta)
     if vartype:
         calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
@@ -184,6 +185,7 @@ def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, max
 
 def load_scalpel_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
     calls = list(reader)
     calls.sort(key=lambda c: float(c.attribute('CHI2')), reverse=True)
     if vartype:
@@ -193,6 +195,7 @@ def load_scalpel_vcf(filename, vartype=None, minlength=None, maxlength=None, cov
 
 def load_triodenovo_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
     calls = list(reader)
     calls.sort(key=lambda c: float(c._sample_data['Kid_'+ cov +'x']['DQ']), reverse=True)
     if vartype:
