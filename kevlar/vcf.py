@@ -434,7 +434,7 @@ class VCFReader(object):
                 variant.annotate(kvp, True)
         if filterstr not in ('.', 'PASS'):
             for filterlabel in filterstr.split(';'):
-                if filterlabel in VariantFilter:
+                if hasattr(VariantFilter, filterlabel):
                     variant.filter(VariantFilter[filterlabel])
                 elif not self.suppress_filter_warnings:
                     message = 'filter "{}" not recognized'.format(filterstr)
