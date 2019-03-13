@@ -49,6 +49,12 @@ This software is free for use under the MIT license.
 </details>
 
 <details>
+  <summary>How do I cite kevlar?</summary>
+
+  Standage DS, Brown CT, Hormozdiari F (2019) Kevlar: a mapping-free framework for accurate discovery of de novo variants. *bioRxiv*, [doi:10.1101/549154](https://doi.org/10.1101/549154).
+</details>
+
+<details>
   <summary>How can I contribute?</summary>
   
   We welcome contributions to the kevlar project from the community!
