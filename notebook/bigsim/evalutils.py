@@ -206,7 +206,7 @@ def load_discosnp_vcf(filename, vartype=None, minlength=None, maxlength=None, co
         elif call.format('G1', 'GT') == '1/1' and call.format('G3', 'GT') == '1/1':
             return True
         return False
-    calls = [c for c in reader if keep(c)]'
+    calls = [c for c in reader if keep(c)]
     calls.sort(key=lambda c: float(c.attribute('Rk')), reverse=True)
     if vartype:
         calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
