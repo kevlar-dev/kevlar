@@ -33,6 +33,7 @@ class VariantFilter(Enum):
     ControlAbundance = 8
     CaseAbundance = 9
     Homopolymer = 10
+    AmbiguousCall = 11
 
 
 class FormattedList(list):
