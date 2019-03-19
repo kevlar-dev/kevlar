@@ -1,9 +1,9 @@
-[![kevlar build status][travisbadge]](https://travis-ci.org/dib-lab/kevlar)
+[![kevlar build status][travisbadge]](https://travis-ci.org/kevlar-dev/kevlar)
 [![PyPI version][pypibadge]](https://pypi.python.org/pypi/biokevlar)
-[![Test coverage][codecovbadge]](https://codecov.io/github/dib-lab/kevlar)
+[![Test coverage][codecovbadge]](https://codecov.io/github/kevlar-dev/kevlar)
 [![kevlar documentation][rtdbadge]](http://kevlar.readthedocs.io/en/latest/?badge=latest)
-[![Docker build status][dockerbadge]](https://quay.io/repository/dib-lab/kevlar)
-[![MIT licensed][licensebadge]](https://github.com/dib-lab/kevlar/blob/master/LICENSE)
+[![Docker build status][dockerbadge]](https://quay.io/repository/kevlar-dev/kevlar)
+[![MIT licensed][licensebadge]](https://github.com/kevlar-dev/kevlar/blob/master/LICENSE)
 
 <img src="docs/_static/morpheus-kevlar.jpg" alt=" What if I told you we don't need alignments to find variants?" width="400px" />
 
@@ -19,13 +19,13 @@ This software is free for use under the MIT license.
 <details>
   <summary>Where can I find kevlar online?</summary>
   <ul>
-    <li>Source repository: https://github.com/dib-lab/kevlar</li>
+    <li>Source repository: https://github.com/kevlar-dev/kevlar</li>
     <li>Documentation: https://kevlar.readthedocs.io</li>
-    <li>Stable releases: https://github.com/dib-lab/kevlar/releases</li>
-    <li>Issue tracker: https://github.com/dib-lab/kevlar/issues</li>
+    <li>Stable releases: https://github.com/kevlar-dev/kevlar/releases</li>
+    <li>Issue tracker: https://github.com/kevlar-dev/kevlar/issues</li>
   </ul>
 
-  If you have questions or need help with kevlar, the [GitHub issue tracker](https://github.com/dib-lab/kevlar) should be your first point of contact.
+  If you have questions or need help with kevlar, the [GitHub issue tracker](https://github.com/kevlar-dev/kevlar) should be your first point of contact.
 </details>
 
 <details>
@@ -64,9 +64,9 @@ This software is free for use under the MIT license.
 </details>
 
 
-[travisbadge]: https://img.shields.io/travis/dib-lab/kevlar.svg
+[travisbadge]: https://img.shields.io/travis/kevlar-dev/kevlar.svg
 [pypibadge]: https://img.shields.io/pypi/v/biokevlar.svg
-[codecovbadge]: https://img.shields.io/codecov/c/github/dib-lab/kevlar.svg
+[codecovbadge]: https://img.shields.io/codecov/c/github/kevlar-dev/kevlar.svg
 [rtdbadge]: https://readthedocs.org/projects/kevlar/badge/?version=latest&maxAge=900
-[dockerbadge]: https://quay.io/repository/dib-lab/kevlar/status
+[dockerbadge]: https://quay.io/repository/kevlar-dev/kevlar/status
 [licensebadge]: https://img.shields.io/badge/license-MIT-blue.svg
