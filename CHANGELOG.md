@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- A new filter for discarding contigs that result in too many ambiguous variant calls (see #361).
+
 ### Fixed
 - Corrected a bug in the VCF reader that choked on filters not supported internally by kevlar (see #359).
 

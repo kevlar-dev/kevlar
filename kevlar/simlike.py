@@ -226,7 +226,7 @@ def annotate_abundances(call, abundances, samplelabels):
         call.format(sample, 'ALTABUND', abundstr)
 
 
-def process_partition(partitionid, calls):
+def process_partition(partitionid, calls, ambigthresh=10):
     passcalls = [c for c in calls if c.filterstr == 'PASS']
     if len(passcalls) == 0:
         return
@@ -238,7 +238,10 @@ def process_partition(partitionid, calls):
         else:
             c.filter(kevlar.vcf.VariantFilter.PartitionScore)
     for c in maxcalls:
-        c.annotate('CALLCLASS', partitionid)
+        if ambigthresh and len(maxcalls) > ambigthresh:
+            c.filter(kevlar.vcf.VariantFilter.AmbiguousCall)
+        else:
+            c.annotate('CALLCLASS', partitionid)
 
 
 def window_check(call, ksize=31):
@@ -298,7 +301,7 @@ def check_ctrl_abund_high(call, ctrlabundlists, ctrlmax, ctrlabundhigh):
 def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             dynamic=True, casemin=6, ctrlmax=1, caseabundlow=5,
             ctrlabundhigh=4, samplelabels=None, fastmode=False,
-            minlikescore=0.0, dropoutliers=False):
+            minlikescore=0.0, dropoutliers=False, ambigthresh=10):
     calls_by_partition = defaultdict(list)
     if samplelabels is None:
         samplelabels = default_sample_labels(len(controls) + 1)
@@ -332,7 +335,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
 
     allcalls = list()
     for partition, calls in calls_by_partition.items():
-        process_partition(partition, calls)
+        process_partition(partition, calls, ambigthresh=ambigthresh)
         allcalls.extend(calls)
 
     allcalls.sort(key=lambda c: c.attribute('LIKESCORE'), reverse=True)
@@ -374,7 +377,7 @@ def main(args):
         ctrlmax=args.ctrl_max, caseabundlow=args.case_abund_low,
         ctrlabundhigh=args.ctrl_abund_high, samplelabels=args.sample_labels,
         fastmode=args.fast_mode, minlikescore=args.min_like_score,
-        dropoutliers=args.drop_outliers,
+        dropoutliers=args.drop_outliers, ambigthresh=args.ambig_thresh,
     )
     for call in calculator:
         writer.write(call)
