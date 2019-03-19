@@ -107,7 +107,7 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
 
     For SNVs, there is a 1-to-1 correspondence of alternate allele k-mers to
     reference allele k-mers. We can therefore check the frequency of the
-    reference allele in the reference genome and increase the error rate if it
+    reference allele in the reference genome and adjust the error rate if it
     is repetitive. There is no such mapping of alt allele k-mers to refr allele
     k-mers for indels, so we use a flat error rate.
     """
@@ -115,9 +115,9 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
         if refrabund:  # SNV
             erate = error * mean
             if dynamic:
-                erate *= refrabund
+                erate += log(refrabund)
         else:  # INDEL
-            erate = error * mean * 0.1
+            erate = (error * mean) + log(0.1)
         return abundance * log(erate)
     elif genotype == 1:
         return scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
