@@ -98,7 +98,7 @@ def subparser(subparsers):
     filt_args.add_argument(
         '--ambig-thresh', metavar='A', type=int, default=10,
         help='discard contigs that result in > A distinct, equally optimal '
-        'variant calls; by default, A = 10'
+        'variant calls; by default, A = 10; set A=0 to disable this filter'
     )
 
     misc_args = subparser.add_argument_group('Miscellaneous settings')

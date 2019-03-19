@@ -238,7 +238,7 @@ def process_partition(partitionid, calls, ambigthresh=10):
         else:
             c.filter(kevlar.vcf.VariantFilter.PartitionScore)
     for c in maxcalls:
-        if len(maxcalls) > ambigthresh:
+        if ambigthresh and len(maxcalls) > ambigthresh:
             c.filter(kevlar.vcf.VariantFilter.AmbiguousCall)
         else:
             c.annotate('CALLCLASS', partitionid)

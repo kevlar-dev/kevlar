@@ -284,7 +284,10 @@ class VCFWriter(object):
             'in the case/proband sample.',
         VariantFilter.Homopolymer:
             'Indels associate with homopolymers are most often spurious and '
-            'very difficult to verify with confidence.'
+            'very difficult to verify with confidence.',
+        VariantFilter.AmbiguousCall:
+            'Derived from a contig with too many distinct, equally optimal '
+            'variant calls.'
     }
 
     info_metadata = {

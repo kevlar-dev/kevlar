@@ -43,8 +43,8 @@ def miniabund(minitrio):
     return altabund, refrabund
 
 
-@pytest.fixture
-def caselowsketches(scope="module"):
+@pytest.fixture(scope="module")
+def caselowsketches():
     kid = kevlar.sketch.load(data_file('case-low-abund/kid.ct'))
     mom = kevlar.sketch.load(data_file('case-low-abund/mom.ct'))
     dad = kevlar.sketch.load(data_file('case-low-abund/dad.ct'))
@@ -52,12 +52,21 @@ def caselowsketches(scope="module"):
     return kid, mom, dad, refr
 
 
-@pytest.fixture
-def ctrlhighsketches(scope="module"):
+@pytest.fixture(scope="module")
+def ctrlhighsketches():
     kid = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.kid.sct'))
     mom = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.mom.sct'))
     dad = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.dad.sct'))
     refr = kevlar.sketch.load(data_file('ctrl-high-abund/cc57120.refr.sct'))
+    return kid, mom, dad, refr
+
+
+@pytest.fixture(scope="module")
+def term_high_abund_trio():
+    kid = kevlar.sketch.load(data_file('term-high-abund/proband.ct'))
+    mom = kevlar.sketch.load(data_file('term-high-abund/mother.ct'))
+    dad = kevlar.sketch.load(data_file('term-high-abund/father.ct'))
+    refr = khmer.Nodetable(31, 1, 1)
     return kid, mom, dad, refr
 
 
@@ -336,17 +345,36 @@ def test_simlike_min_like_score(ctrlhighsketches):
     (True, 'PASS'),
     (False, 'LikelihoodFail'),
 ])
-def test_simlike_drop_outliers(dodrop, filterstr):
-    kid = kevlar.sketch.load(data_file('term-high-abund/proband.ct'))
-    mom = kevlar.sketch.load(data_file('term-high-abund/mother.ct'))
-    dad = kevlar.sketch.load(data_file('term-high-abund/father.ct'))
-    refr = khmer.Nodetable(31, 1, 1)
+def test_simlike_drop_outliers(dodrop, filterstr, term_high_abund_trio):
+    kid, mom, dad, refr = term_high_abund_trio
     prelimcalls = kevlar.vcf.VCFReader(
         kevlar.open(data_file('term-high-abund/calls.vcf'), 'r')
     )
     scorer = kevlar.simlike.simlike(
         prelimcalls, kid, [mom, dad], refr, mu=30.0, sigma=10.0, casemin=5,
-        ctrlmax=1, dropoutliers=dodrop
+        ctrlmax=1, dropoutliers=dodrop, ambigthresh=0
     )
     for call in scorer:
+        assert call.filterstr == filterstr
+
+
+@pytest.mark.parametrize('ambigthresh,filterstr', [
+    (64, 'PASS'),
+    (0, 'PASS'),
+    (10, 'AmbiguousCall'),
+    (None, 'PASS'),
+    (False, 'PASS'),
+])
+def test_simlike_ambig_threshold(ambigthresh, filterstr, term_high_abund_trio):
+    kid, mom, dad, refr = term_high_abund_trio
+    prelimcalls = kevlar.vcf.VCFReader(
+        kevlar.open(data_file('term-high-abund/calls.vcf'), 'r')
+    )
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, mu=30.0, sigma=10.0, casemin=5,
+        ctrlmax=1, dropoutliers=True, ambigthresh=ambigthresh
+    )
+    calls = list(scorer)
+    testcalls = [c for c in calls if c.attribute('PART') == '869']
+    for call in testcalls:
         assert call.filterstr == filterstr
