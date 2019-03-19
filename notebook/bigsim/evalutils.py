@@ -176,7 +176,38 @@ def compact(reader, index, delta=10):
 
 def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, maxlength=None):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
     calls = compact(reader, index, delta=delta)
+    if vartype:
+        calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
+    return calls
+
+
+def load_scalpel_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
+    reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
+    calls = list(reader)
+    calls.sort(key=lambda c: float(c.attribute('CHI2')), reverse=True)
+    if vartype:
+        calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
+    return calls
+
+
+def load_discosnp_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30', applyfilters=False):
+    reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
+    def keep(call):
+        if applyfilters and call.filterstr != 'PASS':
+            return False
+        if call.format('G2', 'GT') not in ('0/1', '1/0'):
+            return False
+        if call.format('G1', 'GT') == '0/0' and call.format('G3', 'GT') == '0/0':
+            return True
+        elif call.format('G1', 'GT') == '1/1' and call.format('G3', 'GT') == '1/1':
+            return True
+        return False
+    calls = [c for c in reader if keep(c)]
+    calls.sort(key=lambda c: float(c.attribute('Rk')), reverse=True)
     if vartype:
         calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
     return calls
@@ -184,6 +215,7 @@ def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, max
 
 def load_triodenovo_vcf(filename, vartype=None, minlength=None, maxlength=None, cov='30'):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
+    reader.suppress_filter_warnings = True
     calls = list(reader)
     calls.sort(key=lambda c: float(c._sample_data['Kid_'+ cov +'x']['DQ']), reverse=True)
     if vartype:
