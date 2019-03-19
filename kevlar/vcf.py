@@ -416,6 +416,7 @@ class VCFReader(object):
     def __init__(self, instream):
         self._in = instream
         self._sample_labels = list()
+        self.suppress_filter_warnings = False
 
     def _variant_from_vcf_string(self, vcfstr):
         fields = vcfstr.strip().split('\t')
@@ -426,12 +427,21 @@ class VCFReader(object):
         filterstr = fields[6]
         variant = Variant(seqid, pos, refr, alt)
         for kvp in fields[7].split(';'):
-            key, values = kvp.split('=')
-            for value in values.split(','):
-                variant.annotate(key, value)
+            if '=' in kvp:
+                key, values = kvp.split('=')
+                for value in values.split(','):
+                    variant.annotate(key, value)
+            else:
+                variant.annotate(kvp, True)
         if filterstr not in ('.', 'PASS'):
             for filterlabel in filterstr.split(';'):
-                variant.filter(VariantFilter[filterlabel])
+                if hasattr(VariantFilter, filterlabel):
+                    variant.filter(VariantFilter[filterlabel])
+                elif not self.suppress_filter_warnings:
+                    message = 'filter "{}" not recognized'.format(filterstr)
+                    message += '; attempting to write this variant to VCF'
+                    message += ' will probably turn out poorly'
+                    kevlar.plog('[kevlar::vcf]', message)
         if len(fields) > 9:
             fmtkeys = fields[8].split(':')
             sample_data = fields[9:]
