@@ -131,7 +131,7 @@ def test_likelihood_false(miniabund):
 
 def test_likelihood_inherited(miniabund):
     altabund, refrabund = miniabund
-    assert likelihood_inherited(altabund) == pytest.approx(-436.01119)
+    assert likelihood_inherited(altabund) == pytest.approx(-438.31377)
 
 
 def test_joinlist():
@@ -219,9 +219,10 @@ def test_simlike_cli(fmtstr, sampleargs, minitrio, capsys):
         kevlar.simlike.main(args)
 
     out, err = capsys.readouterr()
+    print(out)
     assert fmtstr in out
-    assert 'LIKESCORE=214.103' in out
-    assert 'LLDN=-221.908;LLFP=-785.714;LLIH=-436.011' in out
+    assert 'LIKESCORE=216.406' in out
+    assert 'LLDN=-221.908;LLFP=-785.714;LLIH=-438.314' in out
 
 
 def test_simlike_cli_bad_labels():

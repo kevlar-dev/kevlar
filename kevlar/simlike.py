@@ -112,13 +112,12 @@ def abund_log_prob(genotype, abundance, refrabund=None, mean=30.0, sd=8.0,
     k-mers for indels, so we use a flat error rate.
     """
     if genotype == 0:
-        if refrabund:  # SNV
-            if dynamic:
-                return abundance * (log(error * mean) + log(refrabund))
-            else:
-                return abundance * log(error * mean)
+        if refrabund and dynamic:  # SNV, dynamic error model
+            return abundance * (log(error) + log(mean) + log(refrabund))
+        elif refrabund and not dynamic:  # SNV, fixed error model
+                return abundance * (log(error) + log(mean))
         else:  # INDEL
-            return abundance * (log(error * mean) + log(0.01))
+            return abundance * (log(error) + log(mean) + log(0.01))
     elif genotype == 1:
         return scipy.stats.norm.logpdf(abundance, mean / 2, sd / 2)
     elif genotype == 2:
