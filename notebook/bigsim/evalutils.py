@@ -24,6 +24,7 @@ from intervaltree import IntervalTree
 import kevlar
 from kevlar.vcf import VCFReader
 import pandas
+from termcolor import colored
 
 
 class IntervalForest(object):
@@ -122,7 +123,7 @@ def populate_index_from_bed(instream):
     return index
 
 
-def compact(reader, index, delta=10):
+def compact(reader, index, delta=10, debug=False):
     """Compact variants by call class
 
     Variant calls labeled with the same `CALLCLASS` attribute were predicted
@@ -149,6 +150,9 @@ def compact(reader, index, delta=10):
             variants_by_class[callclass].append(varcall)
 
     for callclass, calllist in variants_by_class.items():
+        if len(calllist) == 1:
+            calls.extend(calllist)
+            continue
         nmatches = 0
         match = None
         for varcall in calllist:
@@ -161,9 +165,15 @@ def compact(reader, index, delta=10):
                     match = varcall
                     localfound = hits
         if nmatches == 0:
+            if debug:
+                message = 'DEBUG multi-mapping contig (callclass={}, mappings={}), FALSE call'.format(callclass, len(calllist))
+                print(colored(message, 'red'))
             calls.append(calllist[0])
         else:
             assert nmatches > 0, nmatches
+            if debug:
+                message = 'DEBUG multi-mapping contig (callclass={}, mappings={}), TRUE call'.format(callclass, len(calllist))
+                print(colored(message, 'green'))
             if nmatches > 1:
                 print('WARNING: found', nmatches, 'matches for CALLCLASS',
                       callclass, file=sys.stderr)
@@ -174,10 +184,10 @@ def compact(reader, index, delta=10):
     return calls
 
 
-def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, maxlength=None):
+def load_kevlar_vcf(filename, index, delta=10, vartype=None, minlength=None, maxlength=None, debug=False):
     reader = kevlar.vcf.VCFReader(kevlar.open(filename, 'r'))
     reader.suppress_filter_warnings = True
-    calls = compact(reader, index, delta=delta)
+    calls = compact(reader, index, delta=delta, debug=debug)
     if vartype:
         calls = subset_vcf(calls, vartype, minlength=minlength, maxlength=maxlength)
     return calls
