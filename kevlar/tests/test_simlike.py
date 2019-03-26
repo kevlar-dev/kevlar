@@ -70,6 +70,15 @@ def term_high_abund_trio():
     return kid, mom, dad, refr
 
 
+@pytest.fixture(scope="module")
+def partscore_trio():
+    kid = kevlar.sketch.load(data_file('partscore/partscore-proband.ct'))
+    mom = kevlar.sketch.load(data_file('partscore/partscore-mother.ct'))
+    dad = kevlar.sketch.load(data_file('partscore/partscore-father.ct'))
+    refr = kevlar.sketch.load(data_file('partscore/partscore-refr.sct'))
+    return kid, mom, dad, refr
+
+
 def test_spanning_kmer_abundances(minitrio):
     kid, mom, dad, ref = minitrio
     altseq = 'TGTCTCCCTCCCCTCCACCCCCAGAAATGGGTTTTTGATAGTCTTCCAAAGTTAGGGTAGT'
@@ -379,3 +388,20 @@ def test_simlike_ambig_threshold(ambigthresh, filterstr, term_high_abund_trio):
     testcalls = [c for c in calls if c.attribute('PART') == '869']
     for call in testcalls:
         assert call.filterstr == filterstr
+
+
+@pytest.mark.parametrize('partid', [
+    ('1085'),
+    ('1187'),
+    ('784'),
+])
+def test_simlike_partscore(partid, partscore_trio):
+    kid, mom, dad, refr = partscore_trio
+    infile = 'partscore/partscore-cc{cc}.calls.vcf.gz'.format(cc=partid)
+    prelimcalls = kevlar.vcf.VCFReader(kevlar.open(data_file(infile), 'r'))
+    scorer = kevlar.simlike.simlike(
+        prelimcalls, kid, [mom, dad], refr, mu=30.0, sigma=10.0, casemin=5,
+        ctrlmax=1
+    )
+    for call in scorer:
+        assert call.filterstr == 'PASS'

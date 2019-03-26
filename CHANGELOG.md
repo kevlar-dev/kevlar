@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Corrected a bug in the VCF reader that choked on filters not supported internally by kevlar (see #359).
 - Reformulated the probability of an observed k-mer abundance conditioned on a 0/0 genotype (see #363).
+- The homopolymer filter was made slightly less aggressive (see #365).
+- Corrected a bug with in reporting multiple optimal calls due to floating point comparison (see #365).
 
 
 ## [0.7] 2019-02-13
