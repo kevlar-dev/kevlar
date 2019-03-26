@@ -218,7 +218,9 @@ def default_sample_labels(nsamples):
     return samples
 
 
-def annotate_abundances(call, abundances, samplelabels):
+def annotate_abundances(call, abundances, refrabund, samplelabels):
+    if None not in refrabund:
+        call.annotate('REFRCOPYNUM', refrabund)
     for sample, abundlist in zip(samplelabels, abundances):
         abundstr = joinlist(abundlist)
         call.format(sample, 'ALTABUND', abundstr)
@@ -326,7 +328,7 @@ def simlike(variants, case, controls, refr, mu=30.0, sigma=8.0, epsilon=0.001,
             calls_by_partition[call.attribute('PART')].append(call)
             continue
         calc_likescore(call, altabund, refrabund, mu, sigma, epsilon)
-        annotate_abundances(call, altabund, samplelabels)
+        annotate_abundances(call, altabund, refrabund, samplelabels)
         calls_by_partition[call.attribute('PART')].append(call)
         progress_indicator.update()
 
