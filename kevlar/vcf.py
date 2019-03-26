@@ -309,6 +309,10 @@ class VCFWriter(object):
             'String', '1', 'window containing all k-mers that span the '
             'variant reference allele',
         ),
+        'REFRCOPYNUM': (
+            'Integer', '.', 'number of times each reference allele k-mer '
+            'occurs in the reference genome',
+        ),
         'CONTIG': (
             'String', '1', 'contig assembled from reads containing novel '
             'k-mers, aligned to reference to call variants',
