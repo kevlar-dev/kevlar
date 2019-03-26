@@ -160,11 +160,11 @@ class VariantMapping(object):
         if not self.do_homopolymer_filter:
             return False
         rf = self.rightflank
-        if rf is None or len(rf.target) < 4:
+        if rf is None or len(rf.target) < 5:
             return False
         rf = rf.target
         firstchar = rf[0]
-        poly4 = firstchar * 4
+        poly4 = firstchar * 5
         first7 = rf[0:7]
         return poly4 in first7
 
