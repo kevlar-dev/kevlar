@@ -10,7 +10,7 @@
 from collections import defaultdict
 import kevlar
 from kevlar.vcf import Variant
-from math import log
+from math import log, isclose
 import scipy.stats
 from scipy.special import comb as choose
 
@@ -233,7 +233,9 @@ def process_partition(partitionid, calls, ambigthresh=10):
     maxscore = max([c.attribute('LIKESCORE') for c in passcalls])
     maxcalls = list()
     for c in calls:
-        if c.attribute('LIKESCORE') == maxscore and c.filterstr == 'PASS':
+        passed = c.filterstr == 'PASS'
+        optimal = isclose(c.attribute('LIKESCORE'), maxscore)
+        if passed and optimal:
             maxcalls.append(c)
         else:
             c.filter(kevlar.vcf.VariantFilter.PartitionScore)
