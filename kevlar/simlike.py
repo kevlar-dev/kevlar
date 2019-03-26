@@ -219,7 +219,7 @@ def default_sample_labels(nsamples):
 
 
 def annotate_abundances(call, abundances, refrabund, samplelabels):
-    if None not in refrabund:
+    if len(refrabund) > 0 and None not in refrabund:
         call.annotate('REFRCOPYNUM', ','.join(map(str, refrabund)))
     for sample, abundlist in zip(samplelabels, abundances):
         abundstr = joinlist(abundlist)
