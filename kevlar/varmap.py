@@ -26,13 +26,18 @@ class VariantMapping(object):
     """
     def __init__(self, contig, cutout, score=None, cigar=None, strand=1,
                  match=1, mismatch=2, gapopen=5, gapextend=0,
-                 homopolyfilt=True):
-        if score is None:
+                 homopolyfilt=True, nocall=False):
+        if score is None and not nocall:
             score, cigar, strand = align_both_strands(
                 cutout, contig, match, mismatch, gapopen, gapextend
             )
         self.contig = contig
         self.cutout = cutout
+        self.nocall = nocall
+        self.vartype = None
+        if nocall:
+            self.score = 0
+            return
         self.score = score
         self.strand = strand
         self.do_homopolymer_filter = homopolyfilt
@@ -41,7 +46,6 @@ class VariantMapping(object):
         self.tok = AlignmentTokenizer(self.varseq, self.refrseq, cigar)
         self.cigar = self.tok._cigar
 
-        self.vartype = None
         snvpattern = r'^((\d+)([DI]))?(\d+)M((\d+)[DI])?$'
         indelpattern = r'^((\d+)([DI]))?(\d+)M(\d+)([ID])(\d+)M((\d+)[DI])?$'
         if re.search(snvpattern, self.cigar):
@@ -180,6 +184,10 @@ class VariantMapping(object):
         Variant calls with no spanning interesting k-mers are designated as
         "passenger calls" and discarded.
         """
+        if self.nocall:
+            yield Variant('.', '.', '.', '.', CONTIG=self.contig.sequence,
+                          IKMERS=str(len(self.contig.annotations)))
+            return
         offset = 0 if self.targetshort else self.offset
         if self.vartype == 'snv':
             caller = self.call_snv(self.match.query, self.match.target, offset,

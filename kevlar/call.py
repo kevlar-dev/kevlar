@@ -24,7 +24,7 @@ def alignments_to_report(alignments):
     interpretable as a variant, and of these return the alignment(s) with the
     optimal score.
     """
-    if len(alignments) == 1:
+    if len(alignments) <= 1:
         return alignments
     scrtbl = [aln for aln in alignments if aln.vartype is not None]
     if len(scrtbl) == 0:
@@ -67,14 +67,17 @@ def merge_adjacent(callstream):
 
 def prelim_call(targetlist, querylist, partid=None, match=1, mismatch=2,
                 gapopen=5, gapextend=0, ksize=31, refrfile=None, debug=False,
-                mindist=5, homopolyfilt=True):
+                mindist=5, homopolyfilt=True, maxtargetlen=10000):
     """Implement the `kevlar call` procedure as a generator function."""
     for query in sorted(querylist, reverse=True, key=len):
         alignments = list()
         for target in sorted(targetlist, key=lambda cutout: cutout.defline):
+            nocall = False
+            if maxtargetlen and len(target) > maxtargetlen:
+                nocall = True
             mapping = VariantMapping(
                 query, target, match=match, mismatch=mismatch, gapopen=gapopen,
-                gapextend=gapextend, homopolyfilt=homopolyfilt,
+                gapextend=gapextend, homopolyfilt=homopolyfilt, nocall=nocall,
             )
             alignments.append(mapping)
         aligns2report = alignments_to_report(alignments)
