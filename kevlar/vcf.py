@@ -428,7 +428,7 @@ class VCFReader(object):
     def _variant_from_vcf_string(self, vcfstr):
         fields = vcfstr.strip().split('\t')
         seqid = fields[0]
-        pos = int(fields[1]) - 1
+        pos = '.' if fields[1] == '.' else int(fields[1]) - 1
         refr = fields[3]
         alt = fields[4]
         filterstr = fields[6]
