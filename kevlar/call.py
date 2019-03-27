@@ -155,6 +155,7 @@ def main(args):
             gapopen=args.open, gapextend=args.extend, ksize=args.ksize,
             refrfile=args.refr, debug=args.debug, mindist=5,
             homopolyfilt=not args.no_homopoly_filter,
+            maxtargetlength=args.max_target_length,
         )
         for varcall in caller:
             if args.gen_mask:

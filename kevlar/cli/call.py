@@ -53,6 +53,10 @@ def subparser(subparsers):
                            help='by default, short indels adjacent to '
                            'homopolymers are filtered out; use this flag to '
                            'disable that filter')
+    misc_args.add_argument('--max-target-length', type=int, default=10000,
+                           metavar='L', help='do not attempt to call variants '
+                           'if the target genomic sequence is > L bp; by '
+                           'default, L=10000')
     misc_args.add_argument('--refr', metavar='FILE',
                            help='reference genome indexed for BWA search; if '
                            'provided, mates of interesting reads will be used '
