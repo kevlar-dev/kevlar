@@ -131,8 +131,11 @@ class Variant(object):
                 kvpairs.append(queryseq)
             attrstr = ';'.join(kvpairs)
 
-        return '{:s}\t{:d}\t.\t{:s}\t{:s}\t.\t{:s}\t{:s}'.format(
-            self._seqid, self._pos + 1, self._refr, self._alt, self.filterstr,
+        pos = self.position
+        if pos != '.':
+            pos += 1
+        return '{:s}\t{}\t.\t{:s}\t{:s}\t.\t{:s}\t{:s}'.format(
+            self._seqid, pos, self._refr, self._alt, self.filterstr,
             attrstr
         )
 
@@ -230,6 +233,8 @@ class Variant(object):
         return tuple(gt.split(','))
 
     def test_merge(self, other):
+        if self.seqid == '.':
+            return None
         if self.seqid != other.seqid:
             return None
         if len(self._alt) != len(self._refr):
@@ -428,7 +433,7 @@ class VCFReader(object):
     def _variant_from_vcf_string(self, vcfstr):
         fields = vcfstr.strip().split('\t')
         seqid = fields[0]
-        pos = int(fields[1]) - 1
+        pos = '.' if fields[1] == '.' else int(fields[1]) - 1
         refr = fields[3]
         alt = fields[4]
         filterstr = fields[6]

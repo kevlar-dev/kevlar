@@ -56,7 +56,7 @@ def load_index(simvarfile, vartype=None, minlength=None, maxlength=None):
     return index
 
 
-def handle_collisions(mapping, outfile):
+def handle_collisions(mapping, outfile, mvf=False):
     numcollisions = 0
     for variant, calllist in mapping.items():
         if len(calllist) > 1:
@@ -71,7 +71,7 @@ def handle_collisions(mapping, outfile):
                 if len(calllist) > 1:
                     print('\n#VARIANT:', variant, file=outstream)
                     for varcall in calllist:
-                        if args.mvf:
+                        if mvf:
                             print('    -', varcall, file=outstream)
                         else:
                             print('    -', varcall.vcf, file=outstream)
@@ -122,7 +122,7 @@ def evaluate(simvarfile, varcalls, mode, vartype=None, minlength=None,
         variants, index, delta=tolerance
     )
 
-    handle_collisions(mapping, collisionsfile)
+    handle_collisions(mapping, collisionsfile, mvf=(mode == 'GATK'))
     handle_missing(missing, missingfile)
     handle_calls(correct, correctfile, mvf=(mode == 'GATK'))
     handle_calls(false, falsefile, mvf=(mode == 'GATK'))

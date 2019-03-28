@@ -115,6 +115,7 @@ def populate_index_from_bed(instream):
         if line.strip() == '':
             continue
         values = line.strip().split()
+        assert len(values) >= 3, values
         chrom = values[0]
         start, end = [int(coord) for coord in values[1:3]]
         if start == end:
@@ -141,7 +142,7 @@ def compact(reader, index, delta=10, debug=False):
     variants_by_class = defaultdict(list)
     calls = list()
     for varcall in reader:
-        if varcall.filterstr != 'PASS':
+        if varcall.filterstr != 'PASS' or varcall.position == '.':
             continue
         callclass = varcall.attribute('CALLCLASS')
         if callclass is None:
@@ -249,7 +250,9 @@ def assess_variants_vcf(variants, index, delta=10):
     found = set()
     mapping = defaultdict(list)
 
-    for varcall in variants:
+    for n, varcall in enumerate(variants):
+        if varcall.position == '.':
+            continue
         assert varcall.filterstr == 'PASS'
         hits = index.query(varcall.seqid, varcall.position, delta=delta)
         if hits == set():
@@ -257,7 +260,7 @@ def assess_variants_vcf(variants, index, delta=10):
         else:
             correct.add(varcall)
             found.update(hits)
-            assert len(hits) == 1
+            #assert len(hits) == 1
             for hit in hits:
                 mapping[hit].append(varcall)
 
@@ -348,7 +351,7 @@ def subset_vcf(varcalls, vartype, minlength=None, maxlength=None):
         refrlen = len(call._refr)
         altlen = len(call._alt)
         calltype = 'SNV'
-        if refrlen > 1 or altlen > 1:
+        if refrlen != altlen:
             calltype = 'INDEL'
         if calltype != vartype:
             continue
@@ -369,7 +372,7 @@ def subset_mvf(varcalls, vartype, minlength=None, maxlength=None):
     assert vartype in ('SNV', 'INDEL')
     def determine_type(genotype):
         g1, g2 = genotype.replace('|', '/').split('/')
-        if len(g1) == 1 and len(g2) == 1:
+        if len(g1) == len(g2):
             return 'SNV'
         return 'INDEL'
 

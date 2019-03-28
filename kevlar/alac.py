@@ -19,7 +19,7 @@ import re
 def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
          seedsize=31, maxdiff=None, inclpattern=None, exclpattern=None,
          match=1, mismatch=2, gapopen=5, gapextend=0, min_ikmers=None,
-         maskfile=None, maskmem=1e6, maskmaxfpr=0.01):
+         maskfile=None, maskmem=1e6, maskmaxfpr=0.01, maxtargetlen=10000):
     assembler = kevlar.assemble.assemble(pstream, maxreads=maxreads)
     contigs_by_partition = defaultdict(list)
     for partid, contig in assembler:
@@ -41,7 +41,7 @@ def alac(pstream, refrfile, threads=1, ksize=31, maxreads=10000, delta=50,
         caller = kevlar.call.call(
             gdnalist, contigs, partid, match=match, mismatch=mismatch,
             gapopen=gapopen, gapextend=gapextend, ksize=ksize,
-            refrfile=refrfile,
+            refrfile=refrfile, maxtargetlen=maxtargetlen,
         )
         partcalls = list(caller)
         calls.extend(partcalls)
@@ -81,7 +81,7 @@ def main(args):
         exclpattern=args.exclude, match=args.match, mismatch=args.mismatch,
         gapopen=args.open, gapextend=args.extend, min_ikmers=args.min_ikmers,
         maskfile=args.gen_mask, maskmem=args.mask_mem,
-        maskmaxfpr=args.mask_max_fpr,
+        maskmaxfpr=args.mask_max_fpr, maxtargetlen=args.max_target_length,
     )
 
     writer = kevlar.vcf.VCFWriter(
