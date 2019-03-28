@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - A new filter for discarding contigs that result in too many ambiguous variant calls (see #361).
+- A new filter for discarding very long reference targets composed of tandem arrays of spaced repeats that evade the `--max-diff` filter (see #366).
 
 ### Fixed
 - Corrected a bug in the VCF reader that choked on filters not supported internally by kevlar (see #359).
