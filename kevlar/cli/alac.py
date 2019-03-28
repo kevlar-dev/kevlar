@@ -52,6 +52,10 @@ def subparser(subparsers):
     local_args.add_argument('--exclude', metavar='REGEX', type=str,
                             help='discard alignments to any chromosomes whose '
                             'sequence IDs match the given pattern')
+    local_args.add_argument('--max-target-length', type=int, default=10000,
+                            metavar='L', help='do not attempt to call variants'
+                            ' if the target genomic sequence is > L bp; by'
+                            ' default, L=10000')
 
     score_args = subparser.add_argument_group('Alignment scoring')
     score_args.add_argument('-A', '--match', type=int, default=1, metavar='A',

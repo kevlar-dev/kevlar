@@ -236,13 +236,16 @@ def test_alac_nomates():
     assert coords == set([1476 - 1, 115378 - 1, 127541 - 1])
 
 
-@pytest.mark.parametrize('vcfposition,X,cigar', [
-    (40692, 10000, '32713D96M6I91M15142D'),
-    (40692, 1000, '50D96M6I91M50D'),
-    (40692, 0, '32713D96M6I91M140025D'),
-    (40692, None, '50D96M6I91M50D'),
+@pytest.mark.parametrize('vcfposition,X,maxtargetlen,cigar', [
+    (68538, 10000, 10000, '2763D98M2381D4M329D91M50D'),
+    (40692, 10000, 0, '32713D96M6I91M15142D'),
+    (40692, 10000, None, '32713D96M6I91M15142D'),
+    (40692, 10000, False, '32713D96M6I91M15142D'),
+    (40692, 1000, 1000, '50D96M6I91M50D'),
+    (40692, 0, 0, '32713D96M6I91M140025D'),
+    (40692, None, None, '50D96M6I91M50D'),
 ])
-def test_alac_maxdiff(vcfposition, X, cigar):
+def test_alac_maxdiff(vcfposition, X, maxtargetlen, cigar):
     pstream = kevlar.parse_partitioned_reads(
         kevlar.parse_augmented_fastx(
             kevlar.open(data_file('maxdiff-reads.augfastq.gz'), 'r')
@@ -250,9 +253,11 @@ def test_alac_maxdiff(vcfposition, X, cigar):
     )
     refrfile = data_file('maxdiff-refr.fa.gz')
     caller = kevlar.alac.alac(
-        pstream, refrfile, ksize=31, delta=50, seedsize=51, maxdiff=X
+        pstream, refrfile, ksize=31, delta=50, seedsize=51, maxdiff=X,
+        maxtargetlen=maxtargetlen,
     )
     calls = list(caller)
     assert len(calls) == 1
     assert calls[0].cigar == cigar
+    print(calls[0].vcf)
     assert calls[0].position == vcfposition - 1

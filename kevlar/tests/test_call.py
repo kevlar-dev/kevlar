@@ -404,3 +404,51 @@ def test_call_homopolymer_filter_disabled():
     assert len(calls) == 6
     for c in calls:
         assert 'Homopolymer' not in c.filterstr
+
+
+@pytest.mark.parametrize('contigs,gdnas,maxtargetlen,numpassing', [
+    ('bigtarget-contig.augfasta.gz', 'bigtarget-gdna.fasta.gz', 10000, 0),
+    ('mnv-contig.augfasta', 'mnv-gdna.fa', 10000, 3),
+    ('mnv-contig.augfasta', 'mnv-gdna.fa', 50, 0),
+])
+def test_call_max_target_length(contigs, gdnas, maxtargetlen, numpassing):
+    contigfile = data_file(contigs)
+    contigstream = kevlar.parse_augmented_fastx(kevlar.open(contigfile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(contigstream)
+    contigs = kevlar.call.load_contigs(partstream)
+
+    gdnafile = data_file(gdnas)
+    gdnastream = kevlar.reference.load_refr_cutouts(kevlar.open(gdnafile, 'r'))
+    partstream = kevlar.parse_partitioned_reads(gdnastream)
+    targets = kevlar.call.load_contigs(partstream)
+
+    calls = list()
+    for partid in contigs:
+        contiglist = contigs[partid]
+        gdnalist = targets[partid]
+        caller = kevlar.call.call(
+            gdnalist, contiglist, partid=partid, maxtargetlen=maxtargetlen
+        )
+        calls.extend(list(caller))
+
+    nocalls = [c for c in calls if c.seqid == '.']
+    passcalls = [c for c in calls if c.seqid != '.']
+    assert len(passcalls) == numpassing
+    for c in nocalls:
+        assert c.seqid == c.position == '.'
+        assert sorted(c.info.keys()) == ['CONTIG', 'IKMERS', 'PART']
+
+
+def test_call_max_target_length_cli(capsys):
+    contig = data_file('bigtarget-contig.augfasta.gz')
+    gdna = data_file('bigtarget-gdna.fasta.gz')
+    arglist = ['call', '--max-target-length', '10000', contig, gdna]
+    args = kevlar.cli.parser().parse_args(arglist)
+    kevlar.call.main(args)
+
+    out, err = capsys.readouterr()
+    outlines = out.strip().split('\n')
+    calllines = [l for l in outlines if not l.startswith('#')]
+    assert len(calllines) == 1
+    assert calllines[0].startswith('.\t.\t.\t.\t.')
+    assert 'PASS' not in calllines[0]
