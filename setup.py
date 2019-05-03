@@ -35,6 +35,12 @@ sequencemod = Extension(
     language='c'
 )
 
+sigmod = Extension(
+    'kevlar.signature',
+    sources=['kevlar/signature.cpp'],
+    language='c++'
+)
+
 dependencies = [
     'pysam>=0.14', 'networkx>=2.0', 'pandas>=0.23', 'scipy>=1.1',
     'matplotlib>=2.2', 'intervaltree>=3.0.2'
@@ -63,7 +69,7 @@ setup(name='biokevlar',
       },
       include_package_data=True,
       scripts=glob.glob('kevlar/sandbox/*.py'),
-      ext_modules=[ksw2, fermilite, sequencemod],
+      ext_modules=[ksw2, fermilite, sequencemod, sigmod],
       setup_requires=dependencies,
       install_requires=dependencies,
       entry_points={

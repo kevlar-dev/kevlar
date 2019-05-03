@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//Copyright (c) 2017 The Regents of the University of California
+// Copyright (c) 2017 The Regents of the University of California
 //
 // This file is part of kevlar (http://github.com/standage/kevlar) and is
 // licensed under the MIT license: see LICENSE.
