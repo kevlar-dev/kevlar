@@ -25,7 +25,7 @@ Adjust accordingly depending on available memory and processors.
 
 ```bash
 parallel --gnu --jobs 5 \
-    bin/mut-hist -i 1000000 -k 31 -m 16 -r 0.1 -s 2018 -t {3} -z 5 GRCh38.noambig.fa.{1} GRCh38.ct \
+    bin/mut-hist -i 1000000 -k {2} -m 16 -r 0.1 -s 2018 -t {3} -z 5 GRCh38.noambig.fa.{1} GRCh38.ct \
         '>' k{2}-{3}-{1}.txt '2>' k{2}-{3}-{1}.log \
     ::: {1..16} \
     ::: 23 27 31 35 39 43 47 51 55 59 \
