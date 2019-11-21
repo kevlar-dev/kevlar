@@ -16,10 +16,10 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
 .. code::
 
      # Download data
-     curl -L https://osf.io/db82p/?download -o mother.fq.gz
-     curl -L https://osf.io/6vrnz/?download -o father.fq.gz
-     curl -L https://osf.io/wt5h8/?download -o proband.fq.gz
-     curl -L https://osf.io/35wgn/?download -o refr.fa.gz
+     curl -L https://osf.io/db82p/download -o mother.fq.gz
+     curl -L https://osf.io/6vrnz/download -o father.fq.gz
+     curl -L https://osf.io/wt5h8/download -o proband.fq.gz
+     curl -L https://osf.io/35wgn/download -o refr.fa.gz
      bwa index refr.fa.gz
 
      # Download and format configuration file
