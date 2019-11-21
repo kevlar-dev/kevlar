@@ -23,8 +23,7 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
      bwa index refr.fa.gz
 
      # Download and format configuration file
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-config.json \
-         | sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
+     curl -L https://osf.io/86adm/download  sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
 
      # Invoke the workflow
      snakemake \

@@ -83,14 +83,14 @@ The notes above should be helpful in setting parameter values and selecting appr
 Assessing accuracy
 ------------------
 
-The output of the command above is a VCF file, and in this case should contain 10 variant calls.
+The output of the command above is a gzip-compressed VCF file, and in this case should contain 10 variant calls.
 The ``kevlar-eval.sh`` script below uses ``bedtools intersect`` to do a quick and simple evaluation of kevlar's accuracy.
 
 .. code:: bash
 
     curl -L https://osf.io/yj9nu/download -o neon-refr.vcf
     curl -L https://osf.io/nz5vt/download -o kevlar-eval.sh
-    bash kevlar-eval.sh neon-refr.vcf kevlar-variant-calls.vcf
+    bash kevlar-eval.sh neon-refr.vcf calls.scored.sorted.vcf.gz
 
 
 The kevlar simplex workflow in detail
