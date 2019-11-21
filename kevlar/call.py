@@ -9,7 +9,6 @@
 
 from collections import defaultdict
 import kevlar
-from kevlar.reference import bwa_align
 from kevlar.varmap import VariantMapping
 from kevlar.vcf import VariantFilter as vf
 import khmer

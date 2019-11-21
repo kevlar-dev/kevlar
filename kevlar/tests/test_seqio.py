@@ -195,9 +195,8 @@ def test_partition_reader_simple():
 def test_partition_reader_mixed():
     infile = data_file('part-reads-mixed.fa')
     readstream = kevlar.parse_augmented_fastx(kevlar.open(infile, 'r'))
-    with pytest.raises(KevlarPartitionLabelError) as ple:
+    with pytest.raises(KevlarPartitionLabelError, match=r'with and without partition labels'):
         partitions = list(kevlar.parse_partitioned_reads(readstream))
-    assert 'with and without partition labels' in str(ple)
 
 
 def test_parse_single_partition():
@@ -248,6 +247,5 @@ def test_kevlar_open(basename):
 def test_ikmer_out_of_bounds():
     fh = kevlar.open(data_file('out-of-bounds.augfastq.gz'), 'r')
     reader = kevlar.parse_augmented_fastx(fh)
-    with pytest.raises(AssertionError) as ae:
-        list(reader)
-    assert "('TACGACAGAC', 'TACGACAGACA')" in str(ae)
+    with pytest.raises(AssertionError, match=r"('TACGACAGAC', 'TACGACAGACA')"):
+        list(reader)git a

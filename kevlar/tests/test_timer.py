@@ -20,9 +20,8 @@ def test_testy_mctestface(capsys):
     time.sleep(0.1)
     assert t.probe() > 0
     assert t.probe('task1') > 0.0
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'No timer started for "task2"'):
         t.probe('task2')
-    assert 'No timer started for "task2"' in str(ve)
     elapsed = t.stop('task1')
     assert elapsed > 0.0
     t.start('task2')
@@ -30,10 +29,8 @@ def test_testy_mctestface(capsys):
     assert t.probe('task2') > 0.0
     elapsed = t.stop('task2')
     assert elapsed > 0.0
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'No timer started for "task3"'):
         t.stop('task3')
-    assert 'No timer started for "task3"' in str(ve)
     t.start('task3')
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'Timer already started for "task3"'):
         t.start('task3')
-    assert 'Timer already started for "task3"' in str(ve)

@@ -87,6 +87,7 @@ def test_bwa_align_coords():
            'GCCAGCCCTGGTTTCAAAATTGTTCCTCAGCATT')
     fasta = '>seq1\n{}\n'.format(seq)
     args = ['bwa', 'mem', data_file('fiveparts-refr.fa.gz'), '-']
+    kevlar.reference.autoindex(data_file('fiveparts-refr.fa.gz'))
     aligner = kevlar.reference.bwa_align(args, fasta)
     mappings = list(aligner)
     assert len(mappings) == 1
