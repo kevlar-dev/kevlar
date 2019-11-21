@@ -16,15 +16,14 @@ A :doc:`more detailed tutorial is available <tutorial>`, and a complete listing 
 .. code::
 
      # Download data
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-mother-reads.fq.gz -o mother.fq.gz
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-father-reads.fq.gz -o father.fq.gz
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-proband-reads.fq.gz -o proband.fq.gz
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-refr.fa.gz -o refr.fa.gz
+     curl -L https://osf.io/db82p/download -o mother.fq.gz
+     curl -L https://osf.io/6vrnz/download -o father.fq.gz
+     curl -L https://osf.io/wt5h8/download -o proband.fq.gz
+     curl -L https://osf.io/35wgn/download -o refr.fa.gz
      bwa index refr.fa.gz
 
      # Download and format configuration file
-     curl -L https://s3-us-west-1.amazonaws.com/noble-trios/helium-config.json \
-         | sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
+     curl -L https://osf.io/86adm/download  sed "s:/home/user/Desktop:$(pwd):g" > helium-config.json
 
      # Invoke the workflow
      snakemake \
