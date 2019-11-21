@@ -10,6 +10,7 @@
 import os.path
 import re
 from subprocess import Popen, PIPE, check_call
+import sys
 from tempfile import TemporaryFile
 
 import khmer
@@ -63,7 +64,7 @@ def bwa_align(cmdargs, seqstring=None, seqfilename=None):
             bwaproc = Popen(cmdargs, stdout=samfile, stderr=PIPE)
             stdout, stderr = bwaproc.communicate()
         if bwaproc.returncode != 0:
-            kevlar.plog(stderr)
+            kevlar.plog(sys.stderr)
             raise KevlarBWAError('problem running BWA')
         samfile.seek(0)
         sam = pysam.AlignmentFile(samfile, 'r')

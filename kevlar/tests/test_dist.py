@@ -117,7 +117,7 @@ def test_tsv():
         ]
         args = kevlar.cli.parser().parse_args(arglist)
         kevlar.dist.main(args)
-        data = pandas.read_table(distfile.name, sep='\t')
+        data = pandas.read_csv(distfile.name, sep='\t')
         print(data)
         cuml_test = [
             15.0, 18.0, 24.0, 44.0, 78.0, 153.0, 222.0, 325.0, 423.0, 515.0,
