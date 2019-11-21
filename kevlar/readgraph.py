@@ -38,7 +38,7 @@ class ReadGraph(networkx.Graph):
         return sg
 
     def get_record(self, recordname):
-        return self.node[recordname]['record']
+        return self.nodes[recordname]['record']
 
     def load(self, readstream, minabund=None, maxabund=None, dedup=False):
         """
