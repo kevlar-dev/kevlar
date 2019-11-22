@@ -86,9 +86,9 @@ def test_count_problematic():
         'bogusoutput', data_file('trio1/ctrl1.fq')
     ]
     args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(ValueError) as ve:
+    errormsg = r'Must specify --num-bands and --band together'
+    with pytest.raises(ValueError, match=errormsg):
         kevlar.count.main(args)
-    assert 'Must specify --num-bands and --band together' in str(ve)
 
     arglist = [
         'count', '--ksize', '21', '--memory', '97',

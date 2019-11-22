@@ -18,9 +18,8 @@ def test_kevlar_open():
     filecontents = filehandle.read()
     assert len(filecontents.strip().split('\n')) == 9
 
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'invalid mode "p"'):
         filehandle = kevlar.open(thefile, 'p')
-    assert 'invalid mode "p"' in str(ve)
 
 
 def test_main(capsys):

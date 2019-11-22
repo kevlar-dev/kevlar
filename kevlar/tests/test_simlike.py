@@ -242,7 +242,8 @@ def test_simlike_cli_bad_labels():
         '--refr', 'refr.sct', data_file('minitrio/calls.vcf')
     ]
     args = kevlar.cli.parser().parse_args(arglist)
-    with pytest.raises(kevlar.simlike.KevlarSampleLabelingError, match=r'provided 4 labels but 3 samples'):
+    error = r'provided 4 labels but 3 samples'
+    with pytest.raises(kevlar.simlike.KevlarSampleLabelingError, match=error):
         kevlar.simlike.main(args)
 
 

@@ -23,17 +23,16 @@ from khmer import Counttable
 
 
 def test_novel_banding_args():
-    with pytest.raises(ValueError) as ve:
+    errormsg = r'Must specify `numbands` and `band` together'
+    with pytest.raises(ValueError, match=errormsg):
         reads = list(kevlar.novel.novel(None, [], [], numbands=4))
-    assert 'Must specify `numbands` and `band` together' in str(ve)
 
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=errormsg):
         reads = list(kevlar.novel.novel(None, [], [], band=0))
-    assert 'Must specify `numbands` and `band` together' in str(ve)
 
-    with pytest.raises(ValueError) as ve:
+    errormsg = r'`band` must be a value between 0 and 3'
+    with pytest.raises(ValueError, match=errormsg):
         reads = list(kevlar.novel.novel(None, [], [], numbands=4, band=-1))
-    assert '`band` must be a value between 0 and 3' in str(ve)
 
 
 def test_cli():
@@ -57,13 +56,13 @@ def test_cli():
     assert args.num_bands == 8
     assert args.band == 1
 
-    with pytest.raises(ValueError) as ve:
+    errormsg = r'Must specify --num-bands and --band together'
+    with pytest.raises(ValueError, match=errormsg):
         args = kevlar.cli.parser().parse_args([
             'novel', '--case', 'case1.fq', '--control', 'cntl1.fq',
             '--band', '1'
         ])
         kevlar.novel.main(args)
-    assert 'Must specify --num-bands and --band together' in str(ve)
 
 
 @pytest.mark.parametrize('kmer', [

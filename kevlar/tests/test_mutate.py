@@ -51,9 +51,8 @@ def test_load_mutations_y():
 
 def test_load_mutations_z():
     instream = kevlar.open(data_file('muts-z.csv'), 'r')
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'error parsing mutation'):
         mutations = kevlar.mutate.load_mutations(instream, stderr)
-    assert 'error parsing mutation' in str(ve)
 
 
 def test_mutate_snv():
@@ -89,9 +88,8 @@ def test_mutate_inv():
 
 def test_mutate_bogus():
     instream = kevlar.open(data_file('muts-w.txt'), 'r')
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'invalid variant type "slippage"'):
         mutations = kevlar.mutate.load_mutations(instream, stderr)
-    assert 'invalid variant type "slippage"' in str(ve)
 
 
 def test_mutate_main(capsys):

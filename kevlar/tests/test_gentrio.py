@@ -42,9 +42,8 @@ def test_weights_str_to_dict():
         {'snv': 0.8 / 1.2, 'ins': 0.2 / 1.2, 'del': 0.2 / 1.2}
     )
 
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'too many values to unpack'):
         ws2d('snv=0.8;ins=0.2;del=0.2')
-    assert 'too many values to unpack' in str(ve)
 
 
 def test_rng():
@@ -179,10 +178,9 @@ def test_gen_muts():
 def test_gen_with_inversions(seed):
     seqs = {'1': 'ACGT'}
     w = {'inv': 1.0}
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'unknown mutation type inv'):
         # Invoke the mutator!!!
         list(kevlar.gentrio.generate_mutations(seqs, weights=w, rng=seed))
-    assert 'unknown mutation type inv' in str(ve)
 
 
 def test_sim_var_geno_smoketest():

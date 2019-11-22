@@ -31,7 +31,8 @@ def test_sketch_load(filename, testkmer):
 
 def test_sketch_load_badfilename():
     infile = data_file('test.notasketchtype')
-    with pytest.raises(kevlar.sketch.KevlarSketchTypeError, match=r'sketch type from filename ' + infile):
+    errormsg = r'sketch type from filename ' + infile
+    with pytest.raises(kevlar.sketch.KevlarSketchTypeError, match=errormsg):
         sketch = kevlar.sketch.load(infile)
 
 
@@ -93,7 +94,8 @@ def test_load_sketches():
 
 def test_load_sketches_fpr_fail():
     infiles = data_glob('test.counttable')
-    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError, match=r'FPR too high, bailing out!!!'):
+    errormsg = r'FPR too high, bailing out!!!'
+    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError, match=errormsg):
         sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.001)
 
 
