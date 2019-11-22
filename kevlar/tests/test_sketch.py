@@ -31,9 +31,9 @@ def test_sketch_load(filename, testkmer):
 
 def test_sketch_load_badfilename():
     infile = data_file('test.notasketchtype')
-    with pytest.raises(kevlar.sketch.KevlarSketchTypeError) as kste:
+    errormsg = r'sketch type from filename ' + infile
+    with pytest.raises(kevlar.sketch.KevlarSketchTypeError, match=errormsg):
         sketch = kevlar.sketch.load(infile)
-    assert ('sketch type from filename ' + infile) in str(kste)
 
 
 @pytest.mark.parametrize('count,smallcount', [
@@ -65,9 +65,8 @@ def test_allocate_sketch_non_graphy(count, smallcount):
     sketch.consume(sequence)
     sketch.get(kmer) == 1
     kmer_hash = sketch.hash(kmer)
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(ValueError, match=r'not implemented'):
         _ = sketch.reverse_hash(kmer_hash)
-    assert 'not implemented' in str(ve)
 
 
 def test_autoload():
@@ -95,9 +94,9 @@ def test_load_sketches():
 
 def test_load_sketches_fpr_fail():
     infiles = data_glob('test.counttable')
-    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError) as e:
+    errormsg = r'FPR too high, bailing out!!!'
+    with pytest.raises(kevlar.sketch.KevlarUnsuitableFPRError, match=errormsg):
         sketches = kevlar.sketch.load_sketchfiles(infiles, maxfpr=0.001)
-    assert 'FPR too high, bailing out!!!' in str(e)
 
 
 def test_get_extensions():

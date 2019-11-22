@@ -141,9 +141,8 @@ def test_get_cutouts_missing_seq():
     intervals.add_seed_match('TheCakeIsALie', 77)
     refrstream = open(data_file('simple-genome-ctrl1.fa'), 'r')
     seqs = kevlar.seqio.parse_seq_dict(refrstream)
-    with pytest.raises(KevlarRefrSeqNotFoundError) as rnf:
+    with pytest.raises(KevlarRefrSeqNotFoundError, match=r'TheCakeIsALie'):
         list(intervals.get_cutouts(refrseqs=seqs))
-    assert 'TheCakeIsALie' in str(rnf)
 
 
 def test_extract_regions_boundaries():

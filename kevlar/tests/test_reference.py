@@ -54,17 +54,15 @@ def test_load_cutouts():
 def test_autoindex():
     origlogstream = kevlar.logstream
     # Bogus directory
-    with pytest.raises(KevlarBWAError) as e:
+    with pytest.raises(KevlarBWAError, match=r'does not exist'):
         autoindex('/a/truly/bogus/dir/seqs.fa')
-    assert 'does not exist' in str(e)
 
     tmpdir = mkdtemp()
     try:
         # Real directory, non-existent file
         filename = tmpdir + '/refr.fa'
-        with pytest.raises(KevlarBWAError) as e:
+        with pytest.raises(KevlarBWAError, match=r'does not exist'):
             autoindex(filename)
-        assert 'does not exist' in str(e)
 
         # Should successfully index the sequence
         kevlar.logstream = StringIO()
@@ -87,6 +85,7 @@ def test_bwa_align_coords():
            'GCCAGCCCTGGTTTCAAAATTGTTCCTCAGCATT')
     fasta = '>seq1\n{}\n'.format(seq)
     args = ['bwa', 'mem', data_file('fiveparts-refr.fa.gz'), '-']
+    kevlar.reference.autoindex(data_file('fiveparts-refr.fa.gz'))
     aligner = kevlar.reference.bwa_align(args, fasta)
     mappings = list(aligner)
     assert len(mappings) == 1

@@ -188,9 +188,9 @@ def test_writer_bad_fmt(yrb_writer):
     v.format('NA19240', 'GT', '0/1')
     v.format('NA19239', 'ALTABUND', '0,0,0')
     v.format('NA19240', 'ALTABUND', '0,0,0')
-    with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
+    errormsg = r'samples not annotated with the same FORMAT fields'
+    with pytest.raises(kevlar.vcf.VariantAnnotationError, match=errormsg):
         yrb_writer.write(v)
-    assert 'samples not annotated with the same FORMAT fields' in str(vae)
 
 
 def test_reader():
@@ -207,15 +207,14 @@ def test_reader():
 
 
 @pytest.mark.parametrize('filename,errormsg', [
-    ('five-snvs-fmt-mismatch.vcf', 'sample number mismatch'),
-    ('five-snvs-fmtstr-mismatch.vcf', 'format data mismatch'),
+    ('five-snvs-fmt-mismatch.vcf', r'sample number mismatch'),
+    ('five-snvs-fmtstr-mismatch.vcf', r'format data mismatch'),
 ])
 def test_reader_format_mismatch(filename, errormsg):
     instream = kevlar.open(data_file(filename), 'r')
     reader = kevlar.vcf.VCFReader(instream)
-    with pytest.raises(kevlar.vcf.VariantAnnotationError) as vae:
+    with pytest.raises(kevlar.vcf.VariantAnnotationError, match=errormsg):
         calls = list(reader)
-    assert errormsg in str(vae)
 
 
 def test_vcf_roundtrip(capsys):
