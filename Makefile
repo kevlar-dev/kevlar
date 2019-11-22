@@ -9,7 +9,7 @@ help: Makefile
 
 ## devenv:   install software development pre-requisites
 devenv:
-	pip install --upgrade pip setuptools 'pytest>=4.0,<5.0' pytest-cov pytest-xdist pycodestyle cython sphinx sphinx-argparse
+	pip install --upgrade pip setuptools 'pytest>=5.3' pytest-cov pytest-xdist pycodestyle cython sphinx sphinx-argparse
 
 ## style:    check Python code style against PEP8
 style:
