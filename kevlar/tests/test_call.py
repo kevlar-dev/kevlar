@@ -448,7 +448,7 @@ def test_call_max_target_length_cli(capsys):
 
     out, err = capsys.readouterr()
     outlines = out.strip().split('\n')
-    calllines = [l for l in outlines if not l.startswith('#')]
+    calllines = [ln for ln in outlines if not ln.startswith('#')]
     assert len(calllines) == 1
     assert calllines[0].startswith('.\t.\t.\t.\t.')
     assert 'PASS' not in calllines[0]

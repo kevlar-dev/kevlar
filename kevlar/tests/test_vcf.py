@@ -166,12 +166,12 @@ def test_writer(yrb_writer, capsys):
     print(out)
 
     outlines = out.strip().split('\n')
-    fmtlines = [l for l in outlines if l.startswith('##FORMAT')]
+    fmtlines = [ln for ln in outlines if ln.startswith('##FORMAT')]
     assert len(fmtlines) == 2
     gtfmt = '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">'
     assert gtfmt in fmtlines
 
-    varlines = [l for l in outlines if not l.startswith('#')]
+    varlines = [ln for ln in outlines if not ln.startswith('#')]
     assert len(varlines) == 1
     values = varlines[0].split('\t')
     assert len(values) == 12

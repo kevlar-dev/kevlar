@@ -5,6 +5,7 @@
 # licensed under the MIT license: see LICENSE.
 # -----------------------------------------------------------------------------
 import os
+import sys
 
 
 # -----------------------------------------------------------------------------
@@ -140,6 +141,22 @@ class SimplexDesign(object):
 
 
 simplex = SimplexDesign(config)
+if simplex.numcontrols <= 1:
+    message = (
+        "this particular workflow is optimized for simplex cases with a single case sample "
+        "(proband or affected child) and two or more control samples (parents and, if available, "
+        "unaffected sibling); there are no guarantees for how Kevlar performs with only a single "
+        "parent or controlsample: most of the workflow will likely succeed, but the final `kevlar "
+        "simlike` step will almost certainly fail"
+    )
+    if "controlcheck" in config and config["controlcheck"] is False:
+        print("[WARNING]", message, file=sys.stderr)
+    else:
+        message += (
+            "; set 'controlcheck: true' in the config file to ignore and override this warning"
+        )
+        print("[ERROR]", message, file=sys.stderr)
+        raise ValueError(simplex.numcontrols)
 
 
 # -----------------------------------------------------------------------------
