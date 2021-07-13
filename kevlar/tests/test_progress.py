@@ -38,6 +38,6 @@ def test_progress_timer(capsys):
     out, err = capsys.readouterr()
     print(err)
     loglines = err.strip().split('\n')
-    timelines = [l for l in loglines if 'seconds elapsed' in l]
+    timelines = [ln for ln in loglines if 'seconds elapsed' in ln]
     assert len(loglines) == 20
     assert len(timelines) == 20

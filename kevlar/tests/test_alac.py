@@ -24,7 +24,7 @@ def test_pico_4(capsys):
     out, err = capsys.readouterr()
 
     # grep -v ^'#' out
-    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+    out = '\n'.join([ln for ln in out.split('\n') if not ln.startswith('#')])
 
     vcf = '\t'.join([
         'seq1', '1175768', '.', 'T', 'C', '.', 'PASS',
@@ -79,7 +79,7 @@ def test_pico_partitioned(capsys):
     nformatlines = 1
     nheaderlines = nmetalines + nfilterlines + ninfolines + nformatlines + 1
     assert len(lines) == nheaderlines + 10
-    lines = [l for l in lines if not l.startswith('#')]
+    lines = [ln for ln in lines if not ln.startswith('#')]
     assert len(lines) == 10
     numnocalls = sum([1 for line in lines if '\t.\t.\t.\t.\t' in line])
     assert numnocalls == 2
@@ -147,7 +147,7 @@ def test_alac_single_partition_badlabel(capsys):
     out, err = capsys.readouterr()
 
     # grep -v ^'#' out
-    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+    out = '\n'.join([ln for ln in out.split('\n') if not ln.startswith('#')])
     assert out == ''
 
 
@@ -161,7 +161,7 @@ def test_alac_exclude(capsys):
     print(err)
 
     # grep -v ^'#' out
-    out = '\n'.join([l for l in out.split('\n') if not l.startswith('#')])
+    out = '\n'.join([ln for ln in out.split('\n') if not ln.startswith('#')])
     assert out == ''
 
 

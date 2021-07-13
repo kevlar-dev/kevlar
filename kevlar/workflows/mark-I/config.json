@@ -57,5 +57,6 @@
         "seqpattern": ".",
         "maxdiff": 10000
     },
-    "varfilter": null
+    "varfilter": null,
+    "controlcheck": true
 }
